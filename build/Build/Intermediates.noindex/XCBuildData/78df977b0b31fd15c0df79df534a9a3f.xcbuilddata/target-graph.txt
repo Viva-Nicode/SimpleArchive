@@ -1,0 +1,6 @@
+Target dependency graph (3 targets)
+Target 'SimpleArchiveUITests' in project 'SimpleArchive'
+➜ Explicit dependency on target 'SimpleArchive' in project 'SimpleArchive'
+Target 'SimpleArchiveTests' in project 'SimpleArchive'
+➜ Explicit dependency on target 'SimpleArchive' in project 'SimpleArchive'
+Target 'SimpleArchive' in project 'SimpleArchive' (no dependencies)

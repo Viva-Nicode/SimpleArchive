@@ -1,0 +1,32 @@
+{
+  "configurations" : [
+    {
+      "id" : "BFBA3252-15E3-42A4-BF1E-10D98DF782E6",
+      "name" : "Configuration 1",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "testTimeoutsEnabled" : true
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : false,
+      "target" : {
+        "containerPath" : "container:SimpleArchive.xcodeproj",
+        "identifier" : "FCCF47902E0681C300C95405",
+        "name" : "SimpleArchiveTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:SimpleArchive.xcodeproj",
+        "identifier" : "FC892E512E45DEB0001D7CA3",
+        "name" : "SimpleArchiveUITests"
+      }
+    }
+  ],
+  "version" : 1
+}

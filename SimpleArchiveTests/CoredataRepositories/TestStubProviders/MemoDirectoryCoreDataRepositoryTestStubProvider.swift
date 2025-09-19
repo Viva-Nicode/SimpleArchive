@@ -1,0 +1,27 @@
+final class MemoDirectoryCoreDataRepositoryTestStubProvider: TestStubProvidable {
+    typealias TargetTestClassType = MemoDirectoryCoreDataRepositoryTests
+
+    private var stubContainer: [String: any StubDatable] = [:]
+    private var recentUsingKey: String = ""
+
+    init() {
+        let stubs: [any StubDatable] = [
+            FetchSystemDirectoryEntitiesOnFirstAppLaunchTestStub(),
+            FetchSystemDirectoryEntitiesSuccessfullyTestStub(),
+            CreateStorageItemWithDirectoryTestStub(),
+            CreateStorageItemWithPageTestStub(),
+            MoveFileToDormantBoxWithDirectoryTestStub(),
+            MoveFileToDormantBoxWithPageTestStub(),
+        ]
+        stubs.forEach { stubContainer[$0.testTargetName] = $0 }
+    }
+
+    func getStub(with functionName: String = #function) -> any StubDatable {
+        recentUsingKey = functionName
+        return stubContainer[functionName]!
+    }
+
+    func removeUsedStubData() {
+        stubContainer.removeValue(forKey: recentUsingKey)
+    }
+}

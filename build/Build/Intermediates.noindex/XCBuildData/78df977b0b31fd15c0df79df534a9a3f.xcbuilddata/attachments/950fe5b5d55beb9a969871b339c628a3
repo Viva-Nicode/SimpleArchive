@@ -1,0 +1,898 @@
+{
+  "" : {
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/SimpleArchive-master.dia",
+    "emit-module-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/SimpleArchive-master-emit-module.d",
+    "emit-module-diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/SimpleArchive-master-emit-module.dia",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/SimpleArchive-master.swiftdeps"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/AppDelegate.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/AppDelegate.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/AppDelegate.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/AppDelegate.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/AppDelegate.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/AppDelegate.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/AppDelegate.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/AppDelegate.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/AppDelegate~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/CoreDataRepository/ComponentSnapshotCoredataRepository.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotCoredataRepository.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotCoredataRepository.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotCoredataRepository.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotCoredataRepository.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotCoredataRepository.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotCoredataRepository.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotCoredataRepository.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotCoredataRepository~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/CoreDataRepository/DormantBoxCoreDataRepository.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DormantBoxCoreDataRepository.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DormantBoxCoreDataRepository.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DormantBoxCoreDataRepository.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DormantBoxCoreDataRepository.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DormantBoxCoreDataRepository.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DormantBoxCoreDataRepository.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DormantBoxCoreDataRepository.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DormantBoxCoreDataRepository~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/CoreDataRepository/MemoComponentCoreDataRepository.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoComponentCoreDataRepository.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoComponentCoreDataRepository.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoComponentCoreDataRepository.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoComponentCoreDataRepository.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoComponentCoreDataRepository.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoComponentCoreDataRepository.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoComponentCoreDataRepository.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoComponentCoreDataRepository~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/CoreDataRepository/MemoDirectoryCoreDataRepository.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoDirectoryCoreDataRepository.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoDirectoryCoreDataRepository.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoDirectoryCoreDataRepository.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoDirectoryCoreDataRepository.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoDirectoryCoreDataRepository.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoDirectoryCoreDataRepository.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoDirectoryCoreDataRepository.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoDirectoryCoreDataRepository~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/CoreDataRepository/MemoPageCoreDataRepository.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageCoreDataRepository.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageCoreDataRepository.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageCoreDataRepository.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageCoreDataRepository.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageCoreDataRepository.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageCoreDataRepository.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageCoreDataRepository.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageCoreDataRepository~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/CoreDataRepository/PersistentStore.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PersistentStore.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PersistentStore.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PersistentStore.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PersistentStore.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PersistentStore.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PersistentStore.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PersistentStore.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PersistentStore~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/Dependencies/DIContainer.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DIContainer.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DIContainer.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DIContainer.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DIContainer.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DIContainer.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DIContainer.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DIContainer.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DIContainer~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/Helper/PublisherHelper.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PublisherHelper.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PublisherHelper.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PublisherHelper.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PublisherHelper.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PublisherHelper.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PublisherHelper.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PublisherHelper.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PublisherHelper~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/Helper/UIControlActionPublisher.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/UIControlActionPublisher.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/UIControlActionPublisher.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/UIControlActionPublisher.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/UIControlActionPublisher.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/UIControlActionPublisher.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/UIControlActionPublisher.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/UIControlActionPublisher.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/UIControlActionPublisher~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/Helper/UIHelper.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/UIHelper.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/UIHelper.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/UIHelper.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/UIHelper.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/UIHelper.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/UIHelper.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/UIHelper.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/UIHelper~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/Models/ComponentSnapshotType.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotType.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotType.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotType.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotType.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotType.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotType.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotType.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotType~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/Models/MemoPageModel+NSItemProvider.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageModel+NSItemProvider.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageModel+NSItemProvider.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageModel+NSItemProvider.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageModel+NSItemProvider.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageModel+NSItemProvider.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageModel+NSItemProvider.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageModel+NSItemProvider.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageModel+NSItemProvider~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/Models/Models+CoreData.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/Models+CoreData.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/Models+CoreData.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/Models+CoreData.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/Models+CoreData.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/Models+CoreData.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/Models+CoreData.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/Models+CoreData.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/Models+CoreData~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/Models/PageComponent+UICollectionView.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PageComponent+UICollectionView.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PageComponent+UICollectionView.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PageComponent+UICollectionView.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PageComponent+UICollectionView.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PageComponent+UICollectionView.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PageComponent+UICollectionView.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PageComponent+UICollectionView.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PageComponent+UICollectionView~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/Models/PageComponent.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PageComponent.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PageComponent.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PageComponent.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PageComponent.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PageComponent.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PageComponent.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PageComponent.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PageComponent~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/Models/SnapshotRestorable.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/SnapshotRestorable.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/SnapshotRestorable.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/SnapshotRestorable.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/SnapshotRestorable.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/SnapshotRestorable.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/SnapshotRestorable.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/SnapshotRestorable.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/SnapshotRestorable~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/Models/SortCriterias.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/SortCriterias.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/SortCriterias.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/SortCriterias.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/SortCriterias.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/SortCriterias.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/SortCriterias.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/SortCriterias.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/SortCriterias~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/Models/StorageItem.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/StorageItem.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/StorageItem.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/StorageItem.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/StorageItem.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/StorageItem.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/StorageItem.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/StorageItem.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/StorageItem~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/Models/StorageItemInformation.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/StorageItemInformation.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/StorageItemInformation.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/StorageItemInformation.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/StorageItemInformation.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/StorageItemInformation.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/StorageItemInformation.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/StorageItemInformation.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/StorageItemInformation~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/Models/SystemDirectories.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/SystemDirectories.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/SystemDirectories.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/SystemDirectories.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/SystemDirectories.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/SystemDirectories.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/SystemDirectories.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/SystemDirectories.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/SystemDirectories~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/Models/TextEditorComponentModel+NSItemProvider.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentModel+NSItemProvider.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentModel+NSItemProvider.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentModel+NSItemProvider.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentModel+NSItemProvider.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentModel+NSItemProvider.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentModel+NSItemProvider.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentModel+NSItemProvider.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentModel+NSItemProvider~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/Models/impls/MemoDirectoryModel.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoDirectoryModel.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoDirectoryModel.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoDirectoryModel.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoDirectoryModel.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoDirectoryModel.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoDirectoryModel.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoDirectoryModel.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoDirectoryModel~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/Models/impls/MemoPageModel.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageModel.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageModel.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageModel.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageModel.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageModel.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageModel.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageModel.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageModel~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/Models/impls/PageComponentChangeObject.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PageComponentChangeObject.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PageComponentChangeObject.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PageComponentChangeObject.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PageComponentChangeObject.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PageComponentChangeObject.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PageComponentChangeObject.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PageComponentChangeObject.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PageComponentChangeObject~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/Models/impls/StorageItemContainer.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/StorageItemContainer.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/StorageItemContainer.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/StorageItemContainer.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/StorageItemContainer.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/StorageItemContainer.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/StorageItemContainer.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/StorageItemContainer.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/StorageItemContainer~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/Models/impls/TextEditorComponent.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponent.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponent.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponent.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponent.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponent.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponent.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponent.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponent~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/Models/impls/TextEditorComponentSnapshot.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentSnapshot.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentSnapshot.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentSnapshot.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentSnapshot.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentSnapshot.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentSnapshot.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentSnapshot.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentSnapshot~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/Persistences/CoreDataEntityError.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/CoreDataEntityError.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/CoreDataEntityError.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/CoreDataEntityError.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/CoreDataEntityError.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/CoreDataEntityError.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/CoreDataEntityError.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/CoreDataEntityError.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/CoreDataEntityError~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/Persistences/CoreDataStack.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/CoreDataStack.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/CoreDataStack.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/CoreDataStack.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/CoreDataStack.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/CoreDataStack.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/CoreDataStack.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/CoreDataStack.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/CoreDataStack~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/Persistences/MemoComponentEntity+CoreDataClass.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoComponentEntity+CoreDataClass.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoComponentEntity+CoreDataClass.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoComponentEntity+CoreDataClass.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoComponentEntity+CoreDataClass.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoComponentEntity+CoreDataClass.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoComponentEntity+CoreDataClass.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoComponentEntity+CoreDataClass.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoComponentEntity+CoreDataClass~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/Persistences/MemoComponentEntity+CoreDataProperties.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoComponentEntity+CoreDataProperties.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoComponentEntity+CoreDataProperties.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoComponentEntity+CoreDataProperties.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoComponentEntity+CoreDataProperties.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoComponentEntity+CoreDataProperties.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoComponentEntity+CoreDataProperties.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoComponentEntity+CoreDataProperties.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoComponentEntity+CoreDataProperties~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/Persistences/MemoDirectoryEntity+CoreDataClass.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoDirectoryEntity+CoreDataClass.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoDirectoryEntity+CoreDataClass.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoDirectoryEntity+CoreDataClass.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoDirectoryEntity+CoreDataClass.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoDirectoryEntity+CoreDataClass.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoDirectoryEntity+CoreDataClass.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoDirectoryEntity+CoreDataClass.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoDirectoryEntity+CoreDataClass~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/Persistences/MemoDirectoryEntity+CoreDataProperties.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoDirectoryEntity+CoreDataProperties.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoDirectoryEntity+CoreDataProperties.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoDirectoryEntity+CoreDataProperties.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoDirectoryEntity+CoreDataProperties.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoDirectoryEntity+CoreDataProperties.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoDirectoryEntity+CoreDataProperties.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoDirectoryEntity+CoreDataProperties.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoDirectoryEntity+CoreDataProperties~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/Persistences/MemoPageEntity+CoreDataClass.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageEntity+CoreDataClass.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageEntity+CoreDataClass.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageEntity+CoreDataClass.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageEntity+CoreDataClass.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageEntity+CoreDataClass.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageEntity+CoreDataClass.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageEntity+CoreDataClass.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageEntity+CoreDataClass~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/Persistences/MemoPageEntity+CoreDataProperties.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageEntity+CoreDataProperties.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageEntity+CoreDataProperties.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageEntity+CoreDataProperties.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageEntity+CoreDataProperties.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageEntity+CoreDataProperties.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageEntity+CoreDataProperties.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageEntity+CoreDataProperties.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageEntity+CoreDataProperties~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/Persistences/StorageItemEntity+CoreDataClass.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/StorageItemEntity+CoreDataClass.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/StorageItemEntity+CoreDataClass.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/StorageItemEntity+CoreDataClass.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/StorageItemEntity+CoreDataClass.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/StorageItemEntity+CoreDataClass.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/StorageItemEntity+CoreDataClass.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/StorageItemEntity+CoreDataClass.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/StorageItemEntity+CoreDataClass~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/Persistences/StorageItemEntity+CoreDataProperties.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/StorageItemEntity+CoreDataProperties.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/StorageItemEntity+CoreDataProperties.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/StorageItemEntity+CoreDataProperties.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/StorageItemEntity+CoreDataProperties.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/StorageItemEntity+CoreDataProperties.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/StorageItemEntity+CoreDataProperties.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/StorageItemEntity+CoreDataProperties.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/StorageItemEntity+CoreDataProperties~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/Persistences/TextEditorComponentEntity+CoreDataClass.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentEntity+CoreDataClass.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentEntity+CoreDataClass.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentEntity+CoreDataClass.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentEntity+CoreDataClass.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentEntity+CoreDataClass.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentEntity+CoreDataClass.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentEntity+CoreDataClass.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentEntity+CoreDataClass~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/Persistences/TextEditorComponentEntity+CoreDataProperties.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentEntity+CoreDataProperties.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentEntity+CoreDataProperties.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentEntity+CoreDataProperties.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentEntity+CoreDataProperties.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentEntity+CoreDataProperties.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentEntity+CoreDataProperties.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentEntity+CoreDataProperties.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentEntity+CoreDataProperties~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/Persistences/TextEditorComponentSnapshotEntity+CoreDataClass.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentSnapshotEntity+CoreDataClass.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentSnapshotEntity+CoreDataClass.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentSnapshotEntity+CoreDataClass.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentSnapshotEntity+CoreDataClass.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentSnapshotEntity+CoreDataClass.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentSnapshotEntity+CoreDataClass.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentSnapshotEntity+CoreDataClass.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentSnapshotEntity+CoreDataClass~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/Persistences/TextEditorComponentSnapshotEntity+CoreDataProperties.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentSnapshotEntity+CoreDataProperties.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentSnapshotEntity+CoreDataProperties.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentSnapshotEntity+CoreDataProperties.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentSnapshotEntity+CoreDataProperties.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentSnapshotEntity+CoreDataProperties.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentSnapshotEntity+CoreDataProperties.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentSnapshotEntity+CoreDataProperties.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentSnapshotEntity+CoreDataProperties~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/SceneDelegate.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/SceneDelegate.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/SceneDelegate.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/SceneDelegate.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/SceneDelegate.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/SceneDelegate.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/SceneDelegate.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/SceneDelegate.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/SceneDelegate~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/Services/ComponentCreator.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentCreator.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentCreator.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentCreator.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentCreator.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentCreator.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentCreator.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentCreator.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentCreator~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/Services/ComponentFactory.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentFactory.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentFactory.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentFactory.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentFactory.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentFactory.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentFactory.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentFactory.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentFactory~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/Services/FileCreator.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/FileCreator.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/FileCreator.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/FileCreator.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/FileCreator.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/FileCreator.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/FileCreator.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/FileCreator.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/FileCreator~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/UI/Animators/FullScreenTextComponentAnimator.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/FullScreenTextComponentAnimator.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/FullScreenTextComponentAnimator.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/FullScreenTextComponentAnimator.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/FullScreenTextComponentAnimator.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/FullScreenTextComponentAnimator.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/FullScreenTextComponentAnimator.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/FullScreenTextComponentAnimator.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/FullScreenTextComponentAnimator~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/UI/Delegates/MemoHomeTableView+TableView.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeTableView+TableView.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeTableView+TableView.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeTableView+TableView.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeTableView+TableView.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeTableView+TableView.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeTableView+TableView.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeTableView+TableView.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeTableView+TableView~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/UI/Delegates/MemoPageViewController+CollectionView.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageViewController+CollectionView.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageViewController+CollectionView.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageViewController+CollectionView.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageViewController+CollectionView.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageViewController+CollectionView.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageViewController+CollectionView.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageViewController+CollectionView.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageViewController+CollectionView~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/UI/Delegates/MemoViewController+FixedFileTableView.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoViewController+FixedFileTableView.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoViewController+FixedFileTableView.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoViewController+FixedFileTableView.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoViewController+FixedFileTableView.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoViewController+FixedFileTableView.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoViewController+FixedFileTableView.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoViewController+FixedFileTableView.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoViewController+FixedFileTableView~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/UI/PopupViews/ChangeComponentNamePopupView.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ChangeComponentNamePopupView.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ChangeComponentNamePopupView.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ChangeComponentNamePopupView.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ChangeComponentNamePopupView.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ChangeComponentNamePopupView.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ChangeComponentNamePopupView.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ChangeComponentNamePopupView.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ChangeComponentNamePopupView~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/UI/PopupViews/DirectoryInformationPopupView.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DirectoryInformationPopupView.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DirectoryInformationPopupView.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DirectoryInformationPopupView.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DirectoryInformationPopupView.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DirectoryInformationPopupView.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DirectoryInformationPopupView.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DirectoryInformationPopupView.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DirectoryInformationPopupView~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/UI/PopupViews/ErrorMessagePopupView.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ErrorMessagePopupView.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ErrorMessagePopupView.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ErrorMessagePopupView.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ErrorMessagePopupView.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ErrorMessagePopupView.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ErrorMessagePopupView.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ErrorMessagePopupView.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ErrorMessagePopupView~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/UI/PopupViews/NewDirectoryPopupView.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/NewDirectoryPopupView.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/NewDirectoryPopupView.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/NewDirectoryPopupView.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/NewDirectoryPopupView.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/NewDirectoryPopupView.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/NewDirectoryPopupView.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/NewDirectoryPopupView.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/NewDirectoryPopupView~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/UI/PopupViews/NewPagePopupView.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/NewPagePopupView.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/NewPagePopupView.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/NewPagePopupView.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/NewPagePopupView.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/NewPagePopupView.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/NewPagePopupView.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/NewPagePopupView.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/NewPagePopupView~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/UI/PopupViews/PageInformationPopupView.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PageInformationPopupView.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PageInformationPopupView.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PageInformationPopupView.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PageInformationPopupView.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PageInformationPopupView.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PageInformationPopupView.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PageInformationPopupView.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PageInformationPopupView~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/UI/PopupViews/PopupView.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PopupView.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PopupView.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PopupView.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PopupView.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PopupView.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PopupView.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PopupView.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/PopupView~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/UI/PopupViews/SnapshotCapturePopupView.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/SnapshotCapturePopupView.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/SnapshotCapturePopupView.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/SnapshotCapturePopupView.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/SnapshotCapturePopupView.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/SnapshotCapturePopupView.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/SnapshotCapturePopupView.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/SnapshotCapturePopupView.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/SnapshotCapturePopupView~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/UI/Screens/ComponentSnapshotViewController.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotViewController.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotViewController.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotViewController.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotViewController.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotViewController.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotViewController.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotViewController.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotViewController~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/UI/Screens/DormantBoxViewController.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DormantBoxViewController.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DormantBoxViewController.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DormantBoxViewController.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DormantBoxViewController.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DormantBoxViewController.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DormantBoxViewController.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DormantBoxViewController.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DormantBoxViewController~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/UI/Screens/FullScreenComponentViewController.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/FullScreenComponentViewController.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/FullScreenComponentViewController.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/FullScreenComponentViewController.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/FullScreenComponentViewController.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/FullScreenComponentViewController.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/FullScreenComponentViewController.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/FullScreenComponentViewController.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/FullScreenComponentViewController~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/UI/Screens/MemoHomeViewController.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeViewController.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeViewController.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeViewController.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeViewController.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeViewController.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeViewController.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeViewController.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeViewController~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/UI/Screens/MemoPageViewController.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageViewController.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageViewController.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageViewController.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageViewController.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageViewController.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageViewController.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageViewController.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageViewController~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/UI/Screens/ViewControllerType.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ViewControllerType.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ViewControllerType.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ViewControllerType.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ViewControllerType.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ViewControllerType.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ViewControllerType.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ViewControllerType.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ViewControllerType~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/UI/UIComponents/BasePaddingLabel.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/BasePaddingLabel.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/BasePaddingLabel.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/BasePaddingLabel.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/BasePaddingLabel.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/BasePaddingLabel.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/BasePaddingLabel.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/BasePaddingLabel.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/BasePaddingLabel~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/UI/UIComponents/CreateNewComponentView.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/CreateNewComponentView.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/CreateNewComponentView.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/CreateNewComponentView.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/CreateNewComponentView.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/CreateNewComponentView.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/CreateNewComponentView.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/CreateNewComponentView.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/CreateNewComponentView~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/UI/UIComponents/DynamicBackgrounColordButton.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DynamicBackgrounColordButton.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DynamicBackgrounColordButton.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DynamicBackgrounColordButton.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DynamicBackgrounColordButton.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DynamicBackgrounColordButton.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DynamicBackgrounColordButton.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DynamicBackgrounColordButton.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DynamicBackgrounColordButton~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/UI/UIComponents/MemoHomeTableView.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeTableView.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeTableView.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeTableView.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeTableView.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeTableView.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeTableView.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeTableView.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeTableView~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/UI/UIComponents/MemoTableRowView.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoTableRowView.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoTableRowView.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoTableRowView.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoTableRowView.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoTableRowView.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoTableRowView.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoTableRowView.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoTableRowView~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/UI/UIComponents/RoundedTextField.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/RoundedTextField.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/RoundedTextField.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/RoundedTextField.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/RoundedTextField.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/RoundedTextField.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/RoundedTextField.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/RoundedTextField.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/RoundedTextField~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/UI/UIComponents/TextEditorComponentView.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentView.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentView.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentView.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentView.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentView.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentView.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentView.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/TextEditorComponentView~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/ViewModels/ComponentSnapshotViewModel.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotViewModel.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotViewModel.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotViewModel.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotViewModel.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotViewModel.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotViewModel.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotViewModel.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotViewModel~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/ViewModels/CoreDataRepositoryTypes/ComponentSnapshotCoreDataRepositoryType.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotCoreDataRepositoryType.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotCoreDataRepositoryType.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotCoreDataRepositoryType.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotCoreDataRepositoryType.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotCoreDataRepositoryType.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotCoreDataRepositoryType.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotCoreDataRepositoryType.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotCoreDataRepositoryType~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/ViewModels/CoreDataRepositoryTypes/DormantBoxCoreDataRepositoryType.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DormantBoxCoreDataRepositoryType.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DormantBoxCoreDataRepositoryType.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DormantBoxCoreDataRepositoryType.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DormantBoxCoreDataRepositoryType.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DormantBoxCoreDataRepositoryType.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DormantBoxCoreDataRepositoryType.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DormantBoxCoreDataRepositoryType.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DormantBoxCoreDataRepositoryType~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/ViewModels/CoreDataRepositoryTypes/MemoComponentCoreDataRepositoryType.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoComponentCoreDataRepositoryType.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoComponentCoreDataRepositoryType.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoComponentCoreDataRepositoryType.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoComponentCoreDataRepositoryType.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoComponentCoreDataRepositoryType.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoComponentCoreDataRepositoryType.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoComponentCoreDataRepositoryType.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoComponentCoreDataRepositoryType~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/ViewModels/CoreDataRepositoryTypes/MemoDirectoryCoreDataRepositoryType.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoDirectoryCoreDataRepositoryType.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoDirectoryCoreDataRepositoryType.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoDirectoryCoreDataRepositoryType.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoDirectoryCoreDataRepositoryType.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoDirectoryCoreDataRepositoryType.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoDirectoryCoreDataRepositoryType.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoDirectoryCoreDataRepositoryType.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoDirectoryCoreDataRepositoryType~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/ViewModels/CoreDataRepositoryTypes/MemoPageCoreDataRepositoryType.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageCoreDataRepositoryType.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageCoreDataRepositoryType.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageCoreDataRepositoryType.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageCoreDataRepositoryType.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageCoreDataRepositoryType.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageCoreDataRepositoryType.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageCoreDataRepositoryType.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageCoreDataRepositoryType~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/ViewModels/Delegates/MemoHomeViewModel+CollectionView.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeViewModel+CollectionView.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeViewModel+CollectionView.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeViewModel+CollectionView.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeViewModel+CollectionView.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeViewModel+CollectionView.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeViewModel+CollectionView.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeViewModel+CollectionView.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeViewModel+CollectionView~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/ViewModels/Delegates/MemoHomeViewModel+TableView.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeViewModel+TableView.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeViewModel+TableView.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeViewModel+TableView.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeViewModel+TableView.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeViewModel+TableView.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeViewModel+TableView.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeViewModel+TableView.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeViewModel+TableView~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/ViewModels/Delegates/MemoPageViewModel+CollectionView.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageViewModel+CollectionView.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageViewModel+CollectionView.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageViewModel+CollectionView.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageViewModel+CollectionView.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageViewModel+CollectionView.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageViewModel+CollectionView.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageViewModel+CollectionView.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageViewModel+CollectionView~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/ViewModels/DormantBoxViewModel.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DormantBoxViewModel.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DormantBoxViewModel.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DormantBoxViewModel.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DormantBoxViewModel.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DormantBoxViewModel.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DormantBoxViewModel.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DormantBoxViewModel.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DormantBoxViewModel~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/ViewModels/MemoHomeViewModel.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeViewModel.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeViewModel.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeViewModel.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeViewModel.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeViewModel.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeViewModel.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeViewModel.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeViewModel~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/ViewModels/MemoPageViewModel.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageViewModel.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageViewModel.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageViewModel.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageViewModel.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageViewModel.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageViewModel.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageViewModel.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageViewModel~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/ViewModels/ViewModelIOs/ComponentSnapshotViewModelIO.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotViewModelIO.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotViewModelIO.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotViewModelIO.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotViewModelIO.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotViewModelIO.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotViewModelIO.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotViewModelIO.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ComponentSnapshotViewModelIO~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/ViewModels/ViewModelIOs/DormantBoxViewModelIO.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DormantBoxViewModelIO.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DormantBoxViewModelIO.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DormantBoxViewModelIO.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DormantBoxViewModelIO.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DormantBoxViewModelIO.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DormantBoxViewModelIO.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DormantBoxViewModelIO.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/DormantBoxViewModelIO~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/ViewModels/ViewModelIOs/MemoHomeViewModelIO.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeViewModelIO.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeViewModelIO.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeViewModelIO.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeViewModelIO.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeViewModelIO.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeViewModelIO.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeViewModelIO.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoHomeViewModelIO~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/ViewModels/ViewModelIOs/MemoPageViewModelIO.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageViewModelIO.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageViewModelIO.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageViewModelIO.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageViewModelIO.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageViewModelIO.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageViewModelIO.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageViewModelIO.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/MemoPageViewModelIO~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchive/ViewModels/ViewModelProtocol.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ViewModelProtocol.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ViewModelProtocol.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ViewModelProtocol.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ViewModelProtocol.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ViewModelProtocol.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ViewModelProtocol.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ViewModelProtocol.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/ViewModelProtocol~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/GeneratedAssetSymbols.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/GeneratedAssetSymbols.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/GeneratedAssetSymbols.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/GeneratedAssetSymbols.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/GeneratedAssetSymbols.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchive.build/Objects-normal/arm64/GeneratedAssetSymbols~partial.swiftmodule"
+  }
+}
