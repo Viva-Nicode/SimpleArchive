@@ -1,0 +1,38 @@
+{
+  "" : {
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchiveUITests.build/Objects-normal/arm64/SimpleArchiveUITests-master.dia",
+    "emit-module-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchiveUITests.build/Objects-normal/arm64/SimpleArchiveUITests-master-emit-module.d",
+    "emit-module-diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchiveUITests.build/Objects-normal/arm64/SimpleArchiveUITests-master-emit-module.dia",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchiveUITests.build/Objects-normal/arm64/SimpleArchiveUITests-master.swiftdeps"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchiveUITests/MockMemoHomeViewModel.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchiveUITests.build/Objects-normal/arm64/MockMemoHomeViewModel.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchiveUITests.build/Objects-normal/arm64/MockMemoHomeViewModel.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchiveUITests.build/Objects-normal/arm64/MockMemoHomeViewModel.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchiveUITests.build/Objects-normal/arm64/MockMemoHomeViewModel.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchiveUITests.build/Objects-normal/arm64/MockMemoHomeViewModel.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchiveUITests.build/Objects-normal/arm64/MockMemoHomeViewModel.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchiveUITests.build/Objects-normal/arm64/MockMemoHomeViewModel.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchiveUITests.build/Objects-normal/arm64/MockMemoHomeViewModel~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchiveUITests/SimpleArchiveUITests.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchiveUITests.build/Objects-normal/arm64/SimpleArchiveUITests.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchiveUITests.build/Objects-normal/arm64/SimpleArchiveUITests.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchiveUITests.build/Objects-normal/arm64/SimpleArchiveUITests.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchiveUITests.build/Objects-normal/arm64/SimpleArchiveUITests.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchiveUITests.build/Objects-normal/arm64/SimpleArchiveUITests.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchiveUITests.build/Objects-normal/arm64/SimpleArchiveUITests.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchiveUITests.build/Objects-normal/arm64/SimpleArchiveUITests.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchiveUITests.build/Objects-normal/arm64/SimpleArchiveUITests~partial.swiftmodule"
+  },
+  "/Users/nicode./myDesktop/SimpleArchive/SimpleArchiveUITests/SimpleArchiveUITestsLaunchTests.swift" : {
+    "const-values" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchiveUITests.build/Objects-normal/arm64/SimpleArchiveUITestsLaunchTests.swiftconstvalues",
+    "dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchiveUITests.build/Objects-normal/arm64/SimpleArchiveUITestsLaunchTests.d",
+    "diagnostics" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchiveUITests.build/Objects-normal/arm64/SimpleArchiveUITestsLaunchTests.dia",
+    "index-unit-output-path" : "/SimpleArchive.build/Debug-iphonesimulator/SimpleArchiveUITests.build/Objects-normal/arm64/SimpleArchiveUITestsLaunchTests.o",
+    "llvm-bc" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchiveUITests.build/Objects-normal/arm64/SimpleArchiveUITestsLaunchTests.bc",
+    "object" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchiveUITests.build/Objects-normal/arm64/SimpleArchiveUITestsLaunchTests.o",
+    "swift-dependencies" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchiveUITests.build/Objects-normal/arm64/SimpleArchiveUITestsLaunchTests.swiftdeps",
+    "swiftmodule" : "/Users/nicode./myDesktop/SimpleArchive/build/Build/Intermediates.noindex/SimpleArchive.build/Debug-iphonesimulator/SimpleArchiveUITests.build/Objects-normal/arm64/SimpleArchiveUITestsLaunchTests~partial.swiftmodule"
+  }
+}
