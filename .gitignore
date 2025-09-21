@@ -7,5 +7,7 @@ UnitTestPlan.xctestplan
 resultBundle
 resultBundle.xcresult
 
-# App icons 디렉토리 제외
+
 SimpleArchiveIcons/
+build/
+
