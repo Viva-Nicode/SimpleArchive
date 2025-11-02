@@ -1,12 +1,12 @@
-import UIKit
 import Combine
+import UIKit
 
 class MemoHomeTableView: UICollectionViewCell {
 
-    let tableView: UITableView = {
+    private(set) var directoryContentTableView: UITableView = {
         let tableView = UITableView(frame: .zero, style: .plain)
         tableView.accessibilityIdentifier = "memoHomeTableView"
-        tableView.backgroundColor = .systemBackground
+        tableView.backgroundColor = .clear
         tableView.separatorStyle = .none
         tableView.dragInteractionEnabled = true
         tableView.register(MemoTableRowView.self, forCellReuseIdentifier: MemoTableRowView.cellId)
@@ -37,12 +37,12 @@ class MemoHomeTableView: UICollectionViewCell {
     }
 
     private func setupUI() {
-        tableView.dataSource = self
-        tableView.delegate = self
-        tableView.dragDelegate = self
-        tableView.dropDelegate = self
+        directoryContentTableView.dataSource = self
+        directoryContentTableView.delegate = self
+        directoryContentTableView.dragDelegate = self
+        directoryContentTableView.dropDelegate = self
 
-        tableViewContainer.addArrangedSubview(tableView)
+        tableViewContainer.addArrangedSubview(directoryContentTableView)
         contentView.addSubview(tableViewContainer)
     }
 
@@ -59,6 +59,6 @@ class MemoHomeTableView: UICollectionViewCell {
     ) {
         self.directoryContents = memoDirectoryModel
         self.subject = subject
-        tableView.reloadData()
+        directoryContentTableView.reloadData()
     }
 }

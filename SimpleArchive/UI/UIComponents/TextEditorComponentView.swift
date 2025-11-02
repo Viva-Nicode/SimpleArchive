@@ -112,6 +112,10 @@ final class TextEditorComponentView: PageComponentView<UITextView, TextEditorCom
                 }
                 .store(in: &subscriptions)
         }
+
+        if component.isMinimumHeight {
+            componentContentView.alpha = 0
+        }
     }
 
     func configure(
@@ -148,5 +152,14 @@ final class TextEditorComponentView: PageComponentView<UITextView, TextEditorCom
     func textViewDidChange(_ textView: UITextView) {
         detailAssignSubject.send(textView.text)
         captureButton.isEnabled = !textView.text.isEmpty
+    }
+
+    override func setMinimizeState(_ isMinimize: Bool) {
+        UIView.animate(
+            withDuration: 0.3,
+            animations: { [weak self] in
+                self?.componentContentView.alpha = isMinimize ? 0 : 1
+            }
+        )
     }
 }

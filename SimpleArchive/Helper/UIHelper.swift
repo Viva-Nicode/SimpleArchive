@@ -1,5 +1,36 @@
 import UIKit
 
+extension UIImage {
+    var audioTrackThumbnailSquared: UIImage? {
+        guard let cgImage = cgImage else { return nil }
+        let length = min(cgImage.width, cgImage.height)
+        let x = cgImage.width / 2 - length / 2
+        let y = cgImage.height / 2 - length / 2
+        let cropRect = CGRect(x: x, y: y, width: length, height: length)
+
+        guard let croppedCGImage = cgImage.cropping(to: cropRect) else { return nil }
+        return UIImage(cgImage: croppedCGImage, scale: scale, orientation: imageOrientation)
+    }
+
+    func blurred(radius: CGFloat) -> UIImage? {
+        guard let ciImage = CIImage(image: self) else { return nil }
+
+        let filter = CIFilter(name: "CIGaussianBlur")
+        filter?.setValue(ciImage, forKey: kCIInputImageKey)
+        filter?.setValue(radius, forKey: kCIInputRadiusKey)
+
+        guard let outputImage = filter?.outputImage else { return nil }
+
+        let context = CIContext()
+        let rect = CGRect(origin: .zero, size: size)
+        if let cgImage = context.createCGImage(outputImage, from: rect) {
+            return UIImage(cgImage: cgImage)
+        }
+
+        return nil
+    }
+}
+
 extension CALayer {
     func addBorder(_ arr_edge: [UIRectEdge], color: UIColor, width: CGFloat) {
         for edge in arr_edge {
@@ -136,8 +167,17 @@ extension Date {
 }
 
 enum UIConstants {
-    static let componentMinimumHeight: CGFloat = 65.0
+    static let componentMinimumHeight: CGFloat = 70.0
     static let tableComponentCellMaximumWidth: CGFloat = 260.0
+    static let audioControlBarViewWidth: CGFloat = 330.0
+    static let audioControlBarViewHeight: CGFloat = 140.0
+    static let audioControlBarViewThumbnailWidth: CGFloat = 110.0
+
+    static let singleAudioViewControllerTableViewFooterHeight: CGFloat = 160.0
+
+    static let memoPageViewControllerCollectionViewFooterHeight = 200.0
+    static let memoPageViewControllerCollectionViewHeaderHeight = 80.0
+    static let memoPageViewControllerCollectionViewCellSpacing = 25.0
 
     enum TableComponentCellEditPopupViewConstants {
         static let rowElementWidth: CGFloat = ((UIView.screenWidth * 0.8) - 40) / 3

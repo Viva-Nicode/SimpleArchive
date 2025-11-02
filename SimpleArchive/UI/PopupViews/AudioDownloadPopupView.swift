@@ -1,7 +1,7 @@
 import Combine
 import UIKit
 
-final class MusicDownloadPopupView: PopupView {
+final class AudioDownloadPopupView: PopupView {
 
     private let titleLabel: UILabel = {
         let titleLabel = UILabel()
@@ -17,6 +17,7 @@ final class MusicDownloadPopupView: PopupView {
             attributes: [.foregroundColor: UIColor.systemGray])
         return downloadCodeTextField
     }()
+    
     private let confirmButton: DynamicBackgrounColordButton = {
         let confirmButton = DynamicBackgrounColordButton()
 
@@ -63,7 +64,7 @@ final class MusicDownloadPopupView: PopupView {
     }
 }
 
-extension MusicDownloadPopupView: UITextFieldDelegate {
+extension AudioDownloadPopupView: UITextFieldDelegate {
     func textFieldDidChangeSelection(_ textField: UITextField) {
         guard let text = textField.text else {
             confirmButton.isEnabled = false

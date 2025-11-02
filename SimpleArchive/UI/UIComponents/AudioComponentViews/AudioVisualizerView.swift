@@ -34,10 +34,7 @@ class AudioVisualizerView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    deinit {
-        print("deinit AudioVisualizerView")
-        removeVisuzlization()
-    }
+    deinit { removeVisuzlization() }
 
     func activateAudioVisualizer(samplesCount: Int, scaledSamples: [Float], sampleRate: Double) {
         let viewSize = self.frame.size
@@ -162,4 +159,3 @@ protocol AudioVisualizerController: AnyObject {
     func restartVisuzlization()
     func seekVisuzlization(rate: TimeInterval)
 }
-

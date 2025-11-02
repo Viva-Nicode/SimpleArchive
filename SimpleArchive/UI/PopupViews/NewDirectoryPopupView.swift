@@ -2,6 +2,7 @@ import UIKit
 import Combine
 
 class NewDirectoryPopupView: PopupView {
+    
     private let subject: PassthroughSubject<MemoHomeSubViewInput, Never>
 
     private let titleLabel: UILabel = {

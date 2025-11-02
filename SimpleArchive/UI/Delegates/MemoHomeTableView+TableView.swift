@@ -8,9 +8,10 @@ extension MemoHomeTableView: UITableViewDataSource {
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let storageItem = directoryContents![indexPath.row]!
-        let cell = tableView.dequeueReusableCell(
-            withIdentifier: MemoTableRowView.cellId,
-            for: indexPath) as! MemoTableRowView
+        let cell =
+            tableView.dequeueReusableCell(
+                withIdentifier: MemoTableRowView.cellId,
+                for: indexPath) as! MemoTableRowView
 
         cell.configure(with: storageItem)
         tableView.isUserInteractionEnabled = true
@@ -18,25 +19,25 @@ extension MemoHomeTableView: UITableViewDataSource {
     }
 }
 
-
 extension MemoHomeTableView: UITableViewDelegate {
 
-    func tableView(_ tableView: UITableView,
-        trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+    func tableView(
+        _ tableView: UITableView,
+        trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath
+    ) -> UISwipeActionsConfiguration? {
 
         let showFileInfomation =
             UIContextualAction(style: .normal, title: "share") { (_, _, success: @escaping (Bool) -> Void) in
-            self.subject?.send(.showFileInformation(indexPath.row))
-            success(true)
-        }
+                self.subject?.send(.showFileInformation(indexPath.row))
+                success(true)
+            }
 
         let removeFile =
             UIContextualAction(style: .normal, title: "remove") { (_, _, success: @escaping (Bool) -> Void) in
-            self.subject?.send(.removeFile(indexPath.row))
-            tableView.deleteRows(at: [indexPath], with: .fade)
-            success(true)
-        }
-        
+                self.subject?.send(.removeFile(indexPath.row))
+                tableView.deleteRows(at: [indexPath], with: .fade)
+                success(true)
+            }
 
         showFileInfomation.backgroundColor = .systemBlue
         showFileInfomation.image = UIImage(systemName: "info.circle")
@@ -51,23 +52,27 @@ extension MemoHomeTableView: UITableViewDelegate {
         let fileTapped = directoryContents![indexPath.row]!
 
         switch fileTapped {
-        case is MemoPageModel:
-            self.subject?.send(.didTappedPageRow(indexPath.row))
+            case is MemoPageModel:
+                self.subject?.send(.didTappedPageRow(indexPath.row))
 
-        case is MemoDirectoryModel:
-            tableView.isUserInteractionEnabled = false
-            self.subject?.send(.didTappedDirectoryRow(indexPath.row))
+            case is MemoDirectoryModel:
+                tableView.isUserInteractionEnabled = false
+                self.subject?.send(.didTappedDirectoryRow(indexPath.row))
 
-        default:
-            break
+            default:
+                break
         }
     }
+
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat { 50 }
 }
 
 extension MemoHomeTableView: UITableViewDragDelegate {
 
-    func tableView(_ tableView: UITableView, itemsForBeginning session: any UIDragSession,
-        at indexPath: IndexPath) -> [UIDragItem] {
+    func tableView(
+        _ tableView: UITableView, itemsForBeginning session: any UIDragSession,
+        at indexPath: IndexPath
+    ) -> [UIDragItem] {
 
         let file = directoryContents![indexPath.row]!
 
@@ -82,8 +87,10 @@ extension MemoHomeTableView: UITableViewDragDelegate {
         return []
     }
 
-    func tableView(_ tableView: UITableView, dropSessionDidUpdate session: any UIDropSession,
-        withDestinationIndexPath destinationIndexPath: IndexPath?) -> UITableViewDropProposal {
+    func tableView(
+        _ tableView: UITableView, dropSessionDidUpdate session: any UIDropSession,
+        withDestinationIndexPath destinationIndexPath: IndexPath?
+    ) -> UITableViewDropProposal {
 
         if session.localDragSession != nil {
             let localDragContext = session.localDragSession!.localContext as! LocalDragContext
@@ -112,4 +119,3 @@ extension MemoHomeTableView: UITableViewDropDelegate {
         session.canLoadObjects(ofClass: MemoPageModel.self)
     }
 }
-

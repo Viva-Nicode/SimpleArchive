@@ -4,7 +4,6 @@ import UIKit
 final class SingleTablePageViewController: UIViewController, ViewControllerType,
     UIScrollViewDelegate, NavigationViewControllerDismissible, ComponentSnapshotViewControllerDelegate
 {
-
     typealias Input = SingleTablePageInput
     typealias ViewModelType = SingleTablePageViewModel
 
@@ -87,6 +86,7 @@ final class SingleTablePageViewController: UIViewController, ViewControllerType,
                     tableComponentContentView.configure(
                         content: detail,
                         dispatcher: SinglePageTableComponentActionDispatcher(subject: input),
+                        isMinimum: false,
                         componentID: id)
 
                 case .didTappedSnapshotButton(let vm):
@@ -104,6 +104,7 @@ final class SingleTablePageViewController: UIViewController, ViewControllerType,
                         self.tableComponentContentView.configure(
                             content: detail,
                             dispatcher: SinglePageTableComponentActionDispatcher(subject: self.input),
+                            isMinimum: false,
                             componentID: UUID())
                         UIView.animate(withDuration: 0.25) {
                             self.tableComponentContentView.alpha = 1

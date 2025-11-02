@@ -13,6 +13,7 @@ protocol PageComponentViewType {
     var creationDateLabel: UILabel { get set }
     var componentInformationView: UIStackView { get set }
     func resetupComponentContentViewToDismissFullScreenAnimation()
+    func setMinimizeState(_ isMinimize: Bool)
 }
 
 class PageComponentView<ComponentContentType, PageComponentType>: UICollectionViewCell, PageComponentViewType
@@ -20,7 +21,6 @@ where
     ComponentContentType: UIView,
     PageComponentType: PageComponent
 {
-
     func getContentView() -> ComponentContentType {
         self.componentContentView
     }
@@ -153,6 +153,7 @@ where
     }
 
     func setupConstraints() {
+
         containerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor).isActive = true
         containerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor).isActive = true
         containerView.topAnchor.constraint(equalTo: contentView.topAnchor).isActive = true
@@ -195,18 +196,21 @@ where
         greenCircleView.throttleUIViewTapGesturePublisher()
             .sink { [weak self] _ in
                 guard let self else { return }
-                if let componentTextViewSnapshot = componentContentView.snapshotView(afterScreenUpdates: true) {
-                    self.componentContentViewSnapshot = componentTextViewSnapshot
-                    componentTextViewSnapshot.translatesAutoresizingMaskIntoConstraints = false
-                    containerView.addSubview(componentTextViewSnapshot)
-                    componentTextViewSnapshot.topAnchor.constraint(equalTo: componentInformationView.bottomAnchor)
-                        .isActive = true
-                    componentTextViewSnapshot.leadingAnchor.constraint(equalTo: containerView.leadingAnchor).isActive =
-                        true
-                    componentTextViewSnapshot.trailingAnchor.constraint(equalTo: containerView.trailingAnchor)
-                        .isActive = true
-                    componentTextViewSnapshot.bottomAnchor.constraint(equalTo: containerView.bottomAnchor).isActive =
-                        true
+                // 컨텐츠 뷰가 깜빡거리는게 싫어서 컨텐츠 뷰위에 임시로 덧대는 뷰.
+                if !component.isMinimumHeight {
+                    if let componentTextViewSnapshot = componentContentView.snapshotView(afterScreenUpdates: true) {
+                        self.componentContentViewSnapshot = componentTextViewSnapshot
+                        componentTextViewSnapshot.translatesAutoresizingMaskIntoConstraints = false
+                        containerView.addSubview(componentTextViewSnapshot)
+                        componentTextViewSnapshot.topAnchor.constraint(equalTo: componentInformationView.bottomAnchor)
+                            .isActive = true
+                        componentTextViewSnapshot.leadingAnchor.constraint(equalTo: containerView.leadingAnchor)
+                            .isActive = true
+                        componentTextViewSnapshot.trailingAnchor.constraint(equalTo: containerView.trailingAnchor)
+                            .isActive = true
+                        componentTextViewSnapshot.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
+                            .isActive = true
+                    }
                 }
                 pageInputActionSubject?.send(.maximizeComponent(componentID))
             }
@@ -261,4 +265,6 @@ where
         componentContentViewSnapshot?.removeFromSuperview()
         componentContentViewSnapshot = nil
     }
+
+    func setMinimizeState(_ isMinimize: Bool) {}
 }

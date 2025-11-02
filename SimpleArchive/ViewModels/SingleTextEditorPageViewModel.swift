@@ -9,12 +9,12 @@ import UIKit
     private var output = PassthroughSubject<SingleTextEditorPageOutput, Never>()
     private var subscriptions = Set<AnyCancellable>()
 
-    private var coredataReposotory: MemoComponentRepositoryForSingleComponent
+    private var coredataReposotory: MemoSingleComponentRepositoryType
     private var textEditorComponent: TextEditorComponent
     private var pageTitle: String
 
     init(
-        coredataReposotory: MemoComponentRepositoryForSingleComponent,
+        coredataReposotory: MemoSingleComponentRepositoryType,
         textEditorComponent: TextEditorComponent,
         pageTitle: String
     ) {

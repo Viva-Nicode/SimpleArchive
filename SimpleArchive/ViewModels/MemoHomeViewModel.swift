@@ -188,9 +188,14 @@ import UIKit
                     tableComponent: singleTableComponent,
                     pageTitle: followingPage.name)
                 output.send(.presentSingleTableComponentPage(vm))
+            } else if let singleAudioComponent = followingPage.getComponents.first as? AudioComponent {
+                let vm = SingleAudioPageViewModel(
+                    coredataReposotory: memoComponentCoreDataRepository,
+                    audioComponent: singleAudioComponent,
+                    pageTitle: followingPage.name)
+                output.send(.presentSingleAudioComponentPage(vm))
             }
         } else {
-
             let memoPageViewModel = MemoPageViewModel(
                 componentFactory: componentFactory,
                 memoComponentCoredataReposotory: memoComponentCoreDataRepository,

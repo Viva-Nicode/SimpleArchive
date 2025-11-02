@@ -1,13 +1,19 @@
-import UIKit
 import Combine
+import UIKit
 
 protocol PopupViewDetailConfigurable {
     func popupViewDetailConfigure()
+    func disableDismissPopupViewByTapBackground()
 }
 
 class PopupView: UIView, PopupViewDetailConfigurable {
 
+    func disableDismissPopupViewByTapBackground() {
+        disableDismissPopupViewByTapBackgroundCancel?.cancel()
+    }
+
     var subscriptions: Set<AnyCancellable> = []
+    private var disableDismissPopupViewByTapBackgroundCancel: AnyCancellable?
 
     let backgroundView: UIView = {
         let backgroundView = UIView()
@@ -47,15 +53,14 @@ class PopupView: UIView, PopupViewDetailConfigurable {
         addSubview(backgroundView)
         addSubview(alertContainer)
 
-        backgroundView.throttleUIViewTapGesturePublisher()
-            .sink(receiveValue: { _ in self.dismiss() })
-            .store(in: &subscriptions)
+        disableDismissPopupViewByTapBackgroundCancel = backgroundView.throttleUIViewTapGesturePublisher()
+            .sink { _ in self.dismiss() }
 
         NSLayoutConstraint.activate([
             backgroundView.leadingAnchor.constraint(equalTo: leadingAnchor),
             backgroundView.trailingAnchor.constraint(equalTo: trailingAnchor),
             backgroundView.topAnchor.constraint(equalTo: topAnchor),
-            backgroundView.bottomAnchor.constraint(equalTo: bottomAnchor)
+            backgroundView.bottomAnchor.constraint(equalTo: bottomAnchor),
         ])
 
         alertContainer.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
@@ -68,9 +73,9 @@ class PopupView: UIView, PopupViewDetailConfigurable {
         NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)
             .sink { [weak self] notification in
                 guard let self = self,
-                      let userInfo = notification.userInfo,
-                      let keyboardFrame = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect,
-                      let duration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double
+                    let userInfo = notification.userInfo,
+                    let keyboardFrame = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect,
+                    let duration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double
                 else { return }
 
                 let keyboardHeight = keyboardFrame.height
@@ -85,8 +90,8 @@ class PopupView: UIView, PopupViewDetailConfigurable {
         NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)
             .sink { [weak self] notification in
                 guard let self = self,
-                      let userInfo = notification.userInfo,
-                      let duration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double
+                    let userInfo = notification.userInfo,
+                    let duration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double
                 else { return }
 
                 self.centerYConstraint.constant = 0
@@ -99,7 +104,8 @@ class PopupView: UIView, PopupViewDetailConfigurable {
 
     public func show() {
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-           let window = windowScene.windows.first {
+            let window = windowScene.windows.first
+        {
             self.frame = window.bounds
             window.addSubview(self)
 

@@ -180,6 +180,10 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
         fatalError("init(coder:) has not been implemented")
     }
 
+    override func viewWillAppear(_ animated: Bool) {
+        collectionView.reloadData()
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
         bind()
@@ -240,10 +244,14 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
                 case .presentSingleTextEditorComponentPage(let vm):
                     let singleTextEditorPageViewController = SingleTextEditorPageViewController(viewModel: vm)
                     navigationController?.pushViewController(singleTextEditorPageViewController, animated: true)
-                
+
                 case .presentSingleTableComponentPage(let vm):
                     let singleTablePageViewController = SingleTablePageViewController(viewModel: vm)
                     navigationController?.pushViewController(singleTablePageViewController, animated: true)
+
+                case .presentSingleAudioComponentPage(let vm):
+                    let singleAudioPageViewController = SingleAudioPageViewController(viewModel: vm)
+                    navigationController?.pushViewController(singleAudioPageViewController, animated: true)
             }
         }
         .store(in: &subscriptions)
@@ -467,12 +475,13 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
         guard
             let collectionViewCell = collectionView.cellForItem(at: newIndexPath),
             let cell = collectionViewCell as? MemoHomeTableView,
-            let tableCell = cell.tableView.cellForRow(at: IndexPath(row: before, section: .zero)),
+            let tableCell = cell.directoryContentTableView.cellForRow(at: IndexPath(row: before, section: .zero)),
             let memoTableRow = tableCell as? MemoTableRowView
         else { return }
 
         memoTableRow.setFileNameLabelText(newName)
-        cell.tableView.moveRow(at: IndexPath(row: before, section: 0), to: IndexPath(row: after, section: 0))
+        cell.directoryContentTableView.moveRow(
+            at: IndexPath(row: before, section: 0), to: IndexPath(row: after, section: 0))
     }
 
     private func insertRowToTable(collectionCellIndex: Int, tableCellIndices: [Int]) {
@@ -481,9 +490,9 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
             .cellForItem(at: IndexPath(item: collectionCellIndex, section: 0)) as? MemoHomeTableView
         {
 
-            collectionViewCell.tableView.performBatchUpdates {
+            collectionViewCell.directoryContentTableView.performBatchUpdates {
                 let indexPaths = tableCellIndices.map { IndexPath(row: $0, section: 0) }
-                collectionViewCell.tableView.insertRows(at: indexPaths, with: .automatic)
+                collectionViewCell.directoryContentTableView.insertRows(at: indexPaths, with: .automatic)
             }
         }
     }
@@ -497,8 +506,8 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
         if let lastCell = collectionView.cellForItem(at: lastIndexPath) {
             let cell = lastCell as! MemoHomeTableView
 
-            cell.tableView.performBatchUpdates {
-                cell.tableView.deleteRows(at: deleteRowIndexPaths, with: .automatic)
+            cell.directoryContentTableView.performBatchUpdates {
+                cell.directoryContentTableView.deleteRows(at: deleteRowIndexPaths, with: .automatic)
             }
         }
 
@@ -518,8 +527,8 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
         let lastIndexPath = IndexPath(item: indexOfCell, section: 0)
         if let lastCell = collectionView.cellForItem(at: lastIndexPath) {
             let cell = lastCell as! MemoHomeTableView
-            cell.tableView.performBatchUpdates {
-                cell.tableView.insertRows(at: insertRowIndexPaths, with: .automatic)
+            cell.directoryContentTableView.performBatchUpdates {
+                cell.directoryContentTableView.insertRows(at: insertRowIndexPaths, with: .automatic)
             }
         }
     }
@@ -533,9 +542,9 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
             let cell = collectionViewCell as? MemoHomeTableView
         else { return }
 
-        cell.tableView.performBatchUpdates {
+        cell.directoryContentTableView.performBatchUpdates {
             for (before, after) in sortingReulst {
-                cell.tableView.moveRow(
+                cell.directoryContentTableView.moveRow(
                     at: IndexPath(row: before, section: .zero),
                     to: IndexPath(row: after, section: .zero)
                 )

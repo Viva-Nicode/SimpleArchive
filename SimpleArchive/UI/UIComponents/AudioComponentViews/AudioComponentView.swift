@@ -15,7 +15,7 @@ final class AudioComponentView: PageComponentView<AudioComponentContentView, Aud
         fatalError("init(coder:) has not been implemented")
     }
 
-    deinit { print("deinit TableComponentView") }
+    deinit { print("deinit AudioComponentView") }
 
     override func setupUI() {
         componentContentView = AudioComponentContentView()
@@ -32,18 +32,22 @@ final class AudioComponentView: PageComponentView<AudioComponentContentView, Aud
     override func setupConstraints() {
         super.setupConstraints()
     }
-
+    
     override func configure(
         component: AudioComponent,
         input subject: PassthroughSubject<MemoPageViewInput, Never>,
         isReadOnly: Bool
     ) {
         super.configure(component: component, input: subject, isReadOnly: isReadOnly)
-
+        
         componentContentView.configure(
             content: component,
             dispatcher: MemoPageAudioComponentActionDispatcher(subject: subject),
             componentID: componentID
         )
+    }
+    
+    override func setMinimizeState(_ isMinimize:Bool) {
+        componentContentView.minimizeContentView(isMinimize)
     }
 }

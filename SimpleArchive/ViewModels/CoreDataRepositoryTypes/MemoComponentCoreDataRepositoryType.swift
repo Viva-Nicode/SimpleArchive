@@ -1,7 +1,7 @@
 import Combine
 import Foundation
 
-protocol MemoComponentRepositoryForSingleComponent {
+protocol MemoSingleComponentRepositoryType {
     @discardableResult
     func updateComponentChanges(componentChanges: PageComponentChangeObject) -> AnyPublisher<Void, Error>
 
@@ -12,7 +12,7 @@ protocol MemoComponentRepositoryForSingleComponent {
     func captureSnapshot(snapshotRestorableComponent: any SnapshotRestorable, desc: String) -> AnyPublisher<Void, Error>
 }
 
-protocol MemoComponentCoreDataRepositoryType: MemoComponentRepositoryForSingleComponent {
+protocol MemoComponentCoreDataRepositoryType: MemoSingleComponentRepositoryType {
 
     @discardableResult
     func createComponentEntity(parentPageID: UUID, component: any PageComponent)

@@ -1,5 +1,5 @@
-import UIKit
 import Combine
+import UIKit
 
 class MemoTableRowView: UITableViewCell {
 
@@ -8,6 +8,7 @@ class MemoTableRowView: UITableViewCell {
         containerStackView.backgroundColor = .systemGray6
         containerStackView.axis = .horizontal
         containerStackView.spacing = 10
+        containerStackView.alignment = .center
         containerStackView.distribution = .fill
         containerStackView.isLayoutMarginsRelativeArrangement = true
         containerStackView.layoutMargins = UIEdgeInsets(top: 10, left: 10, bottom: 10, right: 10)
@@ -50,6 +51,7 @@ class MemoTableRowView: UITableViewCell {
         contentView.addSubview(containerStackView)
         containerStackView.addArrangedSubview(fileIconImageView)
         containerStackView.addArrangedSubview(fileNameLable)
+        containerStackView.addArrangedSubview(UIView.spacerView)
         containerStackView.addArrangedSubview(containingFileCountLable)
     }
 
@@ -61,16 +63,37 @@ class MemoTableRowView: UITableViewCell {
     }
 
     public func configure(with fileItem: some StorageItem) {
-
-        fileIconImageView.image = UIImage(systemName: fileItem is MemoDirectoryModel ? "folder" : "note.text")
-        fileIconImageView.tintColor = fileItem is MemoDirectoryModel ? .magenta : .systemBlue
-
         fileNameLable.text = fileItem.name
 
-        containingFileCountLable.text = ""
+        if let directory = fileItem as? MemoDirectoryModel {
+            fileIconImageView.image = UIImage(systemName: "folder")
+            fileIconImageView.tintColor = .magenta
+            containingFileCountLable.text = "\(directory.getChildItemSize())"
+        } else if let page = fileItem as? MemoPageModel {
+            if page.isSingleComponentPage {
+                switch page.getComponents.first!.type {
 
-        if let directoryFile = fileItem as? MemoDirectoryModel {
-            containingFileCountLable.text = "\(directoryFile.getChildItemSize())"
+                    case .text:
+                        fileIconImageView.image = UIImage(systemName: "note.text")
+                        fileIconImageView.tintColor = .systemGreen
+                        containingFileCountLable.text = ""
+
+                    case .table:
+                        fileIconImageView.image = UIImage(systemName: "tablecells")
+                        fileIconImageView.tintColor = .yellow
+                        containingFileCountLable.text = ""
+
+                    case .audio:
+                        fileIconImageView.image = UIImage(systemName: "music.note.list")
+                        fileIconImageView.tintColor = .orange
+                        containingFileCountLable.text =
+                            "\((page.getComponents.first as! AudioComponent).detail.tracks.count)"
+                }
+            } else {
+                fileIconImageView.image = UIImage(systemName: "macwindow")
+                fileIconImageView.tintColor = .systemBlue
+                containingFileCountLable.text = "\(page.getComponents.count)"
+            }
         }
     }
 

@@ -52,6 +52,7 @@ extension PageComponent {
 enum ComponentType: String, Codable, CaseIterable {
     case text = "TEXT"
     case table = "TABLE"
+    case audio = "AUDIO"
 
     func getComponentCreator() -> any ComponentCreatorType {
         switch self {
@@ -60,6 +61,9 @@ enum ComponentType: String, Codable, CaseIterable {
 
             case .table:
                 TableComponentCreator()
+
+            case .audio:
+                AudioComponentCreator()
         }
     }
 
@@ -70,6 +74,9 @@ enum ComponentType: String, Codable, CaseIterable {
 
             case .table:
                 "TableMemo"
+
+            case .audio:
+                "AudioMemo"
         }
     }
 
@@ -80,6 +87,9 @@ enum ComponentType: String, Codable, CaseIterable {
 
             case .table:
                 "tablecells"
+
+            case .audio:
+                "music.note.list"
         }
     }
 }

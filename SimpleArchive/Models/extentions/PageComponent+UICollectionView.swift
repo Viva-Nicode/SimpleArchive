@@ -18,6 +18,7 @@ extension TextEditorComponent {
             ) as! TextEditorComponentView
 
         cell.configure(component: self, input: subject, isReadOnly: isReadOnly)
+
         return cell
     }
 
@@ -82,6 +83,26 @@ extension TableComponent {
             title: title,
             createDate: creationDate,
             input: subject)
+
+        return cell
+    }
+}
+
+extension AudioComponent {
+    func getCollectionViewComponentCell(
+        _ collectionView: UICollectionView,
+        _ indexPath: IndexPath,
+        isReadOnly: Bool,
+        subject: PassthroughSubject<MemoPageViewInput, Never>
+    ) -> UICollectionViewCell {
+        let cell =
+            collectionView
+            .dequeueReusableCell(
+                withReuseIdentifier: AudioComponentView.reuseAudioComponentIdentifier,
+                for: indexPath
+            ) as! AudioComponentView
+
+        cell.configure(component: self, input: subject, isReadOnly: false)
 
         return cell
     }

@@ -73,6 +73,22 @@ extension TableComponent {
     }
 }
 
+extension AudioComponent {
+    func store<ComponentEntityType>(in ctx: NSManagedObjectContext, parentPage: MemoPageEntity) -> ComponentEntityType
+    where ComponentEntityType: MemoComponentEntity {
+        let audioComponentEntity = AudioComponentEntity(context: ctx)
+        audioComponentEntity.id = self.id
+        audioComponentEntity.creationDate = self.creationDate
+        audioComponentEntity.renderingOrder = self.renderingOrder
+        audioComponentEntity.type = self.type.rawValue
+        audioComponentEntity.isMinimumHeight = self.isMinimumHeight
+        audioComponentEntity.title = self.title
+        audioComponentEntity.detail = self.detail.jsonString
+        parentPage.addToComponents(audioComponentEntity)
+        return audioComponentEntity as! ComponentEntityType
+    }
+}
+
 extension TextEditorComponentSnapshot {
     func store(in ctx: NSManagedObjectContext, parentComponentId: UUID) {
 

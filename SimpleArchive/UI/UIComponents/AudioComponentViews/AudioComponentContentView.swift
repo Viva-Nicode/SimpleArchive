@@ -58,19 +58,24 @@ final class AudioComponentContentView: UIView {
         button.setImage(image, for: .normal)
 
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.widthAnchor.constraint(equalToConstant: 25).isActive = true
-        button.heightAnchor.constraint(equalToConstant: 25).isActive = true
+        button.widthAnchor.constraint(equalToConstant: 44).isActive = true
         return button
     }()
-    let tableView: UITableView = {
+    let audioTrackTableView: UITableView = {
         let tableView = UITableView(frame: .zero, style: .plain)
         tableView.separatorStyle = .none
-        tableView.register(AudioTableRowView.self, forCellReuseIdentifier: AudioTableRowView.reuseIdentirifer)
+        tableView.showsVerticalScrollIndicator = false
+        tableView.register(AudioTableRowView.self, forCellReuseIdentifier: AudioTableRowView.reuseIdentifier)
         tableView.translatesAutoresizingMaskIntoConstraints = false
         return tableView
     }()
 
     var audioTrackTotal: Int = 0
+
+    var addbuttonHeightConstraint: NSLayoutConstraint?
+    var toolBarStackViewHeightConstraint: NSLayoutConstraint?
+    var sortOptionStackViewHeightConstraint: NSLayoutConstraint?
+
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupUI()
@@ -86,8 +91,8 @@ final class AudioComponentContentView: UIView {
     deinit { print("deinit AudioComponentContentView") }
 
     private func setupUI() {
-        tableView.backgroundColor = .clear
-        tableView.delegate = self
+        audioTrackTableView.backgroundColor = .clear
+        audioTrackTableView.delegate = self
 
         sortBycreateButton.setTitleColor(traitCollection.userInterfaceStyle == .dark ? .lightGray : .gray, for: .normal)
         sortByNameButton.setTitleColor(traitCollection.userInterfaceStyle == .dark ? .lightGray : .gray, for: .normal)
@@ -140,7 +145,7 @@ final class AudioComponentContentView: UIView {
         sortOptionStackView.addArrangedSubview(sortByNameButton)
         sortOptionStackView.addArrangedSubview(separator)
         sortOptionStackView.addArrangedSubview(sortBycreateButton)
-        addSubview(tableView)
+        addSubview(audioTrackTableView)
     }
 
     private func setupConstraints() {
@@ -148,30 +153,52 @@ final class AudioComponentContentView: UIView {
             audioComponentToolBarStackView.leadingAnchor.constraint(equalTo: leadingAnchor),
             audioComponentToolBarStackView.trailingAnchor.constraint(equalTo: trailingAnchor),
             audioComponentToolBarStackView.topAnchor.constraint(equalTo: topAnchor),
-            audioComponentToolBarStackView.heightAnchor.constraint(equalToConstant: 30),
 
             sortOptionStackView.leadingAnchor.constraint(equalTo: leadingAnchor),
             sortOptionStackView.trailingAnchor.constraint(equalTo: trailingAnchor),
             sortOptionStackView.topAnchor.constraint(equalTo: audioComponentToolBarStackView.bottomAnchor),
-            sortOptionStackView.heightAnchor.constraint(equalToConstant: 30),
 
-            tableView.topAnchor.constraint(equalTo: sortOptionStackView.bottomAnchor),
-            tableView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            tableView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            tableView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            audioTrackTableView.topAnchor.constraint(equalTo: sortOptionStackView.bottomAnchor),
+            audioTrackTableView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            audioTrackTableView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            audioTrackTableView.bottomAnchor.constraint(equalTo: bottomAnchor),
         ])
+
+        addbuttonHeightConstraint = audioAddButton.heightAnchor.constraint(equalToConstant: 44)
+        toolBarStackViewHeightConstraint = audioComponentToolBarStackView.heightAnchor.constraint(equalToConstant: 45)
+        sortOptionStackViewHeightConstraint = sortOptionStackView.heightAnchor.constraint(equalToConstant: 30)
+
+        addbuttonHeightConstraint?.isActive = true
+        toolBarStackViewHeightConstraint?.isActive = true
+        sortOptionStackViewHeightConstraint?.isActive = true
     }
 
+    func minimizeContentView(_ isMinimize: Bool) {
+        UIView.animate(
+            withDuration: 0.3,
+            animations: { [weak self] in
+                self?.alpha = isMinimize ? 0 : 1
+                self?.addbuttonHeightConstraint?.constant = isMinimize ? 0 : 44
+                self?.toolBarStackViewHeightConstraint?.constant = isMinimize ? 0 : 45
+                self?.sortOptionStackViewHeightConstraint?.constant = isMinimize ? 0 : 30
+                self?.layoutIfNeeded()
+            }
+        )
+    }
+
+    // Single 전용
     func configure(
         content audioComponent: AudioComponent,
+        datasource: AudioComponentDataSource,
         dispatcher: AudioComponentActionDispatcher,
         componentID: UUID
     ) {
         self.dispatcher = dispatcher
         self.componentID = componentID
-        self.tableView.dataSource = audioComponent
-        self.tableView.dragDelegate = self
-        self.tableView.dropDelegate = self
+        self.audioTrackTableView.dataSource = datasource
+
+        self.audioTrackTableView.dragDelegate = self
+        self.audioTrackTableView.dropDelegate = self
         self.audioTrackTotal = audioComponent.detail.tracks.count
         totalAudioCountLabel.text = "\(audioTrackTotal) audios in total"
 
@@ -184,6 +211,60 @@ final class AudioComponentContentView: UIView {
 
             case .manual:
                 break
+        }
+    }
+
+    // MemoPage 전용 configure
+    func configure(
+        content audioComponent: AudioComponent,
+        dispatcher: AudioComponentActionDispatcher,
+        componentID: UUID
+    ) {
+        self.dispatcher = dispatcher
+        self.componentID = componentID
+        let datasource = AudioComponentDataSource(
+            tracks: audioComponent.detail.tracks,
+            sortBy: audioComponent.detail.sortBy)
+        self.audioTrackTableView.dataSource = datasource
+        dispatcher.storeDataSource(componentID: componentID, datasource: datasource)
+
+        self.audioTrackTableView.dragDelegate = self
+        self.audioTrackTableView.dropDelegate = self
+        self.audioTrackTotal = audioComponent.detail.tracks.count
+        totalAudioCountLabel.text = "\(audioTrackTotal) audios in total"
+
+        switch audioComponent.detail.sortBy {
+            case .name:
+                sortByNameButton.setTitleColor(.white, for: .normal)
+
+            case .createDate:
+                sortBycreateButton.setTitleColor(.white, for: .normal)
+
+            case .manual:
+                break
+        }
+
+        self.alpha = audioComponent.isMinimumHeight ? 0 : 1
+        self.toolBarStackViewHeightConstraint?.constant = audioComponent.isMinimumHeight ? 0 : 45
+        self.sortOptionStackViewHeightConstraint?.constant = audioComponent.isMinimumHeight ? 0 : 30
+        self.addbuttonHeightConstraint?.constant = audioComponent.isMinimumHeight ? 0 : 44
+    }
+
+    func insertRow(trackIndices: [Int]) {
+        audioTrackTableView.performBatchUpdates {
+            let indexPaths = trackIndices.map { IndexPath(row: $0, section: .zero) }
+            audioTrackTableView.insertRows(at: indexPaths, with: .automatic)
+            audioTrackTotal += trackIndices.count
+            totalAudioCountLabel.text = "\(audioTrackTotal) audios in total"
+        }
+    }
+
+    func removeRow(trackIndex: Int) {
+        audioTrackTableView.performBatchUpdates {
+            let indexPath = IndexPath(row: trackIndex, section: .zero)
+            audioTrackTableView.deleteRows(at: [indexPath], with: .automatic)
+            audioTrackTotal -= 1
+            totalAudioCountLabel.text = "\(audioTrackTotal) audios in total"
         }
     }
 }
@@ -209,13 +290,17 @@ extension AudioComponentContentView: UITableViewDelegate {
                     title: title, artist: artist, thumbnail: thumbnail)
 
                 thumbnameSubscription = audioTrackEditPopupView.thumbnailPublisher
-                    .sink { self.dispatcher?.presentGallery($0) }
+                    .sink { [weak self] in
+                        guard let self else { return }
+                        self.dispatcher?.presentGallery($0)
+                    }
 
                 editAudioTrackMetadataConfrimButtonSubscription = audioTrackEditPopupView.confirmButtonPublisher
-                    .sink { editedMetadata in
+                    .sink { [weak self] editedMetadata in
+                        guard let self else { return }
                         audioTrackEditPopupView.dismiss()
                         self.dispatcher?
-                            .changeAudioTrackThumbnail(
+                            .changeAudioTrackMetadata(
                                 editMetadata: editedMetadata,
                                 componentID: self.componentID,
                                 trackIndex: indexPath.row)
@@ -230,9 +315,6 @@ extension AudioComponentContentView: UITableViewDelegate {
         let deleteAction = UIContextualAction(style: .destructive, title: nil) { [weak self] _, _, completionHandler in
             guard let self = self else { return }
             dispatcher?.removeAudioTrack(componentID: componentID, trackIndex: indexPath.row)
-            tableView.deleteRows(at: [indexPath], with: .automatic)
-            audioTrackTotal -= 1
-            totalAudioCountLabel.text = "\(audioTrackTotal) audios in total"
             completionHandler(true)
         }
         deleteAction.image = UIImage(systemName: "trash")
@@ -280,7 +362,7 @@ extension AudioComponentContentView: UITableViewDropDelegate {
             let fromIndex = sourceIndexPath.row
             let toIndex = destinationIndexPath.row
 
-            dispatcher?.dropAudioTrack(src: fromIndex, des: toIndex)
+            dispatcher?.dropAudioTrack(componentID: componentID, src: fromIndex, des: toIndex)
 
             tableView.performBatchUpdates(
                 {

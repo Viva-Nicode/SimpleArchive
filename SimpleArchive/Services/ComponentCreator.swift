@@ -15,3 +15,7 @@ struct TableComponentCreator: ComponentCreatorType {
     typealias CreatingComponentType = TableComponent
     func createEmptyComponent() -> TableComponent { TableComponent() }
 }
+
+struct AudioComponentCreator: ComponentCreatorType {
+    func createEmptyComponent() -> AudioComponent { AudioComponent() }
+}

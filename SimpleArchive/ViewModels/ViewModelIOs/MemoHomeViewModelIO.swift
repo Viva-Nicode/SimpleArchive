@@ -31,6 +31,7 @@ enum MemoHomeViewOutput {
     case getMemoPageViewModel(MemoPageViewModel)
     case presentSingleTextEditorComponentPage(SingleTextEditorPageViewModel)
     case presentSingleTableComponentPage(SingleTablePageViewModel)
+    case presentSingleAudioComponentPage(SingleAudioPageViewModel)
     case didPerformDropOperationInFixedTable(Int, [IndexPath], [IndexPath])
     case didPerformDropOperationInHomeTable(Int, [IndexPath], [IndexPath])
     case didChangedFileName(String, Int, Int)

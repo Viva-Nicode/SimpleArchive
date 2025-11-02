@@ -59,6 +59,10 @@ final class TableComponentView: PageComponentView<TableComponentContentView, Tab
         toolBarView.addSubview(snapShotView)
     }
 
+    override func prepareForReuse() {
+        componentContentView.prepareForReuse()
+    }
+
     override func setupConstraints() {
         super.setupConstraints()
         snapShotView.centerYAnchor.constraint(equalTo: toolBarView.centerYAnchor).isActive = true
@@ -71,11 +75,13 @@ final class TableComponentView: PageComponentView<TableComponentContentView, Tab
         input subject: PassthroughSubject<MemoPageViewInput, Never>,
         isReadOnly: Bool
     ) {
+
         super.configure(component: component, input: subject, isReadOnly: isReadOnly)
 
         componentContentView.configure(
             content: component.componentDetail,
             dispatcher: MemoPageTableComponentActionDispatcher(subject: subject),
+            isMinimum: component.isMinimumHeight,
             componentID: componentID
         )
 
@@ -133,5 +139,9 @@ final class TableComponentView: PageComponentView<TableComponentContentView, Tab
         pencilButton.removeFromSuperview()
         captureButton.removeFromSuperview()
         snapshotButton.removeFromSuperview()
+    }
+
+    override func setMinimizeState(_ isMinimize: Bool) {
+        componentContentView.minimizeContentView(isMinimize)
     }
 }

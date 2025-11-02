@@ -2,7 +2,7 @@ import UIKit
 
 final class ComponentFullScreenViewAnimator: NSObject, UIViewControllerAnimatedTransitioning {
 
-    static let duration: TimeInterval = 3
+    static let duration: TimeInterval = 0.3
 
     private let type: PresentationType
 

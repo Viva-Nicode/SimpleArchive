@@ -9,12 +9,12 @@ import UIKit
     private var output = PassthroughSubject<SingleTablePageOutput, Never>()
     private var subscriptions = Set<AnyCancellable>()
 
-    private var coredataReposotory: MemoComponentRepositoryForSingleComponent
+    private var coredataReposotory: MemoSingleComponentRepositoryType
     private var tableComponent: TableComponent
     private var pageTitle: String
 
     init(
-        coredataReposotory: MemoComponentRepositoryForSingleComponent,
+        coredataReposotory: MemoSingleComponentRepositoryType,
         tableComponent: TableComponent,
         pageTitle: String
     ) {
