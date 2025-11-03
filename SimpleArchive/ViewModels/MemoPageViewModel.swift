@@ -253,6 +253,7 @@ import ZIPFoundation
     }
 
     @objc private func saveComponentsChanges() {
+        memoPage.getComponents.compactMap { $0 as? AudioComponent }.forEach { $0.datasource = nil }
         let components = memoPage.getComponents.compactMap { $0.currentIfUnsaved() }
         memoComponentCoredataReposotory.saveComponentsDetail(changedComponents: components)
     }
@@ -314,9 +315,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
     private func downloadAudio(componentID: UUID, with code: String) {
         performWithComponentAt(componentID) { (componentIndex, component: AudioComponent) in
 
-            let currentPlayingAudioTrackID = component.detail[
-                audioComponentDataSources[componentID]?.nowPlayingAudioIndex]?
-                .id
+            let currentPlayingAudioTrackID = component.detail[component.datasource?.nowPlayingAudioIndex]?.id
 
             audioDownloader.handleDownloadedProgressPercent = { [weak self] progress in
                 self?.output.send(.updateAudioDownloadProgress(componentIndex, progress))
@@ -328,9 +327,11 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
                     switch result {
                         case .success(let audioTracks):
                             let appendedIndices = component.addAudios(audiotracks: audioTracks)
-                            audioComponentDataSources[componentID]?.tracks = component.detail.tracks
-                            audioComponentDataSources[componentID]?.nowPlayingAudioIndex = component.detail.tracks
+                            component.datasource?.tracks = component.detail.tracks
+                            component.datasource?.nowPlayingAudioIndex = component.detail.tracks
                                 .firstIndex { $0.id == currentPlayingAudioTrackID }
+                            // audioComponentDataSources[componentID]?.tracks = component.detail.tracks
+                            //audioComponentDataSources[componentID]?.nowPlayingAudioIndex = component.detail.tracks
                             output.send(.didDownloadMusicWithCode(componentIndex, appendedIndices))
 
                         case .failure(let failure):
@@ -691,5 +692,25 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
 extension MemoPageViewModel: @preconcurrency ComponentsPageCollectionViewLayoutDelegate {
     func collectionView(heightForItemAt indexPath: IndexPath, with cellWidth: CGFloat) -> CGFloat {
         memoPage[indexPath.item].isMinimumHeight ? UIConstants.componentMinimumHeight : UIView.screenWidth - 40
+    }
+}
+
+extension MemoPageViewModel: UICollectionViewDataSource {
+
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        memoPage.compnentSize
+    }
+
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell
+    {
+        let subject = PassthroughSubject<MemoPageViewInput, Never>()
+        subscribe(input: subject.eraseToAnyPublisher())
+
+        return memoPage[indexPath.item]
+            .getCollectionViewComponentCell(
+                collectionView,
+                indexPath,
+                isReadOnly: isReadOnly,
+                subject: subject)
     }
 }

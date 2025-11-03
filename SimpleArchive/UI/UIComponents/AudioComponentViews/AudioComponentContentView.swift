@@ -222,14 +222,24 @@ final class AudioComponentContentView: UIView {
     ) {
         self.dispatcher = dispatcher
         self.componentID = componentID
-        let datasource = AudioComponentDataSource(
-            tracks: audioComponent.detail.tracks,
-            sortBy: audioComponent.detail.sortBy)
-        self.audioTrackTableView.dataSource = datasource
-        dispatcher.storeDataSource(componentID: componentID, datasource: datasource)
 
         self.audioTrackTableView.dragDelegate = self
         self.audioTrackTableView.dropDelegate = self
+
+        if let datasource = audioComponent.datasource {
+            audioTrackTableView.dataSource = datasource
+            if let visibleRowsIndexPaths = audioTrackTableView.indexPathsForVisibleRows {
+                audioTrackTableView.reloadRows(at: visibleRowsIndexPaths, with: .none)
+            }
+        } else {
+            let datasource = AudioComponentDataSource(
+                tracks: audioComponent.detail.tracks,
+                sortBy: audioComponent.detail.sortBy)
+            dispatcher.storeDataSource(componentID: componentID, datasource: datasource)
+            audioComponent.datasource = datasource
+            audioTrackTableView.dataSource = datasource
+        }
+
         self.audioTrackTotal = audioComponent.detail.tracks.count
         totalAudioCountLabel.text = "\(audioTrackTotal) audios in total"
 

@@ -5,6 +5,21 @@ extension MemoPageViewController: UICollectionViewDelegate {
     func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
         view.endEditing(true)
     }
+
+    func collectionView(
+        _ collectionView: UICollectionView,
+        didEndDisplaying cell: UICollectionViewCell,
+        forItemAt indexPath: IndexPath
+    ) {
+        if let audioCell = cell as? AudioComponentView {
+            audioCell
+                .componentContentView
+                .audioTrackTableView
+                .visibleCells
+                .map { $0 as! AudioTableRowView }
+                .forEach { $0.audioVisualizer.removeVisuzlization() }
+        }
+    }
 }
 
 extension MemoPageViewController: UICollectionViewDragDelegate {
@@ -70,46 +85,3 @@ extension MemoPageViewController: UICollectionViewDropDelegate {
         return supportedClasses.contains { session.canLoadObjects(ofClass: $0) }
     }
 }
-
-//extension MemoPageViewController: UICollectionViewDelegateFlowLayout {
-
-    // MARK: - cell size
-//    func collectionView(
-//        _ collectionView: UICollectionView,
-//        layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath
-//    ) -> CGSize {
-//
-//        let isMinimum = viewModel.memoPage[indexPath.item].isMinimumHeight
-//        let cellWidht = collectionView.bounds.size.width - 40
-//        let height = isMinimum ? UIConstants.componentMinimumHeight : cellWidht
-//
-//        return CGSize(width: cellWidht, height: height)
-//    }
-
-    // MARK: - header size
-//    func collectionView(
-//        _ collectionView: UICollectionView,
-//        layout collectionViewLayout: UICollectionViewLayout, referenceSizeForHeaderInSection section: Int
-//    ) -> CGSize {
-//        CGSize(
-//            width: collectionView.bounds.width,
-//            height: UIConstants.memoPageViewControllerCollectionViewHeaderHeight)
-//    }
-
-    // MARK: - footer size
-//    func collectionView(
-//        _ collectionView: UICollectionView,
-//        layout collectionViewLayout: UICollectionViewLayout, referenceSizeForFooterInSection section: Int
-//    ) -> CGSize {
-//        CGSize(
-//            width: collectionView.bounds.width,
-//            height: UIConstants.memoPageViewControllerCollectionViewFooterHeight)
-//    }
-
-    // MARK: - cell spacing
-//    func collectionView(
-//        _ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout,
-//        minimumLineSpacingForSectionAt section: Int
-//    ) -> CGFloat { UIConstants.memoPageViewControllerCollectionViewCellSpacing }
-//}
-

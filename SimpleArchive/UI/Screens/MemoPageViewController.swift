@@ -74,6 +74,23 @@ class MemoPageViewController: UIViewController, ViewControllerType, ComponentSna
         self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
 
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(keyboardWillChangeFrame),
+            name: UIResponder.keyboardWillChangeFrameNotification,
+            object: nil
+        )
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    deinit { print("MemoPageViewController deinit") }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
         let dynamicHeightFlowLayout = ComponentsPageCollectionViewLayout()
 
         dynamicHeightFlowLayout.delegate = viewModel
@@ -98,23 +115,6 @@ class MemoPageViewController: UIViewController, ViewControllerType, ComponentSna
 
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         self.collectionView = collectionView
-
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(keyboardWillChangeFrame),
-            name: UIResponder.keyboardWillChangeFrameNotification,
-            object: nil
-        )
-    }
-
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-
-    deinit { print("MemoPageViewController deinit") }
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
         bind()
         input.send(.viewDidLoad)
     }
@@ -567,12 +567,13 @@ extension MemoPageViewController {
                         sampleRate: audioSampleData.sampleRate)
                 }
             }
-
-            audioControlBar.configure(
-                metadata: audioMetadata,
-                duration: duration,
-                dispatcher: MemoPageAudioComponentActionDispatcher(subject: input))
         }
+
+        audioControlBar.configure(
+            metadata: audioMetadata,
+            duration: duration,
+            dispatcher: MemoPageAudioComponentActionDispatcher(subject: input)
+        )
     }
 
     private func editAudioTrackMetadata(
@@ -685,7 +686,7 @@ final class ComponentsPageCollectionViewLayout: UICollectionViewFlowLayout {
 
     override func prepare() {
         super.prepare()
-        
+
         guard let collectionView = collectionView else { return }
         collectionView.contentInset = UIEdgeInsets(
             top: UIConstants.memoPageViewControllerCollectionViewHeaderHeight,

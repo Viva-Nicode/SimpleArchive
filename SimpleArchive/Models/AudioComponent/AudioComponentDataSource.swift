@@ -27,13 +27,15 @@ class AudioComponentDataSource: NSObject, UITableViewDataSource {
         audioTableRowView.configure(audioTrack: track)
 
         if let audioSampleData, let progress = getProgress?(), indexPath.row == nowPlayingAudioIndex {
-            audioTableRowView.audioVisualizer.activateAudioVisualizer(
-                samplesCount: audioSampleData.sampleDataCount,
-                scaledSamples: audioSampleData.scaledSampleData,
-                sampleRate: audioSampleData.sampleRate)
-            audioTableRowView.audioVisualizer.seekVisuzlization(rate: progress)
-            if isPlaying == false {
-                audioTableRowView.audioVisualizer.pauseVisuzlization()
+            DispatchQueue.main.async {
+                audioTableRowView.audioVisualizer.activateAudioVisualizer(
+                    samplesCount: audioSampleData.sampleDataCount,
+                    scaledSamples: audioSampleData.scaledSampleData,
+                    sampleRate: audioSampleData.sampleRate)
+                audioTableRowView.audioVisualizer.seekVisuzlization(rate: progress)
+                if self.isPlaying == false {
+                    audioTableRowView.audioVisualizer.pauseVisuzlization()
+                }
             }
         }
 
