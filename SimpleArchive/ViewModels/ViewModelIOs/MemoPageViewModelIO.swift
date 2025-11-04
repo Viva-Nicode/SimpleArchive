@@ -19,7 +19,7 @@ enum MemoPageViewInput {
     case editTableComponentCellValue(UUID, UUID, String)
     case presentTableComponentColumnEditPopupView(UUID, Int)
     // MARK: - Audio
-    case willStoreAudioComponentDataSource(UUID, AudioComponentDataSource)
+//    case willStoreAudioComponentDataSource(UUID, AudioComponentDataSource)
     case willDownloadMusicWithCode(UUID, String)
     case willPlayAudioTrack(UUID, Int)
     case willTapPlayPauseButton
@@ -30,6 +30,7 @@ enum MemoPageViewInput {
     case willRemoveAudioTrack(UUID, Int)
     case willEditAudioTrackMetadata(AudioTrackMetadata, UUID, Int)
     case willSortAudioTracks(UUID, AudioTrackSortBy)
+    case willPresentFilePicker(UUID)
     case willDropAudioTrack(UUID, Int, Int)
     case viewWillDisappear
 }
@@ -59,5 +60,6 @@ enum MemoPageViewOutput {
     case didSortAudioTracks(Int, [String], [String])
     case presentInvalidDownloadCode(Int)
     case outOfSongs(Int)
+    case didPresentFilePicker
     case didEditAudioTrackMetadata(Int, Int, AudioTrackMetadata, Bool, Int?)
 }

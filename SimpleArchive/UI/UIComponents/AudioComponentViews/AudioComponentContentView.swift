@@ -16,10 +16,9 @@ final class AudioComponentContentView: UIView {
         audioComponentToolBarStackView.axis = .horizontal
         audioComponentToolBarStackView.alignment = .center
         audioComponentToolBarStackView.distribution = .fill
-        audioComponentToolBarStackView.spacing = 13
+        audioComponentToolBarStackView.spacing = 9
         audioComponentToolBarStackView.isLayoutMarginsRelativeArrangement = true
-        audioComponentToolBarStackView.directionalLayoutMargins = NSDirectionalEdgeInsets(
-            top: 0, leading: 10, bottom: 0, trailing: 10)
+        audioComponentToolBarStackView.directionalLayoutMargins = .init(top: 0, leading: 10, bottom: 0, trailing: 10)
         audioComponentToolBarStackView.translatesAutoresizingMaskIntoConstraints = false
         return audioComponentToolBarStackView
     }()
@@ -54,9 +53,16 @@ final class AudioComponentContentView: UIView {
         let button = UIButton(type: .system)
         let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .regular)
         let image = UIImage(systemName: "plus.circle", withConfiguration: config)
-
         button.setImage(image, for: .normal)
-
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.widthAnchor.constraint(equalToConstant: 44).isActive = true
+        return button
+    }()
+    private(set) var audioAddFromFileSystemButton: UIButton = {
+        let button = UIButton(type: .system)
+        let config = UIImage.SymbolConfiguration(pointSize: 18, weight: .regular)
+        let image = UIImage(systemName: "folder.badge.plus", withConfiguration: config)
+        button.setImage(image, for: .normal)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.widthAnchor.constraint(equalToConstant: 44).isActive = true
         return button
@@ -65,13 +71,17 @@ final class AudioComponentContentView: UIView {
         let tableView = UITableView(frame: .zero, style: .plain)
         tableView.separatorStyle = .none
         tableView.showsVerticalScrollIndicator = false
+        tableView.contentInset = UIEdgeInsets(
+            top: 12,
+            left: 0,
+            bottom: UIConstants.singleAudioViewControllerTableViewFooterHeight,
+            right: 0)
         tableView.register(AudioTableRowView.self, forCellReuseIdentifier: AudioTableRowView.reuseIdentifier)
         tableView.translatesAutoresizingMaskIntoConstraints = false
         return tableView
     }()
 
     var audioTrackTotal: Int = 0
-
     var addbuttonHeightConstraint: NSLayoutConstraint?
     var toolBarStackViewHeightConstraint: NSLayoutConstraint?
     var sortOptionStackViewHeightConstraint: NSLayoutConstraint?
@@ -92,7 +102,6 @@ final class AudioComponentContentView: UIView {
 
     private func setupUI() {
         audioTrackTableView.backgroundColor = .clear
-        audioTrackTableView.delegate = self
 
         sortBycreateButton.setTitleColor(traitCollection.userInterfaceStyle == .dark ? .lightGray : .gray, for: .normal)
         sortByNameButton.setTitleColor(traitCollection.userInterfaceStyle == .dark ? .lightGray : .gray, for: .normal)
@@ -103,7 +112,10 @@ final class AudioComponentContentView: UIView {
         addSubview(audioComponentToolBarStackView)
         audioComponentToolBarStackView.addArrangedSubview(totalAudioCountLabel)
         audioComponentToolBarStackView.addArrangedSubview(UIView.spacerView)
+        audioComponentToolBarStackView.addArrangedSubview(audioAddFromFileSystemButton)
         audioComponentToolBarStackView.addArrangedSubview(audioAddButton)
+
+        audioAddFromFileSystemButton.tintColor = traitCollection.userInterfaceStyle == .dark ? .lightGray : .gray
         audioAddButton.tintColor = traitCollection.userInterfaceStyle == .dark ? .lightGray : .gray
 
         audioAddButton.addAction(
@@ -120,6 +132,12 @@ final class AudioComponentContentView: UIView {
                         self.cancels = nil
                     }
                 popupView.show()
+            }, for: .touchUpInside)
+
+        audioAddFromFileSystemButton.addAction(
+            UIAction { [weak self] _ in
+                guard let self else { return }
+                dispatcher?.presentFilePicker(componentID: componentID)
             }, for: .touchUpInside)
 
         sortByNameButton.addAction(
@@ -196,9 +214,11 @@ final class AudioComponentContentView: UIView {
         self.dispatcher = dispatcher
         self.componentID = componentID
         self.audioTrackTableView.dataSource = datasource
-
+        self.audioTrackTableView.delegate = self
         self.audioTrackTableView.dragDelegate = self
         self.audioTrackTableView.dropDelegate = self
+        self.audioTrackTableView.isPrefetchingEnabled = false
+
         self.audioTrackTotal = audioComponent.detail.tracks.count
         totalAudioCountLabel.text = "\(audioTrackTotal) audios in total"
 
@@ -225,6 +245,8 @@ final class AudioComponentContentView: UIView {
 
         self.audioTrackTableView.dragDelegate = self
         self.audioTrackTableView.dropDelegate = self
+        self.audioTrackTableView.delegate = self
+        self.audioTrackTableView.isPrefetchingEnabled = false
 
         if let datasource = audioComponent.datasource {
             audioTrackTableView.dataSource = datasource
@@ -235,7 +257,6 @@ final class AudioComponentContentView: UIView {
             let datasource = AudioComponentDataSource(
                 tracks: audioComponent.detail.tracks,
                 sortBy: audioComponent.detail.sortBy)
-            dispatcher.storeDataSource(componentID: componentID, datasource: datasource)
             audioComponent.datasource = datasource
             audioTrackTableView.dataSource = datasource
         }
@@ -337,6 +358,12 @@ extension AudioComponentContentView: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         dispatcher?.playAudioTrack(componentID: componentID, with: indexPath.row)
+    }
+
+    func tableView(_ tableView: UITableView, didEndDisplaying cell: UITableViewCell, forRowAt indexPath: IndexPath) {
+        if let audioTableRow = cell as? AudioTableRowView {
+            audioTableRow.audioVisualizer.removeVisuzlization()
+        }
     }
 }
 

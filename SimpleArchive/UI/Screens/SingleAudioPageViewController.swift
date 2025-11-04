@@ -130,6 +130,9 @@ final class SingleAudioPageViewController: UIViewController, ViewControllerType 
 
                 case .didRemoveAudioTrack(let trackIndex):
                     audioComponentContentView.removeRow(trackIndex: trackIndex)
+
+                case .didPresentFilePicker:
+                    presentFilePicker()
             }
         }
         .store(in: &subscriptions)
@@ -147,9 +150,6 @@ final class SingleAudioPageViewController: UIViewController, ViewControllerType 
         view.addSubview(audioComponentContentView)
         audioComponentContentView.backgroundColor = .clear
 
-        let footer = UIView(
-            frame: .init(x: 0, y: 0, width: 1, height: UIConstants.singleAudioViewControllerTableViewFooterHeight))
-        audioComponentContentView.audioTrackTableView.tableFooterView = footer
         view.addSubview(audioControlBar)
 
         audioControlBar.isHidden = true
@@ -206,7 +206,8 @@ final class SingleAudioPageViewController: UIViewController, ViewControllerType 
                 row.audioVisualizer.activateAudioVisualizer(
                     samplesCount: audioSampleData.sampleDataCount,
                     scaledSamples: audioSampleData.scaledSampleData,
-                    sampleRate: audioSampleData.sampleRate)
+                    sampleRate: audioSampleData.sampleRate
+                )
             }
         }
 
@@ -274,6 +275,15 @@ final class SingleAudioPageViewController: UIViewController, ViewControllerType 
                 }
             }
         }
+    }
+
+    private func presentFilePicker() {
+        let supportedTypes: [UTType] = [.audio, .mp3, .wav]
+        let documentPicker = UIDocumentPickerViewController(forOpeningContentTypes: supportedTypes)
+
+        documentPicker.delegate = viewModel
+        documentPicker.allowsMultipleSelection = true
+        present(documentPicker, animated: true)
     }
 
     private func updateBackgroundImage(with image: UIImage?) {

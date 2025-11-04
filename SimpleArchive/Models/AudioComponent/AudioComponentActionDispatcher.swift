@@ -14,7 +14,7 @@ protocol AudioComponentActionDispatcher {
     func changeSortByAudioTracks(componentID: UUID, sortBy: AudioTrackSortBy)
     func dropAudioTrack(componentID: UUID, src: Int, des: Int)
     func removeAudioTrack(componentID: UUID, trackIndex: Int)
-    func storeDataSource(componentID: UUID, datasource: AudioComponentDataSource)
+    func presentFilePicker(componentID:UUID)
 }
 
 final class MemoPageAudioComponentActionDispatcher: AudioComponentActionDispatcher {
@@ -68,9 +68,9 @@ final class MemoPageAudioComponentActionDispatcher: AudioComponentActionDispatch
     func removeAudioTrack(componentID: UUID, trackIndex: Int) {
         subject.send(.willRemoveAudioTrack(componentID, trackIndex))
     }
-
-    func storeDataSource(componentID: UUID, datasource: AudioComponentDataSource) {
-        subject.send(.willStoreAudioComponentDataSource(componentID, datasource))
+    
+    func presentFilePicker(componentID:UUID) {
+        subject.send(.willPresentFilePicker(componentID))
     }
 }
 
@@ -125,8 +125,8 @@ final class SinglePageAudioComponentActionDispatcher: AudioComponentActionDispat
     func removeAudioTrack(componentID: UUID, trackIndex: Int) {
         subject.send(.willRemoveAudioTrack(trackIndex))
     }
-
-    func storeDataSource(componentID: UUID, datasource: AudioComponentDataSource) {
-        // do notting
+    
+    func presentFilePicker(componentID:UUID) {
+        subject.send(.willPresentFilePicker)
     }
 }

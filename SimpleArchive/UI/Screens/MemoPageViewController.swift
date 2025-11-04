@@ -251,9 +251,21 @@ class MemoPageViewController: UIViewController, ViewControllerType, ComponentSna
                             .map { $0 as! AudioTableRowView }
                             .forEach { $0.audioVisualizer.removeVisuzlization() }
                     }
+
+                case .didPresentFilePicker:
+                    presentFilePicker()
             }
         }
         .store(in: &subscriptions)
+    }
+
+    private func presentFilePicker() {
+        let supportedTypes: [UTType] = [.audio, .mp3, .wav]
+        let documentPicker = UIDocumentPickerViewController(forOpeningContentTypes: supportedTypes)
+
+        documentPicker.delegate = viewModel
+        documentPicker.allowsMultipleSelection = true
+        present(documentPicker, animated: true)
     }
 
     private func setupUI(pageName: String, isReadOnly: Bool) {

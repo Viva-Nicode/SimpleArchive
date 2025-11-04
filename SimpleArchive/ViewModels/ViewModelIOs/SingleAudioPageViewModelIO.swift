@@ -15,6 +15,7 @@ enum SingleAudioPageInput {
     case willPlayPreviousAudioTrack
     case willTapPlayPauseButton
     case willSeekAudioTrack(TimeInterval)
+    case willPresentFilePicker
 }
 
 enum SingleAudioPageOutput {
@@ -29,5 +30,6 @@ enum SingleAudioPageOutput {
     case didSeekAudioTrack(TimeInterval, TimeInterval?, Int?)
     case didSortAudioTracks([String], [String])
     case didRemoveAudioTrack(Int)
+    case didPresentFilePicker
     case outOfSongs
 }

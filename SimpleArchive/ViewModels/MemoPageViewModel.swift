@@ -20,7 +20,8 @@ import ZIPFoundation
     private var audioDownloader: AudioDownloaderType = AudioDownloader()
     private var audioTrackController: AudioTrackControllerType?
     private var nowPlayingAudioComponentID: UUID?
-    private var audioComponentDataSources: [UUID: AudioComponentDataSource] = [:]
+    private var openedFilePickerComponentID: UUID!
+    //    private var audioComponentDataSources: [UUID: AudioComponentDataSource] = [:]
 
     init(
         componentFactory: any ComponentFactoryType,
@@ -142,8 +143,9 @@ import ZIPFoundation
                 case .willPlayPreviousAudioTrack:
                     playPreviousAudioTrack()
 
-                case .willStoreAudioComponentDataSource(let componentID, let datasource):
-                    audioComponentDataSources[componentID] = datasource
+                case .willPresentFilePicker(let componentID):
+                    openedFilePickerComponentID = componentID
+                    output.send(.didPresentFilePicker)
             }
         }
         .store(in: &subscriptions)
@@ -330,8 +332,6 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
                             component.datasource?.tracks = component.detail.tracks
                             component.datasource?.nowPlayingAudioIndex = component.detail.tracks
                                 .firstIndex { $0.id == currentPlayingAudioTrackID }
-                            // audioComponentDataSources[componentID]?.tracks = component.detail.tracks
-                            //audioComponentDataSources[componentID]?.nowPlayingAudioIndex = component.detail.tracks
                             output.send(.didDownloadMusicWithCode(componentIndex, appendedIndices))
 
                         case .failure(let failure):
@@ -359,21 +359,20 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
         nowPlayingAudioComponentID = componentID
 
         performWithComponentAt(componentID) { (componentIndex, component: AudioComponent) in
-            audioComponentDataSources[componentID]?.isPlaying = true
-            audioComponentDataSources[componentID]?.nowPlayingAudioIndex = trackIndex
+            component.datasource?.isPlaying = true
+            component.datasource?.nowPlayingAudioIndex = trackIndex
             audioTrackController = AudioTrackController(audioTrackName: component.trackNames[trackIndex])
-            audioComponentDataSources[componentID]?.nowPlayingURL = audioTrackController?.audioTrackURL
+            component.datasource?.nowPlayingURL = audioTrackController?.audioTrackURL
 
             audioTrackController?.player?.delegate = self
             audioTrackController?.play()
 
             let audioSampleData = getAudioSampleData(nowPlayingURL: audioTrackController?.audioTrackURL)
-            audioComponentDataSources[componentID]?.audioSampleData = audioSampleData
-            audioComponentDataSources[componentID]?.getProgress = { [weak self] in
+            component.datasource?.audioSampleData = audioSampleData
+            component.datasource?.getProgress = { [weak self] in
                 guard let self else { return .zero }
                 return audioTrackController!.getCurrentTime()! / audioTrackController!.getTotalTime()!
             }
-
             output.send(
                 .didPlayAudioTrack(
                     previousComponentIndex,
@@ -393,9 +392,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
         performWithComponentAt(nowPlayingAudioComponentID) { (_, audioComponent: AudioComponent) in
             audioTrackController?.stop()
 
-            if var unwrappedCurrentPlayingTrackIndex = audioComponentDataSources[nowPlayingAudioComponentID]?
-                .nowPlayingAudioIndex
-            {
+            if var unwrappedCurrentPlayingTrackIndex = audioComponent.datasource?.nowPlayingAudioIndex {
                 unwrappedCurrentPlayingTrackIndex += 1
                 if audioComponent.detail.tracks.count <= unwrappedCurrentPlayingTrackIndex {
                     unwrappedCurrentPlayingTrackIndex = 0
@@ -410,9 +407,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
         performWithComponentAt(nowPlayingAudioComponentID) { (_, audioComponent: AudioComponent) in
             audioTrackController?.stop()
 
-            if var unwrappedCurrentPlayingTrackIndex = audioComponentDataSources[nowPlayingAudioComponentID]?
-                .nowPlayingAudioIndex
-            {
+            if var unwrappedCurrentPlayingTrackIndex = audioComponent.datasource?.nowPlayingAudioIndex {
                 unwrappedCurrentPlayingTrackIndex -= 1
                 if 0 > unwrappedCurrentPlayingTrackIndex {
                     unwrappedCurrentPlayingTrackIndex = audioComponent.detail.tracks.count - 1
@@ -423,31 +418,31 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
     }
 
     private func tapPlayPauseButton() {
+        guard let nowPlayingAudioComponentID else { return }
         audioTrackController?.togglePlaying()
 
-        if let isPlaying = audioTrackController?.isPlaying,
-            let nowPlayingAudioComponentID,
-            let componentIndex = memoPage[nowPlayingAudioComponentID]?.index,
-            let trackIndex = audioComponentDataSources[nowPlayingAudioComponentID]?.nowPlayingAudioIndex
-        {
-            audioComponentDataSources[nowPlayingAudioComponentID]?.isPlaying = isPlaying
-            output.send(
-                .didTapPlayPauseButton(
-                    componentIndex,
-                    trackIndex,
-                    isPlaying,
-                    audioTrackController?.getCurrentTime()
+        performWithComponentAt(nowPlayingAudioComponentID) { (_, audioComponent: AudioComponent) in
+            if let isPlaying = audioTrackController?.isPlaying,
+                let componentIndex = memoPage[nowPlayingAudioComponentID]?.index,
+                let trackIndex = audioComponent.datasource?.nowPlayingAudioIndex
+            {
+                audioComponent.datasource?.isPlaying = isPlaying
+                output.send(
+                    .didTapPlayPauseButton(
+                        componentIndex,
+                        trackIndex,
+                        isPlaying,
+                        audioTrackController?.getCurrentTime()
+                    )
                 )
-            )
+            }
         }
     }
 
     private func editAudioMetadata(componentID: UUID, newMetadata: AudioTrackMetadata, trackIndex: Int) {
         performWithComponentAt(componentID) { (componentIndex, component: AudioComponent) in
             let targetAudioTrackID = component.detail[trackIndex]?.id
-            let currentPlayingAudioTrackID = component.detail[
-                audioComponentDataSources[componentID]?.nowPlayingAudioIndex]?
-                .id
+            let currentPlayingAudioTrackID = component.detail[component.datasource?.nowPlayingAudioIndex]?.id
             var trackIndexAfterEdit: Int?
 
             if let newTitle = newMetadata.title {
@@ -468,46 +463,46 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
                 component.detail.tracks.sort(by: { $0.title < $1.title })
                 trackIndexAfterEdit = component.detail.tracks.firstIndex(where: { $0.id == targetAudioTrackID })
                 if let currentPlayingAudioTrackID {
-                    audioComponentDataSources[componentID]?.nowPlayingAudioIndex = component.detail.tracks.firstIndex {
+                    component.datasource?.nowPlayingAudioIndex = component.detail.tracks.firstIndex {
                         $0.id == currentPlayingAudioTrackID
                     }
                 }
             }
-
-            audioComponentDataSources[componentID]?.tracks = component.detail.tracks
+            component.datasource?.tracks = component.detail.tracks
 
             output.send(
                 .didEditAudioTrackMetadata(
                     componentIndex,
                     trackIndex,
                     newMetadata,
-                    audioComponentDataSources[componentID]?.nowPlayingAudioIndex == trackIndex,
+                    component.datasource?.nowPlayingAudioIndex == trackIndex,
                     trackIndexAfterEdit)
             )
         }
     }
 
     private func seekAudioTrack(seek: TimeInterval) {
-        audioTrackController?.seek(interval: seek)
-
-        if let nowPlayingAudioComponentID,
-            let componentIndex = memoPage[nowPlayingAudioComponentID]?.index,
-            let trackIndex = audioComponentDataSources[nowPlayingAudioComponentID]?.nowPlayingAudioIndex
-        {
-            output.send(
-                .didSeekAudioTrack(
-                    componentIndex,
-                    trackIndex,
-                    seek,
-                    audioTrackController?.getTotalTime()
+        performWithComponentAt(nowPlayingAudioComponentID!) { (_, audioComponent: AudioComponent) in
+            audioTrackController?.seek(interval: seek)
+            if let nowPlayingAudioComponentID,
+                let componentIndex = memoPage[nowPlayingAudioComponentID]?.index,
+                let trackIndex = audioComponent.datasource?.nowPlayingAudioIndex
+            {
+                output.send(
+                    .didSeekAudioTrack(
+                        componentIndex,
+                        trackIndex,
+                        seek,
+                        audioTrackController?.getTotalTime()
+                    )
                 )
-            )
+            }
         }
     }
 
     private func dropAudioTrack(componentID: UUID, src: Int, des: Int) {
         performWithComponentAt(componentID) { (_, audioComponent: AudioComponent) in
-            let datasource = audioComponentDataSources[componentID]
+            let datasource = audioComponent.datasource
             let currentPlayingAudioTrackID = audioComponent.detail[datasource?.nowPlayingAudioIndex]?.id
 
             audioComponent.detail.tracks.moveElement(src: src, des: des)
@@ -528,7 +523,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
             audioComponent.detail.sortBy = sortBy
             audioComponent.persistenceState = .unsaved(isMustToStoreSnapshot: false)
 
-            let datasource = audioComponentDataSources[componentID]
+            let datasource = audioComponent.datasource
             let currentPlayingAudioTrackID = audioComponent.detail[datasource?.nowPlayingAudioIndex]?.id
 
             let before = audioComponent.trackNames
@@ -543,8 +538,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
                 case .manual:
                     break
             }
-
-            audioComponentDataSources[componentID]?.nowPlayingAudioIndex = audioComponent.detail.tracks.firstIndex {
+            audioComponent.datasource?.nowPlayingAudioIndex = audioComponent.detail.tracks.firstIndex {
                 $0.id == currentPlayingAudioTrackID
             }
 
@@ -562,7 +556,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
 
             component.persistenceState = .unsaved(isMustToStoreSnapshot: false)
 
-            let datasource = audioComponentDataSources[componentID]
+            let datasource = component.datasource
             let currentPlayingAudioTrackID = component.detail[datasource?.nowPlayingAudioIndex]?.id
             let fileManager = FileManager.default
             let documentsDir = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
@@ -643,12 +637,14 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
     }
 
     private func cleanDataSource(_ id: UUID) {
-        let datasource = audioComponentDataSources[id]
-        datasource?.nowPlayingAudioIndex = nil
-        datasource?.isPlaying = nil
-        datasource?.nowPlayingURL = nil
-        datasource?.audioSampleData = nil
-        datasource?.getProgress = nil
+        performWithComponentAt(id) { (_, component: AudioComponent) in
+            let datasource = component.datasource
+            datasource?.nowPlayingAudioIndex = nil
+            datasource?.isPlaying = nil
+            datasource?.nowPlayingURL = nil
+            datasource?.audioSampleData = nil
+            datasource?.getProgress = nil
+        }
     }
 
     @objc private func pauseAudioOnInterruption(_ notification: Notification) {
@@ -662,10 +658,12 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
                 if let isPlaying = audioTrackController?.isPlaying,
                     isPlaying == true,
                     let nowPlayingAudioComponentID,
-                    let datasource = audioComponentDataSources[nowPlayingAudioComponentID],
-                    let componentIndex = memoPage[nowPlayingAudioComponentID]?.index,
+                    let pageComponent = memoPage[nowPlayingAudioComponentID],
+                    let audioComponent = pageComponent.item as? AudioComponent,
+                    let datasource = audioComponent.datasource,
                     let trackIndex = datasource.nowPlayingAudioIndex
                 {
+                    let componentIndex = pageComponent.index
                     audioTrackController?.togglePlaying()
 
                     datasource.isPlaying = false
@@ -711,6 +709,95 @@ extension MemoPageViewModel: UICollectionViewDataSource {
                 collectionView,
                 indexPath,
                 isReadOnly: isReadOnly,
-                subject: subject)
+                subject: subject
+            )
+    }
+}
+
+extension MemoPageViewModel: UIDocumentPickerDelegate {
+    func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+        let fileManager = FileManager.default
+        let documentsDir = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
+        let archiveDir = documentsDir.appendingPathComponent("SimpleArchiveMusics")
+        var audioTracks: [AudioTrack] = []
+
+        do {
+            if !fileManager.fileExists(atPath: archiveDir.path) {
+                try fileManager.createDirectory(at: archiveDir, withIntermediateDirectories: true)
+            }
+
+            for url in urls {
+                guard url.startAccessingSecurityScopedResource() else { continue }
+                defer { url.stopAccessingSecurityScopedResource() }
+
+                let newID = UUID()
+                let newFileName = "\(newID).\(url.pathExtension)"
+                let destinationURL = archiveDir.appendingPathComponent(newFileName)
+
+                try fileManager.copyItem(at: url, to: destinationURL)
+
+                var fileTitle = url.deletingPathExtension().lastPathComponent
+                var artist: String = "Unknown"
+                let defaultAudioThumbnail = UIImage(named: "defaultMusicThumbnail")!
+                let defaultThumnnailData = defaultAudioThumbnail.jpegData(compressionQuality: 1.0)!
+                var defaultThumbnail = AttachedPicture(imageData: defaultThumnnailData, type: .frontCover)
+
+                if fileTitle.isEmpty { fileTitle = "no title" }
+
+                if let audioFile = try? AudioFile(readingPropertiesAndMetadataFrom: destinationURL) {
+
+                    if let metadataTitle = audioFile.metadata.title, !metadataTitle.isEmpty {
+                        print(metadataTitle)
+                        fileTitle = metadataTitle
+                    }
+
+                    if let metadataArtist = audioFile.metadata.artist, !metadataArtist.isEmpty {
+                        artist = metadataArtist
+                    }
+
+                    if let metadataThumbnail = audioFile.metadata.attachedPictures(ofType: .frontCover).first {
+                        defaultThumbnail = metadataThumbnail
+                    } else if let metadataOtherThumbnail = audioFile.metadata.attachedPictures(ofType: .other).first {
+                        defaultThumbnail = AttachedPicture(
+                            imageData: metadataOtherThumbnail.imageData,
+                            type: .frontCover)
+                    }
+
+                    let newMetadata = AudioMetadata(dictionaryRepresentation: [
+                        .attachedPictures: [defaultThumbnail.dictionaryRepresentation] as NSArray,
+                        .title: NSString(string: fileTitle),
+                        .artist: NSString(string: artist),
+                    ])
+
+                    audioFile.metadata = newMetadata
+                    try? audioFile.writeMetadata()
+                }
+
+                let track = AudioTrack(
+                    id: newID,
+                    title: fileTitle,
+                    artist: artist,
+                    thumbnail: defaultThumbnail.imageData,
+                    fileExtension: destinationURL.pathExtension)
+
+                audioTracks.append(track)
+            }
+
+            performWithComponentAt(openedFilePickerComponentID) { (componentIndex, component: AudioComponent) in
+
+                let currentPlayingAudioTrackID = component.detail[component.datasource?.nowPlayingAudioIndex]?.id
+                let appendedIndices = component.addAudios(audiotracks: audioTracks)
+
+                component.datasource?.tracks = component.detail.tracks
+                component.datasource?.nowPlayingAudioIndex = component.detail.tracks
+                    .firstIndex {
+                        $0.id == currentPlayingAudioTrackID
+                    }
+
+                output.send(.didDownloadMusicWithCode(componentIndex, appendedIndices))
+            }
+        } catch {
+            print(error.localizedDescription)
+        }
     }
 }
