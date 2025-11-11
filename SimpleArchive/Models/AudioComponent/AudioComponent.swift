@@ -39,12 +39,33 @@ final class AudioComponent: NSObject, Codable, PageComponent {
 
     deinit { print("deinit AudioComponentModel : \(title)") }
 
+    var trackNames: [String] {
+        detail.tracks.map { "\($0.id).\($0.fileExtension)" }
+    }
+
     func addAudios(audiotracks: [AudioTrack]) -> [Int] {
         persistenceState = .unsaved(isMustToStoreSnapshot: false)
         return detail.addAudios(audiotracks: audiotracks)
     }
 
-    var trackNames: [String] {
-        detail.tracks.map { "\($0.id).\($0.fileExtension)" }
+    func removeAudio(with index: Int) {
+        let fileManager = FileManager.default
+        let documentsDir = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
+        let audio = detail.tracks.remove(at: index)
+        let trackURL = documentsDir.appendingPathComponent("SimpleArchiveMusics/\(audio.id).\(audio.fileExtension)")
+
+        try? fileManager.removeItem(at: trackURL)
+    }
+
+    func removeAudioFilesFromDisk() {
+        let fileManager = FileManager.default
+        let documentsDir = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
+
+        for targetTrack in detail.tracks {
+            let trackURL = documentsDir.appendingPathComponent(
+                "SimpleArchiveMusics/\(targetTrack.id).\(targetTrack.fileExtension)")
+
+            try? fileManager.removeItem(at: trackURL)
+        }
     }
 }

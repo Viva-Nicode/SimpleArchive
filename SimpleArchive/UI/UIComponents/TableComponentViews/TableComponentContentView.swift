@@ -190,7 +190,7 @@ final class TableComponentContentView: UIView, UIScrollViewDelegate {
             rowStackView.trailingAnchor.constraint(equalTo: rowScrollView.trailingAnchor),
         ])
     }
-    
+
     func prepareForReuse() {
         NSLayoutConstraint.deactivate(heightConstraints.map { $0.0 } + stackViewConstraints)
         heightConstraints = []
@@ -330,6 +330,30 @@ final class TableComponentContentView: UIView, UIScrollViewDelegate {
         }
 
         adjustTableContentWidthToFit()
+
+        heightConstraints = [
+            (tableComponentToolBarStackView.heightAnchor.constraint(equalToConstant: 30), 30),
+            (rowAddButton.heightAnchor.constraint(equalToConstant: 22.5), 22.5),
+            (columnAddButton.heightAnchor.constraint(equalToConstant: 25), 25),
+            (columnContainerView.heightAnchor.constraint(equalToConstant: 38), 38),
+            (topBoundary.heightAnchor.constraint(equalToConstant: 1.5), 1.5),
+            (bottomBoundary.heightAnchor.constraint(equalToConstant: 1.5), 1.5),
+            (columnScrollView.heightAnchor.constraint(equalToConstant: 38), 38),
+        ]
+
+        stackViewConstraints = [
+            columnsStackView.topAnchor.constraint(equalTo: topBoundary.bottomAnchor),
+            rowScrollView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            rowStackView.bottomAnchor.constraint(equalTo: rowScrollView.bottomAnchor),
+            columnsStackView.bottomAnchor.constraint(equalTo: bottomBoundary.topAnchor),
+        ]
+
+        heightConstraints.forEach { $0.0.isActive = true }
+        stackViewConstraints.forEach { $0.isActive = true }
+
+        tableComponentToolBarStackView.alpha = 1
+        columnScrollView.alpha = 1
+        rowScrollView.alpha = 1
     }
 
     private func createTableComponentRowView(row: TableComponentRow) {

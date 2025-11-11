@@ -22,6 +22,7 @@ final class AudioTableRowView: UITableViewCell {
     private(set) var artistLabel: UILabel = {
         let artistLabel = UILabel()
         artistLabel.textAlignment = .left
+        artistLabel.textColor = .label
         artistLabel.font = .systemFont(ofSize: 14)
         artistLabel.numberOfLines = 1
         artistLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -106,7 +107,6 @@ final class AudioTableRowView: UITableViewCell {
     func configure(audioTrack: AudioTrack) {
         titleLabel.text = audioTrack.title
         artistLabel.text = audioTrack.artist
-        artistLabel.textColor = traitCollection.userInterfaceStyle == .dark ? UIColor(named: "MyLightGray") : .gray
         thumbnailImageView.image = UIImage(data: audioTrack.thumbnail)
     }
 

@@ -13,7 +13,6 @@ import ZIPFoundation
     private var output = PassthroughSubject<Output, Never>()
     private var subscriptions = Set<AnyCancellable>()
     private(set) var memoPage: MemoPageModel!
-    private(set) var isReadOnly: Bool = false
 
     private var memoComponentCoredataReposotory: MemoComponentCoreDataRepositoryType
     private var componentFactory: any ComponentFactoryType
@@ -21,18 +20,15 @@ import ZIPFoundation
     private var audioTrackController: AudioTrackControllerType?
     private var nowPlayingAudioComponentID: UUID?
     private var openedFilePickerComponentID: UUID!
-    //    private var audioComponentDataSources: [UUID: AudioComponentDataSource] = [:]
 
     init(
         componentFactory: any ComponentFactoryType,
         memoComponentCoredataReposotory: MemoComponentCoreDataRepositoryType,
         page: MemoPageModel,
-        isReadOnly: Bool = false
     ) {
         self.componentFactory = componentFactory
         self.memoComponentCoredataReposotory = memoComponentCoredataReposotory
         self.memoPage = page
-        self.isReadOnly = isReadOnly
 
         super.init()
 
@@ -59,7 +55,7 @@ import ZIPFoundation
 
             switch event {
                 case .viewDidLoad:
-                    output.send(.viewDidLoad(memoPage.name, isReadOnly))
+                    output.send(.viewDidLoad(memoPage.name))
 
                 case .createNewComponent(let componentType):
                     createNewComponent(with: componentType)
@@ -86,7 +82,7 @@ import ZIPFoundation
                     moveToComponentSnapshotView(componentID: componentID)
 
                 case .viewWillDisappear:
-                    saveComponentsChanges()
+                    saveComponentsChanges(isDisappearView: true)
 
                 // MARK: - Table
 
@@ -165,6 +161,9 @@ import ZIPFoundation
 
     private func removeComponent(componentID: UUID) {
         if let removedComponent = memoPage.removeChildComponentById(componentID) {
+            if let audioComponent = removedComponent.item as? AudioComponent {
+                audioComponent.removeAudioFilesFromDisk()
+            }
             memoComponentCoredataReposotory.removeComponent(
                 parentPageID: memoPage.id,
                 componentID: removedComponent.item.id)
@@ -254,8 +253,11 @@ import ZIPFoundation
         }
     }
 
-    @objc private func saveComponentsChanges() {
-        memoPage.getComponents.compactMap { $0 as? AudioComponent }.forEach { $0.datasource = nil }
+    @objc private func saveComponentsChanges(isDisappearView: Bool = false) {
+        if isDisappearView {
+            memoPage.getComponents.compactMap { $0 as? AudioComponent }.forEach { $0.datasource = nil }
+        }
+
         let components = memoPage.getComponents.compactMap { $0.currentIfUnsaved() }
         memoComponentCoredataReposotory.saveComponentsDetail(changedComponents: components)
     }
@@ -558,14 +560,8 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
 
             let datasource = component.datasource
             let currentPlayingAudioTrackID = component.detail[datasource?.nowPlayingAudioIndex]?.id
-            let fileManager = FileManager.default
-            let documentsDir = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
-            let targetTrack = component.detail.tracks.remove(at: trackIndex)
-            let trackURL = documentsDir.appendingPathComponent(
-                "SimpleArchiveMusics/\(targetTrack.id).\(targetTrack.fileExtension)")
-
-            try? fileManager.removeItem(at: trackURL)
-
+            
+            component.removeAudio(with: trackIndex)
             datasource?.tracks = component.detail.tracks
 
             if datasource?.nowPlayingAudioIndex != nil {
@@ -708,7 +704,6 @@ extension MemoPageViewModel: UICollectionViewDataSource {
             .getCollectionViewComponentCell(
                 collectionView,
                 indexPath,
-                isReadOnly: isReadOnly,
                 subject: subject
             )
     }

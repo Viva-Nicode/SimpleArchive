@@ -15,6 +15,8 @@ class AudioComponentDataSource: NSObject, UITableViewDataSource {
         self.sortBy = sortBy
     }
 
+    deinit { print("deinit AudioComponentDataSource") }
+
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int { tracks.count }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {

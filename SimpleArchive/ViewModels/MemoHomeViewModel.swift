@@ -23,6 +23,8 @@ import UIKit
     private var restoredPageListSubjectSubscription: AnyCancellable?
 
     private var selectedTableindexToCheckFileInformation: Int?
+    private var fixedFileCollectionViewDataSource: FixedFileCollectionViewDataSource!
+    private var memoHomeDirectoryContentCellDataSources: [UUID: MemoHomeDirectoryContentCellDataSource] = [:]
 
     init(
         memoDirectoryCoredataReposotory: MemoDirectoryCoreDataRepositoryType,
@@ -107,7 +109,6 @@ import UIKit
     }
 
     private func fetchMemoData() {
-
         memoDirectoryCoredataReposotory.fetchSystemDirectoryEntities(fileCreator: directoryCreator)
             .sink(
                 receiveCompletion: { completion in
@@ -118,8 +119,15 @@ import UIKit
                 receiveValue: { systemDirectories in
                     self.directoryStack = [systemDirectories[.mainDirectory]!]
                     self.fixedFileDirectory = systemDirectories[.fixedFileDirectory]
+                    self.fixedFileCollectionViewDataSource =
+                        FixedFileCollectionViewDataSource(fixedFileDirectory: self.fixedFileDirectory)
                     self.output.send(
-                        .didfetchMemoData(self.directoryStack.first!.id, self.directoryStack.first!.getSortBy())
+                        .didfetchMemoData(
+                            self.directoryStack.first!.id,
+                            self.directoryStack.first!.getSortBy(),
+                            self.fixedFileCollectionViewDataSource,
+                            systemDirectories[.mainDirectory]!.getChildItemSize()
+                        )
                     )
                 }
             )
@@ -128,7 +136,8 @@ import UIKit
 
     private func createdNewDirectory(_ newDirectoryName: String) {
         let newDirectory = directoryCreator.createFile(
-            itemName: newDirectoryName, parentDirectory: directoryStack.last!)
+            itemName: newDirectoryName,
+            parentDirectory: directoryStack.last!)
         let insertedIndex = directoryStack.last![newDirectory.id]!.index
 
         memoDirectoryCoredataReposotory.createStorageItem(storageItem: newDirectory)
@@ -163,7 +172,8 @@ import UIKit
             .didTappedDirectoryRow(
                 followingDirectory.name,
                 followingDirectory.id,
-                followingDirectory.getSortBy())
+                followingDirectory.getSortBy(),
+                followingDirectory.getChildItemSize())
         )
     }
 
@@ -215,7 +225,9 @@ import UIKit
         output.send(
             .didTappedDirectoryPath(
                 Array(((destinationDirectoryIndex + 1)...directoryStackLastIndex)),
-                directoryStack.last!.getSortBy())
+                directoryStack.last!.getSortBy(),
+                directoryStack.last!.getChildItemSize()
+            )
         )
     }
 
@@ -226,12 +238,35 @@ import UIKit
         else { return }
 
         let followingPage = fixedFileDirectory[followingPageIndex] as! MemoPageModel
-        let memoPageViewModel = MemoPageViewModel(
-            componentFactory: componentFactory,
-            memoComponentCoredataReposotory: memoComponentCoreDataRepository,
-            page: followingPage)
 
-        output.send(.getMemoPageViewModel(memoPageViewModel))
+        if followingPage.isSingleComponentPage {
+            if let singleTextEditorComponent = followingPage.getComponents.first as? TextEditorComponent {
+                let vm = SingleTextEditorPageViewModel(
+                    coredataReposotory: memoComponentCoreDataRepository,
+                    textEditorComponent: singleTextEditorComponent,
+                    pageTitle: followingPage.name)
+                output.send(.presentSingleTextEditorComponentPage(vm))
+            } else if let singleTableComponent = followingPage.getComponents.first as? TableComponent {
+                let vm = SingleTablePageViewModel(
+                    coredataReposotory: memoComponentCoreDataRepository,
+                    tableComponent: singleTableComponent,
+                    pageTitle: followingPage.name)
+                output.send(.presentSingleTableComponentPage(vm))
+            } else if let singleAudioComponent = followingPage.getComponents.first as? AudioComponent {
+                let vm = SingleAudioPageViewModel(
+                    coredataReposotory: memoComponentCoreDataRepository,
+                    audioComponent: singleAudioComponent,
+                    pageTitle: followingPage.name)
+                output.send(.presentSingleAudioComponentPage(vm))
+            }
+        } else {
+            let memoPageViewModel = MemoPageViewModel(
+                componentFactory: componentFactory,
+                memoComponentCoredataReposotory: memoComponentCoreDataRepository,
+                page: followingPage)
+
+            output.send(.getMemoPageViewModel(memoPageViewModel))
+        }
     }
 
     private func showFileInformation(fileIndexToShowInformation: Int) {
@@ -244,6 +279,7 @@ import UIKit
         let targetItem = directoryStack.last![fileIndexToDelete]!
         targetItem.removeStorageItem()
         memoDirectoryCoredataReposotory.moveFileToDormantBox(fileID: targetItem.id)
+        output.send(.didRemoveFile(fileIndexToDelete))
     }
 
     private func getDormantBoxViewModel() {
@@ -258,7 +294,7 @@ import UIKit
             restoredPageListSubject
             .sink { [weak self] restoredPageList in
                 guard let self else { return }
-
+                
                 for page in restoredPageList {
                     page.parentDirectory = directoryStack.first!
                     page.parentDirectory?.insertChildItem(item: page)
@@ -270,56 +306,71 @@ import UIKit
         output.send(.moveDoramntBoxView(dormantBoxViewModel))
     }
 
-    private func fixPage(with dropedPagesInFixedTable: [MemoPageModel]) {
+    private func fixPage(with dropedPageIdsInFixedTable: [UUID]) {
 
-        memoPageCoredataReposotory.fixPages(pageIds: dropedPagesInFixedTable.map { $0.id })
+        memoPageCoredataReposotory.fixPages(pageIds: dropedPageIdsInFixedTable)
 
         var insertRowIndexPaths = [IndexPath]()
         var deleteRowIndexPaths = [IndexPath]()
 
-        for page in dropedPagesInFixedTable {
+        for pageId in dropedPageIdsInFixedTable {
+            if let page = directoryStack.last![pageId] {
 
-            if let item = directoryStack.last![page.id] {
-                deleteRowIndexPaths.append(IndexPath(row: item.index, section: .zero))
-                let deletedPage = directoryStack.last!.removeChildItemByID(with: item.item.id)
-                deletedPage?.parentDirectory = nil
+                deleteRowIndexPaths.append(IndexPath(row: 0, section: page.index))
+                let deletedPage = directoryStack.last!.removeChildItemByID(with: pageId)
+
+                if let deletedPage {
+                    deletedPage.parentDirectory = nil
+                    deletedPage.parentDirectory = fixedFileDirectory
+                    deletedPage.parentDirectory?.insertChildItem(item: deletedPage)
+                }
             }
 
-            page.parentDirectory = fixedFileDirectory
-            page.parentDirectory?.insertChildItem(item: page)
-
-            if let item = fixedFileDirectory[page.id] {
-                insertRowIndexPaths.append(IndexPath(row: item.index, section: .zero))
+            if let item = fixedFileDirectory[pageId] {
+                insertRowIndexPaths.append(IndexPath(item: item.index, section: 0))
             }
         }
         output.send(
-            .didPerformDropOperationInFixedTable(directoryStack.count - 1, insertRowIndexPaths, deleteRowIndexPaths))
+            .didPerformDropOperationInFixedTable(
+                directoryStack.count - 1,
+                insertRowIndexPaths,
+                deleteRowIndexPaths
+            )
+        )
     }
 
-    private func unfixPage(with dropedpagesInHomeTable: [MemoPageModel]) {
+    private func unfixPage(with dropedpagesInHomeTable: [UUID]) {
+
         memoPageCoredataReposotory.unfixPages(
             parentDirectoryId: directoryStack.last!.id,
-            pageIds: dropedpagesInHomeTable.map { $0.id })
+            pageIds: dropedpagesInHomeTable)
 
         var insertRowIndexPaths = [IndexPath]()
         var deleteRowIndexPaths = [IndexPath]()
 
-        for page in dropedpagesInHomeTable {
-            if let item = fixedFileDirectory[page.id] {
-                deleteRowIndexPaths.append(IndexPath(row: item.index, section: .zero))
+        for pageId in dropedpagesInHomeTable {
+            if let item = fixedFileDirectory[pageId] {
+                deleteRowIndexPaths.append(IndexPath(item: item.index, section: .zero))
                 let removedPage = fixedFileDirectory.removeChildItemByID(with: item.item.id)
-                removedPage?.parentDirectory = nil
+
+                if let removedPage {
+                    removedPage.parentDirectory = nil
+                    removedPage.parentDirectory = directoryStack.last!
+                    removedPage.parentDirectory?.insertChildItem(item: removedPage)
+                }
             }
 
-            page.parentDirectory = directoryStack.last!
-            page.parentDirectory?.insertChildItem(item: page)
-
-            if let item = page.parentDirectory?[page.id] {
-                insertRowIndexPaths.append(IndexPath(row: item.index, section: .zero))
+            if let item = directoryStack.last?[pageId] {
+                insertRowIndexPaths.append(IndexPath(row: 0, section: item.index))
             }
         }
         output.send(
-            .didPerformDropOperationInHomeTable(directoryStack.count - 1, insertRowIndexPaths, deleteRowIndexPaths))
+            .didPerformDropOperationInHomeTable(
+                directoryStack.count - 1,
+                insertRowIndexPaths,
+                deleteRowIndexPaths
+            )
+        )
     }
 
     private func changeFileName(fileID: UUID, newName: String) {
@@ -344,6 +395,32 @@ import UIKit
     private func toggleAscendingOrder() {
         let sortingResult = directoryStack.last!.toggleAscending()
         output.send(.didChangeSortCriteria(sortingResult))
+    }
+}
+
+extension MemoHomeViewModel: UICollectionViewDataSource {
+
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        directoryStack.count
+    }
+
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell
+    {
+        let cell =
+            collectionView.dequeueReusableCell(
+                withReuseIdentifier: MemoHomeDirectoryContentCell.reuseIdentifier,
+                for: indexPath) as! MemoHomeDirectoryContentCell
+        let subject = PassthroughSubject<MemoHomeSubViewInput, Never>()
+
+        subscribe(input: subject.eraseToAnyPublisher())
+
+        let datasourceContent = directoryStack[indexPath.item]
+        let datasource = MemoHomeDirectoryContentCellDataSource(
+            directoryContents: datasourceContent,
+            input: subject)
+        memoHomeDirectoryContentCellDataSources[datasourceContent.id] = datasource
+        cell.configure(datasource: datasource)
+        return cell
     }
 }
 

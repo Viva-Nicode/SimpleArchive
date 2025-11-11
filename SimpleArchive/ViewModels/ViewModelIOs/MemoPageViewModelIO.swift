@@ -36,7 +36,7 @@ enum MemoPageViewInput {
 }
 
 enum MemoPageViewOutput {
-    case viewDidLoad(String, Bool)
+    case viewDidLoad(String)
     case insertNewComponentAtLastIndex(Int)
     case removeComponentAtIndex(Int)
     case maximizeComponent(any PageComponent, Int)

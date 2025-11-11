@@ -186,7 +186,6 @@ where
     func configure(
         component: PageComponentType,
         input subject: PassthroughSubject<MemoPageViewInput, Never>,
-        isReadOnly: Bool
     ) {
         pageInputActionSubject = subject
         componentID = component.id
@@ -219,11 +218,7 @@ where
         creationDateLabel.text = "created at \(component.creationDate.formattedDate)"
         titleLabel.text = component.title
 
-        if isReadOnly {
-            redCircleView.backgroundColor = .systemGray5
-            yellowCircleView.backgroundColor = .systemGray5
-            pencilButton.removeFromSuperview()
-        } else {
+        
             redCircleView.throttleUIViewTapGesturePublisher()
                 .sink { [weak self] _ in
                     guard let self else { return }
@@ -252,7 +247,7 @@ where
                     popupView.show()
                 }
                 .store(in: &subscriptions)
-        }
+        
     }
 
     func resetupComponentContentViewToDismissFullScreenAnimation() {

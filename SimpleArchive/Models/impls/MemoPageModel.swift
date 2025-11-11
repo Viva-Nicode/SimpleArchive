@@ -37,6 +37,8 @@ final class MemoPageModel: NSObject, Codable, StorageItem {
         try container.encode(creationDate, forKey: .creationDate)
         try container.encode(isSingleComponentPage, forKey: .isSingleComponentPage)
         try container.encode(components.compactMap { $0 as? TextEditorComponent }, forKey: .textComponents)
+        try container.encode(components.compactMap { $0 as? TableComponent }, forKey: .tableComponents)
+        try container.encode(components.compactMap { $0 as? AudioComponent }, forKey: .audioComponents)
     }
 
     required init(from decoder: Decoder) throws {
@@ -47,11 +49,13 @@ final class MemoPageModel: NSObject, Codable, StorageItem {
         self.creationDate = try container.decode(Date.self, forKey: .creationDate)
         self.components = []
         self.components.append(contentsOf: try container.decode([TextEditorComponent].self, forKey: .textComponents))
+        self.components.append(contentsOf: try container.decode([TableComponent].self, forKey: .tableComponents))
+        self.components.append(contentsOf: try container.decode([AudioComponent].self, forKey: .audioComponents))
         self.parentDirectory = nil
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, creationDate, name, textComponents, isSingleComponentPage
+        case id, creationDate, name, textComponents, audioComponents, tableComponents, isSingleComponentPage
     }
 
     func removeStorageItem() {
@@ -65,11 +69,11 @@ final class MemoPageModel: NSObject, Codable, StorageItem {
             name: name,
             filePath: getFilePath(),
             created: creationDate,
-            containedComponentCount: components.count)
+            containedComponentCount: components.count
+        )
     }
 
     var compnentSize: Int { components.count }
-
     var getComponents: [any PageComponent] { components }
 
     subscript(_ ID: UUID) -> OperationResultItem<any PageComponent>? {
@@ -79,9 +83,7 @@ final class MemoPageModel: NSObject, Codable, StorageItem {
         return nil
     }
 
-    subscript(_ index: Int) -> any PageComponent {
-        components[index]
-    }
+    subscript(_ index: Int) -> any PageComponent { components[index] }
 
     @discardableResult
     func removeChildComponentById(_ ID: UUID) -> OperationResultItem<any PageComponent>? {

@@ -1,5 +1,5 @@
-import UIKit
 import Combine
+import UIKit
 
 class DormantBoxViewController: UIViewController, ViewControllerType, NavigationViewControllerDismissible {
 
@@ -9,6 +9,11 @@ class DormantBoxViewController: UIViewController, ViewControllerType, Navigation
     var input = PassthroughSubject<DormantBoxViewInput, Never>()
     var viewModel: DormantBoxViewModel
     var subscriptions = Set<AnyCancellable>()
+    var removedItemCount: Int = 0 {
+        didSet {
+            self.totalFileCountLabel.text = "\(self.removedItemCount) files in total"
+        }
+    }
 
     private let backgroundView: UIStackView = {
         let bg = UIStackView()
@@ -34,6 +39,11 @@ class DormantBoxViewController: UIViewController, ViewControllerType, Navigation
         titleLabel.textColor = .label
         return titleLabel
     }()
+    private(set) var totalFileCountLabel: UILabel = {
+        let totalFileCountLabel = BasePaddingLabel(padding: .init(top: 10, left: 15, bottom: 20, right: 0))
+        return totalFileCountLabel
+    }()
+
     private let backButton: UIButton = {
         let backButton = UIButton(type: .system)
         let config = UIImage.SymbolConfiguration(pointSize: 20)
@@ -45,7 +55,9 @@ class DormantBoxViewController: UIViewController, ViewControllerType, Navigation
     private let tableView: UITableView = {
         let tableView = UITableView(frame: .zero, style: .insetGrouped)
         tableView.backgroundColor = .systemBackground
-        tableView.register(MemoTableRowView.self, forCellReuseIdentifier: MemoTableRowView.cellId)
+        tableView.register(
+            DirectoryFileItemRowView.self,
+            forCellReuseIdentifier: DirectoryFileItemRowView.reuseIdentifier)
         return tableView
 
     }()
@@ -59,7 +71,7 @@ class DormantBoxViewController: UIViewController, ViewControllerType, Navigation
         fatalError("init(coder:) has not been implemented")
     }
 
-    deinit { print("DormantBoxViewController deinit") }
+    deinit { print("deinit DormantBoxViewController") }
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -75,25 +87,28 @@ class DormantBoxViewController: UIViewController, ViewControllerType, Navigation
 
             switch result {
 
-            case .didfetchMemoData:
-                setupUI()
-                setupConstraints()
+                case .didfetchMemoData(let itemCount):
+                    setupUI(itemCount: itemCount)
+                    setupConstraints()
 
-            case .showFileInformation(let file):
-                showFileInformation(file: file)
+                case .showFileInformation(let pageInfo):
+                    showFileInformation(pageInfo: pageInfo)
 
-            case .getMemoPageViewModel(let vm):
-                self.navigationController?.pushViewController(MemoPageViewController(viewModel: vm), animated: true)
+                case .didRemovePageFromDormantBox(let index):
+                    removedItemCount -= 1
+                    tableView.deleteSections(.init(integer: index), with: .fade)
             }
-        }.store(in: &subscriptions)
+        }
+        .store(in: &subscriptions)
     }
 
-    private func setupUI() {
+    private func setupUI(itemCount: Int) {
+        removedItemCount = itemCount
         view.backgroundColor = .systemBackground
         view.addSubview(backgroundView)
 
         backButton.throttleTapPublisher()
-            .sink(receiveValue: { _ in self.navigationController?.popViewController(animated: true) })
+            .sink { _ in self.navigationController?.popViewController(animated: true) }
             .store(in: &subscriptions)
 
         headerStackView.addArrangedSubview(backButton)
@@ -101,6 +116,9 @@ class DormantBoxViewController: UIViewController, ViewControllerType, Navigation
         headerStackView.addArrangedSubview(UIView.spacerView)
 
         backgroundView.addArrangedSubview(headerStackView)
+        backgroundView.addArrangedSubview(totalFileCountLabel)
+        totalFileCountLabel.text = "\(itemCount) files in total"
+        totalFileCountLabel.textAlignment = .left
 
         tableView.dataSource = viewModel
         tableView.delegate = self
@@ -115,42 +133,63 @@ class DormantBoxViewController: UIViewController, ViewControllerType, Navigation
         backgroundView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor).isActive = true
     }
 
-    private func showFileInformation(file: any StorageItem) {
-        guard let info = file.getFileInformation() as? PageInformation else { return }
-        let fileInformationView = PageInformationPopupView(pageInformation: info, isReadOnly: true)
+    private func showFileInformation(pageInfo: PageInformation) {
+        let fileInformationView = RemovedFileInformationPopupView(pageInformation: pageInfo)
+        fileInformationView.removeButtonPublisher
+            .sink { [weak self] id in
+                guard let id else { return }
+                self?.input.send(.willRemovePageFromDormantBox(id))
+            }
+            .store(in: &subscriptions)
         fileInformationView.show()
     }
 
-    func onDismiss() { subscriptions.removeAll() }
+    func onDismiss() {
+        subscriptions.removeAll()
+    }
 }
 
 extension DormantBoxViewController: UITableViewDelegate {
 
-    func tableView(_ tableView: UITableView,
-        trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
-
-        let showFileInfomation =
-            UIContextualAction(style: .normal, title: "share") { (_, _, success: @escaping (Bool) -> Void) in
-            self.input.send(.showFileInformation(indexPath.row))
-            success(true)
-        }
+    func tableView(
+        _ tableView: UITableView,
+        trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath
+    ) -> UISwipeActionsConfiguration? {
 
         let restoreFileButton =
             UIContextualAction(style: .normal, title: "restore") { (_, _, success: @escaping (Bool) -> Void) in
-            self.input.send(.restoreFile(indexPath.row))
-            tableView.deleteRows(at: [indexPath], with: .fade)
-            success(true)
-        }
+                self.input.send(.restoreFile(indexPath.section))
+                self.removedItemCount -= 1
+                tableView.deleteSections(.init(integer: indexPath.section), with: .fade)
+                success(true)
+            }
 
-        showFileInfomation.backgroundColor = .systemBlue
-        showFileInfomation.image = UIImage(systemName: "info.circle")
         restoreFileButton.backgroundColor = .systemGreen
         restoreFileButton.image = UIImage(systemName: "arrow.up.trash")
-
-        return UISwipeActionsConfiguration(actions: [restoreFileButton, showFileInfomation])
+        let config = UISwipeActionsConfiguration(actions: [restoreFileButton])
+        config.performsFirstActionWithFullSwipe = false
+        return config
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        input.send(.moveToPage(indexPath.row))
+        input.send(.showFileInformation(indexPath.section))
+    }
+
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat { 70 }
+
+    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat { 0 }
+
+    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        let view = UIView()
+        view.backgroundColor = .clear
+        return view
+    }
+
+    func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat { 13 }
+
+    func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
+        let view = UIView()
+        view.backgroundColor = .clear
+        return view
     }
 }

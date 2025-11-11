@@ -45,7 +45,7 @@ class MemoPageViewController: UIViewController, ViewControllerType, ComponentSna
     }()
     private let titleLable: UILabel = {
         let titleLabel = UILabel()
-        titleLabel.font = .systemFont(ofSize: 20, weight: .bold)
+        titleLabel.font = .systemFont(ofSize: 23, weight: .bold)
         titleLabel.textAlignment = .center
         titleLabel.textColor = .label
         titleLabel.numberOfLines = 1
@@ -55,20 +55,16 @@ class MemoPageViewController: UIViewController, ViewControllerType, ComponentSna
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         return titleLabel
     }()
-    private(set) var collectionView: UICollectionView!
-
-    private let newComponentAddButton: UIButton = {
-        let newComponentAddButton = UIButton()
-        let config = UIImage.SymbolConfiguration(pointSize: 25, weight: .regular)
-        let buttonImage = UIImage(systemName: "macwindow.badge.plus", withConfiguration: config)
-
-        newComponentAddButton.frame.origin.y = newComponentAddButton.frame.origin.y + 2
-
-        newComponentAddButton.setImage(buttonImage, for: .normal)
-        newComponentAddButton.tintColor = .label
-        newComponentAddButton.translatesAutoresizingMaskIntoConstraints = false
-        return newComponentAddButton
+    private let componentPlusButton: UIButton = {
+        let componentPlusButton = UIButton(type: .system)
+        let config = UIImage.SymbolConfiguration(pointSize: 20)
+        let buttonImage = UIImage(systemName: "plus", withConfiguration: config)
+        componentPlusButton.setImage(buttonImage, for: .normal)
+        componentPlusButton.tintColor = .label
+        componentPlusButton.translatesAutoresizingMaskIntoConstraints = false
+        return componentPlusButton
     }()
+    private(set) var collectionView: UICollectionView!
 
     init(viewModel: MemoPageViewModel) {
         self.viewModel = viewModel
@@ -126,9 +122,9 @@ class MemoPageViewController: UIViewController, ViewControllerType, ComponentSna
             guard let self else { return }
 
             switch result {
-                case .viewDidLoad(let pageName, let isReadOnly):
-                    setupUI(pageName: pageName, isReadOnly: isReadOnly)
-                    setupConstraints(isReadOnly: isReadOnly)
+                case .viewDidLoad(let pageName):
+                    setupUI(pageName: pageName)
+                    setupConstraints()
 
                 case .insertNewComponentAtLastIndex(let index):
                     collectionView.insertItems(at: [IndexPath(item: index, section: 0)])
@@ -259,16 +255,7 @@ class MemoPageViewController: UIViewController, ViewControllerType, ComponentSna
         .store(in: &subscriptions)
     }
 
-    private func presentFilePicker() {
-        let supportedTypes: [UTType] = [.audio, .mp3, .wav]
-        let documentPicker = UIDocumentPickerViewController(forOpeningContentTypes: supportedTypes)
-
-        documentPicker.delegate = viewModel
-        documentPicker.allowsMultipleSelection = true
-        present(documentPicker, animated: true)
-    }
-
-    private func setupUI(pageName: String, isReadOnly: Bool) {
+    private func setupUI(pageName: String) {
         view.backgroundColor = .systemBackground
         view.addSubview(backgroundView)
 
@@ -279,18 +266,15 @@ class MemoPageViewController: UIViewController, ViewControllerType, ComponentSna
 
         titleLable.text = pageName
 
-        if !isReadOnly {
-            headerView.addSubview(newComponentAddButton)
-
-            newComponentAddButton.throttleTapPublisher()
-                .sink { _ in self.presentCreatingNewComponentView() }
-                .store(in: &subscriptions)
-        }
+        componentPlusButton.throttleTapPublisher()
+            .sink { _ in self.presentCreatingNewComponentView() }
+            .store(in: &subscriptions)
 
         view.addSubview(headerView)
 
         headerView.addSubview(backButton)
         headerView.addSubview(titleLable)
+        headerView.addSubview(componentPlusButton)
 
         backgroundView.addArrangedSubview(collectionView)
 
@@ -304,40 +288,38 @@ class MemoPageViewController: UIViewController, ViewControllerType, ComponentSna
         audioControlBar.isHidden = true
     }
 
-    private func setupConstraints(isReadOnly: Bool) {
-        backgroundView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor).isActive = true
-        backgroundView.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
-        backgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
-        backgroundView.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
+    private func setupConstraints() {
+        NSLayoutConstraint.activate([
+            backgroundView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            backgroundView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            backgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            backgroundView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
 
-        headerView.heightAnchor.constraint(equalToConstant: 50).isActive = true
-        headerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor).isActive = true
-        headerView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
-        headerView.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
+            headerView.heightAnchor.constraint(equalToConstant: 50),
+            headerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            headerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            headerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
 
-        backButton.widthAnchor.constraint(equalToConstant: 30).isActive = true
-        backButton.heightAnchor.constraint(equalToConstant: 25).isActive = true
-        backButton.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 20).isActive = true
-        backButton.bottomAnchor.constraint(equalTo: headerView.bottomAnchor, constant: -10).isActive = true
+            backButton.widthAnchor.constraint(equalToConstant: 50),
+            backButton.heightAnchor.constraint(equalToConstant: 50),
+            backButton.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 20),
 
-        if !isReadOnly {
-            newComponentAddButton.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -20)
-                .isActive = true
-            newComponentAddButton.bottomAnchor.constraint(equalTo: headerView.bottomAnchor, constant: -5).isActive =
-                true
-        }
+            titleLable.heightAnchor.constraint(equalToConstant: 50),
+            titleLable.centerXAnchor.constraint(equalTo: headerView.centerXAnchor),
+            titleLable.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
 
-        titleLable.widthAnchor.constraint(equalTo: headerView.widthAnchor, multiplier: 0.6).isActive = true
-        titleLable.bottomAnchor.constraint(equalTo: headerView.bottomAnchor, constant: -10).isActive = true
-        titleLable.centerXAnchor.constraint(equalTo: headerView.centerXAnchor).isActive = true
+            componentPlusButton.widthAnchor.constraint(equalToConstant: 50),
+            componentPlusButton.heightAnchor.constraint(equalToConstant: 50),
+            componentPlusButton.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -20),
 
-        collectionView.leadingAnchor.constraint(equalTo: backgroundView.leadingAnchor).isActive = true
-        collectionView.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor).isActive = true
+            collectionView.leadingAnchor.constraint(equalTo: backgroundView.leadingAnchor),
+            collectionView.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor),
 
-        audioControlBar.widthAnchor.constraint(equalToConstant: UIConstants.audioControlBarViewWidth).isActive = true
-        audioControlBar.heightAnchor.constraint(equalToConstant: UIConstants.audioControlBarViewHeight).isActive = true
-        audioControlBar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor).isActive = true
-        audioControlBar.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+            audioControlBar.widthAnchor.constraint(equalToConstant: UIConstants.audioControlBarViewWidth),
+            audioControlBar.heightAnchor.constraint(equalToConstant: UIConstants.audioControlBarViewHeight),
+            audioControlBar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            audioControlBar.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+        ])
     }
 
     func reloadCellForRestoredComponent() {
@@ -345,6 +327,15 @@ class MemoPageViewController: UIViewController, ViewControllerType, ComponentSna
             let indexPath = IndexPath(item: selectedComponentIndexForMoveSnapshotView, section: 0)
             collectionView.reloadItems(at: [indexPath])
         }
+    }
+
+    private func presentFilePicker() {
+        let supportedTypes: [UTType] = [.audio, .mp3, .wav]
+        let documentPicker = UIDocumentPickerViewController(forOpeningContentTypes: supportedTypes)
+
+        documentPicker.delegate = viewModel
+        documentPicker.allowsMultipleSelection = true
+        present(documentPicker, animated: true)
     }
 
     @objc private func keyboardWillChangeFrame(_ notification: Notification) {
@@ -469,10 +460,15 @@ class MemoPageViewController: UIViewController, ViewControllerType, ComponentSna
 
     private func presentCreatingNewComponentView() {
         let createNewComponentView = CreateNewComponentView()
-        createNewComponentView.delegate = self
+
+        createNewComponentView.componentTypePublisher
+            .sink { [weak self] componentType in
+                self?.input.send(.createNewComponent(componentType))
+            }
+            .store(in: &subscriptions)
 
         if let sheet = createNewComponentView.sheetPresentationController {
-            sheet.detents = [.medium(), .large()]
+            sheet.detents = [.medium()]
         }
 
         present(createNewComponentView, animated: true)
@@ -492,12 +488,6 @@ extension MemoPageViewController: NavigationViewControllerDismissible {
     func onDismiss() {
         input.send(.viewWillDisappear)
         subscriptions.removeAll()
-    }
-}
-
-extension MemoPageViewController: CreateNewComponentViewDelegate {
-    func createNewComponent(with: ComponentType) {
-        input.send(.createNewComponent(with))
     }
 }
 

@@ -4,12 +4,11 @@ enum DormantBoxViewInput {
     case viewDidLoad
     case showFileInformation(Int)
     case restoreFile(Int)
-    case moveToPage(Int)
+    case willRemovePageFromDormantBox(UUID)
 }
 
 enum DormantBoxViewOutput {
-    case didfetchMemoData
-    case showFileInformation(any StorageItem)
-    case getMemoPageViewModel(MemoPageViewModel)
+    case didfetchMemoData(Int)
+    case showFileInformation(PageInformation)
+    case didRemovePageFromDormantBox(Int)
 }
-

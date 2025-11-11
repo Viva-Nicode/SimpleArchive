@@ -9,8 +9,14 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
     var input = PassthroughSubject<MemoHomeViewInput, Never>()
     var viewModel: MemoHomeViewModel
     var subscriptions = Set<AnyCancellable>()
+    private(set) var isActiveFileCreatePlusButton: Bool = false
+    private(set) var directoryFileCount: Int = 0 {
+        didSet {
+            self.totalFileCountLabel.text = "\(directoryFileCount) files in total"
+        }
+    }
 
-    private let backgroundView: UIStackView = {
+    private(set) var backgroundView: UIStackView = {
         let backgroundView = UIStackView()
         backgroundView.axis = .vertical
         backgroundView.spacing = 10
@@ -20,7 +26,7 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
     }()
 
     // MARK: - Header Views
-    private let headerStackView: UIStackView = {
+    private(set) var headerStackView: UIStackView = {
         let headerStackView = UIStackView()
         headerStackView.axis = .horizontal
         headerStackView.alignment = .center
@@ -30,90 +36,65 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
         headerStackView.layoutMargins = .init(top: 10, left: 15, bottom: 10, right: 15)
         return headerStackView
     }()
-    private let titleLabel: UILabel = {
+    private(set) var titleLabel: UILabel = {
         let titleLabel = UILabel()
         titleLabel.text = "Memo"
         titleLabel.font = .boldSystemFont(ofSize: 28)
         titleLabel.textColor = .label
         return titleLabel
     }()
-    private let trashBoxButton: UIButton = {
-        let trashBoxButton = UIButton(type: .system)
-        trashBoxButton.setImage(UIImage(systemName: "trash"), for: .normal)
-        trashBoxButton.tintColor = .systemBlue
-        return trashBoxButton
-    }()
-    private let newFolderButton: UIButton = {
-        let newFolderButton = UIButton(type: .system)
-        let folderPlusImage = UIImage(named: "folder-plus")!
-        let resizedImage = UIGraphicsImageRenderer(size: CGSize(width: 25, height: 25))
-            .image { _ in
-                folderPlusImage.draw(in: CGRect(origin: .zero, size: CGSize(width: 25, height: 25)))
-            }
-        newFolderButton.setImage(resizedImage, for: .normal)
-        newFolderButton.imageView?.contentMode = .scaleAspectFit
-        newFolderButton.tintColor = .systemBlue
-        return newFolderButton
-    }()
-    private(set) var newPageButton: UIButton = {
-        let newPageButton = UIButton(type: .system)
-        let PagePlusImage = UIImage(named: "file-plus")!
-        let pagePlusResizedImage = UIGraphicsImageRenderer(size: CGSize(width: 25, height: 25))
-            .image { _ in
-                PagePlusImage.draw(in: CGRect(origin: .zero, size: CGSize(width: 25, height: 25)))
-            }
-        newPageButton.setImage(pagePlusResizedImage, for: .normal)
-        newPageButton.imageView?.contentMode = .scaleAspectFit
-        newPageButton.tintColor = .systemBlue
-        newPageButton.accessibilityIdentifier = "newPageButton"
-        return newPageButton
+    private(set) var trashBoxButton: UIButton = {
+        var config = UIButton.Configuration.plain()
+        config.image = UIImage(systemName: "trash")
+        config.baseForegroundColor = .systemBlue
+        config.preferredSymbolConfigurationForImage = .init(pointSize: 20, weight: .regular)
+
+        let button = UIButton(configuration: config)
+        return button
     }()
 
-    // MARK: - FileSorting PullDown Button View
-    private let sortingButtonView: UIStackView = {
-        let sortingButtonView = UIStackView()
-        sortingButtonView.axis = .horizontal
-        sortingButtonView.alignment = .center
-        sortingButtonView.spacing = 8
-        sortingButtonView.isLayoutMarginsRelativeArrangement = true
-        sortingButtonView.layoutMargins = .init(top: 0, left: 20, bottom: 0, right: 20)
-        return sortingButtonView
+    // MARK: - Fixed File Views
+    private(set) var fixedFilesLable: BasePaddingLabel = {
+        let fixedFilesLable = BasePaddingLabel(padding: .init(top: 0, left: 15, bottom: 0, right: 15))
+        fixedFilesLable.text = "📌 Fixed Pages"
+        fixedFilesLable.font = .boldSystemFont(ofSize: 21)
+        fixedFilesLable.textColor = .label
+        return fixedFilesLable
     }()
-    private let sortingButton: UIButton = {
-        let sortingButton = UIButton(type: .system)
-        sortingButton.setTitle("sort by", for: .normal)
-        sortingButton.setTitleColor(.systemBlue, for: .normal)
-        sortingButton.titleLabel?.font = .systemFont(ofSize: 18, weight: .regular)
-        sortingButton.showsMenuAsPrimaryAction = true
-        return sortingButton
-    }()
-    private let ascendingOrderButton: UIButton = {
-        var buttonConfiguration = UIButton.Configuration.plain()
-        buttonConfiguration.image = UIImage(systemName: "arrow.up.and.down.text.horizontal")
-        buttonConfiguration.contentInsets = .zero
-        buttonConfiguration.baseForegroundColor = .systemBlue
-        buttonConfiguration.buttonSize = .small
-        return UIButton(configuration: buttonConfiguration)
+    private(set) var fixedFilesCollectionViewContainer: UIView = {
+        $0.translatesAutoresizingMaskIntoConstraints = false
+        return $0
+    }(UIView())
+    private(set) var fixedFilesCollectionView: UICollectionView = {
+        let layout = UICollectionViewFlowLayout()
+        layout.itemSize = CGSize(width: 90, height: 80)
+        layout.scrollDirection = .horizontal
+        layout.minimumLineSpacing = 25
+
+        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        collectionView.contentInset = .init(top: 10, left: 10, bottom: 10, right: 10)
+        collectionView.register(
+            FixedFileItemView.self,
+            forCellWithReuseIdentifier: FixedFileItemView.reuseIdentifier)
+        collectionView.isPrefetchingEnabled = false
+        collectionView.showsHorizontalScrollIndicator = false
+        collectionView.translatesAutoresizingMaskIntoConstraints = false
+        return collectionView
     }()
 
     // MARK: - Directory Path Views
-    private let rootDirectoryLable: BasePaddingLabel = {
-        let rootDirectoryLable = BasePaddingLabel()
-        rootDirectoryLable.layer.cornerRadius = 5
-        rootDirectoryLable.backgroundColor = .blue
-        rootDirectoryLable.clipsToBounds = true
-        rootDirectoryLable.textColor = .white
-        rootDirectoryLable.isUserInteractionEnabled = true
-        rootDirectoryLable.font = .systemFont(ofSize: 14, weight: .medium)
-        return rootDirectoryLable
+    private(set) var rootDirectoryLable: UIStackView = {
+        let directoryPathLabel = MemoHomeDirectoryNameLabel(name: "Home")
+        directoryPathLabel.setHomePathLabel()
+        return directoryPathLabel
     }()
-    private let directoryPathView: UIScrollView = {
+    private(set) var directoryPathView: UIScrollView = {
         let scrollView = UIScrollView()
         scrollView.showsHorizontalScrollIndicator = false
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         return scrollView
     }()
-    private let directoryPathStackView: UIStackView = {
+    private(set) var directoryPathStackView: UIStackView = {
         let stackView = UIStackView()
         stackView.spacing = 5
         stackView.isLayoutMarginsRelativeArrangement = true
@@ -123,53 +104,131 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
         return stackView
     }()
 
-    // MARK: - Fixed File Views
-    private let fixedFilesTableViewContainer: UIStackView = {
-        let fixedFilesTableViewContainer = UIStackView()
-        fixedFilesTableViewContainer.axis = .vertical
-        fixedFilesTableViewContainer.isLayoutMarginsRelativeArrangement = true
-        fixedFilesTableViewContainer.layoutMargins = .init(top: 0, left: 15, bottom: 0, right: 15)
-        return fixedFilesTableViewContainer
+    // MARK: - FileSorting PullDown Button View
+    private(set) var totalFileCountLabel: UILabel = {
+        let totalFileCountLabel = UILabel()
+        return totalFileCountLabel
     }()
-    private let fixedFilesLable: BasePaddingLabel = {
-        let fixedFilesLable = BasePaddingLabel(padding: .init(top: 0, left: 15, bottom: 0, right: 15))
-        fixedFilesLable.text = "Fixed Files"
-        fixedFilesLable.font = .boldSystemFont(ofSize: 21)
-        fixedFilesLable.textColor = .label
-        return fixedFilesLable
+    private(set) var sortingButtonView: UIStackView = {
+        let sortingButtonView = UIStackView()
+        sortingButtonView.axis = .horizontal
+        sortingButtonView.alignment = .center
+        sortingButtonView.spacing = 8
+        sortingButtonView.isLayoutMarginsRelativeArrangement = true
+        sortingButtonView.layoutMargins = .init(top: 0, left: 20, bottom: 0, right: 20)
+        return sortingButtonView
     }()
-    private let fixedFilesTableView: UITableView = {
-        let fixedFilesTableView = UITableView(frame: .zero, style: .plain)
-        fixedFilesTableView.backgroundColor = .systemGray6
-        fixedFilesTableView.layer.cornerRadius = 10
-        fixedFilesTableView.separatorStyle = .none
-        fixedFilesTableView.dragInteractionEnabled = true
-        fixedFilesTableView.register(MemoTableRowView.self, forCellReuseIdentifier: MemoTableRowView.cellId)
-        fixedFilesTableView.translatesAutoresizingMaskIntoConstraints = false
-        return fixedFilesTableView
-    }()
+    private(set) var separator: UILabel = {
+        $0.text = "|"
+        $0.textColor = .systemGray4
+        return $0
+    }(UILabel())
+    private(set) var sortByNameLabel: UILabel = {
+        $0.text = "name"
+        $0.textColor = .systemGray4
+        $0.isUserInteractionEnabled = true
+        $0.font = .systemFont(ofSize: 16, weight: .regular)
+        return $0
+    }(UILabel())
+    private(set) var sortByCreatedateLabel: UILabel = {
+        $0.text = "create date"
+        $0.textColor = .systemGray4
+        $0.isUserInteractionEnabled = true
+        $0.font = .systemFont(ofSize: 16, weight: .regular)
+        return $0
+    }(UILabel())
 
     // MARK: - Home File Views
-    private let mainFilesLable: BasePaddingLabel = {
-        let mainFilesLable = BasePaddingLabel(padding: .init(top: 0, left: 15, bottom: 0, right: 15))
-        mainFilesLable.text = "Main Files"
-        mainFilesLable.font = .boldSystemFont(ofSize: 21)
-        mainFilesLable.textColor = .label
-        return mainFilesLable
-    }()
-    private(set) var collectionView: UICollectionView = {
+    private(set) var directoryCollectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .horizontal
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
         collectionView.accessibilityIdentifier = "memoHomeCollectionView"
         collectionView.register(
-            MemoHomeTableView.self,
-            forCellWithReuseIdentifier: MemoHomeTableView.reuseIdentifier)
+            MemoHomeDirectoryContentCell.self,
+            forCellWithReuseIdentifier: MemoHomeDirectoryContentCell.reuseIdentifier)
         collectionView.isPrefetchingEnabled = false
         collectionView.showsHorizontalScrollIndicator = false
         collectionView.isScrollEnabled = false
         return collectionView
     }()
+
+    // MARK: - Create Item Button
+    private(set) var fileCreatePlusButton: UIView = {
+        let image = UIImage(systemName: "plus")
+        let buttonImageView = UIImageView(image: image)
+
+        buttonImageView.translatesAutoresizingMaskIntoConstraints = false
+        buttonImageView.tintColor = .white
+        $0.addSubview(buttonImageView)
+
+        buttonImageView.widthAnchor.constraint(equalToConstant: 20).isActive = true
+        buttonImageView.heightAnchor.constraint(equalToConstant: 20).isActive = true
+        buttonImageView.centerYAnchor.constraint(equalTo: $0.centerYAnchor).isActive = true
+        buttonImageView.centerXAnchor.constraint(equalTo: $0.centerXAnchor).isActive = true
+
+        $0.layer.cornerRadius = 27.5
+        $0.backgroundColor = .systemBlue
+        $0.layer.masksToBounds = false
+        $0.translatesAutoresizingMaskIntoConstraints = false
+
+        $0.layer.shadowColor = UIColor.black.cgColor
+        $0.layer.shadowOffset = .init(width: -1.5, height: 1.5)
+        $0.layer.shadowOpacity = 0.2
+        $0.layer.shadowRadius = 4
+
+        return $0
+    }(UIView())
+    private(set) var createFolderButton: UIView = {
+        let image = UIImage(named: "folder-plus")?.withTintColor(.systemBlue, renderingMode: .alwaysOriginal)
+        let buttonImageView = UIImageView(image: image)
+
+        buttonImageView.translatesAutoresizingMaskIntoConstraints = false
+        buttonImageView.tintColor = .systemBlue
+        $0.addSubview(buttonImageView)
+
+        buttonImageView.widthAnchor.constraint(equalToConstant: 20).isActive = true
+        buttonImageView.heightAnchor.constraint(equalToConstant: 20).isActive = true
+        buttonImageView.centerYAnchor.constraint(equalTo: $0.centerYAnchor).isActive = true
+        buttonImageView.centerXAnchor.constraint(equalTo: $0.centerXAnchor).isActive = true
+
+        $0.alpha = 0
+        $0.layer.cornerRadius = 27.5
+        $0.backgroundColor = UIColor(red: 0.94, green: 0.96, blue: 0.98, alpha: 1)
+        $0.layer.masksToBounds = false
+        $0.translatesAutoresizingMaskIntoConstraints = false
+
+        $0.layer.shadowColor = UIColor.black.cgColor
+        $0.layer.shadowOffset = .init(width: -1.5, height: 1.5)
+        $0.layer.shadowOpacity = 0.2
+        $0.layer.shadowRadius = 4
+
+        return $0
+    }(UIView())
+    private(set) var createPageButton: UIView = {
+        let image = UIImage(named: "file-plus")?.withTintColor(.systemBlue, renderingMode: .alwaysOriginal)
+        let buttonImageView = UIImageView(image: image)
+        buttonImageView.translatesAutoresizingMaskIntoConstraints = false
+        buttonImageView.tintColor = .systemBlue
+        $0.addSubview(buttonImageView)
+
+        buttonImageView.widthAnchor.constraint(equalToConstant: 20).isActive = true
+        buttonImageView.heightAnchor.constraint(equalToConstant: 20).isActive = true
+        buttonImageView.centerYAnchor.constraint(equalTo: $0.centerYAnchor).isActive = true
+        buttonImageView.centerXAnchor.constraint(equalTo: $0.centerXAnchor).isActive = true
+
+        $0.alpha = 0
+        $0.layer.cornerRadius = 27.5
+        $0.backgroundColor = UIColor(red: 0.94, green: 0.96, blue: 0.98, alpha: 1)
+        $0.layer.masksToBounds = false
+        $0.translatesAutoresizingMaskIntoConstraints = false
+
+        $0.layer.shadowColor = UIColor.black.cgColor
+        $0.layer.shadowOffset = .init(width: -1.5, height: 1.5)
+        $0.layer.shadowOpacity = 0.2
+        $0.layer.shadowRadius = 4
+        return $0
+    }(UIView())
 
     init(memoHomeViewModel: MemoHomeViewModel) {
         self.viewModel = memoHomeViewModel
@@ -178,10 +237,6 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
-    }
-
-    override func viewWillAppear(_ animated: Bool) {
-        collectionView.reloadData()
     }
 
     override func viewDidLoad() {
@@ -198,20 +253,36 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
             guard let self else { return }
 
             switch result {
-                case .didfetchMemoData(let rootDirectoryID, let sortCriteria):
-                    setupUI(sortBy: sortCriteria)
+                case let .didfetchMemoData(rootDirectoryID, sortCriteria, datasource, fileCount):
+                    setupUI(fixedFileCollectionViewDataSource: datasource)
                     setupConstraints()
+                    updateDirectoryInfo(fileCount: fileCount, sortCriteria: sortCriteria)
                     setupActions(rootDirectoryID)
 
                 case .insertRowToTable(let collectionCellIndex, let tableCellIndices):
                     insertRowToTable(collectionCellIndex: collectionCellIndex, tableCellIndices: tableCellIndices)
 
-                case .didTappedDirectoryPath(let removedIndexList, let sortCriteria):
-                    sortingButton.menu = createUIMenu(sortBy: sortCriteria)
+                case .didRemoveFile(let removedFileIndex):
+                    removeRowToTable(removedFileIndex: removedFileIndex)
+
+                case let .didPerformDropOperationInHomeTable(indexOfCell, insertRowIndexPaths, deleteRowIndexPaths):
+                    didPerformDropOperationInHomeTable(
+                        indexOfCell: indexOfCell,
+                        insertRowIndexPaths: insertRowIndexPaths,
+                        deleteRowIndexPaths: deleteRowIndexPaths)
+
+                case let .didPerformDropOperationInFixedTable(indexOfCell, insertRowIndexPaths, deleteRowIndexPaths):
+                    didPerformDropOperationInFixedTable(
+                        indexOfCell: indexOfCell,
+                        insertRowIndexPaths: insertRowIndexPaths,
+                        deleteRowIndexPaths: deleteRowIndexPaths)
+
+                case let .didTappedDirectoryPath(removedIndexList, sortCriteria, fileCount):
+                    updateDirectoryInfo(fileCount: fileCount, sortCriteria: sortCriteria)
                     movePreviousDirectoryTappedLabel(removedIndexList: removedIndexList)
 
-                case .didTappedDirectoryRow(let directoryName, let directoryID, let sortCriteria):
-                    sortingButton.menu = createUIMenu(sortBy: sortCriteria)
+                case let .didTappedDirectoryRow(directoryName, directoryID, sortCriteria, fileCount):
+                    updateDirectoryInfo(fileCount: fileCount, sortCriteria: sortCriteria)
                     moveToNextDirectory(directoryName: directoryName, directoryID: directoryID)
 
                 case .showFileInformation(let fileInformation):
@@ -222,18 +293,6 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
 
                 case .getMemoPageViewModel(let vm):
                     navigationController?.pushViewController(MemoPageViewController(viewModel: vm), animated: true)
-
-                case .didPerformDropOperationInFixedTable(
-                    let indexOfCell, let insertRowIndexPaths, let deleteRowIndexPaths):
-                    didPerformDropOperationInFixedTable(
-                        indexOfCell: indexOfCell,
-                        insertRowIndexPaths: insertRowIndexPaths, deleteRowIndexPaths: deleteRowIndexPaths)
-
-                case .didPerformDropOperationInHomeTable(
-                    let indexOfCell, let insertRowIndexPaths, let deleteRowIndexPaths):
-                    didPerformDropOperationInHomeTable(
-                        indexOfCell: indexOfCell,
-                        insertRowIndexPaths: insertRowIndexPaths, deleteRowIndexPaths: deleteRowIndexPaths)
 
                 case .didChangedFileName(let newName, let before, let after):
                     changeRowFile(newName: newName, before: before, after: after)
@@ -264,7 +323,7 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
 
                 switch errorCase {
                     case .canNotLoadMemoData:
-                        setupUI(sortBy: .name)
+                        setupUI(fixedFileCollectionViewDataSource: nil)
                         setupConstraints()
                         let errorPopupView = ErrorMessagePopupView(error: errorCase) {
                             UIApplication.shared.perform(#selector(NSXPCConnection.suspend))
@@ -278,68 +337,99 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
             .store(in: &subscriptions)
     }
 
-    private func setupUI(sortBy: SortCriterias) {
+    private func setupUI(fixedFileCollectionViewDataSource: FixedFileCollectionViewDataSource?) {
         view.backgroundColor = .systemBackground
         view.addSubview(backgroundView)
 
         backgroundView.addArrangedSubview(headerStackView)
-        backgroundView.addArrangedSubview(sortingButtonView)
-        backgroundView.addArrangedSubview(directoryPathView)
+
         backgroundView.addArrangedSubview(fixedFilesLable)
-        backgroundView.addArrangedSubview(fixedFilesTableViewContainer)
-        backgroundView.addArrangedSubview(mainFilesLable)
-        backgroundView.addArrangedSubview(collectionView)
+        fixedFilesCollectionViewContainer.addSubview(fixedFilesCollectionView)
+        backgroundView.addArrangedSubview(fixedFilesCollectionViewContainer)
+        backgroundView.addArrangedSubview(directoryPathView)
+        backgroundView.addArrangedSubview(sortingButtonView)
+        backgroundView.addArrangedSubview(directoryCollectionView)
 
         headerStackView.addArrangedSubview(titleLabel)
         headerStackView.addArrangedSubview(trashBoxButton)
-        headerStackView.addArrangedSubview(newFolderButton)
-        headerStackView.addArrangedSubview(newPageButton)
 
+        sortingButtonView.addArrangedSubview(totalFileCountLabel)
         sortingButtonView.addArrangedSubview(UIView.spacerView)
-        sortingButton.menu = createUIMenu(sortBy: sortBy)
-        sortingButtonView.addArrangedSubview(sortingButton)
-        sortingButtonView.addArrangedSubview(ascendingOrderButton)
+        sortingButtonView.addArrangedSubview(sortByNameLabel)
+        sortingButtonView.addArrangedSubview(separator)
+        sortingButtonView.addArrangedSubview(sortByCreatedateLabel)
 
         directoryPathView.addSubview(directoryPathStackView)
-        rootDirectoryLable.text = "Home"
         directoryPathStackView.addArrangedSubview(rootDirectoryLable)
 
-        fixedFilesTableView.dataSource = viewModel
-        fixedFilesTableView.delegate = self
-        fixedFilesTableView.dragDelegate = self
-        fixedFilesTableView.dropDelegate = self
+        fixedFileCollectionViewDataSource?.input = input
+        fixedFilesCollectionView.dataSource = fixedFileCollectionViewDataSource
+        fixedFilesCollectionView.delegate = fixedFileCollectionViewDataSource
+        fixedFilesCollectionView.dragDelegate = fixedFileCollectionViewDataSource
+        fixedFilesCollectionView.dropDelegate = fixedFileCollectionViewDataSource
 
-        fixedFilesTableViewContainer.addArrangedSubview(fixedFilesTableView)
-        collectionView.delegate = self
-        collectionView.dataSource = viewModel
+        directoryCollectionView.delegate = self
+        directoryCollectionView.dataSource = viewModel
+        directoryCollectionView.layoutIfNeeded()
 
-        collectionView.layoutIfNeeded()
+        backgroundView.addSubview(createFolderButton)
+        backgroundView.addSubview(createPageButton)
+        backgroundView.addSubview(fileCreatePlusButton)
     }
 
     private func setupConstraints() {
-        backgroundView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor).isActive = true
-        backgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
-        backgroundView.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
-        backgroundView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor).isActive = true
+        NSLayoutConstraint.activate([
+            backgroundView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            backgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            backgroundView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            backgroundView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
-        directoryPathView.heightAnchor.constraint(equalToConstant: 40).isActive = true
+            fixedFilesCollectionViewContainer.heightAnchor.constraint(equalToConstant: 90),
+            fixedFilesCollectionView.heightAnchor.constraint(equalToConstant: 100),
+            fixedFilesCollectionView.centerXAnchor.constraint(equalTo: fixedFilesCollectionViewContainer.centerXAnchor),
+            fixedFilesCollectionView.widthAnchor.constraint(equalToConstant: UIView.screenWidth - 30),
 
-        directoryPathStackView.topAnchor.constraint(equalTo: directoryPathView.topAnchor).isActive = true
-        directoryPathStackView.bottomAnchor.constraint(equalTo: directoryPathView.bottomAnchor).isActive = true
-        directoryPathStackView.leadingAnchor.constraint(equalTo: directoryPathView.leadingAnchor).isActive = true
-        directoryPathStackView.trailingAnchor.constraint(equalTo: directoryPathView.trailingAnchor).isActive = true
+            directoryPathView.heightAnchor.constraint(equalToConstant: 40),
 
-        fixedFilesTableView.heightAnchor.constraint(equalToConstant: 100).isActive = true
+            directoryPathStackView.topAnchor.constraint(equalTo: directoryPathView.topAnchor),
+            directoryPathStackView.bottomAnchor.constraint(equalTo: directoryPathView.bottomAnchor),
+            directoryPathStackView.leadingAnchor.constraint(equalTo: directoryPathView.leadingAnchor),
+            directoryPathStackView.trailingAnchor.constraint(equalTo: directoryPathView.trailingAnchor),
+
+            fileCreatePlusButton.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor, constant: -22),
+            fileCreatePlusButton.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor, constant: -70),
+            fileCreatePlusButton.widthAnchor.constraint(equalToConstant: 55),
+            fileCreatePlusButton.heightAnchor.constraint(equalToConstant: 55),
+
+            createFolderButton.widthAnchor.constraint(equalToConstant: 55),
+            createFolderButton.heightAnchor.constraint(equalToConstant: 55),
+            createFolderButton.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor, constant: -22),
+            createFolderButton.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor, constant: -70),
+
+            createPageButton.widthAnchor.constraint(equalToConstant: 55),
+            createPageButton.heightAnchor.constraint(equalToConstant: 55),
+            createPageButton.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor, constant: -22),
+            createPageButton.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor, constant: -70),
+        ])
     }
 
     private func setupActions(_ rootDirectoryID: UUID) {
+
+        fileCreatePlusButton.throttleUIViewTapGesturePublisher(interval: 0)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                tappedFileCreatePlusButton()
+            }
+            .store(in: &subscriptions)
+
         trashBoxButton.throttleTapPublisher()
             .sink { _ in self.input.send(.getDormantBoxViewModel) }
             .store(in: &subscriptions)
 
-        newFolderButton.throttleTapPublisher()
+        createFolderButton.throttleUIViewTapGesturePublisher()
             .sink { [weak self] _ in
                 guard let self else { return }
+                tappedFileCreatePlusButton()
 
                 let subject = PassthroughSubject<MemoHomeSubViewInput, Never>()
                 viewModel.subscribe(input: subject.eraseToAnyPublisher())
@@ -349,9 +439,10 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
             }
             .store(in: &subscriptions)
 
-        newPageButton.throttleTapPublisher()
+        createPageButton.throttleUIViewTapGesturePublisher()
             .sink { [weak self] _ in
                 guard let self else { return }
+                tappedFileCreatePlusButton()
 
                 let subject = PassthroughSubject<MemoHomeSubViewInput, Never>()
                 viewModel.subscribe(input: subject.eraseToAnyPublisher())
@@ -368,62 +459,39 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
             }
             .store(in: &subscriptions)
 
-        ascendingOrderButton.throttleTapPublisher(interval: 0.5)
+        sortByNameLabel.throttleUIViewTapGesturePublisher()
             .sink { [weak self] _ in
                 guard let self else { return }
-                input.send(.toggleAscendingOrder)
+                if sortByNameLabel.textColor == .label {
+                    input.send(.toggleAscendingOrder)
+                } else {
+                    sortByNameLabel.textColor = .label
+                    sortByCreatedateLabel.textColor = .systemGray4
+                    input.send(.changeFileSortBy(.name))
+                }
+            }
+            .store(in: &subscriptions)
+
+        sortByCreatedateLabel.throttleUIViewTapGesturePublisher()
+            .sink { [weak self] _ in
+                guard let self else { return }
+                if sortByCreatedateLabel.textColor == .label {
+                    input.send(.toggleAscendingOrder)
+                } else {
+                    sortByCreatedateLabel.textColor = .label
+                    sortByNameLabel.textColor = .systemGray4
+                    input.send(.changeFileSortBy(.creationDate))
+                }
             }
             .store(in: &subscriptions)
     }
 
-    private func createUIMenu(sortBy: SortCriterias) -> UIMenu {
-        var uiActions: [UIAction] = []
-
-        for sortCriteria in SortCriterias.allCases {
-
-            let uiAction = UIAction(title: sortCriteria.getUiActionTitle()) { action in
-                self.input.send(.changeFileSortBy(sortCriteria))
-                self.sortingButton.menu = self.createUIMenu(sortBy: sortCriteria)
-            }
-
-            if sortBy == sortCriteria {
-                uiAction.image = UIImage(systemName: "checkmark")
-            }
-
-            uiActions.append(uiAction)
-        }
-        return UIMenu(children: uiActions)
-    }
-
     private func moveToNextDirectory(directoryName: String, directoryID: UUID) {
 
-        let lastItemIndex = collectionView.numberOfItems(inSection: .zero)
+        let lastItemIndex = directoryCollectionView.numberOfItems(inSection: .zero)
         let newIndexPath = IndexPath(item: lastItemIndex, section: .zero)
-
-        let directoryPathLable: UIStackView = {
-            let directoryPathLable = UIStackView()
-            directoryPathLable.axis = .horizontal
-            directoryPathLable.alignment = .center
-            directoryPathLable.spacing = 5
-
-            let imageView = UIImageView(image: UIImage(systemName: "chevron.forward"))
-            imageView.tintColor = .systemGray4
-            imageView.contentMode = .center
-            imageView.frame = CGRect(x: 0, y: 0, width: 14, height: 14)
-            directoryPathLable.addArrangedSubview(imageView)
-
-            let label = BasePaddingLabel()
-            label.text = directoryName
-            label.layer.cornerRadius = 5
-            label.backgroundColor = .systemBlue
-            label.clipsToBounds = true
-            label.textColor = .white
-            label.font = .systemFont(ofSize: 14, weight: .medium)
-            label.isUserInteractionEnabled = true
-            directoryPathLable.addArrangedSubview(label)
-
-            return directoryPathLable
-        }()
+        let directoryPathLable = MemoHomeDirectoryNameLabel(name: directoryName)
+        directoryPathLable.setCurrentPathLabel()
 
         directoryPathLable.throttleUIViewTapGesturePublisher(interval: 0.5)
             .sink { [weak self] _ in
@@ -432,10 +500,30 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
             }
             .store(in: &subscriptions)
 
-        directoryPathStackView.addArrangedSubview(directoryPathLable)
+        if let last = directoryPathStackView.arrangedSubviews.last,
+            let directoryPathLabel = last as? MemoHomeDirectoryNameLabel
+        {
+            directoryPathLabel.setmiddlePathLabel()
+        }
 
-        collectionView.insertItems(at: [newIndexPath])
-        collectionView.scrollToItem(at: newIndexPath, at: .right, animated: true)
+        directoryPathStackView.addArrangedSubview(directoryPathLable)
+        DispatchQueue.main.async {
+            self.directoryPathView.scrollToTrailing(animated: true)
+        }
+        directoryCollectionView.insertItems(at: [newIndexPath])
+        directoryCollectionView.scrollToItem(at: newIndexPath, at: .right, animated: true)
+    }
+
+    private func updateDirectoryInfo(fileCount: Int, sortCriteria: SortCriterias) {
+        directoryFileCount = fileCount
+        switch sortCriteria {
+            case .name:
+                sortByNameLabel.textColor = .label
+                sortByCreatedateLabel.textColor = .systemGray4
+            case .creationDate:
+                sortByCreatedateLabel.textColor = .label
+                sortByNameLabel.textColor = .systemGray4
+        }
     }
 
     private func movePreviousDirectoryTappedLabel(removedIndexList: [Int]) {
@@ -446,22 +534,42 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
             }
         }
 
+        if let last = directoryPathStackView.arrangedSubviews.last,
+            let directoryPathLabel = last as? MemoHomeDirectoryNameLabel
+        {
+            directoryPathLabel.setCurrentPathLabel()
+        }
+
         let removeIndexPathList = removedIndexList.map { IndexPath(item: $0, section: 0) }
-        collectionView.deleteItems(at: removeIndexPathList)
+        directoryCollectionView.deleteItems(at: removeIndexPathList)
     }
 
     private func showFileInformation(for fileInformation: StorageItemInformationType) {
 
         switch fileInformation {
             case let info as DirectoryInformation:
-                let view = DirectoryInformationPopupView(directoryInformation: info)
-                view.delegate = self
-                view.show()
+                let directoryInformationPopupView = DirectoryInformationPopupView(directoryInformation: info)
+                directoryInformationPopupView.confirmButtonPublisher
+                    .sink { [weak self] directoryID, newName in
+                        if let directoryID, let newName {
+                            self?.input.send(.changeFileName(directoryID, newName))
+                        }
+                    }
+                    .store(in: &subscriptions)
+
+                directoryInformationPopupView.show()
 
             case let info as PageInformation:
-                let view = PageInformationPopupView(pageInformation: info)
-                view.delegate = self
-                view.show()
+                let pageInformationPopupView = PageInformationPopupView(pageInformation: info)
+                pageInformationPopupView.confirmButtonPublisher
+                    .sink { [weak self] pageID, newName in
+                        if let pageID, let newName {
+                            self?.input.send(.changeFileName(pageID, newName))
+                        }
+                    }
+                    .store(in: &subscriptions)
+
+                pageInformationPopupView.show()
 
             default:
                 break
@@ -469,32 +577,41 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
     }
 
     private func changeRowFile(newName: String, before: Int, after: Int) {
-        let lastItemIndex = collectionView.numberOfItems(inSection: .zero)
+        let lastItemIndex = directoryCollectionView.numberOfItems(inSection: .zero)
         let newIndexPath = IndexPath(item: lastItemIndex - 1, section: .zero)
+        let beforeRowIndexPath = IndexPath(row: 0, section: before)
 
         guard
-            let collectionViewCell = collectionView.cellForItem(at: newIndexPath),
-            let cell = collectionViewCell as? MemoHomeTableView,
-            let tableCell = cell.directoryContentTableView.cellForRow(at: IndexPath(row: before, section: .zero)),
-            let memoTableRow = tableCell as? MemoTableRowView
+            let collectionViewCell = directoryCollectionView.cellForItem(at: newIndexPath),
+            let cell = collectionViewCell as? MemoHomeDirectoryContentCell,
+            let tableCell = cell.directoryContentTableView.cellForRow(at: beforeRowIndexPath),
+            let memoTableRow = tableCell as? DirectoryFileItemRowView
         else { return }
 
         memoTableRow.setFileNameLabelText(newName)
-        cell.directoryContentTableView.moveRow(
-            at: IndexPath(row: before, section: 0), to: IndexPath(row: after, section: 0))
+        cell.directoryContentTableView.moveSection(before, toSection: after)
     }
 
     private func insertRowToTable(collectionCellIndex: Int, tableCellIndices: [Int]) {
+        directoryFileCount += tableCellIndices.count
         if let collectionViewCell =
-            collectionView
-            .cellForItem(at: IndexPath(item: collectionCellIndex, section: 0)) as? MemoHomeTableView
+            directoryCollectionView
+            .cellForItem(at: IndexPath(item: collectionCellIndex, section: 0)) as? MemoHomeDirectoryContentCell
         {
-
-            collectionViewCell.directoryContentTableView.performBatchUpdates {
-                let indexPaths = tableCellIndices.map { IndexPath(row: $0, section: 0) }
-                collectionViewCell.directoryContentTableView.insertRows(at: indexPaths, with: .automatic)
-            }
+            collectionViewCell.insertItem(indices: tableCellIndices)
         }
+    }
+
+    private func removeRowToTable(removedFileIndex: Int) {
+        directoryFileCount -= 1
+        let lastItemIndex = directoryCollectionView.numberOfItems(inSection: .zero)
+        let newIndexPath = IndexPath(item: lastItemIndex - 1, section: .zero)
+
+        guard
+            let collectionViewCell = directoryCollectionView.cellForItem(at: newIndexPath),
+            let cell = collectionViewCell as? MemoHomeDirectoryContentCell
+        else { return }
+        cell.deleteItem(with: removedFileIndex)
     }
 
     private func didPerformDropOperationInFixedTable(
@@ -502,59 +619,96 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
         insertRowIndexPaths: [IndexPath],
         deleteRowIndexPaths: [IndexPath]
     ) {
+        directoryFileCount -= 1
         let lastIndexPath = IndexPath(item: indexOfCell, section: 0)
-        if let lastCell = collectionView.cellForItem(at: lastIndexPath) {
-            let cell = lastCell as! MemoHomeTableView
-
+        if let lastCell = directoryCollectionView.cellForItem(at: lastIndexPath),
+            let cell = lastCell as? MemoHomeDirectoryContentCell
+        {
             cell.directoryContentTableView.performBatchUpdates {
-                cell.directoryContentTableView.deleteRows(at: deleteRowIndexPaths, with: .automatic)
+                for path in deleteRowIndexPaths {
+                    cell.directoryContentTableView.deleteSections(.init(integer: path.section), with: .fade)
+                }
             }
+            cell.showEmptyFolderView()
         }
 
-        fixedFilesTableView.performBatchUpdates {
-            fixedFilesTableView.insertRows(at: insertRowIndexPaths, with: .automatic)
+        fixedFilesCollectionView.performBatchUpdates {
+            fixedFilesCollectionView.insertItems(at: insertRowIndexPaths)
         }
     }
 
     private func didPerformDropOperationInHomeTable(
         indexOfCell: Int,
-        insertRowIndexPaths: [IndexPath], deleteRowIndexPaths: [IndexPath]
+        insertRowIndexPaths: [IndexPath],
+        deleteRowIndexPaths: [IndexPath]
     ) {
-        fixedFilesTableView.performBatchUpdates {
-            fixedFilesTableView.deleteRows(at: deleteRowIndexPaths, with: .automatic)
+        directoryFileCount += 1
+        fixedFilesCollectionView.performBatchUpdates {
+            fixedFilesCollectionView.deleteItems(at: deleteRowIndexPaths)
         }
 
         let lastIndexPath = IndexPath(item: indexOfCell, section: 0)
-        if let lastCell = collectionView.cellForItem(at: lastIndexPath) {
-            let cell = lastCell as! MemoHomeTableView
+
+        if let lastCell = directoryCollectionView.cellForItem(at: lastIndexPath) {
+            let cell = lastCell as! MemoHomeDirectoryContentCell
+            cell.removeEmptyFolderView()
             cell.directoryContentTableView.performBatchUpdates {
-                cell.directoryContentTableView.insertRows(at: insertRowIndexPaths, with: .automatic)
+                for path in insertRowIndexPaths {
+                    cell.directoryContentTableView.insertSections(.init(integer: path.section), with: .automatic)
+                }
             }
         }
     }
 
     private func resortFileTableRows(_ sortingReulst: [(Int, Int)]) {
-        let lastItemIndex = collectionView.numberOfItems(inSection: .zero)
+        let lastItemIndex = directoryCollectionView.numberOfItems(inSection: .zero)
         let newIndexPath = IndexPath(item: lastItemIndex - 1, section: .zero)
 
         guard
-            let collectionViewCell = collectionView.cellForItem(at: newIndexPath),
-            let cell = collectionViewCell as? MemoHomeTableView
+            let collectionViewCell = directoryCollectionView.cellForItem(at: newIndexPath),
+            let cell = collectionViewCell as? MemoHomeDirectoryContentCell
         else { return }
 
         cell.directoryContentTableView.performBatchUpdates {
             for (before, after) in sortingReulst {
-                cell.directoryContentTableView.moveRow(
-                    at: IndexPath(row: before, section: .zero),
-                    to: IndexPath(row: after, section: .zero)
-                )
+                cell.directoryContentTableView.moveSection(before, toSection: after)
+            }
+        }
+    }
+
+    private func tappedFileCreatePlusButton() {
+        isActiveFileCreatePlusButton.toggle()
+
+        let angle: CGFloat = isActiveFileCreatePlusButton ? .pi / 4 : 0
+
+        UIView.animate(
+            withDuration: 0.3,
+            delay: 0,
+            usingSpringWithDamping: 0.6,
+            initialSpringVelocity: 0.8,
+            options: [.curveEaseInOut]
+        ) { [weak self] in
+            guard let self else { return }
+
+            fileCreatePlusButton.transform = CGAffineTransform(rotationAngle: angle)
+            createFolderButton.alpha = isActiveFileCreatePlusButton ? 1 : 0
+            createPageButton.alpha = isActiveFileCreatePlusButton ? 1 : 0
+
+            if isActiveFileCreatePlusButton {
+                createFolderButton.frame.origin.y -= 70
+                createPageButton.frame.origin.y -= 140
+            } else {
+                createFolderButton.frame.origin.y += 70
+                createPageButton.frame.origin.y += 140
             }
         }
     }
 }
 
-extension MemoHomeViewController: InformationPopupViewDelegate {
-    func rename(fileID: UUID, newName: String) {
-        input.send(.changeFileName(fileID, newName))
-    }
+extension MemoHomeViewController: UICollectionViewDelegateFlowLayout {
+    func collectionView(
+        _ collectionView: UICollectionView,
+        layout collectionViewLayout: UICollectionViewLayout,
+        sizeForItemAt indexPath: IndexPath
+    ) -> CGSize { collectionView.bounds.size }
 }

@@ -72,11 +72,10 @@ final class TableComponentView: PageComponentView<TableComponentContentView, Tab
     // 페이지 뷰 전용 configure
     override func configure(
         component: TableComponent,
-        input subject: PassthroughSubject<MemoPageViewInput, Never>,
-        isReadOnly: Bool
+        input subject: PassthroughSubject<MemoPageViewInput, Never>
     ) {
 
-        super.configure(component: component, input: subject, isReadOnly: isReadOnly)
+        super.configure(component: component, input: subject)
 
         componentContentView.configure(
             content: component.componentDetail,
@@ -85,28 +84,24 @@ final class TableComponentView: PageComponentView<TableComponentContentView, Tab
             componentID: componentID
         )
 
-        if isReadOnly {
-            snapshotButton.removeFromSuperview()
-            captureButton.removeFromSuperview()
-        } else {
-            captureButton.throttleTapPublisher()
-                .sink { [weak self] _ in
-                    guard let self else { return }
-                    let snapshotCapturePopupView = SnapshotCapturePopupView { snapshotDescription in
-                        self.pageInputActionSubject?
-                            .send(.tappedCaptureButton(self.componentID, snapshotDescription))
-                    }
-                    snapshotCapturePopupView.show()
+        captureButton.throttleTapPublisher()
+            .sink { [weak self] _ in
+                guard let self else { return }
+                let snapshotCapturePopupView = SnapshotCapturePopupView { snapshotDescription in
+                    self.pageInputActionSubject?
+                        .send(.tappedCaptureButton(self.componentID, snapshotDescription))
                 }
-                .store(in: &subscriptions)
+                snapshotCapturePopupView.show()
+            }
+            .store(in: &subscriptions)
 
-            snapshotButton.throttleTapPublisher()
-                .sink { [weak self] _ in
-                    guard let self else { return }
-                    pageInputActionSubject?.send(.tappedSnapshotButton(componentID))
-                }
-                .store(in: &subscriptions)
-        }
+        snapshotButton.throttleTapPublisher()
+            .sink { [weak self] _ in
+                guard let self else { return }
+                pageInputActionSubject?.send(.tappedSnapshotButton(componentID))
+            }
+            .store(in: &subscriptions)
+
     }
 
     // 스냅샷 뷰 전용 configure

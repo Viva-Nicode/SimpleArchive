@@ -25,7 +25,7 @@ class PopupView: UIView, PopupViewDetailConfigurable {
     let alertContainer: UIStackView = {
         let alertContainer = UIStackView()
         alertContainer.isLayoutMarginsRelativeArrangement = true
-        alertContainer.layoutMargins = .init(top: 20, left: 20, bottom: 20, right: 20)
+        alertContainer.layoutMargins = UIEdgeInsets(top: 20, left: 20, bottom: 20, right: 20)
         alertContainer.axis = .vertical
         alertContainer.spacing = 20
         alertContainer.backgroundColor = .white

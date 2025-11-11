@@ -11,8 +11,8 @@ struct DormantBoxCoreDataRepository: DormantBoxCoreDataRepositoryType {
 
     func fetchDormantBoxDirectory() -> AnyPublisher<MemoDirectoryModel, Error> {
         let dormantBoxID = SystemDirectories.dormantBoxDirectory.getId()!
-
         let fetchRequest = MemoDirectoryEntity.findDirectoryEntityById(id: dormantBoxID)
+
         return coredataStack.fetch(fetchRequest) { $0.convertToModel() }
             .map { $0.first! as! MemoDirectoryModel }
             .eraseToAnyPublisher()
@@ -33,6 +33,16 @@ struct DormantBoxCoreDataRepository: DormantBoxCoreDataRepositoryType {
             fetchRemoveTargetPageResult.first!.containingDirectory
                 .removeFromPages(fetchRemoveTargetPageResult.first!)
             fetchMainDirectoryEntityResult.first!.addToPages(fetchRemoveTargetPageResult.first!)
+        }
+    }
+
+    func permanentRemoveFile(pageID: UUID) -> AnyPublisher<Void, Error> {
+        coredataStack.update { ctx in
+            let fetchRequest = MemoPageEntity.findPageById(id: pageID)
+            if let fetchResult = try? ctx.fetch(fetchRequest).first {
+                fetchResult.containingDirectory.removeFromPages(fetchResult)
+                ctx.delete(fetchResult)
+            }
         }
     }
 }

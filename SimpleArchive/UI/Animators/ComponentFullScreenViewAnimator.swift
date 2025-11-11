@@ -54,11 +54,6 @@ final class ComponentFullScreenViewAnimator: NSObject, UIViewControllerAnimatedT
         self.firstViewController = firstViewController
         self.secondViewController = secondViewController
 
-        if firstViewController.viewModel.isReadOnly {
-            redCircle.backgroundColor = .systemGray5
-            yellowCircle.backgroundColor = .systemGray5
-        }
-
         guard
             let window = firstViewController.view.window ?? secondViewController.getView().window,
             let selectedCell = firstViewController.selectedPageComponentCell
@@ -333,10 +328,8 @@ final class ComponentFullScreenViewAnimator: NSObject, UIViewControllerAnimatedT
                     toolBarView.frame = self.toolBarViewRect
                     self.redCircle.frame = self.redCircleRect
 
-                    if !self.firstViewController.viewModel.isReadOnly {
-                        self.redCircle.backgroundColor = UIColor(red: 0.99, green: 0.27, blue: 0.27, alpha: 1)
-                        self.yellowCircle.backgroundColor = UIColor(red: 1.0, green: 0.69, blue: 0.14, alpha: 1)
-                    }
+                    self.redCircle.backgroundColor = UIColor(red: 0.99, green: 0.27, blue: 0.27, alpha: 1)
+                    self.yellowCircle.backgroundColor = UIColor(red: 1.0, green: 0.69, blue: 0.14, alpha: 1)
 
                     self.yellowCircle.frame = self.yellowCircleRect
                     self.greenCircle.frame = self.greenCircleRect

@@ -1,7 +1,7 @@
-import UIKit
 import Combine
+import UIKit
 
-@MainActor class DormantBoxViewModel: NSObject, ViewModelType {
+@MainActor final class DormantBoxViewModel: NSObject, ViewModelType {
 
     typealias Input = DormantBoxViewInput
     typealias Output = DormantBoxViewOutput
@@ -34,21 +34,30 @@ import Combine
             guard let self else { return }
 
             switch event {
-            case .viewDidLoad:
-                fetchDormantBoxDirectory()
+                case .viewDidLoad:
+                    fetchDormantBoxDirectory()
 
-            case .showFileInformation(let index):
-                let item = dormantBoxDirectory[index]!
-                showFileInformation(file: item)
+                case .showFileInformation(let index):
+                    showFileInformation(index: index)
 
-            case .restoreFile(let index):
-                let item = dormantBoxDirectory[index]!
-                restoreFile(file: item)
+                case .restoreFile(let index):
+                    restoreFile(file: dormantBoxDirectory[index]!)
 
-            case .moveToPage(let index):
-                moveToPage(followingPageIndex: index)
+                case .willRemovePageFromDormantBox(let id):
+                    dormantBoxCoredataRepository.permanentRemoveFile(pageID: id)
+                    if let item = dormantBoxDirectory[id],
+                        let page = item.item as? MemoPageModel
+                    {
+                        page.parentDirectory?.removeChildItemByID(with: page.id)
+                        page.parentDirectory = nil
+                        page.getComponents
+                            .compactMap { $0 as? AudioComponent }
+                            .forEach { $0.removeAudioFilesFromDisk() }
+                        output.send(.didRemovePageFromDormantBox(item.index))
+                    }
             }
-        }.store(in: &subscriptions)
+        }
+        .store(in: &subscriptions)
 
         return output.eraseToAnyPublisher()
     }
@@ -56,33 +65,22 @@ import Combine
     private func fetchDormantBoxDirectory() {
         dormantBoxCoredataRepository.fetchDormantBoxDirectory()
             .sink(
-            receiveCompletion: { _ in },
-            receiveValue: { [weak self] value in
-                guard let self else { return }
-                dormantBoxDirectory = value
-                output.send(.didfetchMemoData)
-            }
-        ).store(in: &subscriptions)
+                receiveCompletion: { _ in },
+                receiveValue: { [weak self] dormantBoxDirectory in
+                    guard let self else { return }
+                    self.dormantBoxDirectory = dormantBoxDirectory
+                    output.send(.didfetchMemoData(dormantBoxDirectory.getChildItemSize()))
+                }
+            )
+            .store(in: &subscriptions)
     }
 
-    private func moveToPage(followingPageIndex: Int) {
-        guard
-            let memoComponentCoreDataRepository = DIContainer.shared.resolve(MemoComponentCoreDataRepository.self),
-            let componentFactory = DIContainer.shared.resolve(ComponentFactory.self),
-            let followingPage = dormantBoxDirectory[followingPageIndex] as? MemoPageModel
-            else { fatalError("can not found Dependency") }
-
-        let memoPageViewModel = MemoPageViewModel(
-            componentFactory: componentFactory,
-            memoComponentCoredataReposotory: memoComponentCoreDataRepository,
-            page: followingPage,
-            isReadOnly: true)
-
-        output.send(.getMemoPageViewModel(memoPageViewModel))
-    }
-
-    private func showFileInformation(file: any StorageItem) {
-        output.send(.showFileInformation(file))
+    private func showFileInformation(index: Int) {
+        if let page = dormantBoxDirectory[index],
+            let pageInfo = page.getFileInformation() as? PageInformation
+        {
+            output.send(.showFileInformation(pageInfo))
+        }
     }
 
     private func restoreFile(file: any StorageItem) {
@@ -96,18 +94,20 @@ import Combine
 
 extension DormantBoxViewModel: UITableViewDataSource {
 
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    func numberOfSections(in tableView: UITableView) -> Int {
         dormantBoxDirectory.getChildItemSize()
     }
 
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int { 1 }
+
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let storageItem = dormantBoxDirectory[indexPath.row]!
-        let cell = tableView.dequeueReusableCell(
-            withIdentifier: MemoTableRowView.cellId,
-            for: indexPath) as! MemoTableRowView
+        let storageItem = dormantBoxDirectory[indexPath.section]!
+        let cell =
+            tableView.dequeueReusableCell(
+                withIdentifier: DirectoryFileItemRowView.reuseIdentifier,
+                for: indexPath) as! DirectoryFileItemRowView
 
         cell.configure(with: storageItem)
         return cell
     }
 }
-

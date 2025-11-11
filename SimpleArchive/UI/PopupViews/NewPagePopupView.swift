@@ -1,10 +1,15 @@
 import Combine
 import UIKit
 
-class NewPagePopupView: PopupView {
+final class NewPagePopupView: PopupView {
 
     private let subject: PassthroughSubject<MemoHomeSubViewInput, Never>
-    private var singleComponentCheckBox = CheckboxButton(title: "Single Component")
+    private var singleComponentCheckBox = CheckboxButton(title: "Single Note Page")
+    private let checkBoxContainerView: UIStackView = {
+        $0.axis = .horizontal
+        $0.alignment = .center
+        return $0
+    }(UIStackView())
     private var kindofComponentItems: [ComponentType] = ComponentType.allCases
     private var selectedComponentType: ComponentType?
     private var selectedIndexPath: IndexPath?
@@ -24,7 +29,7 @@ class NewPagePopupView: PopupView {
             attributes: [.foregroundColor: UIColor.systemGray])
         return pageNameTextField
     }()
-    private let confirmButton: DynamicBackgrounColordButton = {
+    private let confirmButton: UIButton = {
         let confirmButton = DynamicBackgrounColordButton()
         confirmButton.accessibilityIdentifier = "newPageConfirmButton"
         confirmButton.setBackgroundColor(.systemBlue, for: .normal)
@@ -43,9 +48,12 @@ class NewPagePopupView: PopupView {
 
         return confirmButton
     }()
+
     private let collectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .vertical
+        layout.minimumLineSpacing = 0
+        layout.minimumInteritemSpacing = 0
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
         collectionView.isHidden = true
         collectionView.backgroundColor = .white
@@ -83,7 +91,11 @@ class NewPagePopupView: PopupView {
 
         alertContainer.addArrangedSubview(titleLabel)
         alertContainer.addArrangedSubview(pageNameTextField)
-        alertContainer.addArrangedSubview(singleComponentCheckBox)
+
+        checkBoxContainerView.addArrangedSubview(singleComponentCheckBox)
+        checkBoxContainerView.addArrangedSubview(UIView.spacerView)
+
+        alertContainer.addArrangedSubview(checkBoxContainerView)
         alertContainer.addArrangedSubview(collectionView)
         alertContainer.addArrangedSubview(confirmButton)
 
@@ -99,7 +111,7 @@ class NewPagePopupView: PopupView {
                     if let selectedIndexPath,
                         let item = collectionView.cellForItem(at: selectedIndexPath) as? ComponentItemView
                     {
-                        item.toggle()
+                        item.toggleIsSelect()
                     }
                     selectedIndexPath = nil
                 }
@@ -108,9 +120,9 @@ class NewPagePopupView: PopupView {
         pageNameTextField.delegate = self
 
         confirmButton.throttleTapPublisher()
-            .sink { _ in
-                self.subject.send(
-                    .didCreatedNewPage(self.pageNameTextField.text ?? "new Page", self.selectedComponentType))
+            .sink { [weak self] _ in
+                guard let self else { return }
+                subject.send(.didCreatedNewPage(pageNameTextField.text ?? "new Page", selectedComponentType))
                 self.dismiss()
             }
             .store(in: &subscriptions)
@@ -153,23 +165,21 @@ extension NewPagePopupView: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
 
         if let selectedItem = collectionView.cellForItem(at: indexPath) as? ComponentItemView {
-            selectedItem.toggle()
+            selectedItem.toggleIsSelect()
 
             if selectedIndexPath == indexPath {
                 selectedIndexPath = nil
                 selectedComponentType = nil
-
             } else {
                 if let selectedIndexPath {
                     if let item = collectionView.cellForItem(at: selectedIndexPath) as? ComponentItemView {
-                        item.toggle()
+                        item.toggleIsSelect()
                     }
                 }
                 selectedComponentType = kindofComponentItems[indexPath.item]
                 selectedIndexPath = indexPath
             }
         }
-
         updateConfirmButton()
     }
 }
@@ -178,9 +188,7 @@ extension NewPagePopupView: UICollectionViewDelegateFlowLayout {
     func collectionView(
         _ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout,
         sizeForItemAt indexPath: IndexPath
-    ) -> CGSize {
-        CGSize(width: collectionView.frame.width / 3, height: collectionView.frame.width / 3)
-    }
+    ) -> CGSize { CGSize(width: collectionView.frame.width / 3, height: collectionView.frame.width / 3) }
 
     func collectionView(
         _ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout,
@@ -191,56 +199,4 @@ extension NewPagePopupView: UICollectionViewDelegateFlowLayout {
         _ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout,
         minimumLineSpacingForSectionAt section: Int
     ) -> CGFloat { .zero }
-}
-
-class ComponentItemView: UICollectionViewCell {
-
-    static let reuseIdentifier = "ComponentItemView"
-    var kindOfItemType: ComponentType?
-
-    var itemSymbol = UIImageView()
-
-    private let stackView: UIStackView = {
-        let stackView = UIStackView()
-        stackView.axis = .vertical
-        stackView.alignment = .center
-        stackView.spacing = 5
-        return stackView
-    }()
-
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        self.setup()
-    }
-
-    required init(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-
-    private func setup() {
-        contentView.addSubview(stackView)
-
-        stackView.translatesAutoresizingMaskIntoConstraints = false
-        stackView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20).isActive = true
-        stackView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -20).isActive = true
-        stackView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20).isActive = true
-        stackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20).isActive = true
-
-        itemSymbol.contentMode = .scaleAspectFill
-        stackView.addArrangedSubview(itemSymbol)
-
-    }
-
-    func configure(with: ComponentType) {
-        itemSymbol.image = UIImage(systemName: with.getSymbolSystemName)
-        itemSymbol.tintColor = .systemGray4
-    }
-
-    func toggle() {
-        if itemSymbol.tintColor == .systemGray4 {
-            itemSymbol.tintColor = .systemPink
-        } else {
-            itemSymbol.tintColor = .systemGray4
-        }
-    }
 }

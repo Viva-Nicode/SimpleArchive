@@ -5,7 +5,7 @@ enum MemoHomeViewInput {
     case didTappedDirectoryPath(UUID)
     case getDormantBoxViewModel
     case didTappedFixedPageRow(Int)
-    case didPerformDropOperationInFixedTable([MemoPageModel])
+    case didPerformDropOperationInFixedTable([UUID])
     case changeFileName(UUID, String)
     case changeFileSortBy(SortCriterias)
     case toggleAscendingOrder
@@ -13,20 +13,21 @@ enum MemoHomeViewInput {
 
 enum MemoHomeSubViewInput {
     case didCreatedNewDirectory(String)
-    case didCreatedNewPage(String,ComponentType?)
+    case didCreatedNewPage(String, ComponentType?)
     case didTappedDirectoryRow(Int)
     case didTappedPageRow(Int)
     case showFileInformation(Int)
     case removeFile(Int)
-    case didPerformDropOperationInHomeTable([MemoPageModel])
+    case didPerformDropOperationInHomeTable([UUID])
 }
 
 enum MemoHomeViewOutput {
-    case didfetchMemoData(UUID, SortCriterias)
+    case didfetchMemoData(UUID, SortCriterias, FixedFileCollectionViewDataSource, Int)
     case insertRowToTable(Int, [Int])
-    case didTappedDirectoryPath([Int], SortCriterias)
-    case didTappedDirectoryRow(String, UUID, SortCriterias)
+    case didTappedDirectoryPath([Int], SortCriterias, Int)
+    case didTappedDirectoryRow(String, UUID, SortCriterias, Int)
     case showFileInformation(StorageItemInformationType)
+    case didRemoveFile(Int)
     case moveDoramntBoxView(DormantBoxViewModel)
     case getMemoPageViewModel(MemoPageViewModel)
     case presentSingleTextEditorComponentPage(SingleTextEditorPageViewModel)
@@ -43,8 +44,8 @@ enum MemoHomeViewModelError: MessageErrorType {
 
     var errorMessage: String {
         switch self {
-        case .canNotLoadMemoData:
-            "An error occurred while loading the memo data."
+            case .canNotLoadMemoData:
+                "An error occurred while loading the memo data."
         }
     }
 }

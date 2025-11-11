@@ -27,7 +27,6 @@ protocol PageComponent: AnyObject, Identifiable, Codable {
     func getCollectionViewComponentCell(
         _ collectionView: UICollectionView,
         _ indexPath: IndexPath,
-        isReadOnly: Bool,
         subject: PassthroughSubject<MemoPageViewInput, Never>
     ) -> UICollectionViewCell
 }
@@ -70,20 +69,20 @@ enum ComponentType: String, Codable, CaseIterable {
     var getTitle: String {
         switch self {
             case .text:
-                "TextMemo"
+                "Text"
 
             case .table:
-                "TableMemo"
+                "Table"
 
             case .audio:
-                "AudioMemo"
+                "Audio"
         }
     }
 
     var getSymbolSystemName: String {
         switch self {
             case .text:
-                "note.text.badge.plus"
+                "note.text"
 
             case .table:
                 "tablecells"

@@ -17,8 +17,6 @@ import ZIPFoundation
     private var audioTrackController: AudioTrackControllerType?
     private var audioDownloader: AudioDownloaderType = AudioDownloader()
     private var audioContentTableDataSource: AudioComponentDataSource
-    
-    private var configuredCells:[AudioTableRowView] = []
 
     init(
         coredataReposotory: MemoSingleComponentRepositoryType,
@@ -297,18 +295,11 @@ import ZIPFoundation
     }
 
     private func removeAudioTrack(trackIndex: Int) {
-        audioComponent.persistenceState = .unsaved(isMustToStoreSnapshot: false)
-
         let currentPlayingAudioTrackID = audioComponent.detail[audioContentTableDataSource.nowPlayingAudioIndex]?.id
-        let fileManager = FileManager.default
-        let documentsDir = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
-        let targetTrack = audioComponent.detail.tracks.remove(at: trackIndex)
-        let trackURL = documentsDir.appendingPathComponent(
-            "SimpleArchiveMusics/\(targetTrack.id).\(targetTrack.fileExtension)")
 
-        try? fileManager.removeItem(at: trackURL)
-
+        audioComponent.removeAudio(with: trackIndex)
         audioContentTableDataSource.tracks = audioComponent.detail.tracks
+        audioComponent.persistenceState = .unsaved(isMustToStoreSnapshot: false)
 
         if audioContentTableDataSource.nowPlayingAudioIndex != nil {
             if audioComponent.detail.tracks.isEmpty {

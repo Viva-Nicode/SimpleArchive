@@ -6,7 +6,6 @@ extension TextEditorComponent {
     func getCollectionViewComponentCell(
         _ collectionView: UICollectionView,
         _ indexPath: IndexPath,
-        isReadOnly: Bool,
         subject: PassthroughSubject<MemoPageViewInput, Never>
     ) -> UICollectionViewCell {
 
@@ -17,7 +16,7 @@ extension TextEditorComponent {
                 for: indexPath
             ) as! TextEditorComponentView
 
-        cell.configure(component: self, input: subject, isReadOnly: isReadOnly)
+        cell.configure(component: self, input: subject)
 
         return cell
     }
@@ -49,7 +48,6 @@ extension TableComponent {
     func getCollectionViewComponentCell(
         _ collectionView: UICollectionView,
         _ indexPath: IndexPath,
-        isReadOnly: Bool,
         subject: PassthroughSubject<MemoPageViewInput, Never>
     ) -> UICollectionViewCell {
         let cell =
@@ -59,7 +57,7 @@ extension TableComponent {
                 for: indexPath
             ) as! TableComponentView
 
-        cell.configure(component: self, input: subject, isReadOnly: false)
+        cell.configure(component: self, input: subject)
 
         return cell
     }
@@ -92,7 +90,6 @@ extension AudioComponent {
     func getCollectionViewComponentCell(
         _ collectionView: UICollectionView,
         _ indexPath: IndexPath,
-        isReadOnly: Bool,
         subject: PassthroughSubject<MemoPageViewInput, Never>
     ) -> UICollectionViewCell {
         let cell =
@@ -102,7 +99,7 @@ extension AudioComponent {
                 for: indexPath
             ) as! AudioComponentView
 
-        cell.configure(component: self, input: subject, isReadOnly: false)
+        cell.configure(component: self, input: subject)
 
         return cell
     }

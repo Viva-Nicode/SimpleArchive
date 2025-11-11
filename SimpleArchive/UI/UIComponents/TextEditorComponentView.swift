@@ -76,18 +76,12 @@ final class TextEditorComponentView: PageComponentView<UITextView, TextEditorCom
 
     override func configure(
         component: TextEditorComponent,
-        input subject: PassthroughSubject<MemoPageViewInput, Never>,
-        isReadOnly: Bool
+        input subject: PassthroughSubject<MemoPageViewInput, Never>
     ) {
-        super.configure(component: component, input: subject, isReadOnly: isReadOnly)
+        super.configure(component: component, input: subject)
 
         componentContentView.text = component.detail
-
-        if isReadOnly {
-            componentContentView.isEditable = false
-            snapshotButton.removeFromSuperview()
-            captureButton.removeFromSuperview()
-        } else {
+        
             component
                 .assignDetail(subject: detailAssignSubject)
                 .store(in: &subscriptions)
@@ -111,7 +105,7 @@ final class TextEditorComponentView: PageComponentView<UITextView, TextEditorCom
                     pageInputActionSubject?.send(.tappedSnapshotButton(componentID))
                 }
                 .store(in: &subscriptions)
-        }
+        
 
         if component.isMinimumHeight {
             componentContentView.alpha = 0

@@ -33,20 +33,24 @@ final class AudioComponentContentView: UIView {
     }(UIStackView())
     private(set) var separator: UILabel = {
         $0.text = "|"
+        $0.textColor = .gray
         return $0
     }(UILabel())
     private(set) var sortByNameButton: UIButton = {
         $0.setTitle("name", for: .normal)
+        $0.setTitleColor(.gray, for: .normal)
         $0.titleLabel?.font = .systemFont(ofSize: 14)
         return $0
     }(UIButton())
     private(set) var sortBycreateButton: UIButton = {
         $0.setTitle("create date", for: .normal)
+        $0.setTitleColor(.gray, for: .normal)
         $0.titleLabel?.font = .systemFont(ofSize: 14)
         return $0
     }(UIButton())
     private(set) var totalAudioCountLabel: UILabel = {
         $0.font = .systemFont(ofSize: 15)
+        $0.textColor = .label
         return $0
     }(UILabel())
     private(set) var audioAddButton: UIButton = {
@@ -54,6 +58,7 @@ final class AudioComponentContentView: UIView {
         let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .regular)
         let image = UIImage(systemName: "plus.circle", withConfiguration: config)
         button.setImage(image, for: .normal)
+        button.tintColor = .label
         button.translatesAutoresizingMaskIntoConstraints = false
         button.widthAnchor.constraint(equalToConstant: 44).isActive = true
         return button
@@ -63,6 +68,7 @@ final class AudioComponentContentView: UIView {
         let config = UIImage.SymbolConfiguration(pointSize: 18, weight: .regular)
         let image = UIImage(systemName: "folder.badge.plus", withConfiguration: config)
         button.setImage(image, for: .normal)
+        button.tintColor = .label
         button.translatesAutoresizingMaskIntoConstraints = false
         button.widthAnchor.constraint(equalToConstant: 44).isActive = true
         return button
@@ -103,20 +109,11 @@ final class AudioComponentContentView: UIView {
     private func setupUI() {
         audioTrackTableView.backgroundColor = .clear
 
-        sortBycreateButton.setTitleColor(traitCollection.userInterfaceStyle == .dark ? .lightGray : .gray, for: .normal)
-        sortByNameButton.setTitleColor(traitCollection.userInterfaceStyle == .dark ? .lightGray : .gray, for: .normal)
-
-        totalAudioCountLabel.textColor = traitCollection.userInterfaceStyle == .dark ? .lightGray : .gray
-        separator.textColor = traitCollection.userInterfaceStyle == .dark ? .lightGray : .gray
-
         addSubview(audioComponentToolBarStackView)
         audioComponentToolBarStackView.addArrangedSubview(totalAudioCountLabel)
         audioComponentToolBarStackView.addArrangedSubview(UIView.spacerView)
         audioComponentToolBarStackView.addArrangedSubview(audioAddFromFileSystemButton)
         audioComponentToolBarStackView.addArrangedSubview(audioAddButton)
-
-        audioAddFromFileSystemButton.tintColor = traitCollection.userInterfaceStyle == .dark ? .lightGray : .gray
-        audioAddButton.tintColor = traitCollection.userInterfaceStyle == .dark ? .lightGray : .gray
 
         audioAddButton.addAction(
             UIAction { [weak self] _ in
@@ -143,18 +140,16 @@ final class AudioComponentContentView: UIView {
         sortByNameButton.addAction(
             UIAction { [weak self] _ in
                 guard let self else { return }
-                sortBycreateButton.setTitleColor(
-                    traitCollection.userInterfaceStyle == .dark ? .lightGray : .gray, for: .normal)
-                sortByNameButton.setTitleColor(.white, for: .normal)
+                sortBycreateButton.setTitleColor(.gray, for: .normal)
+                sortByNameButton.setTitleColor(.label, for: .normal)
                 dispatcher?.changeSortByAudioTracks(componentID: componentID, sortBy: .name)
             }, for: .touchUpInside)
 
         sortBycreateButton.addAction(
             UIAction { [weak self] _ in
                 guard let self else { return }
-                sortByNameButton.setTitleColor(
-                    traitCollection.userInterfaceStyle == .dark ? .lightGray : .gray, for: .normal)
-                sortBycreateButton.setTitleColor(.white, for: .normal)
+                sortByNameButton.setTitleColor(.gray, for: .normal)
+                sortBycreateButton.setTitleColor(.label, for: .normal)
                 dispatcher?.changeSortByAudioTracks(componentID: componentID, sortBy: .createDate)
             }, for: .touchUpInside)
 
@@ -224,10 +219,10 @@ final class AudioComponentContentView: UIView {
 
         switch audioComponent.detail.sortBy {
             case .name:
-                sortByNameButton.setTitleColor(.white, for: .normal)
+                sortByNameButton.setTitleColor(.label, for: .normal)
 
             case .createDate:
-                sortBycreateButton.setTitleColor(.white, for: .normal)
+                sortBycreateButton.setTitleColor(.label, for: .normal)
 
             case .manual:
                 break
@@ -250,26 +245,25 @@ final class AudioComponentContentView: UIView {
 
         if let datasource = audioComponent.datasource {
             audioTrackTableView.dataSource = datasource
-            if let visibleRowsIndexPaths = audioTrackTableView.indexPathsForVisibleRows {
-                audioTrackTableView.reloadRows(at: visibleRowsIndexPaths, with: .none)
-            }
         } else {
             let datasource = AudioComponentDataSource(
                 tracks: audioComponent.detail.tracks,
                 sortBy: audioComponent.detail.sortBy)
+
             audioComponent.datasource = datasource
             audioTrackTableView.dataSource = datasource
         }
+        audioTrackTableView.reloadData()
 
         self.audioTrackTotal = audioComponent.detail.tracks.count
         totalAudioCountLabel.text = "\(audioTrackTotal) audios in total"
 
         switch audioComponent.detail.sortBy {
             case .name:
-                sortByNameButton.setTitleColor(.white, for: .normal)
+                sortByNameButton.setTitleColor(.label, for: .normal)
 
             case .createDate:
-                sortBycreateButton.setTitleColor(.white, for: .normal)
+                sortBycreateButton.setTitleColor(.label, for: .normal)
 
             case .manual:
                 break
@@ -368,24 +362,14 @@ extension AudioComponentContentView: UITableViewDelegate {
 }
 
 extension AudioComponentContentView: UITableViewDragDelegate {
-
-    func tableView(_ tableView: UITableView, itemsForBeginning session: any UIDragSession, at indexPath: IndexPath)
-        -> [UIDragItem]
-    {
+    func tableView(
+        _ tableView: UITableView,
+        itemsForBeginning session: any UIDragSession,
+        at indexPath: IndexPath
+    ) -> [UIDragItem] {
         let dragItem = UIDragItem(itemProvider: NSItemProvider())
         dragItem.localObject = indexPath.row
         return [dragItem]
-    }
-
-    func tableView(
-        _ tableView: UITableView, dropSessionDidUpdate session: any UIDropSession,
-        withDestinationIndexPath destinationIndexPath: IndexPath?
-    ) -> UITableViewDropProposal {
-        if session.localDragSession != nil {
-            return UITableViewDropProposal(operation: .move, intent: .insertAtDestinationIndexPath)
-        } else {
-            return UITableViewDropProposal(operation: .cancel)
-        }
     }
 }
 
@@ -411,10 +395,20 @@ extension AudioComponentContentView: UITableViewDropDelegate {
                 toRowAt: IndexPath(item: max(0, destinationIndexPath.item), section: destinationIndexPath.section)
             )
 
-            sortBycreateButton.setTitleColor(
-                traitCollection.userInterfaceStyle == .dark ? .lightGray : .gray, for: .normal)
-            sortByNameButton.setTitleColor(
-                traitCollection.userInterfaceStyle == .dark ? .lightGray : .gray, for: .normal)
+            sortBycreateButton.setTitleColor(.gray, for: .normal)
+            sortByNameButton.setTitleColor(.gray, for: .normal)
+        }
+    }
+
+    func tableView(
+        _ tableView: UITableView,
+        dropSessionDidUpdate session: any UIDropSession,
+        withDestinationIndexPath destinationIndexPath: IndexPath?
+    ) -> UITableViewDropProposal {
+        if session.localDragSession != nil {
+            return UITableViewDropProposal(operation: .move, intent: .insertAtDestinationIndexPath)
+        } else {
+            return UITableViewDropProposal(operation: .cancel)
         }
     }
 }

@@ -1,6 +1,7 @@
 import UIKit
 
 final class CheckboxButton: UIButton {
+    
     private(set) var isChecked = false {
         didSet { updateAppearance() }
     }
@@ -15,11 +16,10 @@ final class CheckboxButton: UIButton {
         self.title = title
         super.init(frame: .zero)
         configuration = .plain()
+        configuration?.contentInsets = .zero
         tintColor = .black
         addTarget(self, action: #selector(toggle), for: .touchUpInside)
         updateAppearance()
-        accessibilityTraits.insert(.button)
-        accessibilityLabel = "Checkbox"
     }
 
     required init?(coder: NSCoder) { fatalError() }

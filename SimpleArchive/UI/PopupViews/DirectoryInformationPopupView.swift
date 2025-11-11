@@ -1,20 +1,14 @@
-import UIKit
 import Combine
+import UIKit
 
 enum InformationPopupViewState {
     case information, rename
-}
-
-protocol InformationPopupViewDelegate {
-    func rename(fileID: UUID, newName: String)
 }
 
 class DirectoryInformationPopupView: PopupView {
 
     private let directoryInformation: DirectoryInformation
     private var state: InformationPopupViewState = .information
-    var delegate: InformationPopupViewDelegate?
-    let isReadOnly: Bool
 
     private let titleView: UIStackView = {
         let titleView = UIStackView()
@@ -167,7 +161,8 @@ class DirectoryInformationPopupView: PopupView {
         confirmButton.tintColor = .white
         confirmButton.layer.cornerRadius = 5
         confirmButton.configuration = .plain()
-        confirmButton.configuration?.contentInsets = NSDirectionalEdgeInsets(top: 12, leading: 0, bottom: 12, trailing: 0)
+        confirmButton.configuration?.contentInsets = NSDirectionalEdgeInsets(
+            top: 12, leading: 0, bottom: 12, trailing: 0)
 
         var titleAttr = AttributedString.init("Yes, Change!")
         titleAttr.font = .systemFont(ofSize: 15, weight: .regular)
@@ -188,9 +183,8 @@ class DirectoryInformationPopupView: PopupView {
         return UIButton(configuration: buttonConfiguration)
     }()
 
-    init(directoryInformation: DirectoryInformation, isReadOnly: Bool = false) {
+    init(directoryInformation: DirectoryInformation) {
         self.directoryInformation = directoryInformation
-        self.isReadOnly = isReadOnly
         super.init()
     }
 
@@ -204,7 +198,8 @@ class DirectoryInformationPopupView: PopupView {
         directoryNameLabel.text = directoryInformation.name
         filePathLabel.text = directoryInformation.filePath
         createDateLabel.text = directoryInformation.created.formattedDate
-        containedFileCountLabel.text = "Contains \(directoryInformation.containedDirectoryCount) folders and \(directoryInformation.containedPageCount) pages."
+        containedFileCountLabel.text =
+            "Contains \(directoryInformation.containedDirectoryCount) folders and \(directoryInformation.containedPageCount) pages."
 
         titleView.addArrangedSubview(titleIconView)
         titleView.addArrangedSubview(informationTitleLabel)
@@ -213,12 +208,10 @@ class DirectoryInformationPopupView: PopupView {
 
         directoryNameHorizontalStackView.addArrangedSubview(directoryNameLabel)
 
-        if !isReadOnly {
-            directoryNameHorizontalStackView.addArrangedSubview(renamePencilButton)
-            renamePencilButton.throttleUIViewTapGesturePublisher()
-                .sink { _ in self.transformToDirectoryRenameViewWithAnimation() }
-                .store(in: &subscriptions)
-        }
+        directoryNameHorizontalStackView.addArrangedSubview(renamePencilButton)
+        renamePencilButton.throttleUIViewTapGesturePublisher()
+            .sink { _ in self.transformToDirectoryRenameViewWithAnimation() }
+            .store(in: &subscriptions)
 
         directoryNameVerticalStackView.addArrangedSubview(directoryNameHorizontalStackView)
         alertContainer.addArrangedSubview(directoryNameVerticalStackView)
@@ -245,22 +238,27 @@ class DirectoryInformationPopupView: PopupView {
             .sink { _ in self.transformToDirectoryRenameViewWithAnimation() }
             .store(in: &subscriptions)
 
+    }
+
+    var confirmButtonPublisher: AnyPublisher<(UUID?, String?), Never> {
         confirmButton.throttleTapPublisher()
-            .sink { _ in
-            self.delegate?.rename(
-                fileID: self.directoryInformation.id,
-                newName: self.newNameTextField.text!)
-            self.dismiss()
-        }.store(in: &subscriptions)
+            .map { [weak self] _ in
+                self?.dismiss()
+                return (self?.directoryInformation.id, self?.newNameTextField.text)
+            }
+            .eraseToAnyPublisher()
     }
 
     func transformToDirectoryRenameViewWithAnimation() {
         UIView.animate(withDuration: 0.3) { [weak self] in
             guard let self else { return }
 
-            [informationTitleLabel, renameTitleLabel, directoryNameVerticalStackView,
+            [
+                informationTitleLabel, renameTitleLabel, directoryNameVerticalStackView,
                 filePathView, createDateView, containedFileCountLabel,
-                newNameTextField, buttonContainer].forEach {
+                newNameTextField, buttonContainer,
+            ]
+            .forEach {
                 $0.isHidden.toggle()
                 $0.alpha = $0.alpha == 0 ? 1 : 0
             }

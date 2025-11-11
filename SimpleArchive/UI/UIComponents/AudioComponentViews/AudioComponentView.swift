@@ -35,10 +35,9 @@ final class AudioComponentView: PageComponentView<AudioComponentContentView, Aud
     
     override func configure(
         component: AudioComponent,
-        input subject: PassthroughSubject<MemoPageViewInput, Never>,
-        isReadOnly: Bool
+        input subject: PassthroughSubject<MemoPageViewInput, Never>
     ) {
-        super.configure(component: component, input: subject, isReadOnly: isReadOnly)
+        super.configure(component: component, input: subject)
         
         componentContentView.configure(
             content: component,
