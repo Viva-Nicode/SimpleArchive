@@ -253,62 +253,62 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
             guard let self else { return }
 
             switch result {
-                case let .didfetchMemoData(rootDirectoryID, sortCriteria, datasource, fileCount):
+                case let .didFetchMemoData(rootDirectoryID, sortCriteria, datasource, fileCount):
                     setupUI(fixedFileCollectionViewDataSource: datasource)
                     setupConstraints()
                     updateDirectoryInfo(fileCount: fileCount, sortCriteria: sortCriteria)
                     setupActions(rootDirectoryID)
 
-                case .insertRowToTable(let collectionCellIndex, let tableCellIndices):
+                case .didInsertRowToHomeTable(let collectionCellIndex, let tableCellIndices):
                     insertRowToTable(collectionCellIndex: collectionCellIndex, tableCellIndices: tableCellIndices)
 
-                case .didRemoveFile(let removedFileIndex):
+                case .didMoveFileToDormantBox(let removedFileIndex):
                     removeRowToTable(removedFileIndex: removedFileIndex)
 
-                case let .didPerformDropOperationInHomeTable(indexOfCell, insertRowIndexPaths, deleteRowIndexPaths):
+                case let .didAppendPageToHomeTable(indexOfCell, insertRowIndexPaths, deleteRowIndexPaths):
                     didPerformDropOperationInHomeTable(
                         indexOfCell: indexOfCell,
                         insertRowIndexPaths: insertRowIndexPaths,
                         deleteRowIndexPaths: deleteRowIndexPaths)
 
-                case let .didPerformDropOperationInFixedTable(indexOfCell, insertRowIndexPaths, deleteRowIndexPaths):
+                case let .didAppendPageToFixedTable(indexOfCell, insertRowIndexPaths, deleteRowIndexPaths):
                     didPerformDropOperationInFixedTable(
                         indexOfCell: indexOfCell,
                         insertRowIndexPaths: insertRowIndexPaths,
                         deleteRowIndexPaths: deleteRowIndexPaths)
 
-                case let .didTappedDirectoryPath(removedIndexList, sortCriteria, fileCount):
+                case let .didMovePreviousDirectoryPath(removedIndexList, sortCriteria, fileCount):
                     updateDirectoryInfo(fileCount: fileCount, sortCriteria: sortCriteria)
                     movePreviousDirectoryTappedLabel(removedIndexList: removedIndexList)
 
-                case let .didTappedDirectoryRow(directoryName, directoryID, sortCriteria, fileCount):
+                case let .didMoveToFollowingDirectory(directoryName, directoryID, sortCriteria, fileCount):
                     updateDirectoryInfo(fileCount: fileCount, sortCriteria: sortCriteria)
                     moveToNextDirectory(directoryName: directoryName, directoryID: directoryID)
 
-                case .showFileInformation(let fileInformation):
+                case .didPresentFileInformationPopupView(let fileInformation):
                     showFileInformation(for: fileInformation)
 
-                case .moveDoramntBoxView(let vm):
+                case .didNavigateDormantBoxView(let vm):
                     navigationController?.pushViewController(DormantBoxViewController(viewModel: vm), animated: true)
 
-                case .getMemoPageViewModel(let vm):
+                case .didNavigatePageView(let vm):
                     navigationController?.pushViewController(MemoPageViewController(viewModel: vm), animated: true)
 
                 case .didChangedFileName(let newName, let before, let after):
                     changeRowFile(newName: newName, before: before, after: after)
 
-                case .didChangeSortCriteria(let sortingResult):
+                case .didSortDirectoryItems(let sortingResult):
                     resortFileTableRows(sortingResult)
 
-                case .presentSingleTextEditorComponentPage(let vm):
+                case .didNavigateSingleTextEditorComponentPageView(let vm):
                     let singleTextEditorPageViewController = SingleTextEditorPageViewController(viewModel: vm)
                     navigationController?.pushViewController(singleTextEditorPageViewController, animated: true)
 
-                case .presentSingleTableComponentPage(let vm):
+                case .didNavigateSingleTableComponentPageView(let vm):
                     let singleTablePageViewController = SingleTablePageViewController(viewModel: vm)
                     navigationController?.pushViewController(singleTablePageViewController, animated: true)
 
-                case .presentSingleAudioComponentPage(let vm):
+                case .didNavigateSingleAudioComponentPageView(let vm):
                     let singleAudioPageViewController = SingleAudioPageViewController(viewModel: vm)
                     navigationController?.pushViewController(singleAudioPageViewController, animated: true)
             }
@@ -423,7 +423,7 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
             .store(in: &subscriptions)
 
         trashBoxButton.throttleTapPublisher()
-            .sink { _ in self.input.send(.getDormantBoxViewModel) }
+            .sink { _ in self.input.send(.willNavigateDormantBoxView) }
             .store(in: &subscriptions)
 
         createFolderButton.throttleUIViewTapGesturePublisher()
@@ -455,7 +455,7 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
         rootDirectoryLable.throttleUIViewTapGesturePublisher(interval: 0.5)
             .sink { [weak self] _ in
                 guard let self else { return }
-                input.send(.didTappedDirectoryPath(rootDirectoryID))
+                input.send(.willMovePreviousDirectoryPath(rootDirectoryID))
             }
             .store(in: &subscriptions)
 
@@ -463,11 +463,11 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
             .sink { [weak self] _ in
                 guard let self else { return }
                 if sortByNameLabel.textColor == .label {
-                    input.send(.toggleAscendingOrder)
+                    input.send(.willToggleAscendingOrder)
                 } else {
                     sortByNameLabel.textColor = .label
                     sortByCreatedateLabel.textColor = .systemGray4
-                    input.send(.changeFileSortBy(.name))
+                    input.send(.willSortDirectoryItems(.name))
                 }
             }
             .store(in: &subscriptions)
@@ -476,11 +476,11 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
             .sink { [weak self] _ in
                 guard let self else { return }
                 if sortByCreatedateLabel.textColor == .label {
-                    input.send(.toggleAscendingOrder)
+                    input.send(.willToggleAscendingOrder)
                 } else {
                     sortByCreatedateLabel.textColor = .label
                     sortByNameLabel.textColor = .systemGray4
-                    input.send(.changeFileSortBy(.creationDate))
+                    input.send(.willSortDirectoryItems(.creationDate))
                 }
             }
             .store(in: &subscriptions)
@@ -496,7 +496,7 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
         directoryPathLable.throttleUIViewTapGesturePublisher(interval: 0.5)
             .sink { [weak self] _ in
                 guard let self else { return }
-                input.send(.didTappedDirectoryPath(directoryID))
+                input.send(.willMovePreviousDirectoryPath(directoryID))
             }
             .store(in: &subscriptions)
 
@@ -552,7 +552,7 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
                 directoryInformationPopupView.confirmButtonPublisher
                     .sink { [weak self] directoryID, newName in
                         if let directoryID, let newName {
-                            self?.input.send(.changeFileName(directoryID, newName))
+                            self?.input.send(.willChangeFileName(directoryID, newName))
                         }
                     }
                     .store(in: &subscriptions)
@@ -564,7 +564,7 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
                 pageInformationPopupView.confirmButtonPublisher
                     .sink { [weak self] pageID, newName in
                         if let pageID, let newName {
-                            self?.input.send(.changeFileName(pageID, newName))
+                            self?.input.send(.willChangeFileName(pageID, newName))
                         }
                     }
                     .store(in: &subscriptions)

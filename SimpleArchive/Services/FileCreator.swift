@@ -1,23 +1,19 @@
 import Foundation
 
 protocol FileCreatorType {
-    associatedtype ProductType: StorageItem
-    func createFile(itemName: String, parentDirectory: MemoDirectoryModel?) -> ProductType
+    func createFile(itemName: String, parentDirectory: MemoDirectoryModel?) -> any StorageItem
+}
 
+protocol PageCreatorType: FileCreatorType {
+    func createFile(
+        itemName: String,
+        parentDirectory: MemoDirectoryModel?,
+        singleComponentType: ComponentType
+    ) -> any StorageItem
     func setFirstComponentType(type: ComponentType)
 }
 
-extension FileCreatorType {
-    func setFirstComponentType(type: ComponentType) {}
-}
-
-struct DirectoryCreator: FileCreatorType {
-    func createFile(itemName: String, parentDirectory: MemoDirectoryModel?) -> some StorageItem {
-        MemoDirectoryModel(name: itemName, parentDirectory: parentDirectory)
-    }
-}
-
-struct PageCreator: FileCreatorType {
+struct PageCreator: PageCreatorType {
 
     private let componentFactory: any ComponentFactoryType
 
@@ -25,8 +21,16 @@ struct PageCreator: FileCreatorType {
         self.componentFactory = componentFactory
     }
 
+    func createFile(itemName: String, parentDirectory: MemoDirectoryModel?) -> any StorageItem {
+        let component = componentFactory.createComponent()
+        let page = MemoPageModel(name: itemName, parentDirectory: parentDirectory)
+
+        page.appendChildComponent(component: component)
+        return page
+    }
+
     func createFile(itemName: String, parentDirectory: MemoDirectoryModel?, singleComponentType: ComponentType)
-        -> some StorageItem
+        -> any StorageItem
     {
         let component = componentFactory.createComponent()
         let page = MemoPageModel(name: itemName, isSingleComponentPage: true, parentDirectory: parentDirectory)
@@ -36,16 +40,13 @@ struct PageCreator: FileCreatorType {
         return page
     }
 
-    func createFile(itemName: String, parentDirectory: MemoDirectoryModel?) -> some StorageItem {
-
-        let component = componentFactory.createComponent()
-        let page = MemoPageModel(name: itemName, parentDirectory: parentDirectory)
-
-        page.appendChildComponent(component: component)
-        return page
-    }
-
     func setFirstComponentType(type: ComponentType) {
         self.componentFactory.setCreator(creator: type.getComponentCreator())
+    }
+}
+
+struct DirectoryCreator: FileCreatorType {
+    func createFile(itemName: String, parentDirectory: MemoDirectoryModel?) -> any StorageItem {
+        MemoDirectoryModel(name: itemName, parentDirectory: parentDirectory)
     }
 }

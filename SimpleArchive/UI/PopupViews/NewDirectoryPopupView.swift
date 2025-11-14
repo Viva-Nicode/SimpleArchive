@@ -66,7 +66,7 @@ class NewDirectoryPopupView: PopupView {
 
         confirmButton.throttleTapPublisher()
             .sink { _ in
-            self.subject.send(.didCreatedNewDirectory(self.newDirectoryNameTextField.text ?? "new directory"))
+            self.subject.send(.willCreatedNewDirectory(self.newDirectoryNameTextField.text ?? "new directory"))
             self.dismiss()
         }.store(in: &subscriptions)
     }

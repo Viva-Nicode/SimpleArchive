@@ -5,7 +5,7 @@ import Foundation
 final class FetchMemoDataSuccessfullyTestStub: StubDatable {
     typealias GivenStubDataType = [SystemDirectories: MemoDirectoryModel]
     typealias TestTargetInputType = NoUsed
-    typealias ExpectedOutputType = (UUID, SortCriterias)
+    typealias ExpectedOutputType = (UUID, SortCriterias, Int)
 
     let testTargetName = "test_fetchMemoData_successfully()"
 
@@ -22,7 +22,7 @@ final class FetchMemoDataSuccessfullyTestStub: StubDatable {
 
             case .testVerifyOutput:
                 provideState = .allDataConsumed
-                return (mainDirectoryID, mainDirectorySortCriteria)
+                return (mainDirectoryID, mainDirectorySortCriteria, 0)
 
             default:
                 return ()

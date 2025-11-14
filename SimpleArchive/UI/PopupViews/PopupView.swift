@@ -3,17 +3,9 @@ import UIKit
 
 protocol PopupViewDetailConfigurable {
     func popupViewDetailConfigure()
-    func disableDismissPopupViewByTapBackground()
 }
 
 class PopupView: UIView, PopupViewDetailConfigurable {
-
-    func disableDismissPopupViewByTapBackground() {
-        disableDismissPopupViewByTapBackgroundCancel?.cancel()
-    }
-
-    var subscriptions: Set<AnyCancellable> = []
-    private var disableDismissPopupViewByTapBackgroundCancel: AnyCancellable?
 
     let backgroundView: UIView = {
         let backgroundView = UIView()
@@ -35,6 +27,7 @@ class PopupView: UIView, PopupViewDetailConfigurable {
     }()
 
     private var centerYConstraint: NSLayoutConstraint!
+    var subscriptions: Set<AnyCancellable> = []
 
     init() {
         super.init(frame: .zero)
@@ -53,8 +46,10 @@ class PopupView: UIView, PopupViewDetailConfigurable {
         addSubview(backgroundView)
         addSubview(alertContainer)
 
-        disableDismissPopupViewByTapBackgroundCancel = backgroundView.throttleUIViewTapGesturePublisher()
-            .sink { _ in self.dismiss() }
+        backgroundView
+            .throttleUIViewTapGesturePublisher()
+            .sink { [weak self] _ in self?.dismiss() }
+            .store(in: &subscriptions)
 
         NSLayoutConstraint.activate([
             backgroundView.leadingAnchor.constraint(equalTo: leadingAnchor),

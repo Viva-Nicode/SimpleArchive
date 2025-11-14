@@ -49,7 +49,7 @@ import UIKit
                 case .viewWillDisappear:
                     saveComponentsChanges()
 
-                case .willPresentSnapshotView:
+                case .willNavigateSnapshotView:
                     guard let repository = DIContainer.shared.resolve(ComponentSnapshotCoreDataRepository.self)
                     else { return }
 
@@ -57,15 +57,16 @@ import UIKit
                         componentSnapshotCoreDataRepository: repository,
                         snapshotRestorableComponent: textEditorComponent as (any SnapshotRestorable))
 
-                    output.send(.didTappedSnapshotButton(componentSnapshotViewModel))
+                    output.send(.didNavigateSnapshotView(componentSnapshotViewModel))
 
-                case .willRestoreComponentWithSnapshot:
-                    output.send(.didTappedCaptureButton(textEditorComponent.detail))
+                case .willRestoreComponent:
+                    output.send(.didRestoreComponent(textEditorComponent.detail))
 
-                case .willCaptureToComponent(let desc):
+                case .willCaptureComponent(let desc):
                     coredataReposotory.captureSnapshot(
                         snapshotRestorableComponent: textEditorComponent,
                         desc: desc)
+                    output.send(.didCompleteComponentCapture)
             }
         }
         .store(in: &subscriptions)

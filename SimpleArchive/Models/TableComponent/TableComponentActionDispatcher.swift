@@ -17,23 +17,23 @@ final class MemoPageTableComponentActionDispatcher: TableComponentActionDispatch
     }
 
     func appendColumn(componentID: UUID) {
-        subject.send(.appendTableComponentColumn(componentID))
+        subject.send(.willAppendColumnToTable(componentID))
     }
 
     func appendRow(componentID: UUID) {
-        subject.send(.appendTableComponentRow(componentID))
+        subject.send(.willAppendRowToTable(componentID))
     }
 
     func editCellValue(componentID: UUID, cellID: UUID, newValue: String) {
-        subject.send(.editTableComponentCellValue(componentID, cellID, newValue))
+        subject.send(.willApplyTableCellChanges(componentID, cellID, newValue))
     }
 
     func removeRow(componentID: UUID, rowID: UUID) {
-        subject.send(.removeTableComponentRow(componentID, rowID))
+        subject.send(.willRemoveRowToTable(componentID, rowID))
     }
 
     func presentColumnEditPopup(componentID: UUID, columnIndex: Int) {
-        subject.send(.presentTableComponentColumnEditPopupView(componentID, columnIndex))
+        subject.send(.willPresentTableColumnEditingPopupView(componentID, columnIndex))
     }
 }
 
@@ -45,22 +45,22 @@ final class SinglePageTableComponentActionDispatcher: TableComponentActionDispat
     }
 
     func appendColumn(componentID: UUID) {
-        subject.send(.willAppendTableComponentColumn)
+        subject.send(.willAppendColumnToTable)
     }
 
     func appendRow(componentID: UUID) {
-        subject.send(.willAppendTableComponentRow)
+        subject.send(.willAppendRowToTable)
     }
 
     func editCellValue(componentID: UUID, cellID: UUID, newValue: String) {
-        subject.send(.willEditTableComponentCellValue(cellID, newValue))
+        subject.send(.willApplyTableCellChanges(cellID, newValue))
     }
 
     func removeRow(componentID: UUID, rowID: UUID) {
-        subject.send(.willRemoveTableComponentRow(rowID))
+        subject.send(.willRemoveRowToTable(rowID))
     }
 
     func presentColumnEditPopup(componentID: UUID, columnIndex: Int) {
-        subject.send(.presentTableComponentColumnEditPopupView(columnIndex))
+        subject.send(.willPresentTableColumnEditingPopupView(columnIndex))
     }
 }

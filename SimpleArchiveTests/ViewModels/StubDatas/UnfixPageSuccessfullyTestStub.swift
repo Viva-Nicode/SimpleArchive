@@ -4,13 +4,13 @@ import Foundation
 
 final class UnfixPageSuccessfullyTestStub: StubDatable {
     typealias GivenStubDataType = ([MemoDirectoryModel], MemoDirectoryModel)
-    typealias TestTargetInputType = [MemoPageModel]
+    typealias TestTargetInputType = [UUID]
     typealias ExpectedOutputType = (Int, [IndexPath], [IndexPath])
 
     let testTargetName = "test_unfixPage_successfully()"
 
     private var provideState: TestDataProvideState = .givenStubData
-    private var testPage: MemoPageModel!
+    private var unfixedPageID: UUID!
 
     func getStubData() -> Any {
         switch provideState {
@@ -21,11 +21,11 @@ final class UnfixPageSuccessfullyTestStub: StubDatable {
 
             case .testTargetInput:
                 provideState = .testVerifyOutput
-                return [testPage]
+                return [unfixedPageID]
 
             case .testVerifyOutput:
                 provideState = .allDataConsumed
-                return (2, [IndexPath(row: 3, section: 0)], [IndexPath(row: 2, section: 0)])
+                return (2, [IndexPath(row: 0, section: 3)], [IndexPath(row: 2, section: 0)])
 
             default:
                 return ()
@@ -46,7 +46,7 @@ final class UnfixPageSuccessfullyTestStub: StubDatable {
 
         _ = MemoPageModel(name: "test page_4", parentDirectory: fixedDirectory)
         _ = MemoPageModel(name: "test page_5", parentDirectory: fixedDirectory)
-        testPage = MemoPageModel(name: "test page_6", parentDirectory: fixedDirectory)
+        unfixedPageID = MemoPageModel(name: "test page_6", parentDirectory: fixedDirectory).id
         _ = MemoPageModel(name: "test page_7", parentDirectory: fixedDirectory)
 
         return (

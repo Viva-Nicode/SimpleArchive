@@ -31,6 +31,8 @@ where
     var componentContentViewSnapshot: UIView?
     var componentContentView: ComponentContentType!
 
+    deinit { subscriptions.removeAll() }
+
     var containerView: UIView = {
         let containerView = UIView()
         containerView.translatesAutoresizingMaskIntoConstraints = false
@@ -211,43 +213,42 @@ where
                             .isActive = true
                     }
                 }
-                pageInputActionSubject?.send(.maximizeComponent(componentID))
+                pageInputActionSubject?.send(.willMaximizeComponent(componentID))
             }
             .store(in: &subscriptions)
 
         creationDateLabel.text = "created at \(component.creationDate.formattedDate)"
         titleLabel.text = component.title
 
-        
-            redCircleView.throttleUIViewTapGesturePublisher()
-                .sink { [weak self] _ in
-                    guard let self else { return }
-                    contentView.endEditing(true)
-                    pageInputActionSubject?.send(.removeComponent(componentID))
-                }
-                .store(in: &subscriptions)
+        redCircleView.throttleUIViewTapGesturePublisher()
+            .sink { [weak self] _ in
+                guard let self else { return }
+                contentView.endEditing(true)
+                pageInputActionSubject?.send(.willRemoveComponent(componentID))
+            }
+            .store(in: &subscriptions)
 
-            yellowCircleView.throttleUIViewTapGesturePublisher()
-                .sink { [weak self] _ in
-                    guard let self else { return }
-                    contentView.endEditing(true)
-                    pageInputActionSubject?.send(.minimizeComponent(componentID))
-                }
-                .store(in: &subscriptions)
+        yellowCircleView.throttleUIViewTapGesturePublisher()
+            .sink { [weak self] _ in
+                guard let self else { return }
+                contentView.endEditing(true)
+                pageInputActionSubject?.send(.willToggleComponentSize(componentID))
+            }
+            .store(in: &subscriptions)
 
-            pencilButton.throttleTapPublisher()
-                .sink { [weak self] _ in
-                    guard let self else { return }
-                    let popupView = ChangeComponentNamePopupView(
-                        componentTitle: component.title
-                    ) { newTitle in
-                        self.pageInputActionSubject?.send(.changeComponentName(self.componentID, newTitle))
-                        self.titleLabel.text = newTitle
-                    }
-                    popupView.show()
+        pencilButton.throttleTapPublisher()
+            .sink { [weak self] _ in
+                guard let self else { return }
+                let popupView = ChangeComponentNamePopupView(
+                    componentTitle: component.title
+                ) { newTitle in
+                    self.pageInputActionSubject?.send(.willChangeComponentName(self.componentID, newTitle))
+                    self.titleLabel.text = newTitle
                 }
-                .store(in: &subscriptions)
-        
+                popupView.show()
+            }
+            .store(in: &subscriptions)
+
     }
 
     func resetupComponentContentViewToDismissFullScreenAnimation() {

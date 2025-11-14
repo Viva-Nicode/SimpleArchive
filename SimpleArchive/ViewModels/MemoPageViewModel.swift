@@ -1,9 +1,7 @@
 import AVFAudio
-import CSFBAudioEngine
 import Combine
 import SFBAudioEngine
 import UIKit
-import ZIPFoundation
 
 @MainActor class MemoPageViewModel: NSObject, ViewModelType {
 
@@ -19,7 +17,6 @@ import ZIPFoundation
     private var audioDownloader: AudioDownloaderType = AudioDownloader()
     private var audioTrackController: AudioTrackControllerType?
     private var nowPlayingAudioComponentID: UUID?
-    private var openedFilePickerComponentID: UUID!
 
     init(
         componentFactory: any ComponentFactoryType,
@@ -46,7 +43,7 @@ import ZIPFoundation
         )
     }
 
-    deinit { print("MemoPageViewModel deinit") }
+    deinit { print("deinit MemoPageViewModel") }
 
     @discardableResult
     func subscribe(input: AnyPublisher<Input, Never>) -> AnyPublisher<Output, Never> {
@@ -57,28 +54,28 @@ import ZIPFoundation
                 case .viewDidLoad:
                     output.send(.viewDidLoad(memoPage.name))
 
-                case .createNewComponent(let componentType):
+                case .willCreateNewComponent(let componentType):
                     createNewComponent(with: componentType)
 
-                case .removeComponent(let componentID):
+                case .willRemoveComponent(let componentID):
                     removeComponent(componentID: componentID)
 
-                case .changeComponentName(let id, let newName):
+                case .willChangeComponentName(let id, let newName):
                     changeComponentName(componentID: id, newName: newName)
 
-                case .minimizeComponent(let componentID):
-                    minimizeComponent(componentID: componentID)
+                case .willToggleComponentSize(let componentID):
+                    toggleComponentSize(componentID: componentID)
 
-                case .maximizeComponent(let componentID):
+                case .willMaximizeComponent(let componentID):
                     maximizeComponent(componentID: componentID)
 
-                case .changeComponentOrder(let sourceIndex, let destinationIndex):
+                case .willChangeComponentOrder(let sourceIndex, let destinationIndex):
                     changeComponentOrder(sourceIndex: sourceIndex, destinationIndex: destinationIndex)
 
-                case .tappedCaptureButton(let componentID, let description):
+                case .willCaptureComponent(let componentID, let description):
                     captureComponent(componentID: componentID, description: description)
 
-                case .tappedSnapshotButton(let componentID):
+                case .willNavigateSnapshotView(let componentID):
                     moveToComponentSnapshotView(componentID: componentID)
 
                 case .viewWillDisappear:
@@ -86,23 +83,23 @@ import ZIPFoundation
 
                 // MARK: - Table
 
-                case .appendTableComponentRow(let componentID):
+                case .willAppendRowToTable(let componentID):
                     appendTableComponentRow(componentID)
 
-                case .removeTableComponentRow(let componentID, let rowID):
+                case .willRemoveRowToTable(let componentID, let rowID):
                     removeTableComponentRow(componentID, rowID)
 
-                case .appendTableComponentColumn(let componentID):
+                case .willAppendColumnToTable(let componentID):
                     appendTableComponentColumn(componentID)
 
-                case .editTableComponentCellValue(let componentID, let cellID, let newCellValue):
-                    changeTableComponentCellValue(componentID, cellID, newCellValue)
+                case .willApplyTableCellChanges(let componentID, let cellID, let newCellValue):
+                    applyTableCellValue(componentID, cellID, newCellValue)
 
-                case .presentTableComponentColumnEditPopupView(let componentID, let tappedColumnIndex):
+                case .willPresentTableColumnEditingPopupView(let componentID, let tappedColumnIndex):
                     presentTableComponentColumnEditPopupView(componentID: componentID, columnIndex: tappedColumnIndex)
 
-                case .editTableComponentColumn(let componentID, let columns):
-                    editTableComponentColumn(componentID: componentID, columns: columns)
+                case .willApplyTableColumnChanges(let componentID, let columns):
+                    applyTableColumnChanges(componentID: componentID, columns: columns)
 
                 // MARK: - Audio
 
@@ -112,14 +109,12 @@ import ZIPFoundation
                 case .willPlayAudioTrack(let componentID, let trackIndex):
                     playAudioTrack(componentID: componentID, trackIndex: trackIndex)
 
-                case .willPresentGallery(let imageView):
-                    output.send(.didPresentGallery(imageView))
+                case .willApplyAudioMetadataChanges(let editedMetadata, let componentID, let trackIndex):
+                    applyAudioMetadataChanges(
+                        componentID: componentID, newMetadata: editedMetadata, trackIndex: trackIndex)
 
-                case .willEditAudioTrackMetadata(let editedMetadata, let componentID, let trackIndex):
-                    editAudioMetadata(componentID: componentID, newMetadata: editedMetadata, trackIndex: trackIndex)
-
-                case .willTapPlayPauseButton:
-                    tapPlayPauseButton()
+                case .willToggleAudioPlayingState:
+                    toggleAudioPlayingState()
 
                 case .willSeekAudioTrack(let seek):
                     seekAudioTrack(seek: seek)
@@ -127,8 +122,8 @@ import ZIPFoundation
                 case .willSortAudioTracks(let componentID, let sortBy):
                     sortAudioTracks(componentID: componentID, sortBy: sortBy)
 
-                case .willDropAudioTrack(let componentID, let src, let des):
-                    dropAudioTrack(componentID: componentID, src: src, des: des)
+                case .willMoveAudioTrackOrder(let componentID, let src, let des):
+                    moveAudioTrackOrder(componentID: componentID, src: src, des: des)
 
                 case .willRemoveAudioTrack(let componentID, let trackIndex):
                     removeAudioTrack(componentID: componentID, trackIndex: trackIndex)
@@ -139,9 +134,8 @@ import ZIPFoundation
                 case .willPlayPreviousAudioTrack:
                     playPreviousAudioTrack()
 
-                case .willPresentFilePicker(let componentID):
-                    openedFilePickerComponentID = componentID
-                    output.send(.didPresentFilePicker)
+                case .willImportAudioFileFromFileSystem(let componentID, let tempURLs):
+                    importAudioFromLocalFileSystem(componentID: componentID, didPickDocumentsAt: tempURLs)
             }
         }
         .store(in: &subscriptions)
@@ -156,7 +150,7 @@ import ZIPFoundation
         memoPage.appendChildComponent(component: newComponent)
         memoComponentCoredataReposotory.createComponentEntity(
             parentPageID: memoPage.id, component: newComponent)
-        output.send(.insertNewComponentAtLastIndex(memoPage.compnentSize - 1))
+        output.send(.didAppendComponentAt(memoPage.compnentSize - 1))
     }
 
     private func removeComponent(componentID: UUID) {
@@ -167,7 +161,7 @@ import ZIPFoundation
             memoComponentCoredataReposotory.removeComponent(
                 parentPageID: memoPage.id,
                 componentID: removedComponent.item.id)
-            output.send(.removeComponentAtIndex(removedComponent.index))
+            output.send(.didRemoveComponentAt(removedComponent.index))
         }
     }
 
@@ -189,21 +183,21 @@ import ZIPFoundation
                     componentIdChanged: componentID,
                     isMinimumHeight: component.isMinimumHeight)
                 memoComponentCoredataReposotory.updateComponentChanges(componentChanges: pageComponentChangeObject)
-                output.send(.didMinimizeComponentHeight(index, component.isMinimumHeight))
+                output.send(.didToggleComponentSize(index, component.isMinimumHeight))
             } else {
-                output.send(.maximizeComponent(component, index))
+                output.send(.didMaximizeComponent(component, index))
             }
         }
     }
 
-    private func minimizeComponent(componentID: UUID) {
+    private func toggleComponentSize(componentID: UUID) {
         performWithComponentAt(componentID) { index, component in
             component.isMinimumHeight.toggle()
             let pageComponentChangeObject = PageComponentChangeObject(
                 componentIdChanged: componentID,
                 isMinimumHeight: component.isMinimumHeight)
             memoComponentCoredataReposotory.updateComponentChanges(componentChanges: pageComponentChangeObject)
-            output.send(.didMinimizeComponentHeight(index, component.isMinimumHeight))
+            output.send(.didToggleComponentSize(index, component.isMinimumHeight))
         }
     }
 
@@ -220,7 +214,9 @@ import ZIPFoundation
             if let snapshotRestorableComponent = component as? any SnapshotRestorable {
                 memoComponentCoredataReposotory.captureSnapshot(
                     snapshotRestorableComponent: snapshotRestorableComponent,
-                    desc: description)
+                    desc: description
+                )
+                output.send(.didCompleteComponentCapture(index))
             }
         }
     }
@@ -236,7 +232,7 @@ import ZIPFoundation
             componentSnapshotCoreDataRepository: repository,
             snapshotRestorableComponent: textEditorComponent)
 
-        output.send(.didTappedSnapshotButton(componentSnapshotViewModel, component.index))
+        output.send(.didNavigateSnapshotView(componentSnapshotViewModel, component.index))
     }
 
     private func performWithComponentAt<ComponentType: PageComponent>(_ id: UUID, task: (Int, ComponentType) -> Void) {
@@ -269,7 +265,7 @@ extension MemoPageViewModel {
         performWithComponentAt(componentID) { (componentIndex, tableComponent: TableComponent) in
             let newRow = tableComponent.componentDetail.appendNewRow()
             tableComponent.persistenceState = .unsaved(isMustToStoreSnapshot: true)
-            output.send(.didAppendTableComponentRow(componentIndex, newRow))
+            output.send(.didAppendRowToTableView(componentIndex, newRow))
         }
     }
 
@@ -277,7 +273,7 @@ extension MemoPageViewModel {
         performWithComponentAt(componentID) { (componentIndex, tableComponent: TableComponent) in
             let removedRowIndex = tableComponent.componentDetail.removeRow(rowID)
             tableComponent.persistenceState = .unsaved(isMustToStoreSnapshot: true)
-            output.send(.didRemoveTableComponentRow(componentIndex, removedRowIndex))
+            output.send(.didRemoveRowToTableView(componentIndex, removedRowIndex))
         }
     }
 
@@ -285,31 +281,31 @@ extension MemoPageViewModel {
         performWithComponentAt(componentID) { (componentIndex, tableComponent: TableComponent) in
             let newColumn = tableComponent.componentDetail.appendNewColumn(columnTitle: "column")
             tableComponent.persistenceState = .unsaved(isMustToStoreSnapshot: true)
-            output.send(.didAppendTableComponentColumn(componentIndex, newColumn))
+            output.send(.didAppendColumnToTableView(componentIndex, newColumn))
         }
     }
 
-    private func changeTableComponentCellValue(_ componentID: UUID, _ cellID: UUID, _ newCellValue: String) {
+    private func applyTableCellValue(_ componentID: UUID, _ cellID: UUID, _ newCellValue: String) {
         performWithComponentAt(componentID) { (componentIndex, tableComponent: TableComponent) in
             let indices = tableComponent.componentDetail.editCellValeu(cellID, newCellValue)
             tableComponent.persistenceState = .unsaved(isMustToStoreSnapshot: true)
-            output.send(.didEditTableComponentCellValue(componentIndex, indices.0, indices.1, newCellValue))
+            output.send(.didApplyTableCellValueChanges(componentIndex, indices.0, indices.1, newCellValue))
         }
     }
 
     private func presentTableComponentColumnEditPopupView(componentID: UUID, columnIndex: Int) {
         performWithComponentAt(componentID) { (_, tableComponent: TableComponent) in
             output.send(
-                .didPresentTableComponentColumnEditPopupView(
+                .didPresentTableColumnEditPopupView(
                     tableComponent.componentDetail.columns, columnIndex, componentID))
         }
     }
 
-    private func editTableComponentColumn(componentID: UUID, columns: [TableComponentColumn]) {
+    private func applyTableColumnChanges(componentID: UUID, columns: [TableComponentColumn]) {
         performWithComponentAt(componentID) { (componentIndex, tableComponent: TableComponent) in
             tableComponent.componentDetail.setColumn(columns)
             tableComponent.persistenceState = .unsaved(isMustToStoreSnapshot: true)
-            output.send(.didEditTableComponentColumn(componentIndex, columns))
+            output.send(.didApplyTableColumnChanges(componentIndex, columns))
         }
     }
 }
@@ -322,7 +318,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
             let currentPlayingAudioTrackID = component.detail[component.datasource?.nowPlayingAudioIndex]?.id
 
             audioDownloader.handleDownloadedProgressPercent = { [weak self] progress in
-                self?.output.send(.updateAudioDownloadProgress(componentIndex, progress))
+                self?.output.send(.didUpdateAudioDownloadProgress(componentIndex, progress))
             }
 
             audioDownloader.downloadTask(with: code)
@@ -334,7 +330,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
                             component.datasource?.tracks = component.detail.tracks
                             component.datasource?.nowPlayingAudioIndex = component.detail.tracks
                                 .firstIndex { $0.id == currentPlayingAudioTrackID }
-                            output.send(.didDownloadMusicWithCode(componentIndex, appendedIndices))
+                            output.send(.didAppendAudioTrackRows(componentIndex, appendedIndices))
 
                         case .failure(let failure):
                             switch failure {
@@ -343,10 +339,97 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
                                 case .unowned(let msg):
                                     print(msg)
                             }
-                            output.send(.presentInvalidDownloadCode(componentIndex))
+                            output.send(.didPresentInvalidDownloadCode(componentIndex))
                     }
                 }
                 .store(in: &subscriptions)
+        }
+    }
+
+    private func importAudioFromLocalFileSystem(componentID: UUID, didPickDocumentsAt urls: [URL]) {
+
+        let fileManager = FileManager.default
+        let documentsDir = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
+        let archiveDir = documentsDir.appendingPathComponent("SimpleArchiveMusics")
+        var audioTracks: [AudioTrack] = []
+
+        do {
+            if !fileManager.fileExists(atPath: archiveDir.path) {
+                try fileManager.createDirectory(at: archiveDir, withIntermediateDirectories: true)
+            }
+
+            for url in urls {
+                guard url.startAccessingSecurityScopedResource() else { continue }
+                defer { url.stopAccessingSecurityScopedResource() }
+
+                let newID = UUID()
+                let newFileName = "\(newID).\(url.pathExtension)"
+                let destinationURL = archiveDir.appendingPathComponent(newFileName)
+
+                try fileManager.copyItem(at: url, to: destinationURL)
+
+                var fileTitle = url.deletingPathExtension().lastPathComponent
+                var artist: String = "Unknown"
+                let defaultAudioThumbnail = UIImage(named: "defaultMusicThumbnail")!
+                let defaultThumnnailData = defaultAudioThumbnail.jpegData(compressionQuality: 1.0)!
+                var defaultThumbnail = AttachedPicture(imageData: defaultThumnnailData, type: .frontCover)
+
+                if fileTitle.isEmpty { fileTitle = "no title" }
+
+                if let audioFile = try? AudioFile(readingPropertiesAndMetadataFrom: destinationURL) {
+
+                    if let metadataTitle = audioFile.metadata.title, !metadataTitle.isEmpty {
+                        print(metadataTitle)
+                        fileTitle = metadataTitle
+                    }
+
+                    if let metadataArtist = audioFile.metadata.artist, !metadataArtist.isEmpty {
+                        artist = metadataArtist
+                    }
+
+                    if let metadataThumbnail = audioFile.metadata.attachedPictures(ofType: .frontCover).first {
+                        defaultThumbnail = metadataThumbnail
+                    } else if let metadataOtherThumbnail = audioFile.metadata.attachedPictures(ofType: .other).first {
+                        defaultThumbnail = AttachedPicture(
+                            imageData: metadataOtherThumbnail.imageData,
+                            type: .frontCover)
+                    }
+
+                    let newMetadata = AudioMetadata(dictionaryRepresentation: [
+                        .attachedPictures: [defaultThumbnail.dictionaryRepresentation] as NSArray,
+                        .title: NSString(string: fileTitle),
+                        .artist: NSString(string: artist),
+                    ])
+
+                    audioFile.metadata = newMetadata
+                    try? audioFile.writeMetadata()
+                }
+
+                let track = AudioTrack(
+                    id: newID,
+                    title: fileTitle,
+                    artist: artist,
+                    thumbnail: defaultThumbnail.imageData,
+                    fileExtension: destinationURL.pathExtension)
+
+                audioTracks.append(track)
+            }
+
+            performWithComponentAt(componentID) { (componentIndex, component: AudioComponent) in
+
+                let currentPlayingAudioTrackID = component.detail[component.datasource?.nowPlayingAudioIndex]?.id
+                let appendedIndices = component.addAudios(audiotracks: audioTracks)
+
+                component.datasource?.tracks = component.detail.tracks
+                component.datasource?.nowPlayingAudioIndex = component.detail.tracks
+                    .firstIndex {
+                        $0.id == currentPlayingAudioTrackID
+                    }
+
+                output.send(.didAppendAudioTrackRows(componentIndex, appendedIndices))
+            }
+        } catch {
+            print(error.localizedDescription)
         }
     }
 
@@ -419,7 +502,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
         }
     }
 
-    private func tapPlayPauseButton() {
+    private func toggleAudioPlayingState() {
         guard let nowPlayingAudioComponentID else { return }
         audioTrackController?.togglePlaying()
 
@@ -430,7 +513,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
             {
                 audioComponent.datasource?.isPlaying = isPlaying
                 output.send(
-                    .didTapPlayPauseButton(
+                    .didToggleAudioPlayingState(
                         componentIndex,
                         trackIndex,
                         isPlaying,
@@ -441,7 +524,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
         }
     }
 
-    private func editAudioMetadata(componentID: UUID, newMetadata: AudioTrackMetadata, trackIndex: Int) {
+    private func applyAudioMetadataChanges(componentID: UUID, newMetadata: AudioTrackMetadata, trackIndex: Int) {
         performWithComponentAt(componentID) { (componentIndex, component: AudioComponent) in
             let targetAudioTrackID = component.detail[trackIndex]?.id
             let currentPlayingAudioTrackID = component.detail[component.datasource?.nowPlayingAudioIndex]?.id
@@ -473,7 +556,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
             component.datasource?.tracks = component.detail.tracks
 
             output.send(
-                .didEditAudioTrackMetadata(
+                .didApplyAudioMetadataChanges(
                     componentIndex,
                     trackIndex,
                     newMetadata,
@@ -502,7 +585,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
         }
     }
 
-    private func dropAudioTrack(componentID: UUID, src: Int, des: Int) {
+    private func moveAudioTrackOrder(componentID: UUID, src: Int, des: Int) {
         performWithComponentAt(componentID) { (_, audioComponent: AudioComponent) in
             let datasource = audioComponent.datasource
             let currentPlayingAudioTrackID = audioComponent.detail[datasource?.nowPlayingAudioIndex]?.id
@@ -560,7 +643,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
 
             let datasource = component.datasource
             let currentPlayingAudioTrackID = component.detail[datasource?.nowPlayingAudioIndex]?.id
-            
+
             component.removeAudio(with: trackIndex)
             datasource?.tracks = component.detail.tracks
 
@@ -570,14 +653,19 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
                     nowPlayingAudioComponentID = nil
                     cleanDataSource(componentID)
                     output.send(.didRemoveAudioTrack(componentIndex, trackIndex))
-                    output.send(.outOfSongs(componentIndex))
+                    output.send(.didSetAudioPlayingStateToStopped(componentIndex))
                     return
                 }
 
                 if datasource?.nowPlayingAudioIndex == trackIndex {
-                    let nextPlayingAudioTrackIndex = min(trackIndex, component.detail.tracks.count - 1)
-                    output.send(.didRemoveAudioTrack(componentIndex, trackIndex))
-                    playAudioTrack(componentID: componentID, trackIndex: nextPlayingAudioTrackIndex)
+                    if audioTrackController?.isPlaying == true {
+                        let nextPlayingAudioTrackIndex = min(trackIndex, component.detail.tracks.count - 1)
+                        output.send(.didRemoveAudioTrack(componentIndex, trackIndex))
+                        playAudioTrack(componentID: componentID, trackIndex: nextPlayingAudioTrackIndex)
+                    } else {
+                        output.send(.didRemoveAudioTrack(componentIndex, trackIndex))
+                        output.send(.didSetAudioPlayingStateToStopped(componentIndex))
+                    }
                 } else {
                     datasource?.nowPlayingAudioIndex = component.detail.tracks.firstIndex {
                         $0.id == currentPlayingAudioTrackID
@@ -664,7 +752,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
 
                     datasource.isPlaying = false
                     output.send(
-                        .didTapPlayPauseButton(
+                        .didToggleAudioPlayingState(
                             componentIndex,
                             trackIndex,
                             false,
@@ -709,90 +797,8 @@ extension MemoPageViewModel: UICollectionViewDataSource {
     }
 }
 
-extension MemoPageViewModel: UIDocumentPickerDelegate {
-    func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
-        let fileManager = FileManager.default
-        let documentsDir = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
-        let archiveDir = documentsDir.appendingPathComponent("SimpleArchiveMusics")
-        var audioTracks: [AudioTrack] = []
-
-        do {
-            if !fileManager.fileExists(atPath: archiveDir.path) {
-                try fileManager.createDirectory(at: archiveDir, withIntermediateDirectories: true)
-            }
-
-            for url in urls {
-                guard url.startAccessingSecurityScopedResource() else { continue }
-                defer { url.stopAccessingSecurityScopedResource() }
-
-                let newID = UUID()
-                let newFileName = "\(newID).\(url.pathExtension)"
-                let destinationURL = archiveDir.appendingPathComponent(newFileName)
-
-                try fileManager.copyItem(at: url, to: destinationURL)
-
-                var fileTitle = url.deletingPathExtension().lastPathComponent
-                var artist: String = "Unknown"
-                let defaultAudioThumbnail = UIImage(named: "defaultMusicThumbnail")!
-                let defaultThumnnailData = defaultAudioThumbnail.jpegData(compressionQuality: 1.0)!
-                var defaultThumbnail = AttachedPicture(imageData: defaultThumnnailData, type: .frontCover)
-
-                if fileTitle.isEmpty { fileTitle = "no title" }
-
-                if let audioFile = try? AudioFile(readingPropertiesAndMetadataFrom: destinationURL) {
-
-                    if let metadataTitle = audioFile.metadata.title, !metadataTitle.isEmpty {
-                        print(metadataTitle)
-                        fileTitle = metadataTitle
-                    }
-
-                    if let metadataArtist = audioFile.metadata.artist, !metadataArtist.isEmpty {
-                        artist = metadataArtist
-                    }
-
-                    if let metadataThumbnail = audioFile.metadata.attachedPictures(ofType: .frontCover).first {
-                        defaultThumbnail = metadataThumbnail
-                    } else if let metadataOtherThumbnail = audioFile.metadata.attachedPictures(ofType: .other).first {
-                        defaultThumbnail = AttachedPicture(
-                            imageData: metadataOtherThumbnail.imageData,
-                            type: .frontCover)
-                    }
-
-                    let newMetadata = AudioMetadata(dictionaryRepresentation: [
-                        .attachedPictures: [defaultThumbnail.dictionaryRepresentation] as NSArray,
-                        .title: NSString(string: fileTitle),
-                        .artist: NSString(string: artist),
-                    ])
-
-                    audioFile.metadata = newMetadata
-                    try? audioFile.writeMetadata()
-                }
-
-                let track = AudioTrack(
-                    id: newID,
-                    title: fileTitle,
-                    artist: artist,
-                    thumbnail: defaultThumbnail.imageData,
-                    fileExtension: destinationURL.pathExtension)
-
-                audioTracks.append(track)
-            }
-
-            performWithComponentAt(openedFilePickerComponentID) { (componentIndex, component: AudioComponent) in
-
-                let currentPlayingAudioTrackID = component.detail[component.datasource?.nowPlayingAudioIndex]?.id
-                let appendedIndices = component.addAudios(audiotracks: audioTracks)
-
-                component.datasource?.tracks = component.detail.tracks
-                component.datasource?.nowPlayingAudioIndex = component.detail.tracks
-                    .firstIndex {
-                        $0.id == currentPlayingAudioTrackID
-                    }
-
-                output.send(.didDownloadMusicWithCode(componentIndex, appendedIndices))
-            }
-        } catch {
-            print(error.localizedDescription)
-        }
-    }
-}
+//extension MemoPageViewModel: UIDocumentPickerDelegate {
+//    func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+//        downloadAudioFromLocalFileSystem(didPickDocumentsAt: urls)
+//    }
+//}

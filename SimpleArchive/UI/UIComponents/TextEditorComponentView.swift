@@ -1,11 +1,14 @@
 import Combine
 import UIKit
 
-final class TextEditorComponentView: PageComponentView<UITextView, TextEditorComponent>, UITextViewDelegate {
+final class TextEditorComponentView: PageComponentView<UITextView, TextEditorComponent>, UITextViewDelegate,
+    CaptureableComponentView
+{
 
     static let identifierForUseCollectionView: String = "TextEditorComponentView"
     private var snapshotInputActionSubject: PassthroughSubject<ComponentSnapshotViewModelInput, Never>?
     private var detailAssignSubject = PassthroughSubject<String, Never>()
+    var snapshotCapturePopupView: SnapshotCapturePopupView?
 
     private let snapShotView: UIStackView = {
         let snapShotView = UIStackView()
@@ -74,6 +77,7 @@ final class TextEditorComponentView: PageComponentView<UITextView, TextEditorCom
         snapShotView.trailingAnchor.constraint(equalTo: toolBarView.trailingAnchor, constant: -10).isActive = true
     }
 
+    // 페이지 뷰 전용 configure
     override func configure(
         component: TextEditorComponent,
         input subject: PassthroughSubject<MemoPageViewInput, Never>
@@ -81,37 +85,42 @@ final class TextEditorComponentView: PageComponentView<UITextView, TextEditorCom
         super.configure(component: component, input: subject)
 
         componentContentView.text = component.detail
-        
-            component
-                .assignDetail(subject: detailAssignSubject)
-                .store(in: &subscriptions)
 
-            captureButton.throttleTapPublisher()
-                .sink { [weak self] _ in
-                    guard let self else { return }
-                    let snapshotCapturePopupView = SnapshotCapturePopupView { snapshotDescription in
-                        self.pageInputActionSubject?
-                            .send(.tappedCaptureButton(self.componentID, snapshotDescription))
-                    }
-                    snapshotCapturePopupView.show()
-                }
-                .store(in: &subscriptions)
+        component
+            .assignDetail(subject: detailAssignSubject)
+            .store(in: &subscriptions)
 
-            captureButton.isEnabled = !component.detail.isEmpty
+        captureButton.throttleTapPublisher()
+            .flatMap { [weak self] _ -> AnyPublisher<String, Never> in
+                guard let self else { return Empty().eraseToAnyPublisher() }
 
-            snapshotButton.throttleTapPublisher()
-                .sink { [weak self] _ in
-                    guard let self else { return }
-                    pageInputActionSubject?.send(.tappedSnapshotButton(componentID))
-                }
-                .store(in: &subscriptions)
-        
+                let popup = SnapshotCapturePopupView()
+                self.snapshotCapturePopupView = popup
+                popup.show()
+
+                return popup.captureButtonPublisher
+            }
+            .sink { [weak self] snapshotDescription in
+                guard let self else { return }
+                self.pageInputActionSubject?.send(.willCaptureComponent(componentID, snapshotDescription))
+            }
+            .store(in: &subscriptions)
+
+        captureButton.isEnabled = !component.detail.isEmpty
+
+        snapshotButton.throttleTapPublisher()
+            .sink { [weak self] _ in
+                guard let self else { return }
+                pageInputActionSubject?.send(.willNavigateSnapshotView(componentID))
+            }
+            .store(in: &subscriptions)
 
         if component.isMinimumHeight {
             componentContentView.alpha = 0
         }
     }
 
+    // 스냅샷 뷰 전용 configure
     func configure(
         snapshotID: UUID,
         snapshotDetail: String,

@@ -1,8 +1,12 @@
+import Combine
 import UIKit
 
-class SnapshotCapturePopupView: PopupView {
+final class SnapshotCapturePopupView: PopupView {
 
-    private let confirmToSnapshot: (String) -> ()
+    enum SnapshotCapturePopupViewState {
+        case initial
+        case complete
+    }
 
     private let titleLabel: UILabel = {
         let titleLabel = UILabel()
@@ -43,7 +47,7 @@ class SnapshotCapturePopupView: PopupView {
         textLengthLabel.textColor = .gray
         return textLengthLabel
     }()
-    private let confirmButton: DynamicBackgrounColordButton = {
+    private let captureButton: DynamicBackgrounColordButton = {
         let confirmButton = DynamicBackgrounColordButton()
         confirmButton.setBackgroundColor(.systemBlue, for: .normal)
         confirmButton.setBackgroundColor(.lightGray, for: .disabled)
@@ -51,7 +55,7 @@ class SnapshotCapturePopupView: PopupView {
         confirmButton.tintColor = .white
         confirmButton.layer.cornerRadius = 5
         confirmButton.configuration = .plain()
-        confirmButton.configuration?.contentInsets = NSDirectionalEdgeInsets(top: 12, leading: 0, bottom: 12, trailing: 0)
+        confirmButton.configuration?.contentInsets = .init(top: 12, leading: 0, bottom: 12, trailing: 0)
 
         var titleAttr = AttributedString.init("Capture")
         titleAttr.font = .systemFont(ofSize: 15, weight: .regular)
@@ -60,13 +64,70 @@ class SnapshotCapturePopupView: PopupView {
         return confirmButton
     }()
 
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
+    var state: SnapshotCapturePopupViewState = .initial {
+        didSet {
+            switch state {
+
+                case .initial:
+                    break
+
+                case .complete:
+                    setStateToCaptureComplete()
+            }
+        }
     }
 
-    init(confirmToSnapshot: @escaping (String) -> ()) {
-        self.confirmToSnapshot = confirmToSnapshot
-        super.init()
+    var captureButtonPublisher: AnyPublisher<String, Never> {
+        captureButton.throttleTapPublisher()
+            .map { [weak self] _ in
+                self?.snapshotDesctiptionTextView.text ?? ""
+            }
+            .eraseToAnyPublisher()
+    }
+
+    deinit { print("deinit SnapshotCapturePopupView") }
+
+    private func setStateToCaptureComplete() {
+        let checkmark = UIImageView()
+        let completeLabel = UILabel()
+
+        let alertContainerWidth = alertContainer.frame.width
+        let titleLabelMaxY = titleLabel.frame.maxY
+
+        checkmark.image = UIImage(systemName: "checkmark.circle")
+        checkmark.tintColor = .systemGreen
+        checkmark.frame.size = .init(width: 65, height: 65)
+        checkmark.frame.origin = .init(x: (alertContainerWidth * 0.5) - 65 * 0.5, y: titleLabelMaxY + 8)
+        checkmark.alpha = 0
+
+        completeLabel.text = "capture complete"
+        completeLabel.textColor = .systemGreen
+        completeLabel.font = .systemFont(ofSize: 15)
+        completeLabel.sizeToFit()
+        completeLabel.frame.origin = .init(
+            x: (alertContainerWidth * 0.5) - completeLabel.frame.width * 0.5,
+            y: checkmark.frame.maxY)
+        completeLabel.alpha = 0
+
+        alertContainer.addSubview(checkmark)
+        alertContainer.addSubview(completeLabel)
+
+        UIView.animateKeyframes(withDuration: 0.6, delay: 0, options: []) {
+
+            UIView.addKeyframe(withRelativeStartTime: 0.0, relativeDuration: 0.5) { [weak self] in
+                guard let self else { return }
+                snapshotDescriptionLabel.alpha = 0
+                snapshotDesctiptionTextView.alpha = 0
+                bottomBorder.alpha = 0
+                textLengthLabel.alpha = 0
+                captureButton.isEnabled = false
+            }
+
+            UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0.5) {
+                checkmark.alpha = 1
+                completeLabel.alpha = 1
+            }
+        }
     }
 
     override func didMoveToWindow() {
@@ -91,14 +152,7 @@ class SnapshotCapturePopupView: PopupView {
 
         alertContainer.addArrangedSubview(titleLabel)
         alertContainer.addArrangedSubview(descriptionTextStackView)
-
-        let buttonAction = UIAction { [weak self] _ in
-            self?.confirmToSnapshot(self?.snapshotDesctiptionTextView.text ?? "")
-            self?.dismiss()
-        }
-
-        confirmButton.addAction(buttonAction, for: .touchUpInside)
-        alertContainer.addArrangedSubview(confirmButton)
+        alertContainer.addArrangedSubview(captureButton)
     }
 }
 

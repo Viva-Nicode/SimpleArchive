@@ -2,7 +2,7 @@ import AVFoundation
 import Combine
 import UIKit
 
-final class AudioComponentContentView: UIView {
+final class AudioComponentContentView: UIView, UIDocumentPickerDelegate {
 
     private var componentID: UUID!
     private var dispatcher: AudioComponentActionDispatcher?
@@ -123,7 +123,6 @@ final class AudioComponentContentView: UIView {
                     .downloadButtonActionPublisher
                     .sink {
                         self.audioDownloadStatePopupView = AudioDownloadStatePopupView()
-                        self.audioDownloadStatePopupView?.disableDismissPopupViewByTapBackground()
                         self.audioDownloadStatePopupView?.show()
                         self.dispatcher?.downloadMusics(componentID: self.componentID, with: $0)
                         self.cancels = nil
@@ -134,7 +133,13 @@ final class AudioComponentContentView: UIView {
         audioAddFromFileSystemButton.addAction(
             UIAction { [weak self] _ in
                 guard let self else { return }
-                dispatcher?.presentFilePicker(componentID: componentID)
+
+                let supportedTypes: [UTType] = [.audio, .mp3, .wav]
+                let documentPicker = UIDocumentPickerViewController(forOpeningContentTypes: supportedTypes)
+
+                documentPicker.delegate = self
+                documentPicker.allowsMultipleSelection = true
+                parentViewController?.present(documentPicker, animated: true)
             }, for: .touchUpInside)
 
         sortByNameButton.addAction(
@@ -275,6 +280,10 @@ final class AudioComponentContentView: UIView {
         self.addbuttonHeightConstraint?.constant = audioComponent.isMinimumHeight ? 0 : 44
     }
 
+    func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+        dispatcher?.importAudioFilesFromFileSystem(componentID: componentID, urls: urls)
+    }
+
     func insertRow(trackIndices: [Int]) {
         audioTrackTableView.performBatchUpdates {
             let indexPaths = trackIndices.map { IndexPath(row: $0, section: .zero) }
@@ -313,12 +322,6 @@ extension AudioComponentContentView: UITableViewDelegate {
 
                 let audioTrackEditPopupView = AudioTrackEditPopupView(
                     title: title, artist: artist, thumbnail: thumbnail)
-
-                thumbnameSubscription = audioTrackEditPopupView.thumbnailPublisher
-                    .sink { [weak self] in
-                        guard let self else { return }
-                        self.dispatcher?.presentGallery($0)
-                    }
 
                 editAudioTrackMetadataConfrimButtonSubscription = audioTrackEditPopupView.confirmButtonPublisher
                     .sink { [weak self] editedMetadata in
@@ -383,7 +386,7 @@ extension AudioComponentContentView: UITableViewDropDelegate {
             let fromIndex = sourceIndexPath.row
             let toIndex = destinationIndexPath.row
 
-            dispatcher?.dropAudioTrack(componentID: componentID, src: fromIndex, des: toIndex)
+            dispatcher?.moveAudioTrackOrder(componentID: componentID, src: fromIndex, des: toIndex)
 
             tableView.performBatchUpdates(
                 {

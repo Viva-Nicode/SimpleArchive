@@ -2,41 +2,42 @@ import Foundation
 
 enum MemoHomeViewInput {
     case viewDidLoad
-    case didTappedDirectoryPath(UUID)
-    case getDormantBoxViewModel
-    case didTappedFixedPageRow(Int)
-    case didPerformDropOperationInFixedTable([UUID])
-    case changeFileName(UUID, String)
-    case changeFileSortBy(SortCriterias)
-    case toggleAscendingOrder
+
+    case willMovePreviousDirectoryPath(UUID)
+    case willNavigateDormantBoxView
+    case willNavigateFixedPageView(Int)
+    case willAppendPageToFixedTable([UUID])
+    case willChangeFileName(UUID, String)
+    case willSortDirectoryItems(SortCriterias)
+    case willToggleAscendingOrder
 }
 
 enum MemoHomeSubViewInput {
-    case didCreatedNewDirectory(String)
-    case didCreatedNewPage(String, ComponentType?)
-    case didTappedDirectoryRow(Int)
-    case didTappedPageRow(Int)
-    case showFileInformation(Int)
-    case removeFile(Int)
-    case didPerformDropOperationInHomeTable([UUID])
+    case willCreatedNewDirectory(String)
+    case willCreatedNewPage(String, ComponentType?)
+    case willMoveToFollowingDirectory(Int)
+    case willNavigatePageView(Int)
+    case willPresentFileInformationPopupView(Int)
+    case willMoveFileToDormantBox(Int)
+    case willAppendPageToHomeTable([UUID])
 }
 
 enum MemoHomeViewOutput {
-    case didfetchMemoData(UUID, SortCriterias, FixedFileCollectionViewDataSource, Int)
-    case insertRowToTable(Int, [Int])
-    case didTappedDirectoryPath([Int], SortCriterias, Int)
-    case didTappedDirectoryRow(String, UUID, SortCriterias, Int)
-    case showFileInformation(StorageItemInformationType)
-    case didRemoveFile(Int)
-    case moveDoramntBoxView(DormantBoxViewModel)
-    case getMemoPageViewModel(MemoPageViewModel)
-    case presentSingleTextEditorComponentPage(SingleTextEditorPageViewModel)
-    case presentSingleTableComponentPage(SingleTablePageViewModel)
-    case presentSingleAudioComponentPage(SingleAudioPageViewModel)
-    case didPerformDropOperationInFixedTable(Int, [IndexPath], [IndexPath])
-    case didPerformDropOperationInHomeTable(Int, [IndexPath], [IndexPath])
+    case didFetchMemoData(UUID, SortCriterias, FixedFileCollectionViewDataSource, Int)
+    case didInsertRowToHomeTable(Int, [Int])
+    case didMovePreviousDirectoryPath([Int], SortCriterias, Int)
+    case didMoveToFollowingDirectory(String, UUID, SortCriterias, Int)
+    case didPresentFileInformationPopupView(StorageItemInformationType)
+    case didMoveFileToDormantBox(Int)
+    case didNavigateDormantBoxView(DormantBoxViewModel)
+    case didNavigatePageView(MemoPageViewModel)
+    case didNavigateSingleTextEditorComponentPageView(SingleTextEditorPageViewModel)
+    case didNavigateSingleTableComponentPageView(SingleTablePageViewModel)
+    case didNavigateSingleAudioComponentPageView(SingleAudioPageViewModel)
+    case didAppendPageToFixedTable(Int, [IndexPath], [IndexPath])
+    case didAppendPageToHomeTable(Int, [IndexPath], [IndexPath])
     case didChangedFileName(String, Int, Int)
-    case didChangeSortCriteria([(Int, Int)])
+    case didSortDirectoryItems([(Int, Int)])
 }
 
 enum MemoHomeViewModelError: MessageErrorType {

@@ -1,10 +1,13 @@
 import Combine
 import UIKit
 
-final class TableComponentView: PageComponentView<TableComponentContentView, TableComponent> {
+final class TableComponentView: PageComponentView<TableComponentContentView, TableComponent>,
+    CaptureableComponentView
+{
 
     static let reuseTableComponentIdentifier: String = "reuseTableComponentIdentifier"
     private var snapshotInputActionSubject: PassthroughSubject<ComponentSnapshotViewModelInput, Never>?
+    var snapshotCapturePopupView: SnapshotCapturePopupView?
 
     private let snapShotView: UIStackView = {
         let snapShotView = UIStackView()
@@ -85,23 +88,27 @@ final class TableComponentView: PageComponentView<TableComponentContentView, Tab
         )
 
         captureButton.throttleTapPublisher()
-            .sink { [weak self] _ in
+            .flatMap { [weak self] _ -> AnyPublisher<String, Never> in
+                guard let self else { return Empty().eraseToAnyPublisher() }
+
+                let popup = SnapshotCapturePopupView()
+                self.snapshotCapturePopupView = popup
+                popup.show()
+
+                return popup.captureButtonPublisher
+            }
+            .sink { [weak self] snapshotDescription in
                 guard let self else { return }
-                let snapshotCapturePopupView = SnapshotCapturePopupView { snapshotDescription in
-                    self.pageInputActionSubject?
-                        .send(.tappedCaptureButton(self.componentID, snapshotDescription))
-                }
-                snapshotCapturePopupView.show()
+                self.pageInputActionSubject?.send(.willCaptureComponent(componentID, snapshotDescription))
             }
             .store(in: &subscriptions)
 
         snapshotButton.throttleTapPublisher()
             .sink { [weak self] _ in
                 guard let self else { return }
-                pageInputActionSubject?.send(.tappedSnapshotButton(componentID))
+                pageInputActionSubject?.send(.willNavigateSnapshotView(componentID))
             }
             .store(in: &subscriptions)
-
     }
 
     // 스냅샷 뷰 전용 configure

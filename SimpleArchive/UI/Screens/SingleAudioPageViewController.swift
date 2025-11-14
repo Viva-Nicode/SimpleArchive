@@ -1,7 +1,5 @@
-import CSFBAudioEngine
 import Combine
-import CoreImage
-import PhotosUI
+import SFBAudioEngine
 import UIKit
 
 final class SingleAudioPageViewController: UIViewController, ViewControllerType {
@@ -44,7 +42,6 @@ final class SingleAudioPageViewController: UIViewController, ViewControllerType 
     var input = PassthroughSubject<SingleAudioPageInput, Never>()
     var viewModel: SingleAudioPageViewModel
     var subscriptions = Set<AnyCancellable>()
-    var thumbnail: UIImageView?
 
     private var audioControlBar = AudioControlBarView()
 
@@ -82,12 +79,12 @@ final class SingleAudioPageViewController: UIViewController, ViewControllerType 
                         dispatcher: SinglePageAudioComponentActionDispatcher(subject: input),
                         componentID: audioComponent.id)
 
-                case .presentInvalidDownloadCode:
+                case .didPresentInvalidDownloadCode:
                     audioComponentContentView
                         .audioDownloadStatePopupView?
                         .setStateToFail()
 
-                case .didDownloadMusicWithCode(let appededIndices):
+                case .didAppendAudioTrackRows(let appededIndices):
                     insertNewAudioTracks(appededIndices: appededIndices)
 
                 case let .didPlayAudioTrack(audioTrackURL, trackIndex, duration, metadata, audioSampleData):
@@ -98,28 +95,32 @@ final class SingleAudioPageViewController: UIViewController, ViewControllerType 
                         audioMetadata: metadata,
                         audioSampleData: audioSampleData)
 
-                case .didPresentGallery(let imageView):
-                    thumbnail = imageView
-                    presentPhotoGallery()
-
-                case let .didEditAudioTrackMetadata(trackIndex, editedMetadata, isNowPlayingTrack, trackIndexAfterEdit):
-                    editAudioTrackMetadata(trackIndex, editedMetadata, isNowPlayingTrack, trackIndexAfterEdit)
+                case let .didApplyAudioMetadataChanges(
+                    trackIndex,
+                    editedMetadata,
+                    isNowPlayingTrack,
+                    trackIndexAfterEdit):
+                    applyAudioTrackMetadataChanges(
+                        trackIndex,
+                        editedMetadata,
+                        isNowPlayingTrack,
+                        trackIndexAfterEdit)
 
                 case .didSortAudioTracks(let before, let after):
                     sortAudioTracks(before: before, after: after)
 
-                case .updateAudioDownloadProgress(let progress):
+                case .didUpdateAudioDownloadProgress(let progress):
                     audioComponentContentView
                         .audioDownloadStatePopupView?
                         .progress
                         .setProgress(progress, animated: true)
 
-                case .outOfSongs:
+                case .didSetAudioPlayingStateToStopped:
                     audioControlBar.updateControlBarStateToNotPlaying()
                     updateBackgroundImage(with: nil)
 
-                case let .didTapPlayPauseButton(isPlaying, nowPlayingAudioIndex, currentTime):
-                    tapPlayPauseButton(
+                case let .didToggleAudioPlayingState(isPlaying, nowPlayingAudioIndex, currentTime):
+                    setAudioPlayingState(
                         isPlaying: isPlaying, nowPlayingAudioIndex: nowPlayingAudioIndex!, currentTime: currentTime)
 
                 case .didSeekAudioTrack(let seek, let totalTime, let nowPlayingAudioIndex):
@@ -130,9 +131,6 @@ final class SingleAudioPageViewController: UIViewController, ViewControllerType 
 
                 case .didRemoveAudioTrack(let trackIndex):
                     audioComponentContentView.removeRow(trackIndex: trackIndex)
-
-                case .didPresentFilePicker:
-                    presentFilePicker()
             }
         }
         .store(in: &subscriptions)
@@ -217,7 +215,7 @@ final class SingleAudioPageViewController: UIViewController, ViewControllerType 
             dispatcher: SinglePageAudioComponentActionDispatcher(subject: input))
     }
 
-    private func editAudioTrackMetadata(
+    private func applyAudioTrackMetadataChanges(
         _ targetTrackIndex: Int,
         _ metadata: AudioTrackMetadata,
         _ isNowPlayingTrack: Bool,
@@ -243,7 +241,7 @@ final class SingleAudioPageViewController: UIViewController, ViewControllerType 
         }
     }
 
-    private func tapPlayPauseButton(isPlaying: Bool, nowPlayingAudioIndex: Int, currentTime: TimeInterval?) {
+    private func setAudioPlayingState(isPlaying: Bool, nowPlayingAudioIndex: Int, currentTime: TimeInterval?) {
         audioControlBar.setControlBarState(isPlaying: isPlaying, currentTime: currentTime)
         performWithAudioTrackRowAt(nowPlayingAudioIndex) { row in
             if isPlaying {
@@ -277,15 +275,6 @@ final class SingleAudioPageViewController: UIViewController, ViewControllerType 
         }
     }
 
-    private func presentFilePicker() {
-        let supportedTypes: [UTType] = [.audio, .mp3, .wav]
-        let documentPicker = UIDocumentPickerViewController(forOpeningContentTypes: supportedTypes)
-
-        documentPicker.delegate = viewModel
-        documentPicker.allowsMultipleSelection = true
-        present(documentPicker, animated: true)
-    }
-
     private func updateBackgroundImage(with image: UIImage?) {
         UIView.transition(
             with: self.backgroundImageView, duration: 1, options: .transitionCrossDissolve,
@@ -309,34 +298,6 @@ final class SingleAudioPageViewController: UIViewController, ViewControllerType 
             let audioTableRow = row as? AudioTableRowView
         {
             task(audioTableRow)
-        }
-    }
-}
-
-extension SingleAudioPageViewController: PHPickerViewControllerDelegate {
-
-    func presentPhotoGallery() {
-        var configuration = PHPickerConfiguration()
-
-        configuration.selectionLimit = 1
-        configuration.filter = .any(of: [.images])
-
-        let picker = PHPickerViewController(configuration: configuration)
-        picker.delegate = self
-        self.present(picker, animated: true, completion: nil)
-    }
-
-    func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
-        picker.dismiss(animated: true, completion: nil)
-
-        let itemProvider = results.first?.itemProvider
-
-        if let itemProvider = itemProvider, itemProvider.canLoadObject(ofClass: UIImage.self) {
-            itemProvider.loadObject(ofClass: UIImage.self) { (image, error) in
-                DispatchQueue.main.async {
-                    self.thumbnail?.image = (image as? UIImage)?.audioTrackThumbnailSquared
-                }
-            }
         }
     }
 }

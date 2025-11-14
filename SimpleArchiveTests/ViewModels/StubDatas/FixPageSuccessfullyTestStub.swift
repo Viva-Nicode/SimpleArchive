@@ -4,13 +4,13 @@ import Foundation
 
 final class FixPageSuccessfullyTestStub: StubDatable {
     typealias GivenStubDataType = ([MemoDirectoryModel], MemoDirectoryModel)
-    typealias TestTargetInputType = [MemoPageModel]
+    typealias TestTargetInputType = [UUID]
     typealias ExpectedOutputType = (Int, [IndexPath], [IndexPath])
 
     let testTargetName = "test_fixPage_successfully()"
 
     private var provideState: TestDataProvideState = .givenStubData
-    private var testPage: MemoPageModel!
+    private var testPage: UUID!
 
     func getStubData() -> Any {
         switch provideState {
@@ -25,7 +25,7 @@ final class FixPageSuccessfullyTestStub: StubDatable {
 
             case .testVerifyOutput:
                 provideState = .allDataConsumed
-                return (2, [IndexPath(row: 3, section: 0)], [IndexPath(row: 2, section: 0)])
+                return (2, [IndexPath(row: 3, section: 0)], [IndexPath(row: 0, section: 2)])
 
             default:
                 return ()
@@ -39,7 +39,7 @@ final class FixPageSuccessfullyTestStub: StubDatable {
 
         _ = MemoPageModel(name: "test page_1", parentDirectory: testDirectory_3)
         _ = MemoPageModel(name: "test page_2", parentDirectory: testDirectory_3)
-        testPage = MemoPageModel(name: "test page_6", parentDirectory: testDirectory_3)
+        testPage = MemoPageModel(name: "test page_6", parentDirectory: testDirectory_3).id
 
         let fixedDirectory = MemoDirectoryModel(name: "fixedDirectory")
 

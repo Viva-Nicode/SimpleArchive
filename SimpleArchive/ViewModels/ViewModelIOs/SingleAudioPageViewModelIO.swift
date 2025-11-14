@@ -4,32 +4,31 @@ import UIKit
 enum SingleAudioPageInput {
     case viewDidLoad
     case viewWillDisappear
+    
     case willDownloadMusicWithCode(String)
+    case willImportAudioFilesFromFileSystem([URL])
     case willPlayAudioTrack(Int)
-    case willPresentGallery(UIImageView)
-    case willEditAudioTrackMetadata(AudioTrackMetadata, Int)
+    case willApplyAudioMetadataChanges(AudioTrackMetadata, Int)
     case willSortAudioTracks(AudioTrackSortBy)
     case willRemoveAudioTrack(Int)
-    case willDropAudioTrack(Int, Int)
+    case willMoveAudioTrackOrder(Int, Int)
     case willPlayNextAudioTrack
     case willPlayPreviousAudioTrack
-    case willTapPlayPauseButton
+    case willToggleAudioPlayingState
     case willSeekAudioTrack(TimeInterval)
-    case willPresentFilePicker
 }
 
 enum SingleAudioPageOutput {
     case viewDidLoad(String, AudioComponent, AudioComponentDataSource)
-    case presentInvalidDownloadCode
-    case didDownloadMusicWithCode([Int])
+    
+    case didAppendAudioTrackRows([Int])
     case didPlayAudioTrack(URL, Int, TimeInterval?, AudioTrackMetadata, AudioSampleData?)
-    case didPresentGallery(UIImageView)
-    case didEditAudioTrackMetadata(Int, AudioTrackMetadata, Bool, Int?)
-    case didTapPlayPauseButton(Bool, Int?, TimeInterval?)
-    case updateAudioDownloadProgress(Float)
+    case didApplyAudioMetadataChanges(Int, AudioTrackMetadata, Bool, Int?)
+    case didToggleAudioPlayingState(Bool, Int?, TimeInterval?)
+    case didUpdateAudioDownloadProgress(Float)
     case didSeekAudioTrack(TimeInterval, TimeInterval?, Int?)
     case didSortAudioTracks([String], [String])
     case didRemoveAudioTrack(Int)
-    case didPresentFilePicker
-    case outOfSongs
+    case didPresentInvalidDownloadCode
+    case didSetAudioPlayingStateToStopped
 }

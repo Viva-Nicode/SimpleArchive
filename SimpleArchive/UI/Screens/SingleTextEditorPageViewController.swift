@@ -2,7 +2,7 @@ import Combine
 import UIKit
 
 final class SingleTextEditorPageViewController: UIViewController, ViewControllerType, UITextViewDelegate,
-    UIScrollViewDelegate, NavigationViewControllerDismissible, ComponentSnapshotViewControllerDelegate
+    UIScrollViewDelegate, NavigationViewControllerDismissible, CaptureableComponentView
 {
 
     typealias Input = SingleTextEditorPageInput
@@ -12,6 +12,8 @@ final class SingleTextEditorPageViewController: UIViewController, ViewController
     var viewModel: SingleTextEditorPageViewModel
     var detailSubject = PassthroughSubject<String, Never>()
     var subscriptions = Set<AnyCancellable>()
+
+    var snapshotCapturePopupView: SnapshotCapturePopupView?
 
     private(set) var headerView: UIView = {
         let headerView = UIView()
@@ -97,27 +99,42 @@ final class SingleTextEditorPageViewController: UIViewController, ViewController
                     setupUI(memoTitle: title, createDate: date, detail: detail)
                     setupConstraint()
 
-                case .didTappedSnapshotButton(let vm):
+                case .didNavigateSnapshotView(let vm):
                     let snapshotView = ComponentSnapshotViewController(viewModel: vm)
-                    snapshotView.delegate = self
+                    snapshotView.hasRestorePublisher
+                        .sink { [weak self] _ in
+                            guard let self else { return }
+                            input.send(.willRestoreComponent)
+                        }
+                        .store(in: &subscriptions)
                     navigationController?.pushViewController(snapshotView, animated: true)
 
-                case .didTappedCaptureButton(let detail):
+                case .didRestoreComponent(let detail):
+                    UIView.animateKeyframes(withDuration: 0.5, delay: 0, options: []) {
 
-                    UIView.animate(
-                        withDuration: 0.25,
-                        animations: {
-                            self.textEditorView.alpha = 0
+                        UIView.addKeyframe(withRelativeStartTime: 0.0, relativeDuration: 0.5) { [weak self] in
+                            guard let self else { return }
+                            textEditorView.alpha = 0
                         }
-                    ) { _ in
-                        self.textEditorView.delegate = nil
-                        self.textEditorView.text = detail
 
-                        UIView.animate(withDuration: 0.25) {
-                            self.textEditorView.alpha = 1
+                        UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0.0) { [weak self] in
+                            guard let self else { return }
+                            textEditorView.delegate = nil
+                            textEditorView.text = detail
                         }
+
+                        UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0.5) { [weak self] in
+                            guard let self else { return }
+                            textEditorView.alpha = 1
+                        }
+
+                    } completion: { [weak self] _ in
+                        guard let self else { return }
                         self.textEditorView.delegate = self
                     }
+
+                case .didCompleteComponentCapture:
+                    completeSnapshotCapturePopupView()
             }
         }
         .store(in: &subscriptions)
@@ -129,20 +146,28 @@ final class SingleTextEditorPageViewController: UIViewController, ViewController
         headerView.addSubview(titleLable)
         headerView.addSubview(createDateLabel)
         headerView.addSubview(captureButton)
+
         captureButton.throttleTapPublisher()
-            .sink { [weak self] _ in
+            .flatMap { [weak self] _ -> AnyPublisher<String, Never> in
+                guard let self else { return Empty().eraseToAnyPublisher() }
+
+                let popup = SnapshotCapturePopupView()
+                self.snapshotCapturePopupView = popup
+                popup.show()
+
+                return popup.captureButtonPublisher
+            }
+            .sink { [weak self] snapshotDescription in
                 guard let self else { return }
-                let snapshotCapturePopupView = SnapshotCapturePopupView { snapshotDescription in
-                    self.input.send(.willCaptureToComponent(snapshotDescription))
-                }
-                snapshotCapturePopupView.show()
+                self.input.send(.willCaptureComponent(snapshotDescription))
             }
             .store(in: &subscriptions)
         headerView.addSubview(snapshotButton)
+
         snapshotButton.throttleTapPublisher()
             .sink { [weak self] _ in
                 guard let self else { return }
-                input.send(.willPresentSnapshotView)
+                input.send(.willNavigateSnapshotView)
             }
             .store(in: &subscriptions)
 
@@ -198,9 +223,5 @@ final class SingleTextEditorPageViewController: UIViewController, ViewController
     func onDismiss() {
         input.send(.viewWillDisappear)
         subscriptions.removeAll()
-    }
-
-    func reloadCellForRestoredComponent() {
-        input.send(.willRestoreComponentWithSnapshot)
     }
 }

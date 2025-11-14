@@ -2,64 +2,70 @@ import Foundation
 import UIKit
 
 enum MemoPageViewInput {
+    // MARK: - Life Cycle
     case viewDidLoad
-    case createNewComponent(ComponentType)
-    case minimizeComponent(UUID)
-    case maximizeComponent(UUID)
-    case removeComponent(UUID)
-    case changeComponentName(UUID, String)
-    case changeComponentOrder(Int, Int)
-    case tappedSnapshotButton(UUID)
-    case tappedCaptureButton(UUID, String)
+    case viewWillDisappear
+
+    // MARK: - Common
+    case willCreateNewComponent(ComponentType)
+    case willToggleComponentSize(UUID)
+    case willMaximizeComponent(UUID)
+    case willRemoveComponent(UUID)
+    case willChangeComponentName(UUID, String)
+    case willChangeComponentOrder(Int, Int)
+    case willNavigateSnapshotView(UUID)
+    case willCaptureComponent(UUID, String)
+
     // MARK: - Table
-    case appendTableComponentRow(UUID)
-    case removeTableComponentRow(UUID, UUID)
-    case appendTableComponentColumn(UUID)
-    case editTableComponentColumn(UUID, [TableComponentColumn])
-    case editTableComponentCellValue(UUID, UUID, String)
-    case presentTableComponentColumnEditPopupView(UUID, Int)
+    case willAppendRowToTable(UUID)
+    case willRemoveRowToTable(UUID, UUID)
+    case willAppendColumnToTable(UUID)
+    case willApplyTableColumnChanges(UUID, [TableComponentColumn])
+    case willApplyTableCellChanges(UUID, UUID, String)
+    case willPresentTableColumnEditingPopupView(UUID, Int)
+
     // MARK: - Audio
-//    case willStoreAudioComponentDataSource(UUID, AudioComponentDataSource)
     case willDownloadMusicWithCode(UUID, String)
+    case willImportAudioFileFromFileSystem(UUID, [URL])
     case willPlayAudioTrack(UUID, Int)
-    case willTapPlayPauseButton
+    case willToggleAudioPlayingState
     case willPlayNextAudioTrack
     case willPlayPreviousAudioTrack
     case willSeekAudioTrack(TimeInterval)
-    case willPresentGallery(UIImageView)
     case willRemoveAudioTrack(UUID, Int)
-    case willEditAudioTrackMetadata(AudioTrackMetadata, UUID, Int)
+    case willApplyAudioMetadataChanges(AudioTrackMetadata, UUID, Int)
     case willSortAudioTracks(UUID, AudioTrackSortBy)
-    case willPresentFilePicker(UUID)
-    case willDropAudioTrack(UUID, Int, Int)
-    case viewWillDisappear
+    case willMoveAudioTrackOrder(UUID, Int, Int)
 }
 
 enum MemoPageViewOutput {
     case viewDidLoad(String)
-    case insertNewComponentAtLastIndex(Int)
-    case removeComponentAtIndex(Int)
-    case maximizeComponent(any PageComponent, Int)
-    case didTappedSnapshotButton(ComponentSnapshotViewModel, Int)
-    case didMinimizeComponentHeight(Int, Bool)
+
+    // MARK: - Common
+    case didAppendComponentAt(Int)
+    case didRemoveComponentAt(Int)
+    case didMaximizeComponent(any PageComponent, Int)
+    case didToggleComponentSize(Int, Bool)
+    case didNavigateSnapshotView(ComponentSnapshotViewModel, Int)
+    case didCompleteComponentCapture(Int)
+
     // MARK: - Table
-    case didAppendTableComponentRow(Int, TableComponentRow)
-    case didRemoveTableComponentRow(Int, Int)
-    case didAppendTableComponentColumn(Int, (TableComponentColumn, [TableComponentCell]))
-    case didEditTableComponentCellValue(Int, Int, Int, String)
-    case didPresentTableComponentColumnEditPopupView([TableComponentColumn], Int, UUID)
-    case didEditTableComponentColumn(Int, [TableComponentColumn])
+    case didAppendRowToTableView(Int, TableComponentRow)
+    case didRemoveRowToTableView(Int, Int)
+    case didAppendColumnToTableView(Int, (TableComponentColumn, [TableComponentCell]))
+    case didApplyTableCellValueChanges(Int, Int, Int, String)
+    case didPresentTableColumnEditPopupView([TableComponentColumn], Int, UUID)
+    case didApplyTableColumnChanges(Int, [TableComponentColumn])
+
     // MARK: - Audio
-    case didDownloadMusicWithCode(Int, [Int])
+    case didAppendAudioTrackRows(Int, [Int])
     case didPlayAudioTrack(Int?, Int, URL, Int, TimeInterval?, AudioTrackMetadata, AudioSampleData?)
-    case didTapPlayPauseButton(Int, Int, Bool, TimeInterval?)
-    case updateAudioDownloadProgress(Int, Float)
+    case didToggleAudioPlayingState(Int, Int, Bool, TimeInterval?)
+    case didUpdateAudioDownloadProgress(Int, Float)
     case didSeekAudioTrack(Int, Int, TimeInterval, TimeInterval?)
-    case didPresentGallery(UIImageView)
     case didRemoveAudioTrack(Int, Int)
     case didSortAudioTracks(Int, [String], [String])
-    case presentInvalidDownloadCode(Int)
-    case outOfSongs(Int)
-    case didPresentFilePicker
-    case didEditAudioTrackMetadata(Int, Int, AudioTrackMetadata, Bool, Int?)
+    case didPresentInvalidDownloadCode(Int)
+    case didSetAudioPlayingStateToStopped(Int)
+    case didApplyAudioMetadataChanges(Int, Int, AudioTrackMetadata, Bool, Int?)
 }

@@ -1,5 +1,6 @@
 import CSFBAudioEngine
 import Combine
+import PhotosUI
 import UIKit
 
 final class AudioTrackEditPopupView: PopupView {
@@ -84,12 +85,6 @@ final class AudioTrackEditPopupView: PopupView {
         return UIButton(configuration: buttonConfiguration)
     }()
 
-    var thumbnailPublisher: AnyPublisher<UIImageView, Never> {
-        thumbnailImage.throttleUIViewTapGesturePublisher()
-            .map { _ in self.thumbnailImage }
-            .eraseToAnyPublisher()
-    }
-
     var confirmButtonPublisher: AnyPublisher<AudioTrackMetadata, Never> {
         confirmButton.throttleTapPublisher()
             .map { _ in
@@ -125,6 +120,19 @@ final class AudioTrackEditPopupView: PopupView {
         thumbnailView.heightAnchor.constraint(equalToConstant: 100).isActive = true
 
         thumbnailView.addSubview(thumbnailImage)
+
+        thumbnailImage.throttleUIViewTapGesturePublisher()
+            .sink { _ in
+                var configuration = PHPickerConfiguration()
+
+                configuration.selectionLimit = 1
+                configuration.filter = .any(of: [.images])
+
+                let picker = PHPickerViewController(configuration: configuration)
+                picker.delegate = self
+                self.parentViewController?.present(picker, animated: true)
+            }
+            .store(in: &subscriptions)
         thumbnailImage.heightAnchor.constraint(equalToConstant: 100).isActive = true
         thumbnailImage.widthAnchor.constraint(equalToConstant: 100).isActive = true
         thumbnailImage.centerXAnchor.constraint(equalTo: thumbnailView.centerXAnchor).isActive = true
@@ -160,5 +168,21 @@ final class AudioTrackEditPopupView: PopupView {
         buttonContainer.addArrangedSubview(cancelButton)
         buttonContainer.addArrangedSubview(confirmButton)
         alertContainer.addArrangedSubview(buttonContainer)
+    }
+}
+
+extension AudioTrackEditPopupView: PHPickerViewControllerDelegate {
+    func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+        picker.dismiss(animated: true, completion: nil)
+
+        let itemProvider = results.first?.itemProvider
+
+        if let itemProvider = itemProvider, itemProvider.canLoadObject(ofClass: UIImage.self) {
+            itemProvider.loadObject(ofClass: UIImage.self) { (image, error) in
+                DispatchQueue.main.async {
+                    self.thumbnailImage.image = (image as? UIImage)?.audioTrackThumbnailSquared
+                }
+            }
+        }
     }
 }

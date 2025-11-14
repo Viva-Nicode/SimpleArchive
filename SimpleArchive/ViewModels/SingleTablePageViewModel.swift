@@ -47,7 +47,7 @@ import UIKit
                 case .viewWillDisappear:
                     saveComponentsChanges()
 
-                case .willPresentSnapshotView:
+                case .willNavigateSnapshotView:
                     guard let repository = DIContainer.shared.resolve(ComponentSnapshotCoreDataRepository.self)
                     else { return }
 
@@ -55,45 +55,46 @@ import UIKit
                         componentSnapshotCoreDataRepository: repository,
                         snapshotRestorableComponent: tableComponent as (any SnapshotRestorable))
 
-                    output.send(.didTappedSnapshotButton(componentSnapshotViewModel))
+                    output.send(.didNavigateSnapshotView(componentSnapshotViewModel))
 
-                case .willRestoreComponentWithSnapshot:
-                    output.send(.didTappedCaptureButton(tableComponent.detail))
+                case .willRestoreComponent:
+                    output.send(.didRestoreComponent(tableComponent.detail))
 
-                case .willCaptureToComponent(let desc):
+                case .willCaptureComponent(let desc):
                     coredataReposotory.captureSnapshot(
                         snapshotRestorableComponent: tableComponent,
                         desc: desc)
+                    output.send(.didCompleteComponentCapture)
 
-                case .willRemoveTableComponentRow(let rowID):
+                case .willRemoveRowToTable(let rowID):
                     let removedRowIndex = tableComponent.componentDetail.removeRow(rowID)
                     tableComponent.persistenceState = .unsaved(isMustToStoreSnapshot: true)
-                    output.send(.didRemoveTableComponentRow(removedRowIndex))
+                    output.send(.didRemoveRowToTableView(removedRowIndex))
 
-                case .willEditTableComponentCellValue(let cellid, let newCellValue):
+                case .willApplyTableCellChanges(let cellid, let newCellValue):
                     let indices = tableComponent.componentDetail.editCellValeu(cellid, newCellValue)
                     tableComponent.persistenceState = .unsaved(isMustToStoreSnapshot: true)
-                    output.send(.didEditTableComponentCellValue(indices.0, indices.1, newCellValue))
+                    output.send(.didApplyTableCellValueChanges(indices.0, indices.1, newCellValue))
 
-                case .willAppendTableComponentColumn:
+                case .willAppendColumnToTable:
                     let newColumn = tableComponent.componentDetail.appendNewColumn(columnTitle: "column")
                     tableComponent.persistenceState = .unsaved(isMustToStoreSnapshot: true)
-                    output.send(.didAppendTableComponentColumn(newColumn))
+                    output.send(.didAppendColumnToTableView(newColumn))
 
-                case .willAppendTableComponentRow:
+                case .willAppendRowToTable:
                     let newRow = tableComponent.componentDetail.appendNewRow()
                     tableComponent.persistenceState = .unsaved(isMustToStoreSnapshot: true)
-                    output.send(.didAppendTableComponentRow(newRow))
+                    output.send(.didAppendRowToTableView(newRow))
 
-                case .presentTableComponentColumnEditPopupView(let columnIndex):
+                case .willPresentTableColumnEditingPopupView(let columnIndex):
                     output.send(
-                        .didPresentTableComponentColumnEditPopupView(
+                        .didPresentTableColumnEditPopupView(
                             tableComponent.componentDetail.columns, columnIndex))
 
-                case .editTableComponentColumn(let editedColumns):
+                case .willApplyTableColumnChanges(let editedColumns):
                     tableComponent.componentDetail.setColumn(editedColumns)
                     tableComponent.persistenceState = .unsaved(isMustToStoreSnapshot: true)
-                    output.send(.didEditTableComponentColumn(editedColumns))
+                    output.send(.didApplyTableColumnChanges(editedColumns))
             }
         }
         .store(in: &subscriptions)

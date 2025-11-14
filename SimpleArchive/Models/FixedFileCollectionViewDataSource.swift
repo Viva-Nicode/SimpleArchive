@@ -38,7 +38,7 @@ final class FixedFileCollectionViewDataSource: NSObject, UICollectionViewDataSou
 
 extension FixedFileCollectionViewDataSource: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        input?.send(.didTappedFixedPageRow(indexPath.item))
+        input?.send(.willNavigateFixedPageView(indexPath.item))
     }
 }
 
@@ -68,7 +68,7 @@ extension FixedFileCollectionViewDataSource: UICollectionViewDropDelegate {
         coordinator.session.loadObjects(ofClass: NSString.self) { [self] items in
             guard let objects = items as? [NSString] else { return }
             let ids = objects.compactMap { UUID(uuidString: $0 as String) }
-            input?.send(.didPerformDropOperationInFixedTable(ids))
+            input?.send(.willAppendPageToFixedTable(ids))
         }
     }
 }

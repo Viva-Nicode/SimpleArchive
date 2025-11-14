@@ -10,11 +10,10 @@ protocol AudioComponentActionDispatcher {
     func playPreviousAudioTrack()
     func seekAudioTrack(seek: TimeInterval)
     func changeAudioTrackMetadata(editMetadata: AudioTrackMetadata, componentID: UUID, trackIndex: Int)
-    func presentGallery(_ imageView: UIImageView)
     func changeSortByAudioTracks(componentID: UUID, sortBy: AudioTrackSortBy)
-    func dropAudioTrack(componentID: UUID, src: Int, des: Int)
+    func moveAudioTrackOrder(componentID: UUID, src: Int, des: Int)
     func removeAudioTrack(componentID: UUID, trackIndex: Int)
-    func presentFilePicker(componentID:UUID)
+    func importAudioFilesFromFileSystem(componentID: UUID, urls: [URL])
 }
 
 final class MemoPageAudioComponentActionDispatcher: AudioComponentActionDispatcher {
@@ -34,7 +33,7 @@ final class MemoPageAudioComponentActionDispatcher: AudioComponentActionDispatch
     }
 
     func togglePlayingState() {
-        subject.send(.willTapPlayPauseButton)
+        subject.send(.willToggleAudioPlayingState)
     }
 
     func playNextAudioTrack() {
@@ -50,27 +49,23 @@ final class MemoPageAudioComponentActionDispatcher: AudioComponentActionDispatch
     }
 
     func changeAudioTrackMetadata(editMetadata: AudioTrackMetadata, componentID: UUID, trackIndex: Int) {
-        subject.send(.willEditAudioTrackMetadata(editMetadata, componentID, trackIndex))
-    }
-
-    func presentGallery(_ imageView: UIImageView) {
-        subject.send(.willPresentGallery(imageView))
+        subject.send(.willApplyAudioMetadataChanges(editMetadata, componentID, trackIndex))
     }
 
     func changeSortByAudioTracks(componentID: UUID, sortBy: AudioTrackSortBy) {
         subject.send(.willSortAudioTracks(componentID, sortBy))
     }
 
-    func dropAudioTrack(componentID: UUID, src: Int, des: Int) {
-        subject.send(.willDropAudioTrack(componentID, src, des))
+    func moveAudioTrackOrder(componentID: UUID, src: Int, des: Int) {
+        subject.send(.willMoveAudioTrackOrder(componentID, src, des))
     }
 
     func removeAudioTrack(componentID: UUID, trackIndex: Int) {
         subject.send(.willRemoveAudioTrack(componentID, trackIndex))
     }
-    
-    func presentFilePicker(componentID:UUID) {
-        subject.send(.willPresentFilePicker(componentID))
+
+    func importAudioFilesFromFileSystem(componentID: UUID, urls: [URL]) {
+        subject.send(.willImportAudioFileFromFileSystem(componentID, urls))
     }
 }
 
@@ -91,7 +86,7 @@ final class SinglePageAudioComponentActionDispatcher: AudioComponentActionDispat
     }
 
     func togglePlayingState() {
-        subject.send(.willTapPlayPauseButton)
+        subject.send(.willToggleAudioPlayingState)
     }
 
     func playNextAudioTrack() {
@@ -107,26 +102,22 @@ final class SinglePageAudioComponentActionDispatcher: AudioComponentActionDispat
     }
 
     func changeAudioTrackMetadata(editMetadata: AudioTrackMetadata, componentID: UUID, trackIndex: Int) {
-        subject.send(.willEditAudioTrackMetadata(editMetadata, trackIndex))
-    }
-
-    func presentGallery(_ imageView: UIImageView) {
-        subject.send(.willPresentGallery(imageView))
+        subject.send(.willApplyAudioMetadataChanges(editMetadata, trackIndex))
     }
 
     func changeSortByAudioTracks(componentID: UUID, sortBy: AudioTrackSortBy) {
         subject.send(.willSortAudioTracks(sortBy))
     }
 
-    func dropAudioTrack(componentID: UUID, src: Int, des: Int) {
-        subject.send(.willDropAudioTrack(src, des))
+    func moveAudioTrackOrder(componentID: UUID, src: Int, des: Int) {
+        subject.send(.willMoveAudioTrackOrder(src, des))
     }
 
     func removeAudioTrack(componentID: UUID, trackIndex: Int) {
         subject.send(.willRemoveAudioTrack(trackIndex))
     }
-    
-    func presentFilePicker(componentID:UUID) {
-        subject.send(.willPresentFilePicker)
+
+    func importAudioFilesFromFileSystem(componentID: UUID, urls: [URL]) {
+        subject.send(.willImportAudioFilesFromFileSystem(urls))
     }
 }

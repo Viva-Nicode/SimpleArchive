@@ -1,7 +1,8 @@
-import CSFBAudioEngine
 import Combine
 import Foundation
 import UIKit
+import ZIPFoundation
+import SFBAudioEngine
 
 protocol AudioDownloaderType {
     typealias progressClosure = ((Float) -> Void)

@@ -122,7 +122,7 @@ final class NewPagePopupView: PopupView {
         confirmButton.throttleTapPublisher()
             .sink { [weak self] _ in
                 guard let self else { return }
-                subject.send(.didCreatedNewPage(pageNameTextField.text ?? "new Page", selectedComponentType))
+                subject.send(.willCreatedNewPage(pageNameTextField.text ?? "new Page", selectedComponentType))
                 self.dismiss()
             }
             .store(in: &subscriptions)

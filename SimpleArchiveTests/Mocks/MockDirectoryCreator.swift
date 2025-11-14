@@ -9,7 +9,7 @@ class MockDirectoryCreator: Mock, FileCreatorType {
     var actions = MockActions<Action>(expected: [])
     var createFileResult: MemoDirectoryModel!
 
-    func createFile(itemName: String, parentDirectory: MemoDirectoryModel?) -> some StorageItem {
+    func createFile(itemName: String, parentDirectory: MemoDirectoryModel?) -> any StorageItem {
         register(.createFile)
         return createFileResult
     }

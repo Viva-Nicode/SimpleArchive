@@ -44,13 +44,13 @@ extension MemoHomeDirectoryContentCellDataSource: UITableViewDelegate {
 
         let showFileInfomation =
             UIContextualAction(style: .normal, title: "share") { (_, _, success: @escaping (Bool) -> Void) in
-                self.input.send(.showFileInformation(indexPath.section))
+                self.input.send(.willPresentFileInformationPopupView(indexPath.section))
                 success(true)
             }
 
         let removeFile =
             UIContextualAction(style: .normal, title: "remove") { (_, _, success: @escaping (Bool) -> Void) in
-                self.input.send(.removeFile(indexPath.section))
+                self.input.send(.willMoveFileToDormantBox(indexPath.section))
                 success(true)
             }
 
@@ -70,11 +70,11 @@ extension MemoHomeDirectoryContentCellDataSource: UITableViewDelegate {
 
         switch fileTapped {
             case is MemoPageModel:
-                input.send(.didTappedPageRow(indexPath.section))
+                input.send(.willNavigatePageView(indexPath.section))
 
             case is MemoDirectoryModel:
                 tableView.isUserInteractionEnabled = false
-                input.send(.didTappedDirectoryRow(indexPath.section))
+                input.send(.willMoveToFollowingDirectory(indexPath.section))
 
             default:
                 break
@@ -123,7 +123,7 @@ extension MemoHomeDirectoryContentCellDataSource: UITableViewDropDelegate {
         coordinator.session.loadObjects(ofClass: NSString.self) { [self] items in
             guard let nsstrings = items as? [NSString] else { return }
             let ids = nsstrings.compactMap { UUID(uuidString: $0 as String) }
-            input.send(.didPerformDropOperationInHomeTable(ids))
+            input.send(.willAppendPageToHomeTable(ids))
         }
     }
 
@@ -138,7 +138,7 @@ extension MemoHomeDirectoryContentCellDataSource: UIDropInteractionDelegate {
         session.loadObjects(ofClass: NSString.self) { [self] items in
             guard let nsstrings = items as? [NSString] else { return }
             let ids = nsstrings.compactMap { UUID(uuidString: $0 as String) }
-            input.send(.didPerformDropOperationInHomeTable(ids))
+            input.send(.willAppendPageToHomeTable(ids))
         }
     }
 

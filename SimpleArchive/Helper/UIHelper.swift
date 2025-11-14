@@ -148,20 +148,7 @@ extension UIResponder {
 }
 
 extension UIView {
-    func addBottomBorder(color: UIColor, thickness: CGFloat = 1.0) {
-        let border = CALayer()
-        border.backgroundColor = color.cgColor
-        border.frame = CGRect(
-            x: 0,
-            y: self.bounds.height - thickness,
-            width: self.bounds.width,
-            height: thickness
-        )
-        self.layer.addSublayer(border)
-    }
-}
 
-extension UIView {
     public static var spacerView: UIView {
         let view = UIView()
         view.isUserInteractionEnabled = false
@@ -193,6 +180,35 @@ extension UIView {
                 case .purple: return UIColor.purple.cgColor
             }
         }
+    }
+
+    func addBottomBorder(color: UIColor, thickness: CGFloat = 1.0) {
+        let border = CALayer()
+        border.backgroundColor = color.cgColor
+        border.frame = CGRect(
+            x: 0,
+            y: self.bounds.height - thickness,
+            width: self.bounds.width,
+            height: thickness
+        )
+        self.layer.addSublayer(border)
+    }
+
+    var parentViewController: UIViewController? {
+        var responder: UIResponder? = self
+
+        while let next = responder?.next {
+            if let vc = next as? UIViewController {
+                return vc
+            }
+            responder = next
+        }
+
+        guard var top = window?.rootViewController else { return nil }
+        while let presented = top.presentedViewController {
+            top = presented
+        }
+        return top
     }
 }
 

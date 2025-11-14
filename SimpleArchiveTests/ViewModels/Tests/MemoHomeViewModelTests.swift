@@ -66,16 +66,25 @@ final class MemoHomeViewModelTests: XCTestCase, @preconcurrency StubProvidingTes
         let output = try factualOutput.getOutput()
         let (
             factualMainDirectoryID,
-            factualMainDirectorySortCriteria
+            factualMainDirectorySortCriteria,
+            factualMainDirectoryFileCount
         ) = stub.getStubData() as! StubType.ExpectedOutputType
 
-        guard case .didfetchMemoData(let mainDirectoryID, let mainDirectorySortCriteria) = output else {
+        guard
+            case .didFetchMemoData(
+                let mainDirectoryID,
+                let mainDirectorySortCriteria,
+                _,
+                let fileCount
+            ) = output
+        else {
             XCTFail("Unexpected output")
             return
         }
 
         XCTAssertEqual(mainDirectoryID, factualMainDirectoryID)
         XCTAssertEqual(mainDirectorySortCriteria, factualMainDirectorySortCriteria)
+        XCTAssertEqual(fileCount, factualMainDirectoryFileCount)
         mockMemoDirectoryCoreDataRepository.verify()
     }
 
@@ -96,17 +105,18 @@ final class MemoHomeViewModelTests: XCTestCase, @preconcurrency StubProvidingTes
 
         let inputData = stub.getStubData() as! StubType.TestTargetInputType
 
-        input.send(.didTappedDirectoryPath(inputData))
+        input.send(.willMovePreviousDirectoryPath(inputData))
         wait(for: [expectation], timeout: 1)
 
         let output = try factualOutput.getOutput()
-        let (expectedRemovedDirectoryIndices, expectedNextDirectorySortCriteria) =
+        let (expectedRemovedDirectoryIndices, expectedNextDirectorySortCriteria, expectedFileCount) =
             stub.getStubData() as! StubType.ExpectedOutputType
 
         guard
-            case .didTappedDirectoryPath(
+            case .didMovePreviousDirectoryPath(
                 let removedDirectoryIndices,
-                let nextDirectorySortCriteria) = output
+                let nextDirectorySortCriteria,
+                let fileCount) = output
         else {
             XCTFail("Unexpected output")
             return
@@ -114,6 +124,7 @@ final class MemoHomeViewModelTests: XCTestCase, @preconcurrency StubProvidingTes
 
         XCTAssertEqual(expectedRemovedDirectoryIndices, removedDirectoryIndices)
         XCTAssertEqual(expectedNextDirectorySortCriteria, nextDirectorySortCriteria)
+        XCTAssertEqual(expectedFileCount, fileCount)
     }
 
     func test_fixPage_successfully() throws {
@@ -139,7 +150,7 @@ final class MemoHomeViewModelTests: XCTestCase, @preconcurrency StubProvidingTes
 
         let inputData = stub.getStubData() as! StubType.TestTargetInputType
 
-        input.send(.didPerformDropOperationInFixedTable(inputData))
+        input.send(.willAppendPageToFixedTable(inputData))
         wait(for: [expectation], timeout: 1)
 
         let output = try factualOutput.getOutput()
@@ -150,7 +161,7 @@ final class MemoHomeViewModelTests: XCTestCase, @preconcurrency StubProvidingTes
         ) = stub.getStubData() as! StubType.ExpectedOutputType
 
         guard
-            case .didPerformDropOperationInFixedTable(
+            case .didAppendPageToFixedTable(
                 let directoryIndex,
                 let insertRowIndices,
                 let deleteRowIndices) = output
@@ -191,7 +202,7 @@ final class MemoHomeViewModelTests: XCTestCase, @preconcurrency StubProvidingTes
         sut.subscribe(input: subInput.eraseToAnyPublisher())
 
         let inputData = stub.getStubData() as! StubType.TestTargetInputType
-        subInput.send(.didPerformDropOperationInHomeTable(inputData))
+        subInput.send(.willAppendPageToHomeTable(inputData))
         wait(for: [expectation], timeout: 1)
 
         let output = try factualOutput.getOutput()
@@ -202,7 +213,7 @@ final class MemoHomeViewModelTests: XCTestCase, @preconcurrency StubProvidingTes
         ) = stub.getStubData() as! StubType.ExpectedOutputType
 
         guard
-            case .didPerformDropOperationInHomeTable(
+            case .didAppendPageToHomeTable(
                 let directoryIndex,
                 let insertRowIndices,
                 let deleteRowIndices) = output
@@ -241,7 +252,7 @@ final class MemoHomeViewModelTests: XCTestCase, @preconcurrency StubProvidingTes
         sut.subscribe(input: subInput.eraseToAnyPublisher())
 
         let newDirectoryName = stub.getStubData() as! StubType.TestTargetInputType
-        subInput.send(.didCreatedNewDirectory(newDirectoryName))
+        subInput.send(.willCreatedNewDirectory(newDirectoryName))
         wait(for: [expectation], timeout: 1)
 
         let output = try factualOutput.getOutput()
@@ -251,7 +262,7 @@ final class MemoHomeViewModelTests: XCTestCase, @preconcurrency StubProvidingTes
         ) = stub.getStubData() as! StubType.ExpectedOutputType
 
         guard
-            case .insertRowToTable(
+            case .didInsertRowToHomeTable(
                 let directoryStackIndex,
                 let insertIndex
             ) = output
@@ -291,7 +302,7 @@ final class MemoHomeViewModelTests: XCTestCase, @preconcurrency StubProvidingTes
         sut.subscribe(input: subInput.eraseToAnyPublisher())
 
         let newPageName = stub.getStubData() as! StubType.TestTargetInputType
-        subInput.send(.didCreatedNewPage(newPageName))
+        subInput.send(.willCreatedNewPage(newPageName, nil))
         wait(for: [expectation], timeout: 1)
 
         let output = try factualOutput.getOutput()
@@ -302,7 +313,7 @@ final class MemoHomeViewModelTests: XCTestCase, @preconcurrency StubProvidingTes
         ) = stub.getStubData() as! StubType.ExpectedOutputType
 
         guard
-            case .insertRowToTable(
+            case .didInsertRowToHomeTable(
                 let directoryStackIndex,
                 let insertIndex
             ) = output

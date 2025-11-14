@@ -5,7 +5,7 @@ import Foundation
 final class MoveToPreviousDirectorySuccessfullyTestStub: StubDatable {
     typealias GivenStubDataType = [MemoDirectoryModel]
     typealias TestTargetInputType = UUID
-    typealias ExpectedOutputType = ([Int], SortCriterias)
+    typealias ExpectedOutputType = ([Int], SortCriterias, Int)
 
     let testTargetName = "test_moveToPreviousDirectory_successfully()"
 
@@ -25,7 +25,7 @@ final class MoveToPreviousDirectorySuccessfullyTestStub: StubDatable {
 
             case .testVerifyOutput:
                 provideState = .allDataConsumed
-                return ([2, 3], SortCriterias.creationDate)
+                return ([2, 3], SortCriterias.creationDate, 1)
 
             default:
                 return ()

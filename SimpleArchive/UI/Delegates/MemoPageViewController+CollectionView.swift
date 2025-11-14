@@ -69,7 +69,7 @@ extension MemoPageViewController: UICollectionViewDropDelegate {
         if let item = coordinator.items.first, let sourceIndexPath = item.sourceIndexPath {
             collectionView.performBatchUpdates(
                 {
-                    input.send(.changeComponentOrder(sourceIndexPath.item, destinationIndexPath.item))
+                    input.send(.willChangeComponentOrder(sourceIndexPath.item, destinationIndexPath.item))
                     collectionView.moveItem(at: sourceIndexPath, to: destinationIndexPath)
                 }, completion: nil)
 

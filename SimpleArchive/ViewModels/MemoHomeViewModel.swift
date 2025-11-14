@@ -17,7 +17,7 @@ import UIKit
     private var memoPageCoredataReposotory: MemoPageCoreDataRepositoryType
 
     private let directoryCreator: any FileCreatorType
-    private let pageCreator: PageCreator
+    private let pageCreator: any PageCreatorType
 
     private var restoredPageListSubject = PassthroughSubject<[MemoPageModel], Never>()
     private var restoredPageListSubjectSubscription: AnyCancellable?
@@ -30,7 +30,7 @@ import UIKit
         memoDirectoryCoredataReposotory: MemoDirectoryCoreDataRepositoryType,
         memoPageCoredataReposotory: MemoPageCoreDataRepositoryType,
         directoryCreator: any FileCreatorType,
-        pageCreator: PageCreator
+        pageCreator: any PageCreatorType
     ) {
         self.memoDirectoryCoredataReposotory = memoDirectoryCoredataReposotory
         self.memoPageCoredataReposotory = memoPageCoredataReposotory
@@ -47,25 +47,25 @@ import UIKit
                 case .viewDidLoad:
                     fetchMemoData()
 
-                case .didTappedDirectoryPath(let targetDirId):
+                case .willMovePreviousDirectoryPath(let targetDirId):
                     moveToPreviousDirectory(destinationDirectoryID: targetDirId)
 
-                case .getDormantBoxViewModel:
+                case .willNavigateDormantBoxView:
                     getDormantBoxViewModel()
 
-                case .didPerformDropOperationInFixedTable(let dropedPages):
+                case .willAppendPageToFixedTable(let dropedPages):
                     fixPage(with: dropedPages)
 
-                case .changeFileName(let fileID, let newName):
+                case .willChangeFileName(let fileID, let newName):
                     changeFileName(fileID: fileID, newName: newName)
 
-                case .didTappedFixedPageRow(let pageIndex):
+                case .willNavigateFixedPageView(let pageIndex):
                     moveToFixedPage(followingPageIndex: pageIndex)
 
-                case .changeFileSortBy(let sortBy):
+                case .willSortDirectoryItems(let sortBy):
                     changeSortCriteria(sortBy: sortBy)
 
-                case .toggleAscendingOrder:
+                case .willToggleAscendingOrder:
                     toggleAscendingOrder()
             }
         }
@@ -79,25 +79,25 @@ import UIKit
             guard let self else { return }
 
             switch subViewEvent {
-                case .didCreatedNewDirectory(let newDirectoryName):
+                case .willCreatedNewDirectory(let newDirectoryName):
                     createdNewDirectory(newDirectoryName)
 
-                case .didCreatedNewPage(let newPageName, let type):
+                case .willCreatedNewPage(let newPageName, let type):
                     createdNewPage(newPageName, singleComponentType: type)
 
-                case .didTappedDirectoryRow(let index):
+                case .willMoveToFollowingDirectory(let index):
                     moveToFollowingDirectory(index: index)
 
-                case .didTappedPageRow(let index):
+                case .willNavigatePageView(let index):
                     moveToPage(followingPageIndex: index)
 
-                case .showFileInformation(let fileIndex):
+                case .willPresentFileInformationPopupView(let fileIndex):
                     showFileInformation(fileIndexToShowInformation: fileIndex)
 
-                case .removeFile(let fileIndexToDelete):
+                case .willMoveFileToDormantBox(let fileIndexToDelete):
                     moveFileToDormantBox(idx: fileIndexToDelete)
 
-                case .didPerformDropOperationInHomeTable(let dropedPages):
+                case .willAppendPageToHomeTable(let dropedPages):
                     unfixPage(with: dropedPages)
             }
         }
@@ -122,7 +122,7 @@ import UIKit
                     self.fixedFileCollectionViewDataSource =
                         FixedFileCollectionViewDataSource(fixedFileDirectory: self.fixedFileDirectory)
                     self.output.send(
-                        .didfetchMemoData(
+                        .didFetchMemoData(
                             self.directoryStack.first!.id,
                             self.directoryStack.first!.getSortBy(),
                             self.fixedFileCollectionViewDataSource,
@@ -141,7 +141,7 @@ import UIKit
         let insertedIndex = directoryStack.last![newDirectory.id]!.index
 
         memoDirectoryCoredataReposotory.createStorageItem(storageItem: newDirectory)
-        output.send(.insertRowToTable(directoryStack.count - 1, [insertedIndex]))
+        output.send(.didInsertRowToHomeTable(directoryStack.count - 1, [insertedIndex]))
     }
 
     private func createdNewPage(_ newPageName: String, singleComponentType: ComponentType? = nil) {
@@ -154,14 +154,14 @@ import UIKit
             let insertedIndex = directoryStack.last![newPage.id]!.index
 
             memoDirectoryCoredataReposotory.createStorageItem(storageItem: newPage)
-            output.send(.insertRowToTable(directoryStack.count - 1, [insertedIndex]))
+            output.send(.didInsertRowToHomeTable(directoryStack.count - 1, [insertedIndex]))
         } else {
             pageCreator.setFirstComponentType(type: .text)
             let newPage = pageCreator.createFile(itemName: newPageName, parentDirectory: directoryStack.last!)
             let insertedIndex = directoryStack.last![newPage.id]!.index
 
             memoDirectoryCoredataReposotory.createStorageItem(storageItem: newPage)
-            output.send(.insertRowToTable(directoryStack.count - 1, [insertedIndex]))
+            output.send(.didInsertRowToHomeTable(directoryStack.count - 1, [insertedIndex]))
         }
     }
 
@@ -169,7 +169,7 @@ import UIKit
         let followingDirectory = directoryStack.last![index] as! MemoDirectoryModel
         directoryStack.append(followingDirectory)
         output.send(
-            .didTappedDirectoryRow(
+            .didMoveToFollowingDirectory(
                 followingDirectory.name,
                 followingDirectory.id,
                 followingDirectory.getSortBy(),
@@ -191,19 +191,19 @@ import UIKit
                     coredataReposotory: memoComponentCoreDataRepository,
                     textEditorComponent: singleTextEditorComponent,
                     pageTitle: followingPage.name)
-                output.send(.presentSingleTextEditorComponentPage(vm))
+                output.send(.didNavigateSingleTextEditorComponentPageView(vm))
             } else if let singleTableComponent = followingPage.getComponents.first as? TableComponent {
                 let vm = SingleTablePageViewModel(
                     coredataReposotory: memoComponentCoreDataRepository,
                     tableComponent: singleTableComponent,
                     pageTitle: followingPage.name)
-                output.send(.presentSingleTableComponentPage(vm))
+                output.send(.didNavigateSingleTableComponentPageView(vm))
             } else if let singleAudioComponent = followingPage.getComponents.first as? AudioComponent {
                 let vm = SingleAudioPageViewModel(
                     coredataReposotory: memoComponentCoreDataRepository,
                     audioComponent: singleAudioComponent,
                     pageTitle: followingPage.name)
-                output.send(.presentSingleAudioComponentPage(vm))
+                output.send(.didNavigateSingleAudioComponentPageView(vm))
             }
         } else {
             let memoPageViewModel = MemoPageViewModel(
@@ -211,7 +211,7 @@ import UIKit
                 memoComponentCoredataReposotory: memoComponentCoreDataRepository,
                 page: followingPage)
 
-            output.send(.getMemoPageViewModel(memoPageViewModel))
+            output.send(.didNavigatePageView(memoPageViewModel))
         }
     }
 
@@ -223,7 +223,7 @@ import UIKit
         directoryStack.removeLast(directoryStackLastIndex - destinationDirectoryIndex)
 
         output.send(
-            .didTappedDirectoryPath(
+            .didMovePreviousDirectoryPath(
                 Array(((destinationDirectoryIndex + 1)...directoryStackLastIndex)),
                 directoryStack.last!.getSortBy(),
                 directoryStack.last!.getChildItemSize()
@@ -245,19 +245,19 @@ import UIKit
                     coredataReposotory: memoComponentCoreDataRepository,
                     textEditorComponent: singleTextEditorComponent,
                     pageTitle: followingPage.name)
-                output.send(.presentSingleTextEditorComponentPage(vm))
+                output.send(.didNavigateSingleTextEditorComponentPageView(vm))
             } else if let singleTableComponent = followingPage.getComponents.first as? TableComponent {
                 let vm = SingleTablePageViewModel(
                     coredataReposotory: memoComponentCoreDataRepository,
                     tableComponent: singleTableComponent,
                     pageTitle: followingPage.name)
-                output.send(.presentSingleTableComponentPage(vm))
+                output.send(.didNavigateSingleTableComponentPageView(vm))
             } else if let singleAudioComponent = followingPage.getComponents.first as? AudioComponent {
                 let vm = SingleAudioPageViewModel(
                     coredataReposotory: memoComponentCoreDataRepository,
                     audioComponent: singleAudioComponent,
                     pageTitle: followingPage.name)
-                output.send(.presentSingleAudioComponentPage(vm))
+                output.send(.didNavigateSingleAudioComponentPageView(vm))
             }
         } else {
             let memoPageViewModel = MemoPageViewModel(
@@ -265,21 +265,21 @@ import UIKit
                 memoComponentCoredataReposotory: memoComponentCoreDataRepository,
                 page: followingPage)
 
-            output.send(.getMemoPageViewModel(memoPageViewModel))
+            output.send(.didNavigatePageView(memoPageViewModel))
         }
     }
 
     private func showFileInformation(fileIndexToShowInformation: Int) {
         let file = directoryStack.last![fileIndexToShowInformation]!
         selectedTableindexToCheckFileInformation = fileIndexToShowInformation
-        output.send(.showFileInformation(file.getFileInformation()))
+        output.send(.didPresentFileInformationPopupView(file.getFileInformation()))
     }
 
     private func moveFileToDormantBox(idx fileIndexToDelete: Int) {
         let targetItem = directoryStack.last![fileIndexToDelete]!
         targetItem.removeStorageItem()
         memoDirectoryCoredataReposotory.moveFileToDormantBox(fileID: targetItem.id)
-        output.send(.didRemoveFile(fileIndexToDelete))
+        output.send(.didMoveFileToDormantBox(fileIndexToDelete))
     }
 
     private func getDormantBoxViewModel() {
@@ -294,16 +294,16 @@ import UIKit
             restoredPageListSubject
             .sink { [weak self] restoredPageList in
                 guard let self else { return }
-                
+
                 for page in restoredPageList {
                     page.parentDirectory = directoryStack.first!
                     page.parentDirectory?.insertChildItem(item: page)
                 }
 
                 let insertedIndices = restoredPageList.map { self.directoryStack.first![$0.id]!.index }
-                output.send(.insertRowToTable(.zero, insertedIndices))
+                output.send(.didInsertRowToHomeTable(.zero, insertedIndices))
             }
-        output.send(.moveDoramntBoxView(dormantBoxViewModel))
+        output.send(.didNavigateDormantBoxView(dormantBoxViewModel))
     }
 
     private func fixPage(with dropedPageIdsInFixedTable: [UUID]) {
@@ -331,7 +331,7 @@ import UIKit
             }
         }
         output.send(
-            .didPerformDropOperationInFixedTable(
+            .didAppendPageToFixedTable(
                 directoryStack.count - 1,
                 insertRowIndexPaths,
                 deleteRowIndexPaths
@@ -365,7 +365,7 @@ import UIKit
             }
         }
         output.send(
-            .didPerformDropOperationInHomeTable(
+            .didAppendPageToHomeTable(
                 directoryStack.count - 1,
                 insertRowIndexPaths,
                 deleteRowIndexPaths
@@ -389,12 +389,12 @@ import UIKit
 
         memoDirectoryCoredataReposotory.saveFileSortCriteria(
             fileID: directoryStack.last!.id, newSortCriteria: sortBy)
-        output.send(.didChangeSortCriteria(sortingResult))
+        output.send(.didSortDirectoryItems(sortingResult))
     }
 
     private func toggleAscendingOrder() {
         let sortingResult = directoryStack.last!.toggleAscending()
-        output.send(.didChangeSortCriteria(sortingResult))
+        output.send(.didSortDirectoryItems(sortingResult))
     }
 }
 

@@ -1,18 +1,15 @@
 import AVFAudio
 import Combine
 import MediaPlayer
-import PhotosUI
 import UIKit
 
-class MemoPageViewController: UIViewController, ViewControllerType, ComponentSnapshotViewControllerDelegate {
+class MemoPageViewController: UIViewController, ViewControllerType {
     typealias Input = MemoPageViewInput
     typealias ViewModelType = MemoPageViewModel
 
     var input = PassthroughSubject<MemoPageViewInput, Never>()
     var viewModel: MemoPageViewModel
     var subscriptions = Set<AnyCancellable>()
-
-    var thumbnail: UIImageView?
 
     var selectedPageComponentCell: (any PageComponentViewType)?
     var pageComponentContentViewRect: CGRect?
@@ -82,7 +79,7 @@ class MemoPageViewController: UIViewController, ViewControllerType, ComponentSna
         fatalError("init(coder:) has not been implemented")
     }
 
-    deinit { print("MemoPageViewController deinit") }
+    deinit { print("deinit MemoPageViewController") }
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -126,74 +123,97 @@ class MemoPageViewController: UIViewController, ViewControllerType, ComponentSna
                     setupUI(pageName: pageName)
                     setupConstraints()
 
-                case .insertNewComponentAtLastIndex(let index):
+                case .didAppendComponentAt(let index):
                     collectionView.insertItems(at: [IndexPath(item: index, section: 0)])
                     collectionView.scrollToItem(at: IndexPath(item: index, section: 0), at: .top, animated: true)
 
-                case .removeComponentAtIndex(let index):
+                case .didRemoveComponentAt(let index):
                     collectionView.deleteItems(at: [IndexPath(item: index, section: 0)])
 
-                case .didMinimizeComponentHeight(let componentIndexMinimized, let isMinimize):
+                case .didToggleComponentSize(let componentIndexMinimized, let isMinimize):
                     updateComponentHeight(componentIndexMinimized: componentIndexMinimized, isMinimize: isMinimize)
 
-                case .maximizeComponent(let component, let index):
+                case .didMaximizeComponent(let component, let index):
                     presentComponentFullScreen(with: component, index: index)
 
-                case .didTappedSnapshotButton(let vm, let itemIndex):
+                case .didNavigateSnapshotView(let vm, let itemIndex):
                     let snapshotView = ComponentSnapshotViewController(viewModel: vm)
 
-                    snapshotView.delegate = self
+                    snapshotView.hasRestorePublisher
+                        .sink { [weak self] _ in
+                            guard let self else { return }
+                            if let selectedComponentIndexForMoveSnapshotView {
+                                let indexPath = IndexPath(item: selectedComponentIndexForMoveSnapshotView, section: 0)
+                                collectionView.reloadItems(at: [indexPath])
+                            }
+                        }
+                        .store(in: &subscriptions)
+
                     selectedComponentIndexForMoveSnapshotView = itemIndex
                     navigationController?.pushViewController(snapshotView, animated: true)
 
+                case .didCompleteComponentCapture(let componentIndex):
+                    let indexPath = IndexPath(item: componentIndex, section: 0)
+                    if let cell = collectionView.cellForItem(at: indexPath),
+                        let captureableComponentView = cell as? CaptureableComponentView
+                    {
+                        captureableComponentView.completeSnapshotCapturePopupView()
+                    }
+
                 // MARK: - Table
 
-                case .didAppendTableComponentRow(let componentIndex, let row):
+                case .didAppendRowToTableView(let componentIndex, let row):
                     performWithComponentViewAt(componentIndex) { (_: TableComponentView, contentView) in
                         contentView.appendRowToRowStackView(row: row)
                     }
 
-                case .didAppendTableComponentColumn(let componentIndex, let column):
+                case .didAppendColumnToTableView(let componentIndex, let column):
                     performWithComponentViewAt(componentIndex) { (_: TableComponentView, contentView) in
                         contentView.appendColumnToColumnStackView(column)
                     }
 
-                case .didEditTableComponentCellValue(let componentIndex, let rowIndex, let cellIndex, let newCellValue):
+                case let .didApplyTableCellValueChanges(componentIndex, rowIndex, cellIndex, newCellValue):
                     performWithComponentViewAt(componentIndex) { (_: TableComponentView, contentView) in
                         contentView.updateUILabelText(rowIndex: rowIndex, cellIndex: cellIndex, with: newCellValue)
                     }
 
-                case .didRemoveTableComponentRow(let componentIndex, let removedRowIndex):
+                case .didRemoveRowToTableView(let componentIndex, let removedRowIndex):
                     performWithComponentViewAt(componentIndex) { (_: TableComponentView, contentView) in
                         contentView.removeTableComponentRowView(idx: removedRowIndex)
                     }
 
-                case .didEditTableComponentColumn(let componentIndex, let columns):
+                case .didApplyTableColumnChanges(let componentIndex, let columns):
                     performWithComponentViewAt(componentIndex) { (_: TableComponentView, contentView) in
                         contentView.applyColumns(columns: columns)
                     }
 
-                case .didPresentTableComponentColumnEditPopupView(let columns, let tappedColumnIndex, let componentID):
+                case .didPresentTableColumnEditPopupView(let columns, let tappedColumnIndex, let componentID):
                     let tableComponentColumnEditPopupView = TableComponentColumnEditPopupView(
                         columns: columns, tappedColumnIndex: tappedColumnIndex)
 
                     tableComponentColumnEditPopupView.confirmButtonPublisher
-                        .sink { colums in
-                            self.input.send(.editTableComponentColumn(componentID, colums))
+                        .sink { [weak self] colums in
+                            self?.input.send(.willApplyTableColumnChanges(componentID, colums))
                         }
                         .store(in: &subscriptions)
                     tableComponentColumnEditPopupView.show()
 
                 // MARK: - Audio
 
-                case .didDownloadMusicWithCode(let componentIndex, let appendedTrackIndices):
+                case .didAppendAudioTrackRows(let componentIndex, let appendedTrackIndices):
                     appendNewAudioTracks(componentIndex: componentIndex, appendedTrackIndices: appendedTrackIndices)
 
-                case .presentInvalidDownloadCode(let componentIndex):
+                case .didPresentInvalidDownloadCode(let componentIndex):
                     presentInvalidDownloadCodePopupView(componentIndex: componentIndex)
 
                 case let .didPlayAudioTrack(
-                    previousComponentIndex, componentIndex, audioTrackURL, trackIndex, duration, metadata, sampleData):
+                    previousComponentIndex,
+                    componentIndex,
+                    audioTrackURL,
+                    trackIndex,
+                    duration,
+                    metadata,
+                    sampleData):
                     playAudioTrack(
                         previousComponentIndex: previousComponentIndex,
                         componentIndex: componentIndex,
@@ -203,20 +223,16 @@ class MemoPageViewController: UIViewController, ViewControllerType, ComponentSna
                         audioMetadata: metadata,
                         audioSampleData: sampleData)
 
-                case .didPresentGallery(let imageView):
-                    thumbnail = imageView
-                    presentPhotoGallery()
-
-                case let .didEditAudioTrackMetadata(
+                case let .didApplyAudioMetadataChanges(
                     componentIndex, trackIndex, editedMetadata, isNowPlayingTrack, trackIndexAfterEdit):
-                    editAudioTrackMetadata(
+                    applyAudioTrackMetadataChanges(
                         componentIndex, trackIndex, editedMetadata, isNowPlayingTrack, trackIndexAfterEdit)
 
-                case .updateAudioDownloadProgress(let componentIndex, let progress):
+                case .didUpdateAudioDownloadProgress(let componentIndex, let progress):
                     updateAudioDownloadProgress(componentIndex: componentIndex, progress: progress)
 
-                case let .didTapPlayPauseButton(componentIndex, trackIndex, isPlaying, currentTime):
-                    tapPlayPauseButton(
+                case let .didToggleAudioPlayingState(componentIndex, trackIndex, isPlaying, currentTime):
+                    setAudioPlayingState(
                         componentIndex: componentIndex,
                         trackIndex: trackIndex,
                         isPlaying: isPlaying,
@@ -224,7 +240,8 @@ class MemoPageViewController: UIViewController, ViewControllerType, ComponentSna
 
                 case let .didSeekAudioTrack(componentIndex, trackIndex, seek, totalTime):
                     performWithComponentViewAt(componentIndex) { (_: AudioComponentView, contentView) in
-                        if let row = contentView.audioTrackTableView.cellForRow(at: .init(row: trackIndex, section: 0)),
+                        let indexPath = IndexPath(row: trackIndex, section: 0)
+                        if let row = contentView.audioTrackTableView.cellForRow(at: indexPath),
                             let audioRow = row as? AudioTableRowView
                         {
                             audioRow.audioVisualizer.seekVisuzlization(rate: seek / totalTime!)
@@ -238,7 +255,7 @@ class MemoPageViewController: UIViewController, ViewControllerType, ComponentSna
                 case .didRemoveAudioTrack(let componentIndex, let trackIndex):
                     removeAudioTrack(componentIndex: componentIndex, trackIndex: trackIndex)
 
-                case .outOfSongs(let componentIndex):
+                case .didSetAudioPlayingStateToStopped(let componentIndex):
                     audioControlBar.updateControlBarStateToNotPlaying()
                     performWithComponentViewAt(componentIndex) { (_: AudioComponentView, contentView) in
                         contentView
@@ -247,9 +264,6 @@ class MemoPageViewController: UIViewController, ViewControllerType, ComponentSna
                             .map { $0 as! AudioTableRowView }
                             .forEach { $0.audioVisualizer.removeVisuzlization() }
                     }
-
-                case .didPresentFilePicker:
-                    presentFilePicker()
             }
         }
         .store(in: &subscriptions)
@@ -320,22 +334,6 @@ class MemoPageViewController: UIViewController, ViewControllerType, ComponentSna
             audioControlBar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
             audioControlBar.centerXAnchor.constraint(equalTo: view.centerXAnchor),
         ])
-    }
-
-    func reloadCellForRestoredComponent() {
-        if let selectedComponentIndexForMoveSnapshotView {
-            let indexPath = IndexPath(item: selectedComponentIndexForMoveSnapshotView, section: 0)
-            collectionView.reloadItems(at: [indexPath])
-        }
-    }
-
-    private func presentFilePicker() {
-        let supportedTypes: [UTType] = [.audio, .mp3, .wav]
-        let documentPicker = UIDocumentPickerViewController(forOpeningContentTypes: supportedTypes)
-
-        documentPicker.delegate = viewModel
-        documentPicker.allowsMultipleSelection = true
-        present(documentPicker, animated: true)
     }
 
     @objc private func keyboardWillChangeFrame(_ notification: Notification) {
@@ -463,7 +461,7 @@ class MemoPageViewController: UIViewController, ViewControllerType, ComponentSna
 
         createNewComponentView.componentTypePublisher
             .sink { [weak self] componentType in
-                self?.input.send(.createNewComponent(componentType))
+                self?.input.send(.willCreateNewComponent(componentType))
             }
             .store(in: &subscriptions)
 
@@ -488,34 +486,6 @@ extension MemoPageViewController: NavigationViewControllerDismissible {
     func onDismiss() {
         input.send(.viewWillDisappear)
         subscriptions.removeAll()
-    }
-}
-
-extension MemoPageViewController: PHPickerViewControllerDelegate {
-
-    func presentPhotoGallery() {
-        var configuration = PHPickerConfiguration()
-
-        configuration.selectionLimit = 1
-        configuration.filter = .any(of: [.images])
-
-        let picker = PHPickerViewController(configuration: configuration)
-        picker.delegate = self
-        self.present(picker, animated: true, completion: nil)
-    }
-
-    func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
-        picker.dismiss(animated: true, completion: nil)
-
-        let itemProvider = results.first?.itemProvider
-
-        if let itemProvider = itemProvider, itemProvider.canLoadObject(ofClass: UIImage.self) {
-            itemProvider.loadObject(ofClass: UIImage.self) { (image, error) in
-                DispatchQueue.main.async {
-                    self.thumbnail?.image = (image as? UIImage)?.audioTrackThumbnailSquared
-                }
-            }
-        }
     }
 }
 
@@ -578,7 +548,7 @@ extension MemoPageViewController {
         )
     }
 
-    private func editAudioTrackMetadata(
+    private func applyAudioTrackMetadataChanges(
         _ componentIndex: Int,
         _ targetTrackIndex: Int,
         _ metadata: AudioTrackMetadata,
@@ -606,7 +576,8 @@ extension MemoPageViewController {
         }
     }
 
-    private func tapPlayPauseButton(componentIndex: Int, trackIndex: Int, isPlaying: Bool, currentTime: TimeInterval?) {
+    private func setAudioPlayingState(componentIndex: Int, trackIndex: Int, isPlaying: Bool, currentTime: TimeInterval?)
+    {
         audioControlBar.setControlBarState(isPlaying: isPlaying, currentTime: currentTime)
         performWithComponentViewAt(componentIndex) { (_: AudioComponentView, contentView) in
             if let row = contentView.audioTrackTableView.cellForRow(

@@ -7,8 +7,7 @@ class ComponentSnapshotViewController: UIViewController, ViewControllerType {
     var viewModel: ComponentSnapshotViewModel
     var subscriptions = Set<AnyCancellable>()
     private var hasRestore: Bool = false
-
-    weak var delegate: ComponentSnapshotViewControllerDelegate?
+    private var restoreSubject = PassthroughSubject<Void, Never>()
 
     private let backgroundView: UIStackView = {
         let backgroundView = UIStackView()
@@ -48,11 +47,13 @@ class ComponentSnapshotViewController: UIViewController, ViewControllerType {
         collectionView.decelerationRate = .fast
 
         collectionView.register(
-            TextEditorComponentView.self, forCellWithReuseIdentifier: TextEditorComponentView.identifierForUseCollectionView
+            TextEditorComponentView.self,
+            forCellWithReuseIdentifier: TextEditorComponentView.identifierForUseCollectionView
         )
-        
+
         collectionView.register(
-            TableComponentView.self, forCellWithReuseIdentifier: TableComponentView.reuseTableComponentIdentifier
+            TableComponentView.self,
+            forCellWithReuseIdentifier: TableComponentView.reuseTableComponentIdentifier
         )
 
         collectionView.isPrefetchingEnabled = false
@@ -198,7 +199,16 @@ class ComponentSnapshotViewController: UIViewController, ViewControllerType {
     }
 
     override func viewDidDisappear(_ animated: Bool) {
-        if hasRestore { delegate?.reloadCellForRestoredComponent() }
+        super.viewDidDisappear(animated)
+        restoreSubject.send(())
+        subscriptions.removeAll()
+    }
+
+    var hasRestorePublisher: AnyPublisher<Bool, Never> {
+        restoreSubject
+            .map { [weak self] in self?.hasRestore ?? false }
+            .filter { $0 }
+            .eraseToAnyPublisher()
     }
 
     func bind() {
@@ -245,14 +255,15 @@ class ComponentSnapshotViewController: UIViewController, ViewControllerType {
 
     func handleError() {
         viewModel.errorSubscribe()
-            .sink { errorCase in
+            .sink { [weak self] errorCase in
+                guard let self else { return }
                 switch errorCase {
                     case .unownedError:
                         let errorPopupView = ErrorMessagePopupView(error: errorCase)
                         errorPopupView.show()
 
                     case .canNotFoundSnapshot(_):
-                        self.collectionView.reloadData()
+                        collectionView.reloadData()
 
                     case .componentIDMismatchError:
                         break
@@ -313,7 +324,8 @@ class ComponentSnapshotViewController: UIViewController, ViewControllerType {
         backgroundView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor).isActive = true
         backgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
         backgroundView.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
-        backgroundView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20).isActive = true
+        backgroundView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20).isActive =
+            true
 
         headerView.heightAnchor.constraint(equalToConstant: 40).isActive = true
 
@@ -336,8 +348,4 @@ class ComponentSnapshotViewController: UIViewController, ViewControllerType {
         descriptionIconView.widthAnchor.constraint(equalToConstant: 30).isActive = true
         descriptionIconView.heightAnchor.constraint(equalToConstant: 20).isActive = true
     }
-}
-
-protocol ComponentSnapshotViewControllerDelegate: AnyObject {
-    func reloadCellForRestoredComponent()
 }

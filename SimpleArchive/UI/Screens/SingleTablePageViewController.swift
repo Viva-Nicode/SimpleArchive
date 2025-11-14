@@ -2,7 +2,7 @@ import Combine
 import UIKit
 
 final class SingleTablePageViewController: UIViewController, ViewControllerType,
-    UIScrollViewDelegate, NavigationViewControllerDismissible, ComponentSnapshotViewControllerDelegate
+    UIScrollViewDelegate, NavigationViewControllerDismissible, CaptureableComponentView
 {
     typealias Input = SingleTablePageInput
     typealias ViewModelType = SingleTablePageViewModel
@@ -10,6 +10,7 @@ final class SingleTablePageViewController: UIViewController, ViewControllerType,
     var input = PassthroughSubject<SingleTablePageInput, Never>()
     var viewModel: SingleTablePageViewModel
     var subscriptions = Set<AnyCancellable>()
+    var snapshotCapturePopupView: SnapshotCapturePopupView?
 
     private(set) var headerView: UIView = {
         let headerView = UIView()
@@ -89,55 +90,71 @@ final class SingleTablePageViewController: UIViewController, ViewControllerType,
                         isMinimum: false,
                         componentID: id)
 
-                case .didTappedSnapshotButton(let vm):
+                case .didNavigateSnapshotView(let vm):
                     let snapshotView = ComponentSnapshotViewController(viewModel: vm)
-                    snapshotView.delegate = self
+
+                    snapshotView.hasRestorePublisher
+                        .sink { [weak self] _ in
+                            guard let self else { return }
+                            input.send(.willRestoreComponent)
+                        }
+                        .store(in: &subscriptions)
                     navigationController?.pushViewController(snapshotView, animated: true)
 
-                case .didTappedCaptureButton(let detail):
-                    UIView.animate(
-                        withDuration: 0.25,
-                        animations: {
-                            self.tableComponentContentView.alpha = 0
+                case .didRestoreComponent(let detail):
+                    UIView.animateKeyframes(withDuration: 0.5, delay: 0, options: []) {
+
+                        UIView.addKeyframe(withRelativeStartTime: 0.0, relativeDuration: 0.5) { [weak self] in
+                            guard let self else { return }
+                            tableComponentContentView.alpha = 0
                         }
-                    ) { _ in
-                        self.tableComponentContentView.configure(
-                            content: detail,
-                            dispatcher: SinglePageTableComponentActionDispatcher(subject: self.input),
-                            isMinimum: false,
-                            componentID: UUID())
-                        UIView.animate(withDuration: 0.25) {
-                            self.tableComponentContentView.alpha = 1
+
+                        UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0.0) { [weak self] in
+                            guard let self else { return }
+                            tableComponentContentView.configure(
+                                content: detail,
+                                dispatcher: SinglePageTableComponentActionDispatcher(subject: input),
+                                isMinimum: false,
+                                componentID: UUID())
+                        }
+
+                        UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0.5) { [weak self] in
+                            guard let self else { return }
+                            tableComponentContentView.alpha = 1
                         }
                     }
 
-                case .didAppendTableComponentColumn(let column):
+                case .didAppendColumnToTableView(let column):
                     tableComponentContentView.appendColumnToColumnStackView(column)
 
-                case .didAppendTableComponentRow(let row):
+                case .didAppendRowToTableView(let row):
                     tableComponentContentView.appendRowToRowStackView(row: row)
 
-                case .didRemoveTableComponentRow(let removedRowIndex):
+                case .didRemoveRowToTableView(let removedRowIndex):
                     tableComponentContentView.removeTableComponentRowView(idx: removedRowIndex)
 
-                case .didEditTableComponentCellValue(let r, let c, let newCellValue):
+                case .didApplyTableCellValueChanges(let row, let column, let newCellValue):
                     tableComponentContentView.updateUILabelText(
-                        rowIndex: r,
-                        cellIndex: c,
+                        rowIndex: row,
+                        cellIndex: column,
                         with: newCellValue
                     )
 
-                case .didPresentTableComponentColumnEditPopupView(let columns, let columnIndex):
+                case .didPresentTableColumnEditPopupView(let columns, let columnIndex):
                     let tableComponentColumnEditPopupView = TableComponentColumnEditPopupView(
                         columns: columns, tappedColumnIndex: columnIndex)
 
                     tableComponentColumnEditPopupView.confirmButtonPublisher
-                        .sink { self.input.send(.editTableComponentColumn($0)) }
+                        .sink { self.input.send(.willApplyTableColumnChanges($0)) }
                         .store(in: &subscriptions)
+
                     tableComponentColumnEditPopupView.show()
 
-                case .didEditTableComponentColumn(let columns):
+                case .didApplyTableColumnChanges(let columns):
                     tableComponentContentView.applyColumns(columns: columns)
+
+                case .didCompleteComponentCapture:
+                    completeSnapshotCapturePopupView()
             }
         }
         .store(in: &subscriptions)
@@ -149,20 +166,28 @@ final class SingleTablePageViewController: UIViewController, ViewControllerType,
         headerView.addSubview(titleLable)
         headerView.addSubview(createDateLabel)
         headerView.addSubview(captureButton)
+
         captureButton.throttleTapPublisher()
-            .sink { [weak self] _ in
+            .flatMap { [weak self] _ -> AnyPublisher<String, Never> in
+                guard let self else { return Empty().eraseToAnyPublisher() }
+
+                let popup = SnapshotCapturePopupView()
+                self.snapshotCapturePopupView = popup
+                popup.show()
+
+                return popup.captureButtonPublisher
+            }
+            .sink { [weak self] snapshotDescription in
                 guard let self else { return }
-                let snapshotCapturePopupView = SnapshotCapturePopupView { snapshotDescription in
-                    self.input.send(.willCaptureToComponent(snapshotDescription))
-                }
-                snapshotCapturePopupView.show()
+                self.input.send(.willCaptureComponent(snapshotDescription))
             }
             .store(in: &subscriptions)
         headerView.addSubview(snapshotButton)
+
         snapshotButton.throttleTapPublisher()
             .sink { [weak self] _ in
                 guard let self else { return }
-                input.send(.willPresentSnapshotView)
+                input.send(.willNavigateSnapshotView)
             }
             .store(in: &subscriptions)
 
@@ -170,40 +195,36 @@ final class SingleTablePageViewController: UIViewController, ViewControllerType,
         createDateLabel.text = createDate.formattedDate
 
         view.addSubview(tableComponentContentView)
-
     }
 
     private func setupConstraint() {
-        headerView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
-        headerView.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
-        headerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor).isActive = true
-        headerView.heightAnchor.constraint(equalToConstant: 60).isActive = true
+        NSLayoutConstraint.activate([
+            headerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            headerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            headerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            headerView.heightAnchor.constraint(equalToConstant: 60),
 
-        titleLable.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 10).isActive = true
-        titleLable.topAnchor.constraint(equalTo: headerView.topAnchor, constant: 10).isActive = true
+            titleLable.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 10),
+            titleLable.topAnchor.constraint(equalTo: headerView.topAnchor, constant: 10),
 
-        createDateLabel.topAnchor.constraint(equalTo: titleLable.bottomAnchor, constant: 3).isActive = true
-        createDateLabel.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 10).isActive = true
+            createDateLabel.topAnchor.constraint(equalTo: titleLable.bottomAnchor, constant: 3),
+            createDateLabel.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 10),
 
-        snapshotButton.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -10).isActive = true
-        snapshotButton.centerYAnchor.constraint(equalTo: headerView.centerYAnchor).isActive = true
+            snapshotButton.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -10),
+            snapshotButton.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
 
-        captureButton.trailingAnchor.constraint(equalTo: snapshotButton.leadingAnchor, constant: -10).isActive = true
-        captureButton.centerYAnchor.constraint(equalTo: headerView.centerYAnchor).isActive = true
+            captureButton.trailingAnchor.constraint(equalTo: snapshotButton.leadingAnchor, constant: -10),
+            captureButton.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
 
-        tableComponentContentView.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 10).isActive = true
-        tableComponentContentView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
-        tableComponentContentView.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
-        tableComponentContentView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor).isActive =
-            true
+            tableComponentContentView.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 10),
+            tableComponentContentView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            tableComponentContentView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            tableComponentContentView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+        ])
     }
 
     func onDismiss() {
         input.send(.viewWillDisappear)
         subscriptions.removeAll()
-    }
-
-    func reloadCellForRestoredComponent() {
-        input.send(.willRestoreComponentWithSnapshot)
     }
 }
