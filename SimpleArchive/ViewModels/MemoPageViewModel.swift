@@ -16,18 +16,21 @@ import UIKit
     private var componentFactory: any ComponentFactoryType
     private var audioDownloader: AudioDownloaderType
     private var audioTrackController: AudioTrackControllerType?
+    private var audioFileManager: AudioFileManagerType
     private var nowPlayingAudioComponentID: UUID?
 
     init(
         componentFactory: any ComponentFactoryType,
         memoComponentCoredataReposotory: MemoComponentCoreDataRepositoryType,
         audioDownloader: AudioDownloaderType,
+        audioFileManager: AudioFileManagerType,
         page: MemoPageModel,
     ) {
         self.componentFactory = componentFactory
         self.memoComponentCoredataReposotory = memoComponentCoredataReposotory
         self.memoPage = page
         self.audioDownloader = audioDownloader
+        self.audioFileManager = audioFileManager
 
         super.init()
 
@@ -159,7 +162,7 @@ import UIKit
         if let removedComponent = memoPage.removeChildComponentById(componentID) {
             if let audioComponent = removedComponent.item as? AudioComponent {
                 for audioTrack in audioComponent.detail.tracks {
-                    AudioFileManager.default.removeAudio(with: audioTrack)
+                    audioFileManager.removeAudio(with: audioTrack)
                 }
             }
             memoComponentCoredataReposotory.removeComponent(
@@ -259,6 +262,16 @@ import UIKit
         }
 
         let components = memoPage.getComponents.compactMap { $0.currentIfUnsaved() }
+
+        components.forEach { component in
+            if let audioComponent = component as? AudioComponent {
+                let tracks = audioComponent.detail.tracks
+                for track in tracks {
+                    audioFileManager.writeAudioMetadata(audioTrack: track)
+                }
+            }
+        }
+
         memoComponentCoredataReposotory.saveComponentsDetail(changedComponents: components)
     }
 }
@@ -326,6 +339,35 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
             }
 
             audioDownloader.downloadTask(with: code)
+                .tryMapEnumerated { [weak self] _, audioURL in
+                    guard let self else { throw AudioDownloadError.invalidCode }
+                    let audioMetadata = audioFileManager.readAudioMetadata(audioURL: audioURL)
+
+                    var fileTitle = audioURL.deletingPathExtension().lastPathComponent
+                    if fileTitle.isEmpty { fileTitle = "no title" }
+                    if let metadataTitle = audioMetadata.title { fileTitle = metadataTitle }
+
+                    let artist: String = audioMetadata.artist ?? "Unknown"
+
+                    let defaultAudioThumbnailImage = UIImage(named: "defaultMusicThumbnail")!
+                    let thumnnailImageData =
+                        audioMetadata.thumbnail ?? defaultAudioThumbnailImage.jpegData(compressionQuality: 1.0)!
+
+                    let audioFileID = UUID()
+                    let audioFileName = "\(audioFileID).\(audioURL.pathExtension)"
+                    let newFileURL = audioFileManager.createAudioFileURL(fileName: audioFileName)
+                    try audioFileManager.moveItem(src: audioURL, des: newFileURL)
+
+                    let track = AudioTrack(
+                        id: audioFileID,
+                        title: fileTitle,
+                        artist: artist,
+                        thumbnail: thumnnailImageData,
+                        fileExtension: audioURL.pathExtension)
+
+                    audioFileManager.writeAudioMetadata(audioTrack: track)
+                    return track
+                }
                 .sinkToResult { [weak self] result in
                     guard let self else { return }
                     switch result {
@@ -334,16 +376,22 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
                             component.datasource?.tracks = component.detail.tracks
                             component.datasource?.nowPlayingAudioIndex = component.detail.tracks
                                 .firstIndex { $0.id == currentPlayingAudioTrackID }
+                            try? audioFileManager.cleanTempDirectories()
                             output.send(.didAppendAudioTrackRows(componentIndex, appendedIndices))
-                            saveComponentsChanges()
 
                         case .failure(let failure):
-                            switch failure {
-                                case .invalidCode:
-                                    output.send(.didPresentInvalidDownloadCode(componentIndex))
-                                case .unowned(let msg):
-                                    print("audio download unowned error : \(msg)")
+                            if let error = failure as? AudioDownloadError {
+                                switch error {
+                                    case .invalidCode:
+                                        break
+                                    case .unowned(let error):
+                                        print(error.localizedDescription)
+                                    case .fileManagingError(let error):
+                                        print(error.localizedDescription)
+
+                                }
                             }
+                            output.send(.didPresentInvalidDownloadCode(componentIndex))
                     }
                 }
                 .store(in: &subscriptions)
@@ -351,7 +399,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
     }
 
     private func importAudioFromLocalFileSystem(componentID: UUID, didPickDocumentsAt urls: [URL]) {
-        let audioFileManager = AudioFileManager.default
+
         var audioTracks: [AudioTrack] = []
 
         for audioFileUrl in urls {
@@ -376,7 +424,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
                 artist: artist,
                 thumbnail: thumnnailImageData,
                 fileExtension: storedFileURL.pathExtension)
-            
+
             audioFileManager.writeAudioMetadata(audioTrack: track)
             audioTracks.append(track)
         }
@@ -394,7 +442,6 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
 
             output.send(.didAppendAudioTrackRows(componentIndex, appendedIndices))
         }
-        saveComponentsChanges()
     }
 
     private func playAudioTrack(componentID: UUID, trackIndex: Int) {
@@ -410,7 +457,9 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
         performWithComponentAt(componentID) { (componentIndex, component: AudioComponent) in
             component.datasource?.isPlaying = true
             component.datasource?.nowPlayingAudioIndex = trackIndex
-            audioTrackController = AudioTrackController(audioTrackName: component.trackNames[trackIndex])
+            let audioTrackURL = audioFileManager.createAudioFileURL(fileName: component.trackNames[trackIndex])
+            audioTrackController = AudioTrackController(audioTrackURL: audioTrackURL)
+
             component.datasource?.nowPlayingURL = audioTrackController?.audioTrackURL
 
             audioTrackController?.player?.delegate = self
@@ -610,7 +659,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
             let currentPlayingAudioTrackID = component.detail[datasource?.nowPlayingAudioIndex]?.id
             let removedAudioTrack = component.detail.tracks.remove(at: trackIndex)
 
-            AudioFileManager.default.removeAudio(with: removedAudioTrack)
+            audioFileManager.removeAudio(with: removedAudioTrack)
             datasource?.tracks = component.detail.tracks
 
             if datasource?.nowPlayingAudioIndex != nil {

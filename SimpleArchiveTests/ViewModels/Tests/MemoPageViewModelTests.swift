@@ -11,12 +11,14 @@ final class MemoPageViewModelTests: XCTestCase, @preconcurrency StubProvidingTes
     var mockMemoComponentCoredataReposotory: MockMemoComponentCoreDataRepository!
     var mockComponentFactory: MockComponentFactory!
     var mockAudioDownloader: MockAudioDownloader!
+    var mockAudioFileManager: MockAudioFileManager!
     var stubProvider = MemoPageViewModelTestStubProvider()
 
     override func setUpWithError() throws {
         mockMemoComponentCoredataReposotory = MockMemoComponentCoreDataRepository()
         mockComponentFactory = MockComponentFactory()
         mockAudioDownloader = MockAudioDownloader()
+        mockAudioFileManager = MockAudioFileManager()
         input = PassthroughSubject<MemoPageViewModel.Input, Never>()
         subscriptions = []
     }
@@ -25,6 +27,7 @@ final class MemoPageViewModelTests: XCTestCase, @preconcurrency StubProvidingTes
         stubProvider.removeUsedStubData()
         mockMemoComponentCoredataReposotory = nil
         mockComponentFactory = nil
+        mockAudioFileManager = nil
         subscriptions = nil
         mockAudioDownloader = nil
         input = nil
@@ -41,6 +44,7 @@ final class MemoPageViewModelTests: XCTestCase, @preconcurrency StubProvidingTes
             componentFactory: mockComponentFactory,
             memoComponentCoredataReposotory: mockMemoComponentCoredataReposotory,
             audioDownloader: mockAudioDownloader,
+            audioFileManager: mockAudioFileManager,
             page: stubPage)
 
         mockComponentFactory.actions = .init(expected: [.setCreator, .createComponent])
@@ -82,6 +86,7 @@ final class MemoPageViewModelTests: XCTestCase, @preconcurrency StubProvidingTes
             componentFactory: mockComponentFactory,
             memoComponentCoredataReposotory: mockMemoComponentCoredataReposotory,
             audioDownloader: mockAudioDownloader,
+            audioFileManager: mockAudioFileManager,
             page: stubPage)
 
         mockMemoComponentCoredataReposotory.actions = .init(expected: [.captureSnapshot])
@@ -120,6 +125,7 @@ final class MemoPageViewModelTests: XCTestCase, @preconcurrency StubProvidingTes
             componentFactory: mockComponentFactory,
             memoComponentCoredataReposotory: mockMemoComponentCoredataReposotory,
             audioDownloader: mockAudioDownloader,
+            audioFileManager: mockAudioFileManager,
             page: stubPage)
 
         mockMemoComponentCoredataReposotory.actions = .init(expected: [.removeComponent])
@@ -158,6 +164,7 @@ final class MemoPageViewModelTests: XCTestCase, @preconcurrency StubProvidingTes
             componentFactory: mockComponentFactory,
             memoComponentCoredataReposotory: mockMemoComponentCoredataReposotory,
             audioDownloader: mockAudioDownloader,
+            audioFileManager: mockAudioFileManager,
             page: stubPage)
 
         mockAudioDownloader.actions = .init(expected: [.downloadAudioTask])
@@ -202,6 +209,7 @@ final class MemoPageViewModelTests: XCTestCase, @preconcurrency StubProvidingTes
             componentFactory: mockComponentFactory,
             memoComponentCoredataReposotory: mockMemoComponentCoredataReposotory,
             audioDownloader: mockAudioDownloader,
+            audioFileManager: mockAudioFileManager,
             page: stubPage)
 
         mockAudioDownloader.actions = .init(expected: [.downloadAudioTask])
@@ -229,5 +237,9 @@ final class MemoPageViewModelTests: XCTestCase, @preconcurrency StubProvidingTes
 
         XCTAssertEqual(expectedComponentIndex, factualComponentIndex)
         mockAudioDownloader.verify()
+    }
+
+    func test_importAudioFromLocalFileSystem_successfullly() {
+
     }
 }

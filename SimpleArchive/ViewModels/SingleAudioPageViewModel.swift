@@ -13,17 +13,22 @@ import UIKit
     private var audioComponent: AudioComponent
     private var pageTitle: String
     private var audioTrackController: AudioTrackControllerType?
-    private var audioDownloader: AudioDownloaderType = AudioDownloader()
+    private var audioDownloader: AudioDownloaderType
+    private var audioFileManager: AudioFileManagerType
     private var audioContentTableDataSource: AudioComponentDataSource
 
     init(
         coredataReposotory: MemoSingleComponentRepositoryType,
         audioComponent: AudioComponent,
+        audioDownloader: AudioDownloaderType,
+        audioFileManager: AudioFileManagerType,
         pageTitle: String
     ) {
         self.coredataReposotory = coredataReposotory
         self.audioComponent = audioComponent
         self.pageTitle = pageTitle
+        self.audioDownloader = audioDownloader
+        self.audioFileManager = audioFileManager
         self.audioContentTableDataSource = AudioComponentDataSource(
             tracks: audioComponent.detail.tracks,
             sortBy: audioComponent.detail.sortBy
@@ -105,6 +110,36 @@ import UIKit
         }
 
         audioDownloader.downloadTask(with: code)
+            .tryMapEnumerated { [weak self] _, audioURL in
+                guard let self else { throw AudioDownloadError.invalidCode }
+
+                let audioMetadata = audioFileManager.readAudioMetadata(audioURL: audioURL)
+
+                var fileTitle = audioURL.deletingPathExtension().lastPathComponent
+                if fileTitle.isEmpty { fileTitle = "no title" }
+                if let metadataTitle = audioMetadata.title { fileTitle = metadataTitle }
+
+                let artist: String = audioMetadata.artist ?? "Unknown"
+
+                let defaultAudioThumbnailImage = UIImage(named: "defaultMusicThumbnail")!
+                let thumnnailImageData =
+                    audioMetadata.thumbnail ?? defaultAudioThumbnailImage.jpegData(compressionQuality: 1.0)!
+
+                let audioFileID = UUID()
+                let audioFileName = "\(audioFileID).\(audioURL.pathExtension)"
+                let newFileURL = audioFileManager.createAudioFileURL(fileName: audioFileName)
+                try audioFileManager.moveItem(src: audioURL, des: newFileURL)
+
+                let track = AudioTrack(
+                    id: audioFileID,
+                    title: fileTitle,
+                    artist: artist,
+                    thumbnail: thumnnailImageData,
+                    fileExtension: audioURL.pathExtension)
+
+                audioFileManager.writeAudioMetadata(audioTrack: track)
+                return track
+            }
             .sinkToResult { [weak self] result in
                 guard let self else { return }
                 switch result {
@@ -114,14 +149,20 @@ import UIKit
                         audioContentTableDataSource.nowPlayingAudioIndex = audioComponent.detail.tracks.firstIndex {
                             $0.id == currentPlayingAudioTrackID
                         }
+                        try? audioFileManager.cleanTempDirectories()
                         output.send(.didAppendAudioTrackRows(appendedIndices))
 
                     case .failure(let failure):
-                        switch failure {
-                            case .invalidCode:
-                                break
-                            case .unowned(let msg):
-                                print(msg)
+                        if let error = failure as? AudioDownloadError {
+                            switch error {
+                                case .invalidCode:
+                                    break
+                                case .unowned(let error):
+                                    print(error.localizedDescription)
+                                case .fileManagingError(let error):
+                                    print(error.localizedDescription)
+
+                            }
                         }
                         output.send(.didPresentInvalidDownloadCode)
                 }
@@ -130,7 +171,6 @@ import UIKit
     }
 
     private func importAudioFromLocalFileSystem(urls: [URL]) {
-        let audioFileManager = AudioFileManager.default
         var audioTracks: [AudioTrack] = []
 
         for audioFileUrl in urls {
@@ -175,7 +215,8 @@ import UIKit
         audioContentTableDataSource.nowPlayingAudioIndex = trackIndex
         audioContentTableDataSource.isPlaying = true
 
-        audioTrackController = AudioTrackController(audioTrackName: audioComponent.trackNames[trackIndex])
+        let audioTrackURL = audioFileManager.createAudioFileURL(fileName: audioComponent.trackNames[trackIndex])
+        audioTrackController = AudioTrackController(audioTrackURL: audioTrackURL)
         audioContentTableDataSource.nowPlayingURL = audioTrackController?.audioTrackURL
 
         audioTrackController?.player?.delegate = self
@@ -335,7 +376,7 @@ import UIKit
         let currentPlayingAudioTrackID = audioComponent.detail[audioContentTableDataSource.nowPlayingAudioIndex]?.id
         let removedAudioTrack = audioComponent.detail.tracks.remove(at: trackIndex)
 
-        AudioFileManager.default.removeAudio(with: removedAudioTrack)
+        audioFileManager.removeAudio(with: removedAudioTrack)
         audioContentTableDataSource.tracks = audioComponent.detail.tracks
         audioComponent.persistenceState = .unsaved(isMustToStoreSnapshot: false)
 

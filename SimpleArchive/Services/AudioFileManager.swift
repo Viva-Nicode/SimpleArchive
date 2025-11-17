@@ -17,34 +17,35 @@ protocol AudioFileManagerType {
 final class AudioFileManager: NSObject, AudioFileManagerType {
 
     private var fileManager = FileManager.default
-    private let archiveDir: URL
+    private let archiveURL: URL
     private let zipURL: URL
     private let unzipURL: URL
-    static let `default`: AudioFileManagerType = AudioFileManager()
 
-    private override init() {
+    override init() {
         let fileManager = FileManager.default
         let documentsDir = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
 
-        self.archiveDir = documentsDir.appendingPathComponent("SimpleArchiveMusics")
+        self.archiveURL = documentsDir.appendingPathComponent("SimpleArchiveMusics")
         self.zipURL = documentsDir.appendingPathComponent("downloaded_music_temp.zip")
         self.unzipURL = documentsDir.appendingPathComponent("downloaded_music_temp")
 
-        if !fileManager.fileExists(atPath: archiveDir.path) {
-            try? fileManager.createDirectory(at: archiveDir, withIntermediateDirectories: true)
+        if !fileManager.fileExists(atPath: archiveURL.path) {
+            try? fileManager.createDirectory(at: archiveURL, withIntermediateDirectories: true)
         }
     }
 
+    deinit { print("deinit AudioFileManager") }
+
     func removeAudio(with audio: AudioTrack) {
         let trackURL =
-            archiveDir
+            archiveURL
             .appendingPathComponent("\(audio.id)")
             .appendingPathExtension(audio.fileExtension)
         try? fileManager.removeItem(at: trackURL)
     }
 
     func createAudioFileURL(fileName: String) -> URL {
-        archiveDir.appendingPathComponent(fileName)
+        archiveURL.appendingPathComponent(fileName)
     }
 
     func moveItem(src: URL, des: URL) throws {
@@ -55,7 +56,7 @@ final class AudioFileManager: NSObject, AudioFileManagerType {
         guard src.startAccessingSecurityScopedResource() else { fatalError() }
         defer { src.stopAccessingSecurityScopedResource() }
 
-        let destinationURL = archiveDir.appendingPathComponent(des)
+        let destinationURL = archiveURL.appendingPathComponent(des)
         try? fileManager.copyItem(at: src, to: destinationURL)
         return destinationURL
     }

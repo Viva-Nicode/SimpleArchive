@@ -58,12 +58,6 @@ struct MemoComponentCoreDataRepository: MemoComponentCoreDataRepositoryType {
                 let fetchRequest = MemoComponentEntity.findById(id: component.id)
                 let componentEntity = try ctx.fetch(fetchRequest).first!
 
-                if let audioComponent = component as? AudioComponent {
-                    for i in 0..<audioComponent.detail.tracks.count {
-                        AudioFileManager.default.writeAudioMetadata(audioTrack: audioComponent.detail.tracks[i])
-                    }
-                }
-
                 componentEntity.setDetail(detail: component.componentDetail)
 
                 if case .unsaved(true) = component.persistenceState,

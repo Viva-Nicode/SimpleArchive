@@ -11,9 +11,9 @@ final class MockAudioDownloader: Mock, AudioDownloaderType {
 
     var actions = MockActions<Action>(expected: [])
     var handleDownloadedProgressPercent: progressClosure?
-    var downloadTaskResult: Result<[AudioTrack], AudioDownloadError>!
-
-    func downloadTask(with code: String) -> AnyPublisher<[AudioTrack], AudioDownloadError> {
+    var downloadTaskResult: Result<[URL], AudioDownloadError>!
+    
+    func downloadTask(with code: String) -> AnyPublisher<[URL], SimpleArchive.AudioDownloadError> {
         register(.downloadAudioTask)
         return downloadTaskResult.publish()
     }

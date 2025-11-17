@@ -4,17 +4,28 @@ import UIKit
 
 protocol AudioDownloaderType {
     typealias progressClosure = ((Float) -> Void)
-    func downloadTask(with code: String) -> AnyPublisher<[AudioTrack], AudioDownloadError>
+
     var handleDownloadedProgressPercent: progressClosure? { get set }
+
+    func downloadTask(with code: String) -> AnyPublisher<[URL], AudioDownloadError>
 }
 
 enum AudioDownloadError: Error {
     case invalidCode
-    case unowned(String)
+    case fileManagingError(Error)
+    case unowned(Error)
 }
 
 final class AudioDownloader: NSObject, AudioDownloaderType {
     var handleDownloadedProgressPercent: progressClosure?
+    private var audioFileManager: AudioFileManagerType
+
+    init(audioFileManager: AudioFileManagerType) {
+        self.audioFileManager = audioFileManager
+    }
+
+    deinit { print("deinit AudioDownloader") }
+
     private var totalDownloaded: Float = 0 {
         didSet {
             self.handleDownloadedProgressPercent?(totalDownloaded)
@@ -26,14 +37,15 @@ final class AudioDownloader: NSObject, AudioDownloaderType {
         return session
     }()
 
-    private var promise: ((Result<[AudioTrack], AudioDownloadError>) -> Void)!
-    private var tempLocalURL: URL!
+    private var promise: ((Result<[URL], AudioDownloadError>) -> Void)!
 
-    func downloadTask(with code: String) -> AnyPublisher<[AudioTrack], AudioDownloadError> {
-        Future<[AudioTrack], AudioDownloadError> { promise in
+    func downloadTask(with code: String) -> AnyPublisher<[URL], AudioDownloadError> {
+        Future<[URL], AudioDownloadError> { promise in
             self.promise = promise
             let url = URL(string: "http://1.246.134.84/simpleArchive/downloadMusic?code=\(code)")!
-            self.session.downloadTask(with: url).resume()
+            self.session
+                .downloadTask(with: url)
+                .resume()
         }
         .receive(on: DispatchQueue.main)
         .eraseToAnyPublisher()
@@ -48,7 +60,7 @@ extension AudioDownloader: URLSessionTaskDelegate {
         didCompleteWithError error: Error?
     ) {
         if let error {
-            promise(.failure(AudioDownloadError.unowned(error.localizedDescription)))
+            promise(.failure(AudioDownloadError.unowned(error)))
             return
         }
 
@@ -57,47 +69,11 @@ extension AudioDownloader: URLSessionTaskDelegate {
             return
         }
 
-        var audioTracks: [AudioTrack] = []
-        let audioFileManager = AudioFileManager.default
-
         do {
             let audioFileUrls = try audioFileManager.extractAudioFileURLs()
-
-            for audioURL in audioFileUrls {
-
-                let audioMetadata = audioFileManager.readAudioMetadata(audioURL: audioURL)
-
-                var fileTitle = audioURL.deletingPathExtension().lastPathComponent
-                if fileTitle.isEmpty { fileTitle = "no title" }
-                if let metadataTitle = audioMetadata.title { fileTitle = metadataTitle }
-
-                let artist: String = audioMetadata.artist ?? "Unknown"
-
-                let defaultAudioThumbnailImage = UIImage(named: "defaultMusicThumbnail")!
-                let thumnnailImageData =
-                    audioMetadata.thumbnail ?? defaultAudioThumbnailImage.jpegData(compressionQuality: 1.0)!
-
-                let audioFileID = UUID()
-                let audioFileName = "\(audioFileID).\(audioURL.pathExtension)"
-                let newFileURL = audioFileManager.createAudioFileURL(fileName: audioFileName)
-                try audioFileManager.moveItem(src: audioURL, des: newFileURL)
-
-                let track = AudioTrack(
-                    id: audioFileID,
-                    title: fileTitle,
-                    artist: artist,
-                    thumbnail: thumnnailImageData,
-                    fileExtension: audioURL.pathExtension)
-
-                audioFileManager.writeAudioMetadata(audioTrack: track)
-                audioTracks.append(track)
-            }
-
-            try audioFileManager.cleanTempDirectories()
-
-            promise(.success(audioTracks))
+            promise(.success(audioFileUrls))
         } catch {
-            promise(.failure(AudioDownloadError.unowned(error.localizedDescription)))
+            promise(.failure(AudioDownloadError.fileManagingError(error)))
         }
     }
 }
@@ -117,9 +93,9 @@ extension AudioDownloader: URLSessionDownloadDelegate {
         didFinishDownloadingTo location: URL
     ) {
         do {
-            try AudioFileManager.default.moveDownloadFile(location: location)
+            try audioFileManager.moveDownloadFile(location: location)
         } catch {
-            promise(.failure(AudioDownloadError.unowned(error.localizedDescription)))
+            promise(.failure(AudioDownloadError.fileManagingError(error)))
         }
     }
 }

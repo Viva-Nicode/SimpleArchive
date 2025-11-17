@@ -25,3 +25,25 @@ extension Just where Output == Void {
             .eraseToAnyPublisher()
     }
 }
+
+extension Publisher where Output: Sequence {
+    func mapEnumerated<T>(_ transform: @escaping (Int, Self.Output.Element) -> T) -> Publishers.Map<Self, [T]> {
+        self.map { value in
+            value.enumerated()
+                .map { i, v in
+                    transform(i, v)
+                }
+        }
+    }
+    
+    func tryMapEnumerated<T>(
+        _ transform: @escaping (Int, Output.Element) throws -> T
+    ) -> Publishers.TryMap<Self, [T]> {
+        self.tryMap { sequence in
+            try sequence.enumerated()
+                .map { index, element in
+                    try transform(index, element)
+                }
+        }
+    }
+}

@@ -20,8 +20,8 @@ final class AudioTrackController: NSObject, AudioTrackControllerType {
     private(set) var player: AVAudioPlayer?
     private(set) var audioTrackURL: URL
 
-    init(audioTrackName: String) {
-        self.audioTrackURL = AudioFileManager.default.createAudioFileURL(fileName: audioTrackName)
+    init(audioTrackURL: URL) {
+        self.audioTrackURL = audioTrackURL
         super.init()
         preparePlayer()
     }
