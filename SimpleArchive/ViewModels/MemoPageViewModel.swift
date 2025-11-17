@@ -14,18 +14,20 @@ import UIKit
 
     private var memoComponentCoredataReposotory: MemoComponentCoreDataRepositoryType
     private var componentFactory: any ComponentFactoryType
-    private var audioDownloader: AudioDownloaderType = AudioDownloader()
+    private var audioDownloader: AudioDownloaderType
     private var audioTrackController: AudioTrackControllerType?
     private var nowPlayingAudioComponentID: UUID?
 
     init(
         componentFactory: any ComponentFactoryType,
         memoComponentCoredataReposotory: MemoComponentCoreDataRepositoryType,
+        audioDownloader: AudioDownloaderType,
         page: MemoPageModel,
     ) {
         self.componentFactory = componentFactory
         self.memoComponentCoredataReposotory = memoComponentCoredataReposotory
         self.memoPage = page
+        self.audioDownloader = audioDownloader
 
         super.init()
 
@@ -156,7 +158,9 @@ import UIKit
     private func removeComponent(componentID: UUID) {
         if let removedComponent = memoPage.removeChildComponentById(componentID) {
             if let audioComponent = removedComponent.item as? AudioComponent {
-                audioComponent.removeAudioFilesFromDisk()
+                for audioTrack in audioComponent.detail.tracks {
+                    AudioFileManager.default.removeAudio(with: audioTrack)
+                }
             }
             memoComponentCoredataReposotory.removeComponent(
                 parentPageID: memoPage.id,
@@ -331,15 +335,15 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
                             component.datasource?.nowPlayingAudioIndex = component.detail.tracks
                                 .firstIndex { $0.id == currentPlayingAudioTrackID }
                             output.send(.didAppendAudioTrackRows(componentIndex, appendedIndices))
+                            saveComponentsChanges()
 
                         case .failure(let failure):
                             switch failure {
                                 case .invalidCode:
-                                    break
+                                    output.send(.didPresentInvalidDownloadCode(componentIndex))
                                 case .unowned(let msg):
-                                    print(msg)
+                                    print("audio download unowned error : \(msg)")
                             }
-                            output.send(.didPresentInvalidDownloadCode(componentIndex))
                     }
                 }
                 .store(in: &subscriptions)
@@ -347,90 +351,50 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
     }
 
     private func importAudioFromLocalFileSystem(componentID: UUID, didPickDocumentsAt urls: [URL]) {
-
-        let fileManager = FileManager.default
-        let documentsDir = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
-        let archiveDir = documentsDir.appendingPathComponent("SimpleArchiveMusics")
+        let audioFileManager = AudioFileManager.default
         var audioTracks: [AudioTrack] = []
 
-        do {
-            if !fileManager.fileExists(atPath: archiveDir.path) {
-                try fileManager.createDirectory(at: archiveDir, withIntermediateDirectories: true)
-            }
+        for audioFileUrl in urls {
 
-            for url in urls {
-                guard url.startAccessingSecurityScopedResource() else { continue }
-                defer { url.stopAccessingSecurityScopedResource() }
+            let audioID = UUID()
+            let audioFileName = "\(audioID).\(audioFileUrl.pathExtension)"
+            let storedFileURL = audioFileManager.copyFilesToAppDirectory(src: audioFileUrl, des: audioFileName)
+            let audioMetadata = audioFileManager.readAudioMetadata(audioURL: storedFileURL)
 
-                let newID = UUID()
-                let newFileName = "\(newID).\(url.pathExtension)"
-                let destinationURL = archiveDir.appendingPathComponent(newFileName)
+            var fileTitle = audioFileUrl.deletingPathExtension().lastPathComponent
+            if fileTitle.isEmpty { fileTitle = "no title" }
+            if let metadataTile = audioMetadata.title { fileTitle = metadataTile }
 
-                try fileManager.copyItem(at: url, to: destinationURL)
+            let artist: String = audioMetadata.artist ?? "Unknown"
 
-                var fileTitle = url.deletingPathExtension().lastPathComponent
-                var artist: String = "Unknown"
-                let defaultAudioThumbnail = UIImage(named: "defaultMusicThumbnail")!
-                let defaultThumnnailData = defaultAudioThumbnail.jpegData(compressionQuality: 1.0)!
-                var defaultThumbnail = AttachedPicture(imageData: defaultThumnnailData, type: .frontCover)
+            let defaultAudioThumbnail = UIImage(named: "defaultMusicThumbnail")!
+            let thumnnailImageData = audioMetadata.thumbnail ?? defaultAudioThumbnail.jpegData(compressionQuality: 1.0)!
 
-                if fileTitle.isEmpty { fileTitle = "no title" }
+            let track = AudioTrack(
+                id: audioID,
+                title: fileTitle,
+                artist: artist,
+                thumbnail: thumnnailImageData,
+                fileExtension: storedFileURL.pathExtension)
+            
+            audioFileManager.writeAudioMetadata(audioTrack: track)
+            audioTracks.append(track)
+        }
 
-                if let audioFile = try? AudioFile(readingPropertiesAndMetadataFrom: destinationURL) {
+        performWithComponentAt(componentID) { (componentIndex, component: AudioComponent) in
 
-                    if let metadataTitle = audioFile.metadata.title, !metadataTitle.isEmpty {
-                        print(metadataTitle)
-                        fileTitle = metadataTitle
-                    }
+            let currentPlayingAudioTrackID = component.detail[component.datasource?.nowPlayingAudioIndex]?.id
+            let appendedIndices = component.addAudios(audiotracks: audioTracks)
 
-                    if let metadataArtist = audioFile.metadata.artist, !metadataArtist.isEmpty {
-                        artist = metadataArtist
-                    }
-
-                    if let metadataThumbnail = audioFile.metadata.attachedPictures(ofType: .frontCover).first {
-                        defaultThumbnail = metadataThumbnail
-                    } else if let metadataOtherThumbnail = audioFile.metadata.attachedPictures(ofType: .other).first {
-                        defaultThumbnail = AttachedPicture(
-                            imageData: metadataOtherThumbnail.imageData,
-                            type: .frontCover)
-                    }
-
-                    let newMetadata = AudioMetadata(dictionaryRepresentation: [
-                        .attachedPictures: [defaultThumbnail.dictionaryRepresentation] as NSArray,
-                        .title: NSString(string: fileTitle),
-                        .artist: NSString(string: artist),
-                    ])
-
-                    audioFile.metadata = newMetadata
-                    try? audioFile.writeMetadata()
+            component.datasource?.tracks = component.detail.tracks
+            component.datasource?.nowPlayingAudioIndex = component.detail.tracks
+                .firstIndex {
+                    $0.id == currentPlayingAudioTrackID
                 }
 
-                let track = AudioTrack(
-                    id: newID,
-                    title: fileTitle,
-                    artist: artist,
-                    thumbnail: defaultThumbnail.imageData,
-                    fileExtension: destinationURL.pathExtension)
-
-                audioTracks.append(track)
-            }
-
-            performWithComponentAt(componentID) { (componentIndex, component: AudioComponent) in
-
-                let currentPlayingAudioTrackID = component.detail[component.datasource?.nowPlayingAudioIndex]?.id
-                let appendedIndices = component.addAudios(audiotracks: audioTracks)
-
-                component.datasource?.tracks = component.detail.tracks
-                component.datasource?.nowPlayingAudioIndex = component.detail.tracks
-                    .firstIndex {
-                        $0.id == currentPlayingAudioTrackID
-                    }
-
-                output.send(.didAppendAudioTrackRows(componentIndex, appendedIndices))
-            }
-        } catch {
-            print(error.localizedDescription)
+            output.send(.didAppendAudioTrackRows(componentIndex, appendedIndices))
         }
+        saveComponentsChanges()
     }
 
     private func playAudioTrack(componentID: UUID, trackIndex: Int) {
@@ -561,7 +525,8 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
                     trackIndex,
                     newMetadata,
                     component.datasource?.nowPlayingAudioIndex == trackIndex,
-                    trackIndexAfterEdit)
+                    trackIndexAfterEdit
+                )
             )
         }
     }
@@ -643,8 +608,9 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
 
             let datasource = component.datasource
             let currentPlayingAudioTrackID = component.detail[datasource?.nowPlayingAudioIndex]?.id
+            let removedAudioTrack = component.detail.tracks.remove(at: trackIndex)
 
-            component.removeAudio(with: trackIndex)
+            AudioFileManager.default.removeAudio(with: removedAudioTrack)
             datasource?.tracks = component.detail.tracks
 
             if datasource?.nowPlayingAudioIndex != nil {
@@ -796,9 +762,3 @@ extension MemoPageViewModel: UICollectionViewDataSource {
             )
     }
 }
-
-//extension MemoPageViewModel: UIDocumentPickerDelegate {
-//    func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
-//        downloadAudioFromLocalFileSystem(didPickDocumentsAt: urls)
-//    }
-//}

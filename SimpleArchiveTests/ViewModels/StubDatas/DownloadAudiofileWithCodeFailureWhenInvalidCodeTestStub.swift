@@ -2,14 +2,13 @@ import Foundation
 
 @testable import SimpleArchive
 
-final class CaptureComponentSuccessfullyTestStub: StubDatable {
-
+final class DownloadAudiofileWithCodeFailureWhenInvalidCodeTestStub: StubDatable {
     typealias GivenStubDataType = MemoPageModel
     typealias TestTargetInputType = (UUID, String)
     typealias ExpectedOutputType = Int
 
-    let testTargetName = "test_captureComponent_successfully()"
-    private var componentID: UUID!
+    let testTargetName = "test_downloadAudiofileWithCode_failure_WhenInvalidCode()"
+    private var audioComponentID: UUID!
 
     private var provideState: TestDataProvideState = .givenStubData
 
@@ -21,9 +20,10 @@ final class CaptureComponentSuccessfullyTestStub: StubDatable {
 
             case .testTargetInput:
                 provideState = .testVerifyOutput
-                return (componentID, "test snapshot description")
+                return (audioComponentID, "invalidDownloadCode")
 
             case .testVerifyOutput:
+                provideState = .allDataConsumed
                 return 3
 
             default:
@@ -36,9 +36,13 @@ final class CaptureComponentSuccessfullyTestStub: StubDatable {
         testPage.appendChildComponent(component: TextEditorComponent())
         testPage.appendChildComponent(component: TextEditorComponent())
         testPage.appendChildComponent(component: TextEditorComponent())
-        
+
+        let audioComponent = AudioComponent()
+        audioComponentID = audioComponent.id
+
+        testPage.appendChildComponent(component: audioComponent)
+
         let targetComponent = TextEditorComponent()
-        componentID = targetComponent.id
         testPage.appendChildComponent(component: targetComponent)
 
         return testPage

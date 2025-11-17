@@ -130,84 +130,45 @@ import UIKit
     }
 
     private func importAudioFromLocalFileSystem(urls: [URL]) {
-        let fileManager = FileManager.default
-        let documentsDir = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
-        let archiveDir = documentsDir.appendingPathComponent("SimpleArchiveMusics")
+        let audioFileManager = AudioFileManager.default
         var audioTracks: [AudioTrack] = []
 
-        do {
-            if !fileManager.fileExists(atPath: archiveDir.path) {
-                try fileManager.createDirectory(at: archiveDir, withIntermediateDirectories: true)
-            }
+        for audioFileUrl in urls {
 
-            for url in urls {
-                guard url.startAccessingSecurityScopedResource() else { continue }
-                defer { url.stopAccessingSecurityScopedResource() }
+            let audioID = UUID()
+            let audioFileName = "\(audioID).\(audioFileUrl.pathExtension)"
+            let storedFileURL = audioFileManager.copyFilesToAppDirectory(src: audioFileUrl, des: audioFileName)
+            let audioMetadata = audioFileManager.readAudioMetadata(audioURL: storedFileURL)
 
-                let newID = UUID()
-                let newFileName = "\(newID).\(url.pathExtension)"
-                let destinationURL = archiveDir.appendingPathComponent(newFileName)
+            var fileTitle = audioFileUrl.deletingPathExtension().lastPathComponent
 
-                try fileManager.copyItem(at: url, to: destinationURL)
+            if fileTitle.isEmpty { fileTitle = "no title" }
+            if let metadataTitle = audioMetadata.title { fileTitle = metadataTitle }
 
-                var fileTitle = url.deletingPathExtension().lastPathComponent
-                var artist: String = "Unknown"
-                let defaultAudioThumbnail = UIImage(named: "defaultMusicThumbnail")!
-                let defaultThumnnailData = defaultAudioThumbnail.jpegData(compressionQuality: 1.0)!
-                var defaultThumbnail = AttachedPicture(imageData: defaultThumnnailData, type: .frontCover)
+            let artist: String = audioMetadata.artist ?? "Unknown"
 
-                if fileTitle.isEmpty { fileTitle = "no title" }
+            let defaultAudioThumbnail = UIImage(named: "defaultMusicThumbnail")!
+            let thumnnailImageData = audioMetadata.thumbnail ?? defaultAudioThumbnail.jpegData(compressionQuality: 1.0)!
 
-                if let audioFile = try? AudioFile(readingPropertiesAndMetadataFrom: destinationURL) {
+            let track = AudioTrack(
+                id: audioID,
+                title: fileTitle,
+                artist: artist,
+                thumbnail: thumnnailImageData,
+                fileExtension: storedFileURL.pathExtension)
 
-                    if let metadataTitle = audioFile.metadata.title, !metadataTitle.isEmpty {
-                        print(metadataTitle)
-                        fileTitle = metadataTitle
-                    }
-
-                    if let metadataArtist = audioFile.metadata.artist, !metadataArtist.isEmpty {
-                        artist = metadataArtist
-                    }
-
-                    if let metadataThumbnail = audioFile.metadata.attachedPictures(ofType: .frontCover).first {
-                        defaultThumbnail = metadataThumbnail
-                    } else if let metadataOtherThumbnail = audioFile.metadata.attachedPictures(ofType: .other).first {
-                        defaultThumbnail = AttachedPicture(
-                            imageData: metadataOtherThumbnail.imageData,
-                            type: .frontCover)
-                    }
-
-                    let newMetadata = AudioMetadata(dictionaryRepresentation: [
-                        .attachedPictures: [defaultThumbnail.dictionaryRepresentation] as NSArray,
-                        .title: NSString(string: fileTitle),
-                        .artist: NSString(string: artist),
-                    ])
-
-                    audioFile.metadata = newMetadata
-                    try? audioFile.writeMetadata()
-                }
-
-                let track = AudioTrack(
-                    id: newID,
-                    title: fileTitle,
-                    artist: artist,
-                    thumbnail: defaultThumbnail.imageData,
-                    fileExtension: destinationURL.pathExtension)
-
-                audioTracks.append(track)
-            }
-
-            let currentPlayingAudioTrackID = audioComponent.detail[audioContentTableDataSource.nowPlayingAudioIndex]?.id
-            let appendedIndices = audioComponent.addAudios(audiotracks: audioTracks)
-            audioContentTableDataSource.tracks = audioComponent.detail.tracks
-            audioContentTableDataSource.nowPlayingAudioIndex = audioComponent.detail.tracks.firstIndex {
-                $0.id == currentPlayingAudioTrackID
-            }
-
-            output.send(.didAppendAudioTrackRows(appendedIndices))
-        } catch {
-            print(error.localizedDescription)
+            audioFileManager.writeAudioMetadata(audioTrack: track)
+            audioTracks.append(track)
         }
+
+        let currentPlayingAudioTrackID = audioComponent.detail[audioContentTableDataSource.nowPlayingAudioIndex]?.id
+        let appendedIndices = audioComponent.addAudios(audiotracks: audioTracks)
+        audioContentTableDataSource.tracks = audioComponent.detail.tracks
+        audioContentTableDataSource.nowPlayingAudioIndex = audioComponent.detail.tracks.firstIndex {
+            $0.id == currentPlayingAudioTrackID
+        }
+
+        output.send(.didAppendAudioTrackRows(appendedIndices))
     }
 
     private func playAudioTrack(trackIndex: Int) {
@@ -372,8 +333,9 @@ import UIKit
 
     private func removeAudioTrack(trackIndex: Int) {
         let currentPlayingAudioTrackID = audioComponent.detail[audioContentTableDataSource.nowPlayingAudioIndex]?.id
+        let removedAudioTrack = audioComponent.detail.tracks.remove(at: trackIndex)
 
-        audioComponent.removeAudio(with: trackIndex)
+        AudioFileManager.default.removeAudio(with: removedAudioTrack)
         audioContentTableDataSource.tracks = audioComponent.detail.tracks
         audioComponent.persistenceState = .unsaved(isMustToStoreSnapshot: false)
 

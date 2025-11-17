@@ -2,14 +2,14 @@ import Foundation
 
 @testable import SimpleArchive
 
-final class CaptureComponentSuccessfullyTestStub: StubDatable {
+final class RemoveComponentSuccessfullyTestStub: StubDatable {
 
     typealias GivenStubDataType = MemoPageModel
-    typealias TestTargetInputType = (UUID, String)
+    typealias TestTargetInputType = UUID
     typealias ExpectedOutputType = Int
 
-    let testTargetName = "test_captureComponent_successfully()"
-    private var componentID: UUID!
+    let testTargetName = "test_removeComponent_successfullly()"
+    private var targetComponentID: UUID!
 
     private var provideState: TestDataProvideState = .givenStubData
 
@@ -21,9 +21,10 @@ final class CaptureComponentSuccessfullyTestStub: StubDatable {
 
             case .testTargetInput:
                 provideState = .testVerifyOutput
-                return (componentID, "test snapshot description")
+                return targetComponentID!
 
             case .testVerifyOutput:
+                provideState = .allDataConsumed
                 return 3
 
             default:
@@ -36,9 +37,9 @@ final class CaptureComponentSuccessfullyTestStub: StubDatable {
         testPage.appendChildComponent(component: TextEditorComponent())
         testPage.appendChildComponent(component: TextEditorComponent())
         testPage.appendChildComponent(component: TextEditorComponent())
-        
+
         let targetComponent = TextEditorComponent()
-        componentID = targetComponent.id
+        targetComponentID = targetComponent.id
         testPage.appendChildComponent(component: targetComponent)
 
         return testPage

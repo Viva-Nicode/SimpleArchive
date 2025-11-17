@@ -298,7 +298,7 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
                     changeRowFile(newName: newName, before: before, after: after)
 
                 case .didSortDirectoryItems(let sortingResult):
-                    resortFileTableRows(sortingResult)
+                    sortFileTableRows(sortingResult)
 
                 case .didNavigateSingleTextEditorComponentPageView(let vm):
                     let singleTextEditorPageViewController = SingleTextEditorPageViewController(viewModel: vm)
@@ -660,7 +660,7 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
         }
     }
 
-    private func resortFileTableRows(_ sortingReulst: [(Int, Int)]) {
+    private func sortFileTableRows(_ sortingReulst: [(Int, Int)]) {
         let lastItemIndex = directoryCollectionView.numberOfItems(inSection: .zero)
         let newIndexPath = IndexPath(item: lastItemIndex - 1, section: .zero)
 

@@ -11,7 +11,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     var window: UIWindow?
 
-    func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
+    func scene(
+        _ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions
+    ) {
 
         guard let windowScene = (scene as? UIWindowScene) else { return }
 
@@ -24,7 +26,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             let memoPageCoreDataRepository = DIContainer.shared.resolve(MemoPageCoreDataRepository.self),
             let directoryCreator = DIContainer.shared.resolve(DirectoryCreator.self),
             let pageCreator = DIContainer.shared.resolve(PageCreator.self)
-            else { fatalError("can not found Dependency") }
+        else { fatalError("can not found Dependency") }
 
         let memoHomeViewModel = MemoHomeViewModel(
             memoDirectoryCoredataReposotory: memoDirectoryCoreDataRepository,
@@ -44,15 +46,15 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         self.window = window
     }
 
-    func sceneDidDisconnect(_ scene: UIScene) { }
+    func sceneDidDisconnect(_ scene: UIScene) {}
 
-    func sceneDidBecomeActive(_ scene: UIScene) { }
+    func sceneDidBecomeActive(_ scene: UIScene) {}
 
-    func sceneWillResignActive(_ scene: UIScene) { }
+    func sceneWillResignActive(_ scene: UIScene) {}
 
-    func sceneWillEnterForeground(_ scene: UIScene) { }
+    func sceneWillEnterForeground(_ scene: UIScene) {}
 
-    func sceneDidEnterBackground(_ scene: UIScene) { }
+    func sceneDidEnterBackground(_ scene: UIScene) {}
 }
 
 protocol NavigationViewControllerDismissible {
@@ -63,13 +65,16 @@ class NavigationDelegateObject: NSObject, UINavigationControllerDelegate {
 
     static var shared = NavigationDelegateObject()
 
-    func navigationController(_ navigationController: UINavigationController,
-        didShow viewController: UIViewController, animated: Bool) {
+    func navigationController(
+        _ navigationController: UINavigationController,
+        didShow viewController: UIViewController, animated: Bool
+    ) {
 
         if let fromViewController = navigationController.transitionCoordinator?.viewController(forKey: .from),
-            !navigationController.viewControllers.contains(fromViewController) {
-
-            if let popedViewController = fromViewController as? NavigationViewControllerDismissible { popedViewController.onDismiss()
+            !navigationController.viewControllers.contains(fromViewController)
+        {
+            if let popedViewController = fromViewController as? NavigationViewControllerDismissible {
+                popedViewController.onDismiss()
             }
         }
     }

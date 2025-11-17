@@ -60,7 +60,7 @@ struct MemoComponentCoreDataRepository: MemoComponentCoreDataRepositoryType {
 
                 if let audioComponent = component as? AudioComponent {
                     for i in 0..<audioComponent.detail.tracks.count {
-                        writeAudioMetadata(audioTrack: audioComponent.detail.tracks[i])
+                        AudioFileManager.default.writeAudioMetadata(audioTrack: audioComponent.detail.tracks[i])
                     }
                 }
 
@@ -74,26 +74,6 @@ struct MemoComponentCoreDataRepository: MemoComponentCoreDataRepositoryType {
                 }
                 component.updatePersistenceState(to: .synced)
             }
-        }
-    }
-
-    private func writeAudioMetadata(audioTrack: AudioTrack) {
-        let fileManager = FileManager.default
-        let documentsDir = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
-        let fileName = "\(audioTrack.id).\(audioTrack.fileExtension)"
-        let trackURL = documentsDir.appendingPathComponent("SimpleArchiveMusics/\(fileName)")
-
-        if let audioFile = try? AudioFile(readingPropertiesAndMetadataFrom: trackURL) {
-            let picture = AttachedPicture(imageData: audioTrack.thumbnail, type: .frontCover)
-
-            let audioMetadata = AudioMetadata(dictionaryRepresentation: [
-                .attachedPictures: [picture.dictionaryRepresentation] as NSArray,
-                .title: NSString(string: audioTrack.title),
-                .artist: NSString(string: audioTrack.artist),
-            ])
-
-            audioFile.metadata = audioMetadata
-            try? audioFile.writeMetadata()
         }
     }
 

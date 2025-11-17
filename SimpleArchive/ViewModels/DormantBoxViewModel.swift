@@ -50,9 +50,14 @@ import UIKit
                     {
                         page.parentDirectory?.removeChildItemByID(with: page.id)
                         page.parentDirectory = nil
-                        page.getComponents
-                            .compactMap { $0 as? AudioComponent }
-                            .forEach { $0.removeAudioFilesFromDisk() }
+
+                        let audioComponents = page.getComponents.compactMap { $0 as? AudioComponent }
+
+                        for audioComponent in audioComponents {
+                            for audioTrack in audioComponent.detail.tracks {
+                                AudioFileManager.default.removeAudio(with: audioTrack)
+                            }
+                        }
                         output.send(.didRemovePageFromDormantBox(item.index))
                     }
             }

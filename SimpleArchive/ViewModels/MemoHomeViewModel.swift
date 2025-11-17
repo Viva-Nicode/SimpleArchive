@@ -209,6 +209,7 @@ import UIKit
             let memoPageViewModel = MemoPageViewModel(
                 componentFactory: componentFactory,
                 memoComponentCoredataReposotory: memoComponentCoreDataRepository,
+                audioDownloader: AudioDownloader(),
                 page: followingPage)
 
             output.send(.didNavigatePageView(memoPageViewModel))
@@ -263,6 +264,7 @@ import UIKit
             let memoPageViewModel = MemoPageViewModel(
                 componentFactory: componentFactory,
                 memoComponentCoredataReposotory: memoComponentCoreDataRepository,
+                audioDownloader: AudioDownloader(),
                 page: followingPage)
 
             output.send(.didNavigatePageView(memoPageViewModel))

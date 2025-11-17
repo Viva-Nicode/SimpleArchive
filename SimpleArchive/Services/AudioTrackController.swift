@@ -16,18 +16,16 @@ protocol AudioTrackControllerType {
 }
 
 final class AudioTrackController: NSObject, AudioTrackControllerType {
-    
+
     private(set) var player: AVAudioPlayer?
     private(set) var audioTrackURL: URL
 
     init(audioTrackName: String) {
-        let fileManager = FileManager.default
-        let documentsDir = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
-        self.audioTrackURL = documentsDir.appendingPathComponent("SimpleArchiveMusics/\(audioTrackName)")
+        self.audioTrackURL = AudioFileManager.default.createAudioFileURL(fileName: audioTrackName)
         super.init()
         preparePlayer()
     }
-    
+
     deinit { print("deinit AudioTrackController") }
 
     private func preparePlayer() {
@@ -62,7 +60,7 @@ final class AudioTrackController: NSObject, AudioTrackControllerType {
             player.play()
         }
     }
-    
+
     func stop() {
         player?.stop()
     }

@@ -1,8 +1,6 @@
 import Combine
 import Foundation
 import UIKit
-import ZIPFoundation
-import SFBAudioEngine
 
 protocol AudioDownloaderType {
     typealias progressClosure = ((Float) -> Void)
@@ -59,75 +57,43 @@ extension AudioDownloader: URLSessionTaskDelegate {
             return
         }
 
-        let fileManager = FileManager.default
-        let documentsDir = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
-        let archiveDir = documentsDir.appendingPathComponent("SimpleArchiveMusics")
-        let unzipTempDir = documentsDir.appendingPathComponent("downloaded_music_temp")
         var audioTracks: [AudioTrack] = []
+        let audioFileManager = AudioFileManager.default
 
         do {
-            if !fileManager.fileExists(atPath: archiveDir.path) {
-                try fileManager.createDirectory(at: archiveDir, withIntermediateDirectories: true)
-            }
+            let audioFileUrls = try audioFileManager.extractAudioFileURLs()
 
-            try fileManager.unzipItem(at: tempLocalURL, to: unzipTempDir)
+            for audioURL in audioFileUrls {
 
-            let files = try fileManager.contentsOfDirectory(at: unzipTempDir, includingPropertiesForKeys: nil)
+                let audioMetadata = audioFileManager.readAudioMetadata(audioURL: audioURL)
 
-            for fileURL in files where ["mp3", "m4a"].contains(fileURL.pathExtension.lowercased()) {
-                let newID = UUID()
-                let newFileName = "\(newID).\(fileURL.pathExtension)"
-                let newFileURL = archiveDir.appendingPathComponent(newFileName)
-                var fileTitle = fileURL.deletingPathExtension().lastPathComponent
-                var artist: String = "Unknown"
-                let defaultAudioThumbnail = UIImage(named: "defaultMusicThumbnail")!
-                let defaultThumnnailData = defaultAudioThumbnail.jpegData(compressionQuality: 1.0)!
-                var defaultThumbnail = AttachedPicture(imageData: defaultThumnnailData, type: .frontCover)
-
+                var fileTitle = audioURL.deletingPathExtension().lastPathComponent
                 if fileTitle.isEmpty { fileTitle = "no title" }
+                if let metadataTitle = audioMetadata.title { fileTitle = metadataTitle }
 
-                if let audioFile = try? AudioFile(readingPropertiesAndMetadataFrom: fileURL) {
+                let artist: String = audioMetadata.artist ?? "Unknown"
 
-                    if let metadataTitle = audioFile.metadata.title, !metadataTitle.isEmpty {
-                        fileTitle = metadataTitle
-                    }
+                let defaultAudioThumbnailImage = UIImage(named: "defaultMusicThumbnail")!
+                let thumnnailImageData =
+                    audioMetadata.thumbnail ?? defaultAudioThumbnailImage.jpegData(compressionQuality: 1.0)!
 
-                    if let metadataArtist = audioFile.metadata.artist, !metadataArtist.isEmpty {
-                        artist = metadataArtist
-                    }
-
-                    if let metadataThumbnail = audioFile.metadata.attachedPictures(ofType: .frontCover).first {
-                        defaultThumbnail = metadataThumbnail
-                    } else if let metadataOtherThumbnail = audioFile.metadata.attachedPictures(ofType: .other).first {
-                        defaultThumbnail = AttachedPicture(
-                            imageData: metadataOtherThumbnail.imageData,
-                            type: .frontCover)
-                    }
-
-                    let newMetadata = AudioMetadata(dictionaryRepresentation: [
-                        .attachedPictures: [defaultThumbnail.dictionaryRepresentation] as NSArray,
-                        .title: NSString(string: fileTitle),
-                        .artist: NSString(string: artist),
-                    ])
-
-                    audioFile.metadata = newMetadata
-                    try? audioFile.writeMetadata()
-                }
-
-                try fileManager.moveItem(at: fileURL, to: newFileURL)
+                let audioFileID = UUID()
+                let audioFileName = "\(audioFileID).\(audioURL.pathExtension)"
+                let newFileURL = audioFileManager.createAudioFileURL(fileName: audioFileName)
+                try audioFileManager.moveItem(src: audioURL, des: newFileURL)
 
                 let track = AudioTrack(
-                    id: newID,
+                    id: audioFileID,
                     title: fileTitle,
                     artist: artist,
-                    thumbnail: defaultThumbnail.imageData,
-                    fileExtension: fileURL.pathExtension)
+                    thumbnail: thumnnailImageData,
+                    fileExtension: audioURL.pathExtension)
 
+                audioFileManager.writeAudioMetadata(audioTrack: track)
                 audioTracks.append(track)
             }
 
-            try? fileManager.removeItem(at: unzipTempDir)
-            try? fileManager.removeItem(at: tempLocalURL)
+            try audioFileManager.cleanTempDirectories()
 
             promise(.success(audioTracks))
         } catch {
@@ -150,14 +116,8 @@ extension AudioDownloader: URLSessionDownloadDelegate {
         downloadTask: URLSessionDownloadTask,
         didFinishDownloadingTo location: URL
     ) {
-        let fileManager = FileManager.default
-        let documentsDir = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
-        let tempCopyURL = documentsDir.appendingPathComponent("downloaded_music_temp.zip")
-
         do {
-            try? fileManager.removeItem(at: tempCopyURL)
-            try fileManager.moveItem(at: location, to: tempCopyURL)
-            self.tempLocalURL = tempCopyURL
+            try AudioFileManager.default.moveDownloadFile(location: location)
         } catch {
             promise(.failure(AudioDownloadError.unowned(error.localizedDescription)))
         }

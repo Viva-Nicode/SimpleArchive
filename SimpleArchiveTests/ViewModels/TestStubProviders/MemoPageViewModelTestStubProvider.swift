@@ -8,6 +8,9 @@ final class MemoPageViewModelTestStubProvider: TestStubProvidable {
         let stubs: [any StubDatable] = [
             CreateNewComponentSuccessfullyTestStub(),
             CaptureComponentSuccessfullyTestStub(),
+            RemoveComponentSuccessfullyTestStub(),
+            DownloadAudioTracksSuccessfullyTestStub(),
+            DownloadAudiofileWithCodeFailureWhenInvalidCodeTestStub(),
         ]
         stubs.forEach { stubContainer[$0.testTargetName] = $0 }
     }
