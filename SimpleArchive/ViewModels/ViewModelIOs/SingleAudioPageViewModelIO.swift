@@ -4,7 +4,7 @@ import UIKit
 enum SingleAudioPageInput {
     case viewDidLoad
     case viewWillDisappear
-    
+
     case willDownloadMusicWithCode(String)
     case willImportAudioFilesFromFileSystem([URL])
     case willPlayAudioTrack(Int)
@@ -22,13 +22,14 @@ enum SingleAudioPageOutput {
     case viewDidLoad(String, AudioComponent, AudioComponentDataSource)
     
     case didAppendAudioTrackRows([Int])
-    case didPlayAudioTrack(URL, Int, TimeInterval?, AudioTrackMetadata, AudioSampleData?)
+    case didPlayAudioTrack(Int, TimeInterval?, AudioTrackMetadata, AudioSampleData?)
     case didApplyAudioMetadataChanges(Int, AudioTrackMetadata, Bool, Int?)
-    case didToggleAudioPlayingState(Bool, Int?, TimeInterval?)
+    case didToggleAudioPlayingState(Bool, Int?)
     case didUpdateAudioDownloadProgress(Float)
     case didSeekAudioTrack(TimeInterval, TimeInterval?, Int?)
     case didSortAudioTracks([String], [String])
     case didRemoveAudioTrack(Int)
+    case didRemoveAudioTrackAndPlayNextAudio(Int, Int, TimeInterval?, AudioTrackMetadata, AudioSampleData?)
     case didPresentInvalidDownloadCode
-    case didSetAudioPlayingStateToStopped
+    case didRemoveAudioTrackAndStopPlaying(Int)
 }

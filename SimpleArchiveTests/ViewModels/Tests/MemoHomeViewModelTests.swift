@@ -4,7 +4,7 @@ import XCTest
 @testable import SimpleArchive
 
 @MainActor
-final class MemoHomeViewModelTests: XCTestCase, @preconcurrency StubProvidingTestCase {
+final class MemoHomeViewModelTests: XCTestCase, @preconcurrency FixtureProvidingTestCase {
 
     var sut: MemoHomeViewModel!
     var subscriptions: Set<AnyCancellable>!
@@ -12,7 +12,7 @@ final class MemoHomeViewModelTests: XCTestCase, @preconcurrency StubProvidingTes
     var mockMemoPageCoreDataRepository: MockMemoPageCoreDataRepository!
     var mockDirectoryCreator: MockDirectoryCreator!
     var mockPageCreator: MockPageCreator!
-    var stubProvider = MemoHomeViewModelTestStubProvider()
+    var fixtureProvider = MemoHomeViewModelTestFixtureProvider()
     var input: PassthroughSubject<MemoHomeViewModel.Input, Never>!
 
     override func setUpWithError() throws {
@@ -31,7 +31,7 @@ final class MemoHomeViewModelTests: XCTestCase, @preconcurrency StubProvidingTes
     }
 
     override func tearDownWithError() throws {
-        stubProvider.removeUsedStubData()
+        fixtureProvider.removeUsedFixtureData()
         mockMemoDirectoryCoreDataRepository = nil
         mockMemoPageCoreDataRepository = nil
         mockDirectoryCreator = nil
@@ -42,15 +42,15 @@ final class MemoHomeViewModelTests: XCTestCase, @preconcurrency StubProvidingTes
     }
 
     func test_fetchMemoData_successfully() throws {
-        typealias StubType = FetchMemoDataSuccessfullyTestStub
-        let stub = stubProvider.getStub()
+        typealias FixtureType = FetchMemoDataSuccessfullyTestFixture
+        let fixture = fixtureProvider.getFixture()
 
-        let givenStub = stub.getStubData() as! StubType.GivenStubDataType
+        let givenFixture = fixture.getFixtureData() as! FixtureType.GivenFixtureDataType
 
         mockMemoDirectoryCoreDataRepository.actions = .init(expected: [
             .fetchSystemDirectoryEntities
         ])
-        mockMemoDirectoryCoreDataRepository.fetchSystemDirectoryEntitiesResult = .success(givenStub)
+        mockMemoDirectoryCoreDataRepository.fetchSystemDirectoryEntitiesResult = .success(givenFixture)
 
         let expectation = XCTestExpectation(description: #function)
         let factualOutput = FactualOutput<MemoHomeViewModel.Output>()
@@ -68,7 +68,7 @@ final class MemoHomeViewModelTests: XCTestCase, @preconcurrency StubProvidingTes
             factualMainDirectoryID,
             factualMainDirectorySortCriteria,
             factualMainDirectoryFileCount
-        ) = stub.getStubData() as! StubType.ExpectedOutputType
+        ) = fixture.getFixtureData() as! FixtureType.ExpectedOutputType
 
         guard
             case .didFetchMemoData(
@@ -89,10 +89,10 @@ final class MemoHomeViewModelTests: XCTestCase, @preconcurrency StubProvidingTes
     }
 
     func test_moveToPreviousDirectory_successfully() throws {
-        typealias StubType = MoveToPreviousDirectorySuccessfullyTestStub
-        let stub = stubProvider.getStub()
+        typealias FixtureType = MoveToPreviousDirectorySuccessfullyTestFixture
+        let fixture = fixtureProvider.getFixture()
 
-        let givenDirectoryStack = stub.getStubData() as! StubType.GivenStubDataType
+        let givenDirectoryStack = fixture.getFixtureData() as! FixtureType.GivenFixtureDataType
         sut.setDirectoryStack(with: givenDirectoryStack)
 
         let expectation = XCTestExpectation(description: #function)
@@ -103,14 +103,14 @@ final class MemoHomeViewModelTests: XCTestCase, @preconcurrency StubProvidingTes
             .sinkToFulfill(expectation, factualOutput)
             .store(in: &subscriptions)
 
-        let inputData = stub.getStubData() as! StubType.TestTargetInputType
+        let inputData = fixture.getFixtureData() as! FixtureType.TestTargetInputType
 
         input.send(.willMovePreviousDirectoryPath(inputData))
         wait(for: [expectation], timeout: 1)
 
         let output = try factualOutput.getOutput()
         let (expectedRemovedDirectoryIndices, expectedNextDirectorySortCriteria, expectedFileCount) =
-            stub.getStubData() as! StubType.ExpectedOutputType
+            fixture.getFixtureData() as! FixtureType.ExpectedOutputType
 
         guard
             case .didMovePreviousDirectoryPath(
@@ -128,16 +128,14 @@ final class MemoHomeViewModelTests: XCTestCase, @preconcurrency StubProvidingTes
     }
 
     func test_fixPage_successfully() throws {
-        typealias StubType = FixPageSuccessfullyTestStub
-        let stub = stubProvider.getStub()
+        typealias FixtureType = FixPageSuccessfullyTestFixture
+        let fixture = fixtureProvider.getFixture()
 
-        let (directoryStack, fixedDirectory) = stub.getStubData() as! StubType.GivenStubDataType
+        let (directoryStack, fixedDirectory) = fixture.getFixtureData() as! FixtureType.GivenFixtureDataType
         sut.setDirectoryStack(with: directoryStack)
         sut.setFixedFileDirectory(with: fixedDirectory)
 
-        mockMemoPageCoreDataRepository.actions = .init(expected: [
-            .fixPages
-        ])
+        mockMemoPageCoreDataRepository.actions = .init(expected: [.fixPages])
         mockMemoPageCoreDataRepository.fixPagesResult = .success(())
 
         let expectation = XCTestExpectation(description: #function)
@@ -148,7 +146,7 @@ final class MemoHomeViewModelTests: XCTestCase, @preconcurrency StubProvidingTes
             .sinkToFulfill(expectation, factualOutput)
             .store(in: &subscriptions)
 
-        let inputData = stub.getStubData() as! StubType.TestTargetInputType
+        let inputData = fixture.getFixtureData() as! FixtureType.TestTargetInputType
 
         input.send(.willAppendPageToFixedTable(inputData))
         wait(for: [expectation], timeout: 1)
@@ -158,7 +156,7 @@ final class MemoHomeViewModelTests: XCTestCase, @preconcurrency StubProvidingTes
             expectedDirectoryIndex,
             expectedInsertRowIndices,
             expectedDeleteRowIndices
-        ) = stub.getStubData() as! StubType.ExpectedOutputType
+        ) = fixture.getFixtureData() as! FixtureType.ExpectedOutputType
 
         guard
             case .didAppendPageToFixedTable(
@@ -178,17 +176,15 @@ final class MemoHomeViewModelTests: XCTestCase, @preconcurrency StubProvidingTes
     }
 
     func test_unfixPage_successfully() throws {
-        typealias StubType = UnfixPageSuccessfullyTestStub
-        let stub = stubProvider.getStub()
+        typealias FixtureType = UnfixPageSuccessfullyTestFixture
+        let fixture = fixtureProvider.getFixture()
 
         let subInput = PassthroughSubject<MemoHomeSubViewInput, Never>()
-        let (directoryStack, fixedDirectory) = stub.getStubData() as! StubType.GivenStubDataType
+        let (directoryStack, fixedDirectory) = fixture.getFixtureData() as! FixtureType.GivenFixtureDataType
         sut.setDirectoryStack(with: directoryStack)
         sut.setFixedFileDirectory(with: fixedDirectory)
 
-        mockMemoPageCoreDataRepository.actions = .init(expected: [
-            .unfixPages
-        ])
+        mockMemoPageCoreDataRepository.actions = .init(expected: [.unfixPages])
         mockMemoPageCoreDataRepository.unfixPagesResult = .success(())
 
         let expectation = XCTestExpectation(description: #function)
@@ -201,7 +197,7 @@ final class MemoHomeViewModelTests: XCTestCase, @preconcurrency StubProvidingTes
 
         sut.subscribe(input: subInput.eraseToAnyPublisher())
 
-        let inputData = stub.getStubData() as! StubType.TestTargetInputType
+        let inputData = fixture.getFixtureData() as! FixtureType.TestTargetInputType
         subInput.send(.willAppendPageToHomeTable(inputData))
         wait(for: [expectation], timeout: 1)
 
@@ -210,7 +206,7 @@ final class MemoHomeViewModelTests: XCTestCase, @preconcurrency StubProvidingTes
             expectedDirectoryIndex,
             expectedInsertRowIndices,
             expectedDeleteRowIndices
-        ) = stub.getStubData() as! StubType.ExpectedOutputType
+        ) = fixture.getFixtureData() as! FixtureType.ExpectedOutputType
 
         guard
             case .didAppendPageToHomeTable(
@@ -229,11 +225,11 @@ final class MemoHomeViewModelTests: XCTestCase, @preconcurrency StubProvidingTes
     }
 
     func test_createdNewDirectory_successfully() throws {
-        typealias StubType = CreatedNewDirectorySuccessfullyTestStub
-        let stub = stubProvider.getStub()
+        typealias FixtureType = CreatedNewDirectorySuccessfullyTestFixture
+        let fixture = fixtureProvider.getFixture()
 
         let subInput = PassthroughSubject<MemoHomeSubViewInput, Never>()
-        let (directoryStack, createdNewDirectory) = stub.getStubData() as! StubType.GivenStubDataType
+        let (directoryStack, createdNewDirectory) = fixture.getFixtureData() as! FixtureType.GivenFixtureDataType
         sut.setDirectoryStack(with: directoryStack)
 
         mockMemoDirectoryCoreDataRepository.actions = .init(expected: [.createStorageItem])
@@ -251,7 +247,7 @@ final class MemoHomeViewModelTests: XCTestCase, @preconcurrency StubProvidingTes
 
         sut.subscribe(input: subInput.eraseToAnyPublisher())
 
-        let newDirectoryName = stub.getStubData() as! StubType.TestTargetInputType
+        let newDirectoryName = fixture.getFixtureData() as! FixtureType.TestTargetInputType
         subInput.send(.willCreatedNewDirectory(newDirectoryName))
         wait(for: [expectation], timeout: 1)
 
@@ -259,7 +255,7 @@ final class MemoHomeViewModelTests: XCTestCase, @preconcurrency StubProvidingTes
         let (
             expectedDirectoryStackIndex,
             expectedInsertIndex,
-        ) = stub.getStubData() as! StubType.ExpectedOutputType
+        ) = fixture.getFixtureData() as! FixtureType.ExpectedOutputType
 
         guard
             case .didInsertRowToHomeTable(
@@ -279,11 +275,11 @@ final class MemoHomeViewModelTests: XCTestCase, @preconcurrency StubProvidingTes
     }
 
     func test_createdNewPage_successfully() throws {
-        typealias StubType = CreatedNewPageSuccessfullyTestStub
-        let stub = stubProvider.getStub()
+        typealias FixtureType = CreatedNewPageSuccessfullyTestFixture
+        let fixture = fixtureProvider.getFixture()
 
         let subInput = PassthroughSubject<MemoHomeSubViewInput, Never>()
-        let (directoryStack, createdNewPage) = stub.getStubData() as! StubType.GivenStubDataType
+        let (directoryStack, createdNewPage) = fixture.getFixtureData() as! FixtureType.GivenFixtureDataType
         sut.setDirectoryStack(with: directoryStack)
 
         mockMemoDirectoryCoreDataRepository.actions = .init(expected: [.createStorageItem])
@@ -301,7 +297,7 @@ final class MemoHomeViewModelTests: XCTestCase, @preconcurrency StubProvidingTes
 
         sut.subscribe(input: subInput.eraseToAnyPublisher())
 
-        let newPageName = stub.getStubData() as! StubType.TestTargetInputType
+        let newPageName = fixture.getFixtureData() as! FixtureType.TestTargetInputType
         subInput.send(.willCreatedNewPage(newPageName, nil))
         wait(for: [expectation], timeout: 1)
 
@@ -310,7 +306,7 @@ final class MemoHomeViewModelTests: XCTestCase, @preconcurrency StubProvidingTes
         let (
             expectedDirectoryStackIndex,
             expectedInsertIndex,
-        ) = stub.getStubData() as! StubType.ExpectedOutputType
+        ) = fixture.getFixtureData() as! FixtureType.ExpectedOutputType
 
         guard
             case .didInsertRowToHomeTable(

@@ -224,8 +224,8 @@ extension Date {
 enum UIConstants {
     static let componentMinimumHeight: CGFloat = 70.0
     static let tableComponentCellMaximumWidth: CGFloat = 260.0
-    static let audioControlBarViewWidth: CGFloat = 330.0
-    static let audioControlBarViewHeight: CGFloat = 140.0
+    static let audioControlBarViewWidth: CGFloat = 335.0
+    static let audioControlBarViewHeight: CGFloat = 150.0
     static let audioControlBarViewThumbnailWidth: CGFloat = 110.0
 
     static let singleAudioViewControllerTableViewFooterHeight: CGFloat = 160.0

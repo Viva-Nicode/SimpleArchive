@@ -207,17 +207,10 @@ class MemoPageViewController: UIViewController, ViewControllerType {
                     presentInvalidDownloadCodePopupView(componentIndex: componentIndex)
 
                 case let .didPlayAudioTrack(
-                    previousComponentIndex,
-                    componentIndex,
-                    audioTrackURL,
-                    trackIndex,
-                    duration,
-                    metadata,
-                    sampleData):
+                    previousComponentIndex, componentIndex, trackIndex, duration, metadata, sampleData):
                     playAudioTrack(
                         previousComponentIndex: previousComponentIndex,
                         componentIndex: componentIndex,
-                        audioTrackURL: audioTrackURL,
                         trackIndex: trackIndex,
                         duration: duration,
                         audioMetadata: metadata,
@@ -226,17 +219,20 @@ class MemoPageViewController: UIViewController, ViewControllerType {
                 case let .didApplyAudioMetadataChanges(
                     componentIndex, trackIndex, editedMetadata, isNowPlayingTrack, trackIndexAfterEdit):
                     applyAudioTrackMetadataChanges(
-                        componentIndex, trackIndex, editedMetadata, isNowPlayingTrack, trackIndexAfterEdit)
+                        componentIndex: componentIndex,
+                        targetTrackIndex: trackIndex,
+                        metadata: editedMetadata,
+                        isNowPlayingTrack: isNowPlayingTrack,
+                        trackIndexAfterEditing: trackIndexAfterEdit)
 
                 case .didUpdateAudioDownloadProgress(let componentIndex, let progress):
                     updateAudioDownloadProgress(componentIndex: componentIndex, progress: progress)
 
-                case let .didToggleAudioPlayingState(componentIndex, trackIndex, isPlaying, currentTime):
+                case let .didToggleAudioPlayingState(componentIndex, trackIndex, isPlaying):
                     setAudioPlayingState(
                         componentIndex: componentIndex,
                         trackIndex: trackIndex,
-                        isPlaying: isPlaying,
-                        currentTime: currentTime)
+                        isPlaying: isPlaying)
 
                 case let .didSeekAudioTrack(componentIndex, trackIndex, seek, totalTime):
                     performWithComponentViewAt(componentIndex) { (_: AudioComponentView, contentView) in
@@ -255,15 +251,19 @@ class MemoPageViewController: UIViewController, ViewControllerType {
                 case .didRemoveAudioTrack(let componentIndex, let trackIndex):
                     removeAudioTrack(componentIndex: componentIndex, trackIndex: trackIndex)
 
-                case .didSetAudioPlayingStateToStopped(let componentIndex):
-                    audioControlBar.updateControlBarStateToNotPlaying()
-                    performWithComponentViewAt(componentIndex) { (_: AudioComponentView, contentView) in
-                        contentView
-                            .audioTrackTableView
-                            .visibleCells
-                            .map { $0 as! AudioTableRowView }
-                            .forEach { $0.audioVisualizer.removeVisuzlization() }
-                    }
+                case let .didRemoveAudioTrackAndPlayNextAudio(
+                    componentIndex, trackIndex, nextIndex, duration, audioMetadata, audioSampleData):
+                    removeAudioTrackAndPlayNextAudio(
+                        componentIndex: componentIndex,
+                        removeAudioRowIndex: trackIndex,
+                        nextPlayingAudioRowIndex: nextIndex,
+                        duration: duration,
+                        audioMetadata: audioMetadata,
+                        audioSampleData: audioSampleData
+                    )
+
+                case .didRemoveAudioTrackAndStopPlaying(let componentIndex, let trackIndex):
+                    removeAudioTrackAndStopPlaying(componentIndex: componentIndex, trackIndex: trackIndex)
             }
         }
         .store(in: &subscriptions)
@@ -503,7 +503,6 @@ extension MemoPageViewController {
     private func playAudioTrack(
         previousComponentIndex: Int?,
         componentIndex: Int,
-        audioTrackURL: URL,
         trackIndex: Int,
         duration: TimeInterval?,
         audioMetadata: AudioTrackMetadata,
@@ -526,8 +525,6 @@ extension MemoPageViewController {
                 .map { $0 as! AudioTableRowView }
                 .forEach { $0.audioVisualizer.removeVisuzlization() }
 
-            audioControlBar.isHidden = false
-
             let trackIndexPath = IndexPath(row: trackIndex, section: .zero)
             if let row = contentView.audioTrackTableView.cellForRow(at: trackIndexPath),
                 let targetPlayingAudioRow = row as? AudioTableRowView
@@ -541,19 +538,20 @@ extension MemoPageViewController {
             }
         }
 
-        audioControlBar.configure(
+        audioControlBar.isHidden = false
+
+        audioControlBar.state = .play(
             metadata: audioMetadata,
             duration: duration,
-            dispatcher: MemoPageAudioComponentActionDispatcher(subject: input)
-        )
+            dispatcher: MemoPageAudioComponentActionDispatcher(subject: input))
     }
 
     private func applyAudioTrackMetadataChanges(
-        _ componentIndex: Int,
-        _ targetTrackIndex: Int,
-        _ metadata: AudioTrackMetadata,
-        _ isNowPlayingTrack: Bool,
-        _ trackIndexAfterEditing: Int?
+        componentIndex: Int,
+        targetTrackIndex: Int,
+        metadata: AudioTrackMetadata,
+        isNowPlayingTrack: Bool,
+        trackIndexAfterEditing: Int?
     ) {
         performWithComponentViewAt(componentIndex) { (_: AudioComponentView, contentView) in
             if let row = contentView.audioTrackTableView.cellForRow(at: .init(row: targetTrackIndex, section: .zero)),
@@ -563,7 +561,7 @@ extension MemoPageViewController {
             }
 
             if isNowPlayingTrack {
-                audioControlBar.update(with: metadata)
+                audioControlBar.applyUpdatedMetadata(with: metadata)
             }
 
             if let trackIndexAfterEditing {
@@ -576,9 +574,9 @@ extension MemoPageViewController {
         }
     }
 
-    private func setAudioPlayingState(componentIndex: Int, trackIndex: Int, isPlaying: Bool, currentTime: TimeInterval?)
-    {
-        audioControlBar.setControlBarState(isPlaying: isPlaying, currentTime: currentTime)
+    private func setAudioPlayingState(componentIndex: Int, trackIndex: Int, isPlaying: Bool) {
+        audioControlBar.state = isPlaying ? .resume : .pause
+
         performWithComponentViewAt(componentIndex) { (_: AudioComponentView, contentView) in
             if let row = contentView.audioTrackTableView.cellForRow(
                 at: IndexPath(row: trackIndex, section: .zero)),
@@ -613,6 +611,63 @@ extension MemoPageViewController {
 
     private func removeAudioTrack(componentIndex: Int, trackIndex: Int) {
         performWithComponentViewAt(componentIndex) { (_: AudioComponentView, contentView) in
+            contentView.removeRow(trackIndex: trackIndex)
+        }
+    }
+
+    private func removeAudioTrackAndPlayNextAudio(
+        componentIndex: Int,
+        removeAudioRowIndex: Int,
+        nextPlayingAudioRowIndex: Int,
+        duration: TimeInterval?,
+        audioMetadata: AudioTrackMetadata,
+        audioSampleData: AudioSampleData?
+    ) {
+        performWithComponentViewAt(componentIndex) { (_: AudioComponentView, contentView) in
+
+            let removeTrackIndexPath = IndexPath(row: removeAudioRowIndex, section: .zero)
+            if let row = contentView.audioTrackTableView.cellForRow(at: removeTrackIndexPath),
+                let targetPlayingAudioRow = row as? AudioTableRowView
+            {
+                targetPlayingAudioRow.audioVisualizer.removeVisuzlization()
+            }
+
+            contentView.removeRow(trackIndex: removeAudioRowIndex)
+
+            let trackIndexPath = IndexPath(row: nextPlayingAudioRowIndex, section: .zero)
+
+            if let row = contentView.audioTrackTableView.cellForRow(at: trackIndexPath),
+                let targetPlayingAudioRow = row as? AudioTableRowView
+            {
+                if let audioSampleData {
+                    targetPlayingAudioRow.audioVisualizer.activateAudioVisualizer(
+                        samplesCount: audioSampleData.sampleDataCount,
+                        scaledSamples: audioSampleData.scaledSampleData,
+                        sampleRate: audioSampleData.sampleRate)
+                }
+            }
+        }
+
+        audioControlBar.isHidden = false
+
+        audioControlBar.state = .play(
+            metadata: audioMetadata,
+            duration: duration,
+            dispatcher: MemoPageAudioComponentActionDispatcher(subject: input))
+    }
+
+    private func removeAudioTrackAndStopPlaying(componentIndex: Int, trackIndex: Int) {
+        audioControlBar.state = .stop
+
+        performWithComponentViewAt(componentIndex) { (_: AudioComponentView, contentView) in
+
+            let removeTrackIndexPath = IndexPath(row: trackIndex, section: .zero)
+            if let row = contentView.audioTrackTableView.cellForRow(at: removeTrackIndexPath),
+                let targetPlayingAudioRow = row as? AudioTableRowView
+            {
+                targetPlayingAudioRow.audioVisualizer.removeVisuzlization()
+            }
+
             contentView.removeRow(trackIndex: trackIndex)
         }
     }

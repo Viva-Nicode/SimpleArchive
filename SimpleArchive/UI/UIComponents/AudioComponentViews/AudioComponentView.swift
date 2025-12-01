@@ -32,21 +32,21 @@ final class AudioComponentView: PageComponentView<AudioComponentContentView, Aud
     override func setupConstraints() {
         super.setupConstraints()
     }
-    
+
     override func configure(
         component: AudioComponent,
-        input subject: PassthroughSubject<MemoPageViewInput, Never>
+        input subject: PassthroughSubject<MemoPageViewInput, Never>,
     ) {
         super.configure(component: component, input: subject)
-        
+
         componentContentView.configure(
             content: component,
             dispatcher: MemoPageAudioComponentActionDispatcher(subject: subject),
             componentID: componentID
         )
     }
-    
-    override func setMinimizeState(_ isMinimize:Bool) {
+
+    override func setMinimizeState(_ isMinimize: Bool) {
         componentContentView.minimizeContentView(isMinimize)
     }
 }

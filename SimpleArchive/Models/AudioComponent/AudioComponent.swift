@@ -13,7 +13,6 @@ final class AudioComponent: NSObject, Codable, PageComponent {
     var persistenceState: PersistentState
     var componentDetail: AudioComponentContent { detail }
     var detail: AudioComponentContent
-    var datasource: AudioComponentDataSource?
 
     init(
         id: UUID = UUID(),

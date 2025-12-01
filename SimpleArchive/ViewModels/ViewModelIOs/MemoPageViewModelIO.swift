@@ -36,6 +36,7 @@ enum MemoPageViewInput {
     case willApplyAudioMetadataChanges(AudioTrackMetadata, UUID, Int)
     case willSortAudioTracks(UUID, AudioTrackSortBy)
     case willMoveAudioTrackOrder(UUID, Int, Int)
+
 }
 
 enum MemoPageViewOutput {
@@ -59,13 +60,14 @@ enum MemoPageViewOutput {
 
     // MARK: - Audio
     case didAppendAudioTrackRows(Int, [Int])
-    case didPlayAudioTrack(Int?, Int, URL, Int, TimeInterval?, AudioTrackMetadata, AudioSampleData?)
-    case didToggleAudioPlayingState(Int, Int, Bool, TimeInterval?)
+    case didPlayAudioTrack(Int?, Int, Int, TimeInterval?, AudioTrackMetadata, AudioSampleData?)
+    case didToggleAudioPlayingState(Int, Int, Bool)
     case didUpdateAudioDownloadProgress(Int, Float)
     case didSeekAudioTrack(Int, Int, TimeInterval, TimeInterval?)
     case didRemoveAudioTrack(Int, Int)
+    case didRemoveAudioTrackAndPlayNextAudio(Int, Int, Int, TimeInterval?, AudioTrackMetadata, AudioSampleData?)
+    case didRemoveAudioTrackAndStopPlaying(Int, Int)
     case didSortAudioTracks(Int, [String], [String])
     case didPresentInvalidDownloadCode(Int)
-    case didSetAudioPlayingStateToStopped(Int)
     case didApplyAudioMetadataChanges(Int, Int, AudioTrackMetadata, Bool, Int?)
 }

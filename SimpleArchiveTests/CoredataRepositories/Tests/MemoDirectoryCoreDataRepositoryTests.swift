@@ -4,8 +4,8 @@ import XCTest
 
 @testable import SimpleArchive
 
-final class MemoDirectoryCoreDataRepositoryTests: XCTestCase, StubProvidingTestCase {
-    var stubProvider = MemoDirectoryCoreDataRepositoryTestStubProvider()
+final class MemoDirectoryCoreDataRepositoryTests: XCTestCase, FixtureProvidingTestCase {
+    var fixtureProvider = MemoDirectoryCoreDataRepositoryTestFixtureProvider()
     var sut: MemoDirectoryCoreDataRepositoryType!
     var coreDataStack: CoreDataStack = CoreDataStack.manager
     var subscriptions: Set<AnyCancellable>!
@@ -17,23 +17,23 @@ final class MemoDirectoryCoreDataRepositoryTests: XCTestCase, StubProvidingTestC
 
     override func tearDownWithError() throws {
         sut = nil
-        stubProvider.removeUsedStubData()
+        fixtureProvider.removeUsedFixtureData()
         coreDataStack.cleanAllCoreDataEntitiesExceptSystemDirectories()
         subscriptions = nil
     }
 
     func test_fetchSystemDirectoryEntities_onFirstAppLaunch() throws {
-        typealias StubType = FetchSystemDirectoryEntitiesOnFirstAppLaunchTestStub
-        let stub = stubProvider.getStub()
+        typealias FixtureType = FetchSystemDirectoryEntitiesOnFirstAppLaunchTestFixture
+        let fixture = fixtureProvider.getFixture()
 
-        let givenStubData = stub.getStubData() as! StubType.GivenStubDataType
+        let givenFixtureData = fixture.getFixtureData() as! FixtureType.GivenFixtureDataType
 
         SystemDirectories.mainDirectory.removeId()
         SystemDirectories.fixedFileDirectory.removeId()
         coreDataStack.cleanAllCoreDataEntities()
 
         sut
-            .fetchSystemDirectoryEntities(fileCreator: givenStubData)
+            .fetchSystemDirectoryEntities(fileCreator: givenFixtureData)
             .sinkToResult { result in
                 switch result {
                     case .success(let systemDirectoryEntities):
@@ -50,13 +50,13 @@ final class MemoDirectoryCoreDataRepositoryTests: XCTestCase, StubProvidingTestC
     }
 
     func test_fetchSystemDirectoryEntities_successfully() throws {
-        typealias StubType = FetchSystemDirectoryEntitiesSuccessfullyTestStub
-        let stub = stubProvider.getStub()
+        typealias FixtureType = FetchSystemDirectoryEntitiesSuccessfullyTestFixture
+        let fixture = fixtureProvider.getFixture()
 
-        let givenStubData = stub.getStubData() as! StubType.GivenStubDataType
+        let givenFixtureData = fixture.getFixtureData() as! FixtureType.GivenFixtureDataType
 
         sut
-            .fetchSystemDirectoryEntities(fileCreator: givenStubData)
+            .fetchSystemDirectoryEntities(fileCreator: givenFixtureData)
             .sinkToResult { result in
                 switch result {
                     case .success(let systemDirectoryEntities):
@@ -71,14 +71,16 @@ final class MemoDirectoryCoreDataRepositoryTests: XCTestCase, StubProvidingTestC
     }
 
     func test_createStorageItem_withDirectory() throws {
-        typealias StubType = CreateStorageItemWithDirectoryTestStub
-        let stub = stubProvider.getStub()
+        typealias FixtureType = CreateStorageItemWithDirectoryTestFixture
+        let fixture = fixtureProvider.getFixture()
 
-        let givenStubData = stub.getStubData() as! StubType.GivenStubDataType
-        try coreDataStack.prepareCoreDataEntities(storageItem: givenStubData, systemDirectory: .mainDirectory)
+        let givenFixtureData = fixture.getFixtureData() as! FixtureType.GivenFixtureDataType
+        try coreDataStack.prepareCoreDataEntities(
+            storageItem: givenFixtureData,
+            systemDirectory: .mainDirectory)
 
         let expectation = XCTestExpectation(description: "")
-        let targetInput = stub.getStubData() as! StubType.TestTargetInputType
+        let targetInput = fixture.getFixtureData() as! FixtureType.TestTargetInputType
 
         sut
             .createStorageItem(storageItem: targetInput)
@@ -89,14 +91,16 @@ final class MemoDirectoryCoreDataRepositoryTests: XCTestCase, StubProvidingTestC
     }
 
     func test_createStorageItem_withPage() throws {
-        typealias StubType = CreateStorageItemWithPageTestStub
-        let stub = stubProvider.getStub()
+        typealias FixtureType = CreateStorageItemWithPageTestFixture
+        let fixture = fixtureProvider.getFixture()
 
-        let givenStubData = stub.getStubData() as! StubType.GivenStubDataType
-        try coreDataStack.prepareCoreDataEntities(storageItem: givenStubData, systemDirectory: .mainDirectory)
+        let givenFixtureData = fixture.getFixtureData() as! FixtureType.GivenFixtureDataType
+        try coreDataStack.prepareCoreDataEntities(
+            storageItem: givenFixtureData,
+            systemDirectory: .mainDirectory)
 
         let expectation = XCTestExpectation(description: "")
-        let targetInput = stub.getStubData() as! StubType.TestTargetInputType
+        let targetInput = fixture.getFixtureData() as! FixtureType.TestTargetInputType
 
         sut
             .createStorageItem(storageItem: targetInput)
@@ -107,14 +111,16 @@ final class MemoDirectoryCoreDataRepositoryTests: XCTestCase, StubProvidingTestC
     }
 
     func test_moveFileToDormantBox_withDirectory() throws {
-        typealias StubType = MoveFileToDormantBoxWithDirectoryTestStub
-        let stub = stubProvider.getStub()
+        typealias FixtureType = MoveFileToDormantBoxWithDirectoryTestFixture
+        let fixture = fixtureProvider.getFixture()
 
-        let givenStubData = stub.getStubData() as! StubType.GivenStubDataType
-        try coreDataStack.prepareCoreDataEntities(storageItem: givenStubData, systemDirectory: .mainDirectory)
+        let givenFixtureData = fixture.getFixtureData() as! FixtureType.GivenFixtureDataType
+        try coreDataStack.prepareCoreDataEntities(
+            storageItem: givenFixtureData,
+            systemDirectory: .mainDirectory)
 
         let expectation = XCTestExpectation(description: "")
-        let targetInput = stub.getStubData() as! StubType.TestTargetInputType
+        let targetInput = fixture.getFixtureData() as! FixtureType.TestTargetInputType
 
         sut.moveFileToDormantBox(fileID: targetInput)
             .sinkToFulfill(expectation)
@@ -122,7 +128,7 @@ final class MemoDirectoryCoreDataRepositoryTests: XCTestCase, StubProvidingTestC
 
         wait(for: [expectation], timeout: 1)
 
-        let (directoryCount, pageCount) = stub.getStubData() as! StubType.ExpectedOutputType
+        let (directoryCount, pageCount) = fixture.getFixtureData() as! FixtureType.ExpectedOutputType
         let fetchReuqest = MemoDirectoryEntity.findDirectoryEntityById(
             id: SystemDirectories.dormantBoxDirectory.getId()!)
 
@@ -143,14 +149,16 @@ final class MemoDirectoryCoreDataRepositoryTests: XCTestCase, StubProvidingTestC
     }
 
     func test_moveFileToDormantBox_withPage() throws {
-        typealias StubType = MoveFileToDormantBoxWithPageTestStub
-        let stub = stubProvider.getStub()
+        typealias FixtureType = MoveFileToDormantBoxWithPageTestFixture
+        let fixture = fixtureProvider.getFixture()
 
-        let givenStubData = stub.getStubData() as! StubType.GivenStubDataType
-        try coreDataStack.prepareCoreDataEntities(storageItem: givenStubData, systemDirectory: .mainDirectory)
+        let givenFixtureData = fixture.getFixtureData() as! FixtureType.GivenFixtureDataType
+        try coreDataStack.prepareCoreDataEntities(
+            storageItem: givenFixtureData,
+            systemDirectory: .mainDirectory)
 
         let expectation = XCTestExpectation(description: "")
-        let targetInput = stub.getStubData() as! StubType.TestTargetInputType
+        let targetInput = fixture.getFixtureData() as! FixtureType.TestTargetInputType
 
         sut.moveFileToDormantBox(fileID: targetInput)
             .sinkToFulfill(expectation)

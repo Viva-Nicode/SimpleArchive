@@ -206,23 +206,25 @@ final class AudioComponentContentView: UIView, UIDocumentPickerDelegate {
 
     // Single 전용
     func configure(
-        content audioComponent: AudioComponent,
+        trackCount: Int,
+        sortBy: AudioTrackSortBy,
         datasource: AudioComponentDataSource,
         dispatcher: AudioComponentActionDispatcher,
         componentID: UUID
     ) {
         self.dispatcher = dispatcher
         self.componentID = componentID
+
         self.audioTrackTableView.dataSource = datasource
         self.audioTrackTableView.delegate = self
         self.audioTrackTableView.dragDelegate = self
         self.audioTrackTableView.dropDelegate = self
         self.audioTrackTableView.isPrefetchingEnabled = false
 
-        self.audioTrackTotal = audioComponent.detail.tracks.count
+        self.audioTrackTotal = trackCount
         totalAudioCountLabel.text = "\(audioTrackTotal) audios in total"
 
-        switch audioComponent.detail.sortBy {
+        switch sortBy {
             case .name:
                 sortByNameButton.setTitleColor(.label, for: .normal)
 
@@ -233,7 +235,7 @@ final class AudioComponentContentView: UIView, UIDocumentPickerDelegate {
                 break
         }
     }
-
+    
     // MemoPage 전용 configure
     func configure(
         content audioComponent: AudioComponent,
@@ -243,22 +245,10 @@ final class AudioComponentContentView: UIView, UIDocumentPickerDelegate {
         self.dispatcher = dispatcher
         self.componentID = componentID
 
+        self.audioTrackTableView.delegate = self
         self.audioTrackTableView.dragDelegate = self
         self.audioTrackTableView.dropDelegate = self
-        self.audioTrackTableView.delegate = self
         self.audioTrackTableView.isPrefetchingEnabled = false
-
-        if let datasource = audioComponent.datasource {
-            audioTrackTableView.dataSource = datasource
-        } else {
-            let datasource = AudioComponentDataSource(
-                tracks: audioComponent.detail.tracks,
-                sortBy: audioComponent.detail.sortBy)
-
-            audioComponent.datasource = datasource
-            audioTrackTableView.dataSource = datasource
-        }
-        audioTrackTableView.reloadData()
 
         self.audioTrackTotal = audioComponent.detail.tracks.count
         totalAudioCountLabel.text = "\(audioTrackTotal) audios in total"

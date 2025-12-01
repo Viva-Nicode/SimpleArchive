@@ -4,9 +4,9 @@ import XCTest
 
 @testable import SimpleArchive
 
-final class MemoPageCoreDataRepositoryTests: XCTestCase, StubProvidingTestCase {
+final class MemoPageCoreDataRepositoryTests: XCTestCase, FixtureProvidingTestCase {
     var sut: MemoPageCoreDataRepositoryType!
-    var stubProvider = MemoPageCoreDataRepositoryTestStubProvider()
+    var fixtureProvider = MemoPageCoreDataRepositoryTestFixtureProvider()
     var coreDataStack: CoreDataStack = CoreDataStack.manager
     var subscriptions: Set<AnyCancellable>!
 
@@ -17,19 +17,19 @@ final class MemoPageCoreDataRepositoryTests: XCTestCase, StubProvidingTestCase {
 
     override func tearDownWithError() throws {
         sut = nil
-        stubProvider.removeUsedStubData()
+        fixtureProvider.removeUsedFixtureData()
         coreDataStack.cleanAllCoreDataEntitiesExceptSystemDirectories()
         subscriptions = nil
     }
 
     func test_fixPages_successfully() throws {
-        typealias StubType = FixPagesSuccessfullyTestStub
-        let stub = stubProvider.getStub()
+        typealias FixtureType = FixPagesSuccessfullyTestFixture
+        let fixture = fixtureProvider.getFixture()
 
-        let givenStub = stub.getStubData() as! StubType.GivenStubDataType
-        try coreDataStack.prepareCoreDataEntities(storageItem: givenStub, systemDirectory: .mainDirectory)
+        let givenFixture = fixture.getFixtureData() as! FixtureType.GivenFixtureDataType
+        try coreDataStack.prepareCoreDataEntities(storageItem: givenFixture, systemDirectory: .mainDirectory)
 
-        let pageId = stub.getStubData() as! StubType.TestTargetInputType
+        let pageId = fixture.getFixtureData() as! FixtureType.TestTargetInputType
         let expectation = XCTestExpectation(description: "")
 
         sut
@@ -56,14 +56,14 @@ final class MemoPageCoreDataRepositoryTests: XCTestCase, StubProvidingTestCase {
     }
 
     func test_unfixPages_successfully() throws {
-        typealias StubType = UnfixPagesSuccessfullyTestStub
-        let stub = stubProvider.getStub()
+        typealias FixtureType = UnfixPagesSuccessfullyTestFixture
+        let fixture = fixtureProvider.getFixture()
 
-        let (testDirectory, testPage) = stub.getStubData() as! StubType.GivenStubDataType
+        let (testDirectory, testPage) = fixture.getFixtureData() as! FixtureType.GivenFixtureDataType
         try coreDataStack.prepareCoreDataEntities(storageItem: testDirectory, systemDirectory: .mainDirectory)
         try coreDataStack.prepareCoreDataEntities(storageItem: testPage, systemDirectory: .fixedFileDirectory)
 
-        let (testDirectoryID, pageId) = stub.getStubData() as! StubType.TestTargetInputType
+        let (testDirectoryID, pageId) = fixture.getFixtureData() as! FixtureType.TestTargetInputType
         let expectation = XCTestExpectation(description: "")
 
         sut

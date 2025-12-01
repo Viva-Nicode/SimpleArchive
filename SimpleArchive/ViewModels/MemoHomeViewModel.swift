@@ -184,8 +184,7 @@ import UIKit
         else { return }
 
         let followingPage = directoryStack.last![followingPageIndex] as! MemoPageModel
-        let audioFileManager = AudioFileManager()
-        
+
         if followingPage.isSingleComponentPage {
             if let singleTextEditorComponent = followingPage.getComponents.first as? TextEditorComponent {
                 let vm = SingleTextEditorPageViewModel(
@@ -203,8 +202,9 @@ import UIKit
                 let vm = SingleAudioPageViewModel(
                     coredataReposotory: memoComponentCoreDataRepository,
                     audioComponent: singleAudioComponent,
-                    audioDownloader: AudioDownloader(audioFileManager: audioFileManager),
-                    audioFileManager: audioFileManager,
+                    audioDownloader: AudioDownloader(),
+                    audioFileManager: AudioFileManager(),
+                    audioTrackController: AudioTrackController(),
                     pageTitle: followingPage.name)
                 output.send(.didNavigateSingleAudioComponentPageView(vm))
             }
@@ -212,8 +212,9 @@ import UIKit
             let memoPageViewModel = MemoPageViewModel(
                 componentFactory: componentFactory,
                 memoComponentCoredataReposotory: memoComponentCoreDataRepository,
-                audioDownloader: AudioDownloader(audioFileManager: audioFileManager),
-                audioFileManager: audioFileManager,
+                audioDownloader: AudioDownloader(),
+                audioFileManager: AudioFileManager(),
+                audioTrackController: AudioTrackController(),
                 page: followingPage)
 
             output.send(.didNavigatePageView(memoPageViewModel))
@@ -261,8 +262,9 @@ import UIKit
                 let vm = SingleAudioPageViewModel(
                     coredataReposotory: memoComponentCoreDataRepository,
                     audioComponent: singleAudioComponent,
-                    audioDownloader: AudioDownloader(audioFileManager: AudioFileManager()),
+                    audioDownloader: AudioDownloader(),
                     audioFileManager: AudioFileManager(),
+                    audioTrackController: AudioTrackController(),
                     pageTitle: followingPage.name,
                 )
                 output.send(.didNavigateSingleAudioComponentPageView(vm))
@@ -271,8 +273,9 @@ import UIKit
             let memoPageViewModel = MemoPageViewModel(
                 componentFactory: componentFactory,
                 memoComponentCoredataReposotory: memoComponentCoreDataRepository,
-                audioDownloader: AudioDownloader(audioFileManager: AudioFileManager()),
+                audioDownloader: AudioDownloader(),
                 audioFileManager: AudioFileManager(),
+                audioTrackController: AudioTrackController(),
                 page: followingPage)
 
             output.send(.didNavigatePageView(memoPageViewModel))

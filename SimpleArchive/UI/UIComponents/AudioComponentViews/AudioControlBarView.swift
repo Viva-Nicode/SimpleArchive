@@ -5,6 +5,14 @@ import UIKit
 
 final class AudioControlBarView: UIView {
 
+    enum AudioControlBarViewState {
+        case initial
+        case play(metadata: AudioTrackMetadata, duration: TimeInterval?, dispatcher: AudioComponentActionDispatcher)
+        case resume
+        case pause
+        case stop
+    }
+
     private let titleLabel: UILabel = {
         let titleLabel = UILabel()
         titleLabel.numberOfLines = 2
@@ -38,7 +46,7 @@ final class AudioControlBarView: UIView {
         thumbnailImageView.translatesAutoresizingMaskIntoConstraints = false
         return thumbnailImageView
     }()
-    private let playButton: UIButton = {
+    private let playPauseButton: UIButton = {
         let button = UIButton(type: .system)
         var config = UIButton.Configuration.plain()
         config.image = UIImage(systemName: "pause.fill")
@@ -87,41 +95,34 @@ final class AudioControlBarView: UIView {
         totalTimeLabel.translatesAutoresizingMaskIntoConstraints = false
         return totalTimeLabel
     }()
-    private let slider: UISlider = {
-        let slider = UISlider()
-        slider.translatesAutoresizingMaskIntoConstraints = false
-        slider.minimumTrackTintColor = .systemOrange
-        slider.maximumTrackTintColor = .lightGray
-
-        let size = CGSize(width: 20, height: 20)
-        let renderer = UIGraphicsImageRenderer(size: size)
-        let circleImage = renderer.image { context in
-            UIColor.clear.setFill()
-            context.cgContext.fillEllipse(in: CGRect(origin: .zero, size: size))
-        }
-
-        slider.setThumbImage(circleImage, for: .normal)
-        return slider
+    private let audioProgressBar: AudioProgressBar = {
+        let progressBar = AudioProgressBar()
+        progressBar.translatesAutoresizingMaskIntoConstraints = false
+        return progressBar
     }()
 
-    private var nowPlayingInfo: NowPlayingInfo?
-    private var audioPlayTimer: DispatchSourceTimer?
-    private var dispatcher: AudioComponentActionDispatcher?
-    private var currentTime: Float = .zero {
-        didSet { currentTimeLabel.text = currentTime.asMinuteSecond }
-    }
     private var duration: TimeInterval?
-    private var isPlaying: Bool = true
     private var subscriptions: Set<AnyCancellable> = []
+    private var nowPlayingInfoCenter = MPNowPlayingInfoCenter.default()
+    private var dispatcher: AudioComponentActionDispatcher?
+    private var currentTime: TimeInterval = .zero {
+        didSet {
+            currentTimeLabel.text = currentTime.asMinuteSecond
+            nowPlayingInfoCenter.nowPlayingInfo?[MPNowPlayingInfoPropertyElapsedPlaybackTime] = currentTime
+        }
+    }
+    var state: AudioControlBarViewState = .initial {
+        didSet {
+            handleState()
+        }
+    }
 
     init() {
         super.init(frame: .zero)
         setupUI()
         setupConstraints()
         setupActions()
-
-        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [])
-        try? AVAudioSession.sharedInstance().setActive(true)
+        setupRemoteTransportControls()
     }
 
     required init?(coder: NSCoder) { fatalError() }
@@ -134,7 +135,7 @@ final class AudioControlBarView: UIView {
 
     private func setupUI() {
         buttonStackView.addSubview(previousButton)
-        buttonStackView.addSubview(playButton)
+        buttonStackView.addSubview(playPauseButton)
         buttonStackView.addSubview(nextButton)
 
         addSubview(thumbnailImageView)
@@ -142,7 +143,7 @@ final class AudioControlBarView: UIView {
 
         controlView.addSubview(titleLabel)
         controlView.addSubview(artistLabel)
-        controlView.addSubview(slider)
+        controlView.addSubview(audioProgressBar)
         controlView.addSubview(currentTimeLabel)
         controlView.addSubview(totalTimeLabel)
         controlView.addSubview(buttonStackView)
@@ -156,7 +157,8 @@ final class AudioControlBarView: UIView {
         shadowLayer.frame = .init(
             x: 0, y: 0,
             width: UIConstants.audioControlBarViewWidth,
-            height: UIConstants.audioControlBarViewHeight)
+            height: UIConstants.audioControlBarViewHeight
+        )
         shadowLayer.backgroundColor = UIColor(named: "StandardGray")?.cgColor
         shadowLayer.cornerRadius = 12
         shadowLayer.shadowColor =
@@ -173,7 +175,7 @@ final class AudioControlBarView: UIView {
         NSLayoutConstraint.activate([
             thumbnailImageView.widthAnchor.constraint(equalToConstant: UIConstants.audioControlBarViewThumbnailWidth),
             thumbnailImageView.heightAnchor.constraint(equalToConstant: UIConstants.audioControlBarViewThumbnailWidth),
-            thumbnailImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
+            thumbnailImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 15),
             thumbnailImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
 
             controlView.topAnchor.constraint(equalTo: topAnchor),
@@ -181,25 +183,26 @@ final class AudioControlBarView: UIView {
             controlView.leadingAnchor.constraint(equalTo: thumbnailImageView.trailingAnchor, constant: 10),
             controlView.trailingAnchor.constraint(equalTo: trailingAnchor),
 
+            titleLabel.topAnchor.constraint(equalTo: controlView.topAnchor, constant: 12),
             titleLabel.centerXAnchor.constraint(equalTo: controlView.centerXAnchor),
             titleLabel.widthAnchor.constraint(equalToConstant: 180),
             titleLabel.heightAnchor.constraint(equalToConstant: 30),
-            titleLabel.bottomAnchor.constraint(equalTo: artistLabel.topAnchor),
 
+            artistLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 5),
             artistLabel.centerXAnchor.constraint(equalTo: controlView.centerXAnchor),
             artistLabel.widthAnchor.constraint(equalToConstant: 180),
             artistLabel.heightAnchor.constraint(equalToConstant: 20),
-            artistLabel.bottomAnchor.constraint(equalTo: slider.topAnchor, constant: -10),
 
             currentTimeLabel.leadingAnchor.constraint(equalTo: controlView.leadingAnchor, constant: 10),
-            currentTimeLabel.bottomAnchor.constraint(equalTo: slider.topAnchor, constant: 7),
+            currentTimeLabel.bottomAnchor.constraint(equalTo: audioProgressBar.topAnchor),
 
             totalTimeLabel.trailingAnchor.constraint(equalTo: controlView.trailingAnchor, constant: -10),
-            totalTimeLabel.bottomAnchor.constraint(equalTo: slider.topAnchor, constant: 7),
+            totalTimeLabel.bottomAnchor.constraint(equalTo: audioProgressBar.topAnchor),
 
-            slider.widthAnchor.constraint(equalToConstant: 180),
-            slider.centerXAnchor.constraint(equalTo: controlView.centerXAnchor),
-            slider.bottomAnchor.constraint(equalTo: buttonStackView.topAnchor, constant: 0),
+            audioProgressBar.widthAnchor.constraint(equalToConstant: 180),
+            audioProgressBar.heightAnchor.constraint(equalToConstant: 5),
+            audioProgressBar.centerXAnchor.constraint(equalTo: controlView.centerXAnchor),
+            audioProgressBar.bottomAnchor.constraint(equalTo: buttonStackView.topAnchor, constant: -10),
 
             buttonStackView.heightAnchor.constraint(equalToConstant: 40),
             buttonStackView.widthAnchor.constraint(equalToConstant: 170),
@@ -211,10 +214,10 @@ final class AudioControlBarView: UIView {
             previousButton.centerYAnchor.constraint(equalTo: buttonStackView.centerYAnchor),
             previousButton.leadingAnchor.constraint(equalTo: buttonStackView.leadingAnchor),
 
-            playButton.widthAnchor.constraint(equalToConstant: 40),
-            playButton.heightAnchor.constraint(equalToConstant: 35),
-            playButton.centerYAnchor.constraint(equalTo: buttonStackView.centerYAnchor),
-            playButton.centerXAnchor.constraint(equalTo: buttonStackView.centerXAnchor),
+            playPauseButton.widthAnchor.constraint(equalToConstant: 40),
+            playPauseButton.heightAnchor.constraint(equalToConstant: 35),
+            playPauseButton.centerYAnchor.constraint(equalTo: buttonStackView.centerYAnchor),
+            playPauseButton.centerXAnchor.constraint(equalTo: buttonStackView.centerXAnchor),
 
             nextButton.widthAnchor.constraint(equalToConstant: 45),
             nextButton.heightAnchor.constraint(equalToConstant: 35),
@@ -223,80 +226,146 @@ final class AudioControlBarView: UIView {
         ])
     }
 
-    private func playNextAudioTrack() {
-        removeTimer()
-        dispatcher?.playNextAudioTrack()
-    }
-
-    private func playPreviousAudioTrack() {
-        removeTimer()
-        dispatcher?.playPreviousAudioTrack()
-    }
-
     private func setupActions() {
-        playButton.addAction(UIAction { [weak self] _ in self?.togglePlayState() }, for: .touchUpInside)
+        playPauseButton.addAction(
+            UIAction { [weak self] _ in
+                self?.dispatcher?.togglePlayingState()
+            }, for: .touchUpInside)
 
         nextButton.throttleTapPublisher(interval: 1.0)
-            .sink { [weak self] _ in self?.playNextAudioTrack() }
+            .sink { [weak self] _ in
+                self?.audioProgressBar.pause()
+                self?.dispatcher?.playNextAudioTrack()
+            }
             .store(in: &subscriptions)
 
         previousButton.throttleTapPublisher(interval: 1.0)
-            .sink { [weak self] _ in self?.playPreviousAudioTrack() }
+            .sink { [weak self] _ in
+                self?.audioProgressBar.pause()
+                self?.dispatcher?.playPreviousAudioTrack()
+            }
             .store(in: &subscriptions)
     }
 
-    @objc private func sliderValueChanged(_ sender: UISlider) {
-        removeTimer()
-        currentTimeLabel.text = sender.value.asMinuteSecond
+    func seek(seek: TimeInterval) {
+        currentTime = seek
+        audioProgressBar.setValue(seek)
     }
 
-    @objc private func sliderValuecomp(_ sender: UISlider) {
-        dispatcher?.seekAudioTrack(seek: TimeInterval(sender.value))
-        startTimer()
-    }
+    func applyUpdatedMetadata(with data: AudioTrackMetadata) {
+        titleLabel.text = data.title
+        nowPlayingInfoCenter.nowPlayingInfo?[MPMediaItemPropertyTitle] = data.title
 
-    private func startTimer() {
-        audioPlayTimer = DispatchSource.makeTimerSource(flags: [], queue: DispatchQueue.main)
-        audioPlayTimer?.schedule(deadline: .now(), repeating: 1)
-        audioPlayTimer?
-            .setEventHandler { [weak self] in
-                guard let self else { return }
-                UIView.animate(
-                    withDuration: 1,
-                    animations: {
-                        self.slider.setValue(self.currentTime, animated: true)
-                        self.nowPlayingInfo?.currentTime = TimeInterval(self.currentTime)
-                    })
-                currentTime = min(Float(duration!), currentTime + 1)
-            }
-        audioPlayTimer?.resume()
-    }
+        artistLabel.text = data.artist
+        nowPlayingInfoCenter.nowPlayingInfo?[MPMediaItemPropertyArtist] = data.artist
 
-    private func removeTimer() {
-        audioPlayTimer?.cancel()
-        audioPlayTimer = nil
-    }
-
-    private func updateNowPlayingInfo(with nowPlayInfo: NowPlayingInfo) {
-        var info: [String: Any] = [
-            MPMediaItemPropertyTitle: nowPlayInfo.title,
-            MPMediaItemPropertyArtist: nowPlayInfo.artist,
-            MPMediaItemPropertyPlaybackDuration: nowPlayInfo.totalTime,
-            MPNowPlayingInfoPropertyElapsedPlaybackTime: nowPlayInfo.currentTime,
-            MPNowPlayingInfoPropertyPlaybackRate: nowPlayInfo.playbackRate,
-            MPNowPlayingInfoPropertyDefaultPlaybackRate: nowPlayInfo.playbackRate,
-        ]
-
-        info[MPMediaItemPropertyArtwork] = MPMediaItemArtwork(boundsSize: nowPlayInfo.thumbname.size) { _ in
-            nowPlayInfo.thumbname
+        if let thumbnailData = data.thumbnail,
+            let thumbnailImage = UIImage(data: thumbnailData)
+        {
+            thumbnailImageView.image = thumbnailImage
+            nowPlayingInfoCenter.nowPlayingInfo?[MPMediaItemPropertyArtwork] =
+                MPMediaItemArtwork(boundsSize: thumbnailImage.size) { _ in thumbnailImage }
         }
-        let center = MPNowPlayingInfoCenter.default()
-        center.nowPlayingInfo = info
     }
 
-    private func togglePlayState() {
-        dispatcher?.togglePlayingState()
-        isPlaying.toggle()
+    private func handleState() {
+        switch state {
+            case .initial:
+                break
+
+            case let .play(metadata, duration, dispatcher):
+                configureControlBarForPlayback(metadata: metadata, duration: duration, dispatcher: dispatcher)
+
+            case .resume:
+                playPauseButton.setImage(UIImage(systemName: "pause.fill"), for: .normal)
+                nowPlayingInfoCenter.nowPlayingInfo?[MPNowPlayingInfoPropertyPlaybackRate] = 1.0
+                audioProgressBar.start()
+
+            case .pause:
+                playPauseButton.setImage(UIImage(systemName: "play.fill"), for: .normal)
+                nowPlayingInfoCenter.nowPlayingInfo?[MPNowPlayingInfoPropertyPlaybackRate] = 0.0
+                audioProgressBar.pause()
+
+            case .stop:
+                updateControlBarStateToStopped()
+        }
+    }
+
+    private func configureControlBarForPlayback(
+        metadata: AudioTrackMetadata,
+        duration: TimeInterval?,
+        dispatcher: AudioComponentActionDispatcher
+    ) {
+        self.dispatcher = dispatcher
+        self.duration = duration
+
+        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [])
+        try? AVAudioSession.sharedInstance().setActive(true)
+
+        currentTime = .zero
+
+        playPauseButton.isEnabled = true
+        previousButton.isEnabled = true
+        nextButton.isEnabled = true
+
+        playPauseButton.setImage(UIImage(systemName: "pause.fill"), for: .normal)
+
+        audioProgressBar.isScrubbingEnabled = true
+        audioProgressBar.addTarget(self, action: #selector(sliderValueChanged(_:)), for: .valueChanged)
+        audioProgressBar.addTarget(
+            self,
+            action: #selector(sliderValuecomp(_:)),
+            for: [.touchUpInside, .touchUpOutside, .touchCancel])
+        audioProgressBar.updateCurrentTimeLabel = { self.currentTime = $0 }
+
+        if let title = metadata.title,
+            let artist = metadata.artist,
+            let thumbnailData = metadata.thumbnail,
+            let thumbnail = UIImage(data: thumbnailData)
+        {
+            titleLabel.text = title
+            artistLabel.text = artist
+            thumbnailImageView.image = thumbnail
+
+            if let duration {
+                totalTimeLabel.text = duration.asMinuteSecond
+
+                audioProgressBar.minimumValue = .zero
+                audioProgressBar.maximumValue = duration
+                audioProgressBar.setValue(.zero)
+                audioProgressBar.start()
+
+                var info: [String: Any] = [
+                    MPMediaItemPropertyTitle: title,
+                    MPMediaItemPropertyArtist: artist,
+                    MPMediaItemPropertyPlaybackDuration: duration,
+                    MPNowPlayingInfoPropertyElapsedPlaybackTime: 0.0,
+                    MPNowPlayingInfoPropertyPlaybackRate: 1.0,
+                ]
+
+                info[MPMediaItemPropertyArtwork] = MPMediaItemArtwork(boundsSize: thumbnail.size) { _ in
+                    thumbnail
+                }
+
+                nowPlayingInfoCenter.nowPlayingInfo = info
+            }
+        }
+    }
+
+    private func updateControlBarStateToStopped() {
+        audioProgressBar.setValue(.zero)
+        audioProgressBar.isScrubbingEnabled = false
+
+        titleLabel.text = "Not Playing"
+        artistLabel.text = "UnKnown"
+        thumbnailImageView.image = UIImage(named: "defaultMusicThumbnail")
+        playPauseButton.isEnabled = false
+        previousButton.isEnabled = false
+        nextButton.isEnabled = false
+        currentTimeLabel.text = "0:00"
+        totalTimeLabel.text = "0:00"
+
+        nowPlayingInfoCenter.nowPlayingInfo = nil
     }
 
     private func setupRemoteTransportControls() {
@@ -308,7 +377,7 @@ final class AudioControlBarView: UIView {
         remoteCommandCenter.togglePlayPauseCommand.isEnabled = true
         remoteCommandCenter.togglePlayPauseCommand.addTarget { [weak self] _ in
             guard let self else { return .commandFailed }
-            togglePlayState()
+            dispatcher?.togglePlayingState()
             return .success
         }
 
@@ -329,7 +398,7 @@ final class AudioControlBarView: UIView {
         remoteCommandCenter.nextTrackCommand.isEnabled = true
         remoteCommandCenter.nextTrackCommand.addTarget { [weak self] _ in
             guard let self else { return .commandFailed }
-            playNextAudioTrack()
+            dispatcher?.playNextAudioTrack()
             return .success
         }
 
@@ -337,131 +406,16 @@ final class AudioControlBarView: UIView {
         remoteCommandCenter.previousTrackCommand.isEnabled = true
         remoteCommandCenter.previousTrackCommand.addTarget { [weak self] _ in
             guard let self else { return .commandFailed }
-            playPreviousAudioTrack()
+            dispatcher?.playPreviousAudioTrack()
             return .success
         }
     }
 
-    func configure(metadata: AudioTrackMetadata, duration: TimeInterval?, dispatcher: AudioComponentActionDispatcher) {
-        self.dispatcher = dispatcher
-        self.duration = duration
-        isPlaying = true
-        removeTimer()
-        currentTime = .zero
-        startTimer()
-
-        playButton.isEnabled = true
-        previousButton.isEnabled = true
-        nextButton.isEnabled = true
-
-        playButton.setImage(UIImage(systemName: "pause.fill"), for: .normal)
-
-        slider.isUserInteractionEnabled = true
-        slider.addTarget(self, action: #selector(sliderValueChanged(_:)), for: .valueChanged)
-        slider.addTarget(
-            self, action: #selector(sliderValuecomp(_:)), for: [.touchUpInside, .touchUpOutside, .touchCancel])
-
-        if let title = metadata.title,
-            let artist = metadata.artist,
-            let thumbnailData = metadata.thumbnail,
-            let thumbnail = UIImage(data: thumbnailData)
-        {
-            titleLabel.text = title
-            artistLabel.text = artist
-            thumbnailImageView.image = thumbnail
-            currentTime = .zero
-
-            if let duration {
-                totalTimeLabel.text = duration.asMinuteSecond
-
-                slider.minimumValue = .zero
-                slider.maximumValue = Float(duration)
-
-                nowPlayingInfo = NowPlayingInfo(
-                    title: title,
-                    artist: artist,
-                    thumbname: thumbnail,
-                    totalTime: duration,
-                    currentTime: .zero,
-                    playbackRate: 1.0)
-
-                updateNowPlayingInfo(with: nowPlayingInfo!)
-                setupRemoteTransportControls()
-            }
-        }
+    @objc private func sliderValueChanged(_ sender: AudioProgressBar) {
+        currentTime = sender.value
     }
 
-    func setControlBarState(isPlaying: Bool, currentTime: TimeInterval?) {
-        self.isPlaying = isPlaying
-        if isPlaying {
-            playButton.setImage(UIImage(systemName: "pause.fill"), for: .normal)
-            nowPlayingInfo?.playbackRate = 1.0
-            updateNowPlayingInfo(with: nowPlayingInfo!)
-            self.currentTime = Float(currentTime!)
-            startTimer()
-        } else {
-            playButton.setImage(UIImage(systemName: "play.fill"), for: .normal)
-            nowPlayingInfo?.playbackRate = 0.0
-            updateNowPlayingInfo(with: nowPlayingInfo!)
-            removeTimer()
-        }
-    }
-
-    func seek(seek: TimeInterval) {
-        nowPlayingInfo?.currentTime = seek
-        updateNowPlayingInfo(with: nowPlayingInfo!)
-        slider.setValue(Float(seek), animated: true)
-        currentTime = Float(seek)
-        if isPlaying { startTimer() }
-    }
-
-    func updateControlBarStateToNotPlaying() {
-        UIView.animate(withDuration: 1) { self.slider.setValue(.zero, animated: true) }
-        titleLabel.text = "Not Playing"
-        artistLabel.text = "UnKnown"
-        thumbnailImageView.image = UIImage(named: "defaultMusicThumbnail")
-        playButton.isEnabled = false
-        previousButton.isEnabled = false
-        nextButton.isEnabled = false
-        removeTimer()
-        currentTimeLabel.text = "0:00"
-        totalTimeLabel.text = "0:00"
-        slider.setValue(.zero, animated: true)
-        slider.isUserInteractionEnabled = false
-        MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
-    }
-
-    func update(with data: AudioTrackMetadata) {
-        titleLabel.text = data.title
-        artistLabel.text = data.artist
-        if let thumbnailData = data.thumbnail {
-            thumbnailImageView.image = UIImage(data: thumbnailData)
-        }
-
-    }
-}
-
-final class NowPlayingInfo {
-    var title: String
-    var artist: String
-    var thumbname: UIImage
-    var totalTime: TimeInterval
-    var currentTime: TimeInterval
-    var playbackRate: NSNumber
-
-    init(
-        title: String,
-        artist: String,
-        thumbname: UIImage,
-        totalTime: TimeInterval,
-        currentTime: TimeInterval,
-        playbackRate: NSNumber
-    ) {
-        self.title = title
-        self.artist = artist
-        self.thumbname = thumbname
-        self.totalTime = totalTime
-        self.currentTime = currentTime
-        self.playbackRate = playbackRate
+    @objc private func sliderValuecomp(_ sender: AudioProgressBar) {
+        dispatcher?.seekAudioTrack(seek: TimeInterval(sender.value))
     }
 }

@@ -4,8 +4,8 @@ import XCTest
 
 @testable import SimpleArchive
 
-final class MemoComponentCoreDataRepositoryTests: XCTestCase, StubProvidingTestCase {
-    var stubProvider = MemoComponentCoreDataRepositoryTestStubProvider()
+final class MemoComponentCoreDataRepositoryTests: XCTestCase, FixtureProvidingTestCase {
+    var fixtureProvider = MemoComponentCoreDataRepositoryTestFixtureProvider()
     var sut: MemoComponentCoreDataRepositoryType!
     var coreDataStack: CoreDataStack = CoreDataStack.manager
     var subscriptions: Set<AnyCancellable>!
@@ -17,19 +17,21 @@ final class MemoComponentCoreDataRepositoryTests: XCTestCase, StubProvidingTestC
 
     override func tearDownWithError() throws {
         sut = nil
-        stubProvider.removeUsedStubData()
+        fixtureProvider.removeUsedFixtureData()
         coreDataStack.cleanAllCoreDataEntitiesExceptSystemDirectories()
         subscriptions = nil
     }
 
     func test_createComponent_successfully() throws {
-        typealias StubType = CreateComponentSuccessfullyTestStub
-        let stub = stubProvider.getStub()
+        typealias FixtureType = CreateComponentSuccessfullyTestFixture
+        let fixture = fixtureProvider.getFixture()
 
-        let givenStubData = stub.getStubData() as! StubType.GivenStubDataType
-        try coreDataStack.prepareCoreDataEntities(storageItem: givenStubData, systemDirectory: .mainDirectory)
+        let givenFixtureData = fixture.getFixtureData() as! FixtureType.GivenFixtureDataType
+        try coreDataStack.prepareCoreDataEntities(
+            storageItem: givenFixtureData,
+            systemDirectory: .mainDirectory)
 
-        let (pageId, component) = stub.getStubData() as! StubType.TestTargetInputType
+        let (pageId, component) = fixture.getFixtureData() as! FixtureType.TestTargetInputType
         let expectation = XCTestExpectation(description: "")
 
         sut
@@ -41,13 +43,15 @@ final class MemoComponentCoreDataRepositoryTests: XCTestCase, StubProvidingTestC
     }
 
     func test_saveComponentDetail_successfully() throws {
-        typealias StubType = SaveComponentDetailSuccessfullyTestStub
-        let stub = stubProvider.getStub()
+        typealias FixtureType = SaveComponentDetailSuccessfullyTestFixture
+        let fixture = fixtureProvider.getFixture()
 
-        let givenStubData = stub.getStubData() as! StubType.GivenStubDataType
-        try coreDataStack.prepareCoreDataEntities(storageItem: givenStubData, systemDirectory: .mainDirectory)
+        let givenFixtureData = fixture.getFixtureData() as! FixtureType.GivenFixtureDataType
+        try coreDataStack.prepareCoreDataEntities(
+            storageItem: givenFixtureData,
+            systemDirectory: .mainDirectory)
 
-        let changedComponents = stub.getStubData() as! StubType.TestTargetInputType
+        let changedComponents = fixture.getFixtureData() as! FixtureType.TestTargetInputType
         let expectation = XCTestExpectation(description: "")
 
         sut
@@ -57,7 +61,7 @@ final class MemoComponentCoreDataRepositoryTests: XCTestCase, StubProvidingTestC
 
         wait(for: [expectation], timeout: 1)
 
-        let expectedOutput = stub.getStubData() as! StubType.ExpectedOutputType
+        let expectedOutput = fixture.getFixtureData() as! FixtureType.ExpectedOutputType
 
         for (changedComponent, (persistentState, snapshotCount, detail)) in zip(changedComponents, expectedOutput) {
             let fetchRequest = TextEditorComponentEntity.findTextComponentEntityById(id: changedComponent.id)
@@ -81,13 +85,15 @@ final class MemoComponentCoreDataRepositoryTests: XCTestCase, StubProvidingTestC
     }
 
     func test_saveComponentDetail_withRestoredComponents_successfully() throws {
-        typealias StubType = SaveComponentDetailWithRestoredComponentsSuccessfullyTestStub
-        let stub = stubProvider.getStub()
+        typealias FixtureType = SaveComponentDetailWithRestoredComponentsSuccessfullyTestFixture
+        let fixture = fixtureProvider.getFixture()
 
-        let givenStubData = stub.getStubData() as! StubType.GivenStubDataType
-        try coreDataStack.prepareCoreDataEntities(storageItem: givenStubData, systemDirectory: .mainDirectory)
+        let givenFixtureData = fixture.getFixtureData() as! FixtureType.GivenFixtureDataType
+        try coreDataStack.prepareCoreDataEntities(
+            storageItem: givenFixtureData,
+            systemDirectory: .mainDirectory)
 
-        let changedComponents = stub.getStubData() as! StubType.TestTargetInputType
+        let changedComponents = fixture.getFixtureData() as! FixtureType.TestTargetInputType
         let expectation = XCTestExpectation(description: "")
 
         sut
@@ -97,7 +103,7 @@ final class MemoComponentCoreDataRepositoryTests: XCTestCase, StubProvidingTestC
 
         wait(for: [expectation], timeout: 1)
 
-        let expectedOutput = stub.getStubData() as! StubType.ExpectedOutputType
+        let expectedOutput = fixture.getFixtureData() as! FixtureType.ExpectedOutputType
 
         for (changedComponent, (persistentState, snapshotCount, detail))
             in zip(changedComponents, expectedOutput)
@@ -123,13 +129,15 @@ final class MemoComponentCoreDataRepositoryTests: XCTestCase, StubProvidingTestC
     }
 
     func test_updateComponentChanges_successfully() throws {
-        typealias StubType = UpdateComponentChangesSuccessfullyTestStub
-        let stub = stubProvider.getStub()
+        typealias FixtureType = UpdateComponentChangesSuccessfullyTestFixture
+        let fixture = fixtureProvider.getFixture()
 
-        let givenStubData = stub.getStubData() as! StubType.GivenStubDataType
-        try coreDataStack.prepareCoreDataEntities(storageItem: givenStubData, systemDirectory: .mainDirectory)
+        let givenFixtureData = fixture.getFixtureData() as! FixtureType.GivenFixtureDataType
+        try coreDataStack.prepareCoreDataEntities(
+            storageItem: givenFixtureData,
+            systemDirectory: .mainDirectory)
 
-        let componentChanges = stub.getStubData() as! StubType.TestTargetInputType
+        let componentChanges = fixture.getFixtureData() as! FixtureType.TestTargetInputType
         let expectation = XCTestExpectation(description: "")
 
         sut
@@ -138,7 +146,7 @@ final class MemoComponentCoreDataRepositoryTests: XCTestCase, StubProvidingTestC
             .store(in: &subscriptions)
 
         wait(for: [expectation], timeout: 1)
-        let (expectedTitle, expectedIsMinimum) = stub.getStubData() as! StubType.ExpectedOutputType
+        let (expectedTitle, expectedIsMinimum) = fixture.getFixtureData() as! FixtureType.ExpectedOutputType
 
         let fetchRequest = TextEditorComponentEntity.findTextComponentEntityById(
             id: componentChanges.componentIdChanged)
@@ -160,13 +168,15 @@ final class MemoComponentCoreDataRepositoryTests: XCTestCase, StubProvidingTestC
     }
 
     func test_captureSnapshot_successfully() throws {
-        typealias StubType = CaptureSnapshotSuccessfullyTestStub
-        let stub = stubProvider.getStub()
+        typealias FixtureType = CaptureSnapshotSuccessfullyTestFixture
+        let fixture = fixtureProvider.getFixture()
 
-        let givenStubData = stub.getStubData() as! StubType.GivenStubDataType
-        try coreDataStack.prepareCoreDataEntities(storageItem: givenStubData, systemDirectory: .mainDirectory)
+        let givenFixtureData = fixture.getFixtureData() as! FixtureType.GivenFixtureDataType
+        try coreDataStack.prepareCoreDataEntities(
+            storageItem: givenFixtureData,
+            systemDirectory: .mainDirectory)
 
-        let (snapshotRestorableComponent, description) = stub.getStubData() as! StubType.TestTargetInputType
+        let (snapshotRestorableComponent, description) = fixture.getFixtureData() as! FixtureType.TestTargetInputType
         let expectation = XCTestExpectation(description: "")
 
         sut
@@ -179,7 +189,7 @@ final class MemoComponentCoreDataRepositoryTests: XCTestCase, StubProvidingTestC
         let fetchRequest = TextEditorComponentEntity.findTextComponentEntityById(
             id: snapshotRestorableComponent.id)
         let (snapshotCount, snapshotDetail, snapshotDescription) =
-            stub.getStubData() as! StubType.ExpectedOutputType
+            fixture.getFixtureData() as! FixtureType.ExpectedOutputType
 
         coreDataStack
             .fetch(fetchRequest) { $0 }

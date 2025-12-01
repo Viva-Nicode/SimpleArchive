@@ -4,10 +4,10 @@ import XCTest
 
 @testable import SimpleArchive
 
-final class DormantBoxCoreDataRepositoryTests: XCTestCase, StubProvidingTestCase {
+final class DormantBoxCoreDataRepositoryTests: XCTestCase, FixtureProvidingTestCase {
 
     var sut: DormantBoxCoreDataRepositoryType!
-    var stubProvider = DormantBoxCoreDataRepositoryTestStubProvider()
+    var fixtureProvider = DormantBoxCoreDataRepositoryTestFixtureProvider()
     var coreDataStack: CoreDataStack = CoreDataStack.manager
     var subscriptions: Set<AnyCancellable>!
 
@@ -18,14 +18,14 @@ final class DormantBoxCoreDataRepositoryTests: XCTestCase, StubProvidingTestCase
 
     override func tearDownWithError() throws {
         sut = nil
-        stubProvider.removeUsedStubData()
+        fixtureProvider.removeUsedFixtureData()
         coreDataStack.cleanAllCoreDataEntitiesExceptSystemDirectories()
         subscriptions = nil
     }
 
     func test_fetchDormantBoxDirectory_successfully() throws {
-        typealias StubType = FetchDormantBoxDirectorySuccessfullyTestStub
-        _ = stubProvider.getStub()
+        typealias FixtureType = FetchDormantBoxDirectorySuccessfullyTestFixture
+        _ = fixtureProvider.getFixture()
 
         let expectation = XCTestExpectation(description: "")
 
@@ -39,16 +39,18 @@ final class DormantBoxCoreDataRepositoryTests: XCTestCase, StubProvidingTestCase
     }
 
     func test_restoreFile_successfully() throws {
-        typealias StubType = RestoreFileSuccessfullyTestStub
-        let stub = stubProvider.getStub()
+        typealias FixtureType = RestoreFileSuccessfullyTestFixture
+        let fixture = fixtureProvider.getFixture()
 
-        let givenStubData = stub.getStubData() as! StubType.GivenStubDataType
-        try coreDataStack.prepareCoreDataEntities(storageItem: givenStubData, systemDirectory: .dormantBoxDirectory)
+        let givenFixtureData = fixture.getFixtureData() as! FixtureType.GivenFixtureDataType
+        try coreDataStack.prepareCoreDataEntities(
+            storageItem: givenFixtureData,
+            systemDirectory: .dormantBoxDirectory)
 
         let expectation = XCTestExpectation(description: "")
 
         sut
-            .restoreFile(restoredFileID: givenStubData.id)
+            .restoreFile(restoredFileID: givenFixtureData.id)
             .sinkToFulfill(expectation)
             .store(in: &subscriptions)
 
@@ -60,7 +62,7 @@ final class DormantBoxCoreDataRepositoryTests: XCTestCase, StubProvidingTestCase
             .sinkToResult { result in
                 switch result {
                     case .success(let mainDirectoryEntity):
-                        XCTAssertEqual(mainDirectoryEntity.pages.first!.id, givenStubData.id)
+                        XCTAssertEqual(mainDirectoryEntity.pages.first!.id, givenFixtureData.id)
 
                     case .failure(let failure):
                         XCTFail(failure.localizedDescription)

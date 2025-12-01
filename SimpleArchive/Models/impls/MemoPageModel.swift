@@ -76,7 +76,7 @@ final class MemoPageModel: NSObject, Codable, StorageItem {
     var compnentSize: Int { components.count }
     var getComponents: [any PageComponent] { components }
 
-    subscript(_ ID: UUID) -> OperationResultItem<any PageComponent>? {
+    subscript(_ ID: UUID?) -> OperationResultItem<any PageComponent>? {
         if let index = components.firstIndex(where: { $0.id == ID }) {
             return OperationResultItem(index: index, item: components[index])
         }

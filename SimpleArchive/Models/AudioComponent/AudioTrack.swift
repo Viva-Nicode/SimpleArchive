@@ -24,14 +24,4 @@ struct AudioTrack: Codable, Identifiable {
         self.fileExtension = fileExtension
         self.createData = createData
     }
-
-    var metadata: AudioTrackMetadata {
-        AudioTrackMetadata(title: title, artist: artist, thumbnail: thumbnail)
-    }
-}
-
-struct AudioTrackMetadata {
-    var title: String?
-    var artist: String?
-    var thumbnail: Data?
 }

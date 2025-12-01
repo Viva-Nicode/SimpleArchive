@@ -1,42 +1,63 @@
 import Foundation
+import XCTest
 
 @testable import SimpleArchive
 
-final class MockAudioFileManager: NSObject, AudioFileManagerType {
-    
-    func removeAudio(with audio: SimpleArchive.AudioTrack) {
-        <#code#>
+final class MockAudioFileManager: Mock, AudioFileManagerType {
+
+    enum Action: Equatable {
+        case removeAudio
+        case copyFilesToAppDirectory
+        case moveItem
+        case extractAudioFileURLs
+        case createAudioFileURL
+        case readAudioMetadata
+        case readAudioSampleData
+        case writeAudioMetadata
+    }
+
+    var actions = MockActions<Action>(expected: [])
+
+    var copyFilesToAppDirectoryResult: [URL]!
+    var createAudioFileURLResult: [URL]!
+    var extractAudioFileURLsResult: [URL]!
+    var readAudioMetadataResult: [AudioTrackMetadata]!
+    var readAudioSampleDataResult: AudioSampleData!
+
+    func createAudioFileURL(fileName: String) -> URL {
+        register(.createAudioFileURL)
+        return createAudioFileURLResult.removeFirst()
+    }
+
+    func removeAudio(with audio: AudioTrack) {
+        register(.removeAudio)
     }
 
     func copyFilesToAppDirectory(src: URL, des: String) -> URL {
-        <#code#>
+        register(.copyFilesToAppDirectory)
+        return copyFilesToAppDirectoryResult.removeFirst()
     }
 
-    func moveItem(src: URL, des: URL) throws {
-        <#code#>
+    func extractAudioFileURLs(zipURL: URL) throws -> [URL] {
+        register(.extractAudioFileURLs)
+        return extractAudioFileURLsResult
     }
 
-    func moveDownloadFile(location: URL) throws {
-        <#code#>
+    func moveItem(src: URL, fileName: String) throws {
+        register(.moveItem)
     }
 
-    func extractAudioFileURLs() throws -> [URL] {
-        <#code#>
+    func readAudioMetadata(audioURL: URL) -> AudioTrackMetadata {
+        register(.readAudioMetadata)
+        return readAudioMetadataResult.removeFirst()
     }
 
-    func createAudioFileURL(fileName: String) -> URL {
-        <#code#>
+    func readAudioSampleData(audioURL: URL?) -> AudioSampleData? {
+        register(.readAudioSampleData)
+        return readAudioSampleDataResult
     }
 
-    func cleanTempDirectories() throws {
-        <#code#>
-    }
-
-    func readAudioMetadata(audioURL: URL) -> SimpleArchive.AudioTrackMetadata {
-        <#code#>
-    }
-
-    func writeAudioMetadata(audioTrack: SimpleArchive.AudioTrack) {
-        <#code#>
+    func writeAudioMetadata(audioTrack: AudioTrack) {
+        register(.writeAudioMetadata)
     }
 }

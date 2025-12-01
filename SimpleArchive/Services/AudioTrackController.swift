@@ -1,53 +1,42 @@
 import AVFoundation
 import CSFBAudioEngine
-import UIKit
 
 protocol AudioTrackControllerType {
     var player: AVAudioPlayer? { get }
     var isPlaying: Bool { get }
-    var audioTrackURL: URL { get }
+    var totalTime: TimeInterval? { get }
+    var currentTime: TimeInterval? { get }
+    var audioTrackURL: URL? { get }
+
+    func setAudioURL(audioURL: URL)
     func play()
-    func stop()
     func togglePlaying()
-    func getTotalTime() -> TimeInterval?
-    func getCurrentTime() -> TimeInterval?
     func seek(interval: TimeInterval)
-    func setDelegate(_ delegate: AVAudioPlayerDelegate)
+    func reset()
 }
 
 final class AudioTrackController: NSObject, AudioTrackControllerType {
 
     private(set) var player: AVAudioPlayer?
-    private(set) var audioTrackURL: URL
-
-    init(audioTrackURL: URL) {
-        self.audioTrackURL = audioTrackURL
-        super.init()
-        preparePlayer()
-    }
+    private(set) var audioTrackURL: URL?
 
     deinit { print("deinit AudioTrackController") }
 
-    private func preparePlayer() {
-        do {
-            player = try AVAudioPlayer(contentsOf: audioTrackURL)
-            player?.prepareToPlay()
-        } catch {
-            print("AVAudioPlayer 초기화 실패: \(error.localizedDescription)")
-        }
+    var isPlaying: Bool {
+        player?.isPlaying ?? false
     }
 
-    func setDelegate(_ delegate: AVAudioPlayerDelegate) {
-        self.player?.delegate = delegate
+    var totalTime: TimeInterval? {
+        player?.duration
     }
 
-    func togglePlaying() {
-        guard let player = player else { return }
-        if player.isPlaying {
-            player.pause()
-        } else {
-            player.play()
-        }
+    var currentTime: TimeInterval? {
+        player?.currentTime
+    }
+
+    func setAudioURL(audioURL: URL) {
+        self.audioTrackURL = audioURL
+        preparePlayer()
     }
 
     func play() {
@@ -61,25 +50,36 @@ final class AudioTrackController: NSObject, AudioTrackControllerType {
         }
     }
 
-    func stop() {
-        player?.stop()
-    }
-
-    var isPlaying: Bool {
-        player?.isPlaying ?? false
-    }
-
-    func getTotalTime() -> TimeInterval? {
-        player?.duration
-    }
-
-    func getCurrentTime() -> TimeInterval? {
-        player?.currentTime
+    func togglePlaying() {
+        guard let player = player else { return }
+        if player.isPlaying {
+            player.pause()
+        } else {
+            player.play()
+        }
     }
 
     func seek(interval: TimeInterval) {
         guard let player = player else { return }
         let newTime = max(0, min(interval, player.duration))
         player.currentTime = newTime
+    }
+
+    func reset() {
+        player?.stop()
+        player?.delegate = nil
+
+        player = nil
+        audioTrackURL = nil
+    }
+
+    private func preparePlayer() {
+        do {
+            guard let audioURL = audioTrackURL else { return }
+            player = try AVAudioPlayer(contentsOf: audioURL)
+            player?.prepareToPlay()
+        } catch {
+            print("AVAudioPlayer 초기화 실패: \(error.localizedDescription)")
+        }
     }
 }

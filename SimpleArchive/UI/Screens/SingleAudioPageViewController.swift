@@ -74,7 +74,8 @@ final class SingleAudioPageViewController: UIViewController, ViewControllerType 
                     setupUI(pageTitle: pageTitle)
                     setupConstraints()
                     audioComponentContentView.configure(
-                        content: audioComponent,
+                        trackCount: audioComponent.detail.tracks.count,
+                        sortBy: audioComponent.detail.sortBy,
                         datasource: dataSource,
                         dispatcher: SinglePageAudioComponentActionDispatcher(subject: input),
                         componentID: audioComponent.id)
@@ -87,24 +88,20 @@ final class SingleAudioPageViewController: UIViewController, ViewControllerType 
                 case .didAppendAudioTrackRows(let appededIndices):
                     insertNewAudioTracks(appededIndices: appededIndices)
 
-                case let .didPlayAudioTrack(audioTrackURL, trackIndex, duration, metadata, audioSampleData):
+                case let .didPlayAudioTrack(trackIndex, duration, metadata, audioSampleData):
                     playAudioTrack(
-                        audioTrackURL: audioTrackURL,
                         trackIndex: trackIndex,
                         duration: duration,
                         audioMetadata: metadata,
                         audioSampleData: audioSampleData)
 
                 case let .didApplyAudioMetadataChanges(
-                    trackIndex,
-                    editedMetadata,
-                    isNowPlayingTrack,
-                    trackIndexAfterEdit):
+                    trackIndex, editedMetadata, isNowPlayingTrack, trackIndexAfterEdit):
                     applyAudioTrackMetadataChanges(
-                        trackIndex,
-                        editedMetadata,
-                        isNowPlayingTrack,
-                        trackIndexAfterEdit)
+                        targetTrackIndex: trackIndex,
+                        metadata: editedMetadata,
+                        isNowPlayingTrack: isNowPlayingTrack,
+                        trackIndexAfterEditing: trackIndexAfterEdit)
 
                 case .didSortAudioTracks(let before, let after):
                     sortAudioTracks(before: before, after: after)
@@ -115,13 +112,9 @@ final class SingleAudioPageViewController: UIViewController, ViewControllerType 
                         .progress
                         .setProgress(progress, animated: true)
 
-                case .didSetAudioPlayingStateToStopped:
-                    audioControlBar.updateControlBarStateToNotPlaying()
-                    updateBackgroundImage(with: nil)
-
-                case let .didToggleAudioPlayingState(isPlaying, nowPlayingAudioIndex, currentTime):
+                case let .didToggleAudioPlayingState(isPlaying, nowPlayingAudioIndex):
                     setAudioPlayingState(
-                        isPlaying: isPlaying, nowPlayingAudioIndex: nowPlayingAudioIndex!, currentTime: currentTime)
+                        isPlaying: isPlaying, nowPlayingAudioIndex: nowPlayingAudioIndex!)
 
                 case .didSeekAudioTrack(let seek, let totalTime, let nowPlayingAudioIndex):
                     performWithAudioTrackRowAt(nowPlayingAudioIndex!) { row in
@@ -131,6 +124,18 @@ final class SingleAudioPageViewController: UIViewController, ViewControllerType 
 
                 case .didRemoveAudioTrack(let trackIndex):
                     audioComponentContentView.removeRow(trackIndex: trackIndex)
+
+                case let .didRemoveAudioTrackAndPlayNextAudio(
+                    removeTrackIndex, nextPlayTrackIndex, duration, metadata, sampleData):
+                    removeAudioTrackAndPlayNextAudio(
+                        removeTrackIndex: removeTrackIndex,
+                        nextPlayTrackIndex: nextPlayTrackIndex,
+                        duration: duration,
+                        metadata: metadata,
+                        sampleData: sampleData)
+
+                case .didRemoveAudioTrackAndStopPlaying(let removeTrackIndex):
+                    removeAudioTrackAndStopPlaying(removeTrackIndex: removeTrackIndex)
             }
         }
         .store(in: &subscriptions)
@@ -181,7 +186,6 @@ final class SingleAudioPageViewController: UIViewController, ViewControllerType 
     }
 
     private func playAudioTrack(
-        audioTrackURL: URL,
         trackIndex: Int,
         duration: TimeInterval?,
         audioMetadata: AudioTrackMetadata,
@@ -208,18 +212,18 @@ final class SingleAudioPageViewController: UIViewController, ViewControllerType 
                 )
             }
         }
-
-        audioControlBar.configure(
+        audioControlBar.state = .play(
             metadata: audioMetadata,
             duration: duration,
-            dispatcher: SinglePageAudioComponentActionDispatcher(subject: input))
+            dispatcher: SinglePageAudioComponentActionDispatcher(subject: input)
+        )
     }
 
     private func applyAudioTrackMetadataChanges(
-        _ targetTrackIndex: Int,
-        _ metadata: AudioTrackMetadata,
-        _ isNowPlayingTrack: Bool,
-        _ trackIndexAfterEditing: Int?
+        targetTrackIndex: Int,
+        metadata: AudioTrackMetadata,
+        isNowPlayingTrack: Bool,
+        trackIndexAfterEditing: Int?
     ) {
         performWithAudioTrackRowAt(targetTrackIndex) { row in
             row.update(metadata)
@@ -229,7 +233,7 @@ final class SingleAudioPageViewController: UIViewController, ViewControllerType 
             if let thumbnailImageData = metadata.thumbnail {
                 updateBackgroundImage(with: UIImage(data: thumbnailImageData))
             }
-            audioControlBar.update(with: metadata)
+            audioControlBar.applyUpdatedMetadata(with: metadata)
         }
 
         if let trackIndexAfterEditing {
@@ -241,8 +245,8 @@ final class SingleAudioPageViewController: UIViewController, ViewControllerType 
         }
     }
 
-    private func setAudioPlayingState(isPlaying: Bool, nowPlayingAudioIndex: Int, currentTime: TimeInterval?) {
-        audioControlBar.setControlBarState(isPlaying: isPlaying, currentTime: currentTime)
+    private func setAudioPlayingState(isPlaying: Bool, nowPlayingAudioIndex: Int) {
+        audioControlBar.state = isPlaying ? .resume : .pause
         performWithAudioTrackRowAt(nowPlayingAudioIndex) { row in
             if isPlaying {
                 row.audioVisualizer.restartVisuzlization()
@@ -257,6 +261,47 @@ final class SingleAudioPageViewController: UIViewController, ViewControllerType 
             .audioDownloadStatePopupView?
             .dismiss()
         audioComponentContentView.insertRow(trackIndices: appededIndices)
+    }
+
+    private func removeAudioTrackAndPlayNextAudio(
+        removeTrackIndex: Int,
+        nextPlayTrackIndex: Int,
+        duration: TimeInterval?,
+        metadata: AudioTrackMetadata,
+        sampleData: AudioSampleData?
+    ) {
+        performWithAudioTrackRowAt(removeTrackIndex) { row in
+            row.audioVisualizer.removeVisuzlization()
+        }
+
+        audioComponentContentView.removeRow(trackIndex: removeTrackIndex)
+
+        if let thumbnailImageData = metadata.thumbnail {
+            updateBackgroundImage(with: UIImage(data: thumbnailImageData))
+        }
+
+        audioControlBar.isHidden = false
+
+        performWithAudioTrackRowAt(nextPlayTrackIndex) { row in
+            if let sampleData {
+                row.audioVisualizer.activateAudioVisualizer(
+                    samplesCount: sampleData.sampleDataCount,
+                    scaledSamples: sampleData.scaledSampleData,
+                    sampleRate: sampleData.sampleRate
+                )
+            }
+        }
+        audioControlBar.state = .play(
+            metadata: metadata,
+            duration: duration,
+            dispatcher: SinglePageAudioComponentActionDispatcher(subject: input)
+        )
+    }
+
+    private func removeAudioTrackAndStopPlaying(removeTrackIndex: Int) {
+        audioComponentContentView.removeRow(trackIndex: removeTrackIndex)
+        audioControlBar.state = .stop
+        updateBackgroundImage(with: nil)
     }
 
     private func sortAudioTracks(before: [String], after: [String]) {

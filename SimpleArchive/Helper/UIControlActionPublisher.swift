@@ -1,6 +1,57 @@
 import Combine
 import UIKit
 
+final class DoubleSubscription<S: Subscriber>: Subscription where S.Input == Double {
+
+    private var subscriber: S?
+    private let col: () -> Double
+
+    init(subscriber: S, col: @escaping () -> Double) {
+        self.subscriber = subscriber
+        self.col = col
+    }
+
+    func request(_ demand: Subscribers.Demand) {
+        guard demand > 0 else { return }
+        _ = subscriber?.receive(col())
+    }
+
+    func cancel() {
+        subscriber = nil
+    }
+
+    func emit() {
+        _ = subscriber?.receive(col())
+    }
+}
+
+class DoublePublisher: Publisher {
+
+    typealias Output = Double
+    typealias Failure = Never
+
+    private let col: () -> Double
+
+    private var subscription: DoubleSubscription<AnySubscriber<Double, Never>>?
+
+    init(col: @escaping () -> Double) {
+        self.col = col
+    }
+
+    func receive<S>(subscriber: S) where S: Subscriber, S.Input == Double, S.Failure == Never {
+
+        let anySub = AnySubscriber(subscriber)
+        let sub = DoubleSubscription(subscriber: anySub, col: col)
+
+        self.subscription = sub
+        subscriber.receive(subscription: sub)
+    }
+
+    func giveMeValue() {
+        subscription?.emit()
+    }
+}
+
 extension UIControl {
 
     final class GestureSubscription<S: Subscriber, Control: UIControl>: Subscription where S.Input == Control {
@@ -15,7 +66,7 @@ extension UIControl {
         }
 
         // 구독자가 발행자에게 값을 달라고할 때 구독자가 사용하는 함수
-        func request(_ demand: Subscribers.Demand) { }
+        func request(_ demand: Subscribers.Demand) {}
 
         // AnyCancelable을 구현해야 한다.
         func cancel() { subscriber = nil }
@@ -48,7 +99,9 @@ extension UIControl {
         }
     }
 
-    func throttleTapPublisher(interval: Double = 1.0) -> Publishers.Throttle<UIControl.GestruePublisher<UIControl>, RunLoop> {
+    func throttleTapPublisher(interval: Double = 1.0)
+        -> Publishers.Throttle<UIControl.GestruePublisher<UIControl>, RunLoop>
+    {
         GestruePublisher(control: self, event: .touchUpInside)
             .throttle(for: .seconds(interval), scheduler: RunLoop.main, latest: false)
     }
@@ -56,7 +109,8 @@ extension UIControl {
 
 extension UITapGestureRecognizer {
 
-    final class UIViewTabSubscription<S: Subscriber, TapRecognizer: UITapGestureRecognizer>: Subscription where S.Input == TapRecognizer {
+    final class UIViewTabSubscription<S: Subscriber, TapRecognizer: UITapGestureRecognizer>: Subscription
+    where S.Input == TapRecognizer {
 
         private var subscriber: S?
         private let recognizer: TapRecognizer
@@ -73,7 +127,7 @@ extension UITapGestureRecognizer {
         // 예를 들면 구독자가 값을 달라고했을 때 줄수도있고, 달라고 하지 않아도 그냥 줄수도있고.
         // 현재 코드 경우에는 값을 달라고 하든 달라고 하지않든 안주다가 버튼 이벤트가 발생하면 준다.
         func request(_ demand: Subscribers.Demand) {
-//            _ = subscriber?.receive(recognizer)
+            //            _ = subscriber?.receive(recognizer)
         }
 
         func cancel() { subscriber = nil }
@@ -83,7 +137,7 @@ extension UITapGestureRecognizer {
         }
     }
 
-    struct UIViewTapPublisher<TapRecognizer:UITapGestureRecognizer>: Publisher {
+    struct UIViewTapPublisher<TapRecognizer: UITapGestureRecognizer>: Publisher {
 
         typealias Output = TapRecognizer
         typealias Failure = Never
@@ -104,7 +158,9 @@ extension UITapGestureRecognizer {
 }
 
 extension UIView {
-    func throttleUIViewTapGesturePublisher(interval: Double = 1.0) -> Publishers.Throttle<UITapGestureRecognizer.UIViewTapPublisher<UITapGestureRecognizer>, RunLoop> {
+    func throttleUIViewTapGesturePublisher(interval: Double = 1.0)
+        -> Publishers.Throttle<UITapGestureRecognizer.UIViewTapPublisher<UITapGestureRecognizer>, RunLoop>
+    {
         UITapGestureRecognizer.UIViewTapPublisher(recognizer: .init(), view: self)
             .throttle(for: .seconds(interval), scheduler: RunLoop.main, latest: false)
     }

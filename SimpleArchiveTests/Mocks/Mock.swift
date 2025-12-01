@@ -6,6 +6,7 @@ protocol Mock {
 
     func register(_ action: Action)
     func verify(file: StaticString, line: UInt)
+    func repeatingActions(actions: [Action], count: UInt) -> [Action]
 }
 
 extension Mock {
@@ -15,6 +16,10 @@ extension Mock {
 
     func verify(file: StaticString = #file, line: UInt = #line) {
         actions.verify(file: file, line: line)
+    }
+
+    func repeatingActions(actions: [Action], count: UInt) -> [Action] {
+        Array(repeating: actions, count: 3).flatMap { $0 }
     }
 }
 

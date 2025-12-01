@@ -1,7 +1,7 @@
 import AVFAudio
 import UIKit
 
-class AudioVisualizerView: UIView {
+final class AudioVisualizerView: UIView {
 
     private let barCount = 7
     private var bars: [UIView] = (0..<7).map { _ in UIView() }
@@ -11,7 +11,7 @@ class AudioVisualizerView: UIView {
     private var viewHeight: CGFloat = 0
     private var heights: [Float] = []
     private var totalFrames: Int = 0
-    private var index = 0
+    private var visualizerProgress = 0
     private var duration: TimeInterval = .zero
 
     private var colors: [UIColor] = [
@@ -69,13 +69,13 @@ class AudioVisualizerView: UIView {
 
         audioVisualizeTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] timer in
             guard let self else { return }
-            if self.index >= self.totalFrames {
+            if self.visualizerProgress >= self.totalFrames {
                 timer.invalidate()
                 print("waveform animation finished")
                 return
             }
 
-            let barHeights = self.makeBarSet(from: heights[self.index])
+            let barHeights = self.makeBarSet(from: heights[self.visualizerProgress])
 
             UIView.animate(withDuration: interval) {
                 for (i, bar) in self.bars.enumerated() {
@@ -85,8 +85,8 @@ class AudioVisualizerView: UIView {
                     bar.frame.size.height = barHeight
                 }
             }
-            self.index += 1
-            print("\(self.index) : \(self.totalFrames)")
+            self.visualizerProgress += 1
+            print("\(self.visualizerProgress) : \(self.totalFrames)")
         }
         RunLoop.main.add(audioVisualizeTimer!, forMode: .common)
     }
@@ -107,13 +107,13 @@ extension AudioVisualizerView: AudioVisualizerController {
         let interval = duration / Double(totalFrames)
         audioVisualizeTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] timer in
             guard let self else { return }
-            if self.index >= self.totalFrames {
+            if self.visualizerProgress >= self.totalFrames {
                 timer.invalidate()
                 print("waveform animation finished")
                 return
             }
 
-            let barHeights = self.makeBarSet(from: self.heights[self.index])
+            let barHeights = self.makeBarSet(from: self.heights[self.visualizerProgress])
 
             UIView.animate(withDuration: interval) {
                 for (i, bar) in self.bars.enumerated() {
@@ -123,8 +123,8 @@ extension AudioVisualizerView: AudioVisualizerController {
                     bar.frame.size.height = barHeight
                 }
             }
-            self.index += 1
-            print("\(self.index) : \(self.totalFrames)")
+            self.visualizerProgress += 1
+            print("\(self.visualizerProgress) : \(self.totalFrames)")
         }
         RunLoop.main.add(audioVisualizeTimer!, forMode: .common)
     }
@@ -144,12 +144,12 @@ extension AudioVisualizerView: AudioVisualizerController {
     func removeVisuzlization() {
         audioVisualizeTimer?.invalidate()
         audioVisualizeTimer = nil
-        index = 0
+        visualizerProgress = 0
         bars.forEach { $0.removeFromSuperview() }
     }
 
     func seekVisuzlization(rate: TimeInterval) {
-        index = Int(Double(totalFrames) * rate)
+        visualizerProgress = Int(Double(totalFrames) * rate)
     }
 }
 

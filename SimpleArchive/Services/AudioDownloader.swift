@@ -4,10 +4,8 @@ import UIKit
 
 protocol AudioDownloaderType {
     typealias progressClosure = ((Float) -> Void)
-
     var handleDownloadedProgressPercent: progressClosure? { get set }
-
-    func downloadTask(with code: String) -> AnyPublisher<[URL], AudioDownloadError>
+    func downloadTask(with code: String) -> AnyPublisher<URL, AudioDownloadError>
 }
 
 enum AudioDownloadError: Error {
@@ -18,12 +16,7 @@ enum AudioDownloadError: Error {
 
 final class AudioDownloader: NSObject, AudioDownloaderType {
     var handleDownloadedProgressPercent: progressClosure?
-    private var audioFileManager: AudioFileManagerType
-
-    init(audioFileManager: AudioFileManagerType) {
-        self.audioFileManager = audioFileManager
-    }
-
+    private var zipURL: URL!
     deinit { print("deinit AudioDownloader") }
 
     private var totalDownloaded: Float = 0 {
@@ -37,10 +30,10 @@ final class AudioDownloader: NSObject, AudioDownloaderType {
         return session
     }()
 
-    private var promise: ((Result<[URL], AudioDownloadError>) -> Void)!
+    private var promise: ((Result<URL, AudioDownloadError>) -> Void)!
 
-    func downloadTask(with code: String) -> AnyPublisher<[URL], AudioDownloadError> {
-        Future<[URL], AudioDownloadError> { promise in
+    func downloadTask(with code: String) -> AnyPublisher<URL, AudioDownloadError> {
+        Future<URL, AudioDownloadError> { promise in
             self.promise = promise
             let url = URL(string: "http://1.246.134.84/simpleArchive/downloadMusic?code=\(code)")!
             self.session
@@ -69,12 +62,7 @@ extension AudioDownloader: URLSessionTaskDelegate {
             return
         }
 
-        do {
-            let audioFileUrls = try audioFileManager.extractAudioFileURLs()
-            promise(.success(audioFileUrls))
-        } catch {
-            promise(.failure(AudioDownloadError.fileManagingError(error)))
-        }
+        promise(.success(zipURL))
     }
 }
 
@@ -92,8 +80,15 @@ extension AudioDownloader: URLSessionDownloadDelegate {
         downloadTask: URLSessionDownloadTask,
         didFinishDownloadingTo location: URL
     ) {
+        let fileManager = FileManager.default
+        let documentsDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        zipURL = documentsDir.appendingPathComponent("downloaded_music_temp.zip")
+//        file:///Users/nicode./Library/Developer/CoreSimulator/Devices/C4906AB1-BB48-4D3E-A7A8-397C29A281D3/data/Containers/Data/Application/B7AA7C02-DC03-4B6B-A9F5-814AAB804962/Documents/downloaded_music_temp.zip
         do {
-            try audioFileManager.moveDownloadFile(location: location)
+            if fileManager.fileExists(atPath: zipURL.path) {
+                try fileManager.removeItem(at: zipURL)
+            }
+            try fileManager.moveItem(at: location, to: zipURL)
         } catch {
             promise(.failure(AudioDownloadError.fileManagingError(error)))
         }

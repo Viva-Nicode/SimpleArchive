@@ -4,10 +4,10 @@ import XCTest
 @testable import SimpleArchive
 
 @MainActor
-final class ComponentSnapshotViewModelTests: XCTestCase, @preconcurrency StubProvidingTestCase {
+final class ComponentSnapshotViewModelTests: XCTestCase, @preconcurrency FixtureProvidingTestCase {
 
     var sut: ComponentSnapshotViewModel!
-    var stubProvider = ComponentSnapshotViewModelTestStubProvider()
+    var fixtureProvider = ComponentSnapshotViewModelTestFixtureProvider()
     var componentSnapshotCoreDataRepository: MockComponentSnapshotCoreDataRepository!
     var subscriptions: Set<AnyCancellable>!
     var input: PassthroughSubject<ComponentSnapshotViewModel.Input, Never>!
@@ -19,7 +19,7 @@ final class ComponentSnapshotViewModelTests: XCTestCase, @preconcurrency StubPro
     }
 
     override func tearDownWithError() throws {
-        stubProvider.removeUsedStubData()
+        fixtureProvider.removeUsedFixtureData()
         componentSnapshotCoreDataRepository = nil
         sut = nil
         input = nil
@@ -27,18 +27,18 @@ final class ComponentSnapshotViewModelTests: XCTestCase, @preconcurrency StubPro
     }
 
     func test_removeSnapshot_whenFirstSnapshotIsDeleted() throws {
-        typealias StubType = RemoveSnapshotWhenFirstSnapshotIsDeletedTestStub
-        let stub = stubProvider.getStub()
+        typealias FixtureType = RemoveSnapshotWhenFirstSnapshotIsDeletedTestFixture
+        let fixture = fixtureProvider.getFixture()
 
-        let givenStubData = stub.getStubData() as! StubType.GivenStubDataType
+        let givenFixtureData = fixture.getFixtureData() as! FixtureType.GivenFixtureDataType
 
         sut = ComponentSnapshotViewModel(
             componentSnapshotCoreDataRepository: componentSnapshotCoreDataRepository,
-            snapshotRestorableComponent: givenStubData)
+            snapshotRestorableComponent: givenFixtureData)
 
         let expectation = XCTestExpectation(description: "")
         let factualOutput = FactualOutput<ComponentSnapshotViewModel.Output>()
-        let testTargetInput = stub.getStubData() as! StubType.TestTargetInputType
+        let testTargetInput = fixture.getFixtureData() as! FixtureType.TestTargetInputType
 
         sut
             .subscribe(input: input.eraseToAnyPublisher())
@@ -49,7 +49,8 @@ final class ComponentSnapshotViewModelTests: XCTestCase, @preconcurrency StubPro
         wait(for: [expectation], timeout: 1)
 
         let output = try factualOutput.getOutput()
-        let (expectedRemovedSnapshotIndex, expectedNextMetaData) = stub.getStubData() as! StubType.ExpectedOutputType
+        let (expectedRemovedSnapshotIndex, expectedNextMetaData) =
+            fixture.getFixtureData() as! FixtureType.ExpectedOutputType
 
         guard case let .didCompleteRemoveSnapshot(factualMetadata, factualRemovedSnapshotIndex) = output else {
             XCTFail("Unexpected output")
@@ -61,19 +62,19 @@ final class ComponentSnapshotViewModelTests: XCTestCase, @preconcurrency StubPro
     }
 
     func test_removeSnapshot_whenMiddleSnapshotIsDeleted() throws {
-        typealias StubType = RemoveSnapshotWhenMiddleSnapshotIsDeletedTestStub
-        let stub = stubProvider.getStub()
+        typealias FixtureType = RemoveSnapshotWhenMiddleSnapshotIsDeletedTestFixture
+        let fixture = fixtureProvider.getFixture()
 
-        let (givenStubData, initialViewedSnapshotID) = stub.getStubData() as! StubType.GivenStubDataType
+        let (givenFixtureData, initialViewedSnapshotID) = fixture.getFixtureData() as! FixtureType.GivenFixtureDataType
 
         sut = ComponentSnapshotViewModel(
-            snapshotRestorableComponent: givenStubData,
+            snapshotRestorableComponent: givenFixtureData,
             componentSnapshotCoreDataRepository: componentSnapshotCoreDataRepository,
             initialViewedSnapshotID: initialViewedSnapshotID)
 
         let expectation = XCTestExpectation(description: "")
         let factualOutput = FactualOutput<ComponentSnapshotViewModel.Output>()
-        let testTargetInput = stub.getStubData() as! StubType.TestTargetInputType
+        let testTargetInput = fixture.getFixtureData() as! FixtureType.TestTargetInputType
 
         sut.subscribe(input: input.eraseToAnyPublisher())
             .sinkToFulfill(expectation, factualOutput)
@@ -83,7 +84,8 @@ final class ComponentSnapshotViewModelTests: XCTestCase, @preconcurrency StubPro
         wait(for: [expectation], timeout: 1)
 
         let output = try factualOutput.getOutput()
-        let (expectedRemovedSnapshotIndex, expectedNextMetaData) = stub.getStubData() as! StubType.ExpectedOutputType
+        let (expectedRemovedSnapshotIndex, expectedNextMetaData) =
+            fixture.getFixtureData() as! FixtureType.ExpectedOutputType
 
         guard case let .didCompleteRemoveSnapshot(metadata, removedSnapshotIndex) = output else {
             XCTFail("Unexpected output")
@@ -94,19 +96,19 @@ final class ComponentSnapshotViewModelTests: XCTestCase, @preconcurrency StubPro
     }
 
     func test_removeSnapshot_whenLastSnapshotIsDeleted() throws {
-        typealias StubType = RemoveSnapshotWhenLastSnapshotIsDeletedTestStub
-        let stub = stubProvider.getStub()
+        typealias FixtureType = RemoveSnapshotWhenLastSnapshotIsDeletedTestFixture
+        let fixture = fixtureProvider.getFixture()
 
-        let (givenStubData, initialViewedSnapshotID) = stub.getStubData() as! StubType.GivenStubDataType
+        let (givenFixtureData, initialViewedSnapshotID) = fixture.getFixtureData() as! FixtureType.GivenFixtureDataType
 
         sut = ComponentSnapshotViewModel(
-            snapshotRestorableComponent: givenStubData,
+            snapshotRestorableComponent: givenFixtureData,
             componentSnapshotCoreDataRepository: componentSnapshotCoreDataRepository,
             initialViewedSnapshotID: initialViewedSnapshotID)
 
         let expectation = XCTestExpectation(description: "")
         let factualOutput = FactualOutput<ComponentSnapshotViewModel.Output>()
-        let testTargetInput = stub.getStubData() as! StubType.TestTargetInputType
+        let testTargetInput = fixture.getFixtureData() as! FixtureType.TestTargetInputType
 
         sut
             .subscribe(input: input.eraseToAnyPublisher())
@@ -117,7 +119,8 @@ final class ComponentSnapshotViewModelTests: XCTestCase, @preconcurrency StubPro
         wait(for: [expectation], timeout: 1)
 
         let output = try factualOutput.getOutput()
-        let (expectedRemovedSnapshotIndex, expectedNextMetaData) = stub.getStubData() as! StubType.ExpectedOutputType
+        let (expectedRemovedSnapshotIndex, expectedNextMetaData) =
+            fixture.getFixtureData() as! FixtureType.ExpectedOutputType
 
         guard case let .didCompleteRemoveSnapshot(metadata, removedSnapshotIndex) = output else {
             XCTFail("Unexpected output")
@@ -128,18 +131,18 @@ final class ComponentSnapshotViewModelTests: XCTestCase, @preconcurrency StubPro
     }
 
     func test_removeSnapshot_whenOnlySnapshotIsDeleted() throws {
-        typealias StubType = RemoveSnapshotWhenOnlySnapshotIsDeletedTestStub
-        let stub = stubProvider.getStub()
+        typealias FixtureType = RemoveSnapshotWhenOnlySnapshotIsDeletedTestFixture
+        let fixture = fixtureProvider.getFixture()
 
-        let givenStubData = stub.getStubData() as! StubType.GivenStubDataType
+        let givenFixtureData = fixture.getFixtureData() as! FixtureType.GivenFixtureDataType
 
         sut = ComponentSnapshotViewModel(
             componentSnapshotCoreDataRepository: componentSnapshotCoreDataRepository,
-            snapshotRestorableComponent: givenStubData)
+            snapshotRestorableComponent: givenFixtureData)
 
         let expectation = XCTestExpectation(description: "")
         let factualOutput = FactualOutput<ComponentSnapshotViewModel.Output>()
-        let testTargetInput = stub.getStubData() as! StubType.TestTargetInputType
+        let testTargetInput = fixture.getFixtureData() as! FixtureType.TestTargetInputType
 
         sut
             .subscribe(input: input.eraseToAnyPublisher())
@@ -150,7 +153,7 @@ final class ComponentSnapshotViewModelTests: XCTestCase, @preconcurrency StubPro
         wait(for: [expectation], timeout: 1)
 
         let output = try factualOutput.getOutput()
-        let expectedRemovedSnapshotIndex = stub.getStubData() as! StubType.ExpectedOutputType
+        let expectedRemovedSnapshotIndex = fixture.getFixtureData() as! FixtureType.ExpectedOutputType
 
         guard case let .didCompleteRemoveSnapshot(metadata, removedSnapshotIndex) = output else {
             XCTFail("Unexpected output")
@@ -162,18 +165,18 @@ final class ComponentSnapshotViewModelTests: XCTestCase, @preconcurrency StubPro
     }
 
     func test_removeSnapshot_failureWhenSnapshotMismatch() throws {
-        typealias StubType = RemoveSnapshotFailureWhenSnapshotMismatchTestStub
-        let stub = stubProvider.getStub()
+        typealias FixtureType = RemoveSnapshotFailureWhenSnapshotMismatchTestFixture
+        let fixture = fixtureProvider.getFixture()
 
-        let givenStubData = stub.getStubData() as! StubType.GivenStubDataType
+        let givenFixtureData = fixture.getFixtureData() as! FixtureType.GivenFixtureDataType
 
         sut = ComponentSnapshotViewModel(
             componentSnapshotCoreDataRepository: componentSnapshotCoreDataRepository,
-            snapshotRestorableComponent: givenStubData)
+            snapshotRestorableComponent: givenFixtureData)
 
         let expectation = XCTestExpectation(description: "")
         let factualOutput = FactualOutput<ComponentSnapshotViewModel.ErrorOutput>()
-        let testTargetInput = stub.getStubData() as! StubType.TestTargetInputType
+        let testTargetInput = fixture.getFixtureData() as! FixtureType.TestTargetInputType
 
         sut
             .subscribe(input: input.eraseToAnyPublisher())
@@ -197,10 +200,10 @@ final class ComponentSnapshotViewModelTests: XCTestCase, @preconcurrency StubPro
     }
 
     func test_removeSnapshot_failureWhenNotFoundSnapshot() throws {
-        typealias StubType = RemoveSnapshotFailureWhenNotFoundSnapshotTestStub
-        let stub = stubProvider.getStub()
+        typealias FixtureType = RemoveSnapshotFailureWhenNotFoundSnapshotTestFixture
+        let fixture = fixtureProvider.getFixture()
 
-        let (testComponent, notExistID) = stub.getStubData() as! StubType.GivenStubDataType
+        let (testComponent, notExistID) = fixture.getFixtureData() as! FixtureType.GivenFixtureDataType
 
         sut = ComponentSnapshotViewModel(
             snapshotRestorableComponent: testComponent,
@@ -209,7 +212,7 @@ final class ComponentSnapshotViewModelTests: XCTestCase, @preconcurrency StubPro
 
         let expectation = XCTestExpectation(description: "")
         let factualOutput = FactualOutput<ComponentSnapshotViewModel.ErrorOutput>()
-        let testTargetInput = stub.getStubData() as! StubType.TestTargetInputType
+        let testTargetInput = fixture.getFixtureData() as! FixtureType.TestTargetInputType
 
         sut
             .subscribe(input: input.eraseToAnyPublisher())
@@ -233,14 +236,14 @@ final class ComponentSnapshotViewModelTests: XCTestCase, @preconcurrency StubPro
     }
 
     func test_restoreSnapshot_successfully() throws {
-        typealias StubType = RestoreSnapshotSuccessfullyTestStub
-        let stub = stubProvider.getStub()
+        typealias FixtureType = RestoreSnapshotSuccessfullyTestFixture
+        let fixture = fixtureProvider.getFixture()
 
-        let givenStubData = stub.getStubData() as! StubType.GivenStubDataType
+        let givenFixtureData = fixture.getFixtureData() as! FixtureType.GivenFixtureDataType
 
         sut = ComponentSnapshotViewModel(
             componentSnapshotCoreDataRepository: componentSnapshotCoreDataRepository,
-            snapshotRestorableComponent: givenStubData)
+            snapshotRestorableComponent: givenFixtureData)
 
         let expectation = XCTestExpectation(description: "")
         let factualOutput = FactualOutput<ComponentSnapshotViewModel.Output>()
@@ -260,18 +263,19 @@ final class ComponentSnapshotViewModelTests: XCTestCase, @preconcurrency StubPro
             return
         }
 
-        XCTAssertEqual(givenStubData.detail, "Snapshot 1 detail")
-        XCTAssertEqual(givenStubData.persistenceState, .unsaved(isMustToStoreSnapshot: false))
+        XCTAssertEqual(givenFixtureData.detail, "Snapshot 1 detail")
+        XCTAssertEqual(givenFixtureData.persistenceState, .unsaved(isMustToStoreSnapshot: false))
+        // 이거 왜 기븐을 테스트하냐
     }
 
     func test_restoreSnapshot_failureWhenNotFoundSnapshot() throws {
-        typealias StubType = RestoreSnapshotFailureWhenNotFoundSnapshotStubTest
-        let stub = stubProvider.getStub()
+        typealias FixtureType = RestoreSnapshotFailureWhenNotFoundSnapshotTestFixture
+        let fixture = fixtureProvider.getFixture()
 
-        let (givenStubData, notExistID) = stub.getStubData() as! StubType.GivenStubDataType
+        let (givenFixtureData, notExistID) = fixture.getFixtureData() as! FixtureType.GivenFixtureDataType
 
         sut = ComponentSnapshotViewModel(
-            snapshotRestorableComponent: givenStubData,
+            snapshotRestorableComponent: givenFixtureData,
             componentSnapshotCoreDataRepository: componentSnapshotCoreDataRepository,
             initialViewedSnapshotID: notExistID)
 

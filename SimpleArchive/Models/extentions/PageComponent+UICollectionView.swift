@@ -58,7 +58,6 @@ extension TableComponent {
             ) as! TableComponentView
 
         cell.configure(component: self, input: subject)
-
         return cell
     }
 
@@ -98,7 +97,7 @@ extension AudioComponent {
                 withReuseIdentifier: AudioComponentView.reuseAudioComponentIdentifier,
                 for: indexPath
             ) as! AudioComponentView
-
+        
         cell.configure(component: self, input: subject)
 
         return cell
