@@ -1,7 +1,7 @@
 import Combine
 import Foundation
 
-final class TextEditorComponent: NSObject, Codable, PageComponent, SnapshotRestorable {
+final class TextEditorComponent: NSObject, Codable, SnapshotRestorablePageComponent {
 
     var id: UUID
     var renderingOrder: Int
@@ -9,10 +9,8 @@ final class TextEditorComponent: NSObject, Codable, PageComponent, SnapshotResto
     var type: ComponentType { .text }
     var creationDate: Date
     var title: String
-    var detail: String {
-        didSet { persistenceState = .unsaved(isMustToStoreSnapshot: !detail.isEmpty) }
-    }
-    var persistenceState: PersistentState
+    var detail: String
+    var captureState: CaptureState
     var componentDetail: String { detail }
 
     var snapshots: [TextEditorComponentSnapshot] = []
@@ -24,7 +22,7 @@ final class TextEditorComponent: NSObject, Codable, PageComponent, SnapshotResto
         creationDate: Date = Date(),
         title: String = "Memo",
         detail: DetailType = "",
-        persistenceState: PersistentState = .synced,
+        captureState: CaptureState = .captured,
         componentSnapshots: [TextEditorComponentSnapshot] = []
     ) {
         self.id = id
@@ -33,15 +31,11 @@ final class TextEditorComponent: NSObject, Codable, PageComponent, SnapshotResto
         self.creationDate = creationDate
         self.title = title
         self.detail = detail
-        self.persistenceState = persistenceState
+        self.captureState = captureState
         self.snapshots = componentSnapshots
     }
 
     deinit { print("deinit TextEditorComponentModel : \(title)") }
-
-    func assignDetail(subject: PassthroughSubject<String, Never>) -> AnyCancellable {
-        subject.assign(to: \.detail, on: self)
-    }
 
     @discardableResult
     func makeSnapshot(desc: String, saveMode: SnapshotSaveMode) -> TextEditorComponentSnapshot {
@@ -53,7 +47,6 @@ final class TextEditorComponent: NSObject, Codable, PageComponent, SnapshotResto
     func revertToSnapshot(snapshotID: UUID) throws(ComponentSnapshotViewModelError) {
         if let idx = snapshots.firstIndex(where: { $0.snapshotID == snapshotID }) {
             snapshots[idx].revert(component: self)
-            persistenceState = .unsaved(isMustToStoreSnapshot: false)
         } else {
             throw .canNotFoundSnapshot(snapshotID)
         }

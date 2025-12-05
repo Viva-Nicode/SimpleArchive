@@ -90,7 +90,6 @@ class CoreDataStack: PersistentStore {
         return
             onStoreIsReady
             .flatMap { update }
-            .receive(on: DispatchQueue.main)
             .eraseToAnyPublisher()
     }
 

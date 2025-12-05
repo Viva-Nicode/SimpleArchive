@@ -33,5 +33,4 @@ final class FullScreenAudioComponentViewController: ComponentFullScreenView<Audi
             }
             .store(in: &subscriptions)
     }
-
 }

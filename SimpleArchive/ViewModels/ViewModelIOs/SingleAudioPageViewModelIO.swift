@@ -3,7 +3,6 @@ import UIKit
 
 enum SingleAudioPageInput {
     case viewDidLoad
-    case viewWillDisappear
 
     case willDownloadMusicWithCode(String)
     case willImportAudioFilesFromFileSystem([URL])

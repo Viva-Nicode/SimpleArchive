@@ -10,13 +10,13 @@ import UIKit
     private var errorOutput = PassthroughSubject<ComponentSnapshotViewModelError, Never>()
     private var subscriptions = Set<AnyCancellable>()
 
-    private var snapshotRestorableComponent: any SnapshotRestorable
+    private var snapshotRestorableComponent: any SnapshotRestorablePageComponent
     private var currentViewedSnapshotID: UUID?
     private var componentSnapshotCoreDataRepository: ComponentSnapshotCoreDataRepositoryType
 
     init(
         componentSnapshotCoreDataRepository: ComponentSnapshotCoreDataRepositoryType,
-        snapshotRestorableComponent: any SnapshotRestorable
+        snapshotRestorableComponent: any SnapshotRestorablePageComponent
     ) {
         self.componentSnapshotCoreDataRepository = componentSnapshotCoreDataRepository
         self.snapshotRestorableComponent = snapshotRestorableComponent
@@ -55,6 +55,8 @@ import UIKit
         do {
             if let currentViewedSnapshotID {
                 try snapshotRestorableComponent.revertToSnapshot(snapshotID: currentViewedSnapshotID)
+                componentSnapshotCoreDataRepository
+                    .saveComponentsDetail(modifiedComponent: snapshotRestorableComponent)
                 output.send(.didCompleteRestoreSnapshot)
             } else {
                 errorOutput.send(.unownedError)
@@ -74,7 +76,7 @@ import UIKit
         }
 
         defer {
-            let componentID = (snapshotRestorableComponent as! any PageComponent).id
+            let componentID = snapshotRestorableComponent.id
             componentSnapshotCoreDataRepository
                 .removeSnapshot(componentID: componentID, snapshotID: tappedSnapshotID)
         }
@@ -175,7 +177,7 @@ extension ComponentSnapshotViewModel: UICollectionViewDelegate {
 #if DEBUG
     extension ComponentSnapshotViewModel {
         convenience init(
-            snapshotRestorableComponent: any SnapshotRestorable,
+            snapshotRestorableComponent: any SnapshotRestorablePageComponent,
             componentSnapshotCoreDataRepository: ComponentSnapshotCoreDataRepositoryType,
             initialViewedSnapshotID: UUID?
         ) {

@@ -3,7 +3,7 @@ import Combine
 import SFBAudioEngine
 import UIKit
 
-@MainActor class MemoPageViewModel: NSObject, ViewModelType {
+@MainActor final class MemoPageViewModel: NSObject, ViewModelType {
 
     typealias Input = MemoPageViewInput
     typealias Output = MemoPageViewOutput
@@ -20,6 +20,8 @@ import UIKit
     private var audioFileManager: AudioFileManagerType
     private(set) var nowPlayingAudioComponentID: UUID?
     private(set) var audioCompoenntDataSources: [UUID: AudioComponentDataSource] = [:]
+
+    private let captureDispatchSemaphore = DispatchSemaphore(value: 1)
 
     init(
         componentFactory: any ComponentFactoryType,
@@ -40,8 +42,14 @@ import UIKit
 
         NotificationCenter.default.addObserver(
             self,
-            selector: #selector(saveComponentsChanges),
-            name: UIApplication.didEnterBackgroundNotification,
+            selector: #selector(captureComponentsChanges),
+            name: UIScene.didEnterBackgroundNotification,
+            object: nil)
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(captureComponentsChanges),
+            name: UIScene.didDisconnectNotification,
             object: nil)
 
         NotificationCenter.default.addObserver(
@@ -88,7 +96,12 @@ import UIKit
                     moveToComponentSnapshotView(componentID: componentID)
 
                 case .viewWillDisappear:
-                    saveComponentsChanges(isDisappearView: true)
+                    captureComponentsChangesOnDisappear()
+
+                // MARK: - Text
+
+                case .willEditTextComponent(let componentID, let detail):
+                    saveTextEditorComponentChanged(componentID: componentID, detail: detail)
 
                 // MARK: - Table
 
@@ -145,7 +158,6 @@ import UIKit
 
                 case .willImportAudioFileFromFileSystem(let componentID, let tempURLs):
                     importAudioFromLocalFileSystem(componentID: componentID, didPickDocumentsAt: tempURLs)
-
             }
         }
         .store(in: &subscriptions)
@@ -223,11 +235,11 @@ import UIKit
 
     private func captureComponent(componentID: UUID, description: String) {
         performWithComponentAt(componentID) { index, component in
-            if let snapshotRestorableComponent = component as? any SnapshotRestorable {
+            if let snapshotRestorableComponent = component as? any SnapshotRestorablePageComponent {
                 memoComponentCoredataReposotory.captureSnapshot(
                     snapshotRestorableComponent: snapshotRestorableComponent,
-                    desc: description
-                )
+                    saveMode: .manual,
+                    snapShotDescription: description)
                 output.send(.didCompleteComponentCapture(index))
             }
         }
@@ -237,14 +249,64 @@ import UIKit
         guard
             let repository = DIContainer.shared.resolve(ComponentSnapshotCoreDataRepository.self),
             let component = memoPage[componentID],
-            let textEditorComponent = component.item as? any SnapshotRestorable
+            let snapshotRestorableComponent = component.item as? any SnapshotRestorablePageComponent
         else { return }
 
         let componentSnapshotViewModel = ComponentSnapshotViewModel(
             componentSnapshotCoreDataRepository: repository,
-            snapshotRestorableComponent: textEditorComponent)
+            snapshotRestorableComponent: snapshotRestorableComponent)
 
         output.send(.didNavigateSnapshotView(componentSnapshotViewModel, component.index))
+    }
+
+    private func captureComponentsChangesOnDisappear() {
+        let components = memoPage.getComponents
+            .compactMap { $0 as? any SnapshotRestorablePageComponent }
+            .compactMap { $0.currentIfUnsaved() }
+
+        if components.isEmpty {
+            print("no components to capture")
+        } else {
+            memoComponentCoredataReposotory.captureSnapshot(snapshotRestorableComponents: components)
+        }
+    }
+
+    @objc private func captureComponentsChanges() {
+
+        var taskID: UIBackgroundTaskIdentifier = .invalid
+
+        taskID = UIApplication.shared.beginBackgroundTask {
+            UIApplication.shared.endBackgroundTask(taskID)
+            taskID = .invalid
+        }
+
+        captureDispatchSemaphore.wait()
+
+        let start = CACurrentMediaTime()
+
+        let components = memoPage.getComponents
+            .compactMap { $0 as? any SnapshotRestorablePageComponent }
+            .compactMap { $0.currentIfUnsaved() }
+
+        if components.isEmpty {
+            print("no components to capture")
+            UIApplication.shared.endBackgroundTask(taskID)
+            captureDispatchSemaphore.signal()
+        } else {
+            memoComponentCoredataReposotory.captureSnapshot(snapshotRestorableComponents: components)
+                .sinkToResult { result in
+                    print(CACurrentMediaTime() - start)
+                    switch result {
+                        case .success:
+                            print("capture successfully")
+                        case .failure(let failure):
+                            print("capture fail reason : \(failure.localizedDescription)")
+                    }
+                    UIApplication.shared.endBackgroundTask(taskID)
+                    self.captureDispatchSemaphore.signal()
+                }
+                .store(in: &subscriptions)
+        }
     }
 
     private func performWithComponentAt<ComponentType: PageComponent>(_ id: UUID, task: (Int, ComponentType) -> Void) {
@@ -260,29 +322,24 @@ import UIKit
             task(pageComponent.index, pageComponent.item)
         }
     }
+}
 
-    @objc private func saveComponentsChanges(isDisappearView: Bool = false) {
-        let components = memoPage.getComponents.compactMap { $0.currentIfUnsaved() }
-
-        components.forEach { component in
-            if let audioComponent = component as? AudioComponent {
-                let tracks = audioComponent.detail.tracks
-                for track in tracks {
-                    audioFileManager.writeAudioMetadata(audioTrack: track)
-                }
-            }
+extension MemoPageViewModel {
+    func saveTextEditorComponentChanged(componentID: UUID, detail: String) {
+        performWithComponentAt(componentID) { (componentIndex, textEditorComponent: TextEditorComponent) in
+            textEditorComponent.detail = detail
+            textEditorComponent.setCaptureState(to: .needsCapture)
+            memoComponentCoredataReposotory.saveComponentsDetail(modifiedComponent: textEditorComponent)
         }
-
-        memoComponentCoredataReposotory.saveComponentsDetail(changedComponents: components)
     }
 }
 
 extension MemoPageViewModel {
-
     private func appendTableComponentRow(_ componentID: UUID) {
         performWithComponentAt(componentID) { (componentIndex, tableComponent: TableComponent) in
             let newRow = tableComponent.componentDetail.appendNewRow()
-            tableComponent.persistenceState = .unsaved(isMustToStoreSnapshot: true)
+            tableComponent.setCaptureState(to: .needsCapture)
+            memoComponentCoredataReposotory.saveComponentsDetail(modifiedComponent: tableComponent)
             output.send(.didAppendRowToTableView(componentIndex, newRow))
         }
     }
@@ -290,7 +347,8 @@ extension MemoPageViewModel {
     private func removeTableComponentRow(_ componentID: UUID, _ rowID: UUID) {
         performWithComponentAt(componentID) { (componentIndex, tableComponent: TableComponent) in
             let removedRowIndex = tableComponent.componentDetail.removeRow(rowID)
-            tableComponent.persistenceState = .unsaved(isMustToStoreSnapshot: true)
+            tableComponent.setCaptureState(to: .needsCapture)
+            memoComponentCoredataReposotory.saveComponentsDetail(modifiedComponent: tableComponent)
             output.send(.didRemoveRowToTableView(componentIndex, removedRowIndex))
         }
     }
@@ -298,7 +356,8 @@ extension MemoPageViewModel {
     private func appendTableComponentColumn(_ componentID: UUID) {
         performWithComponentAt(componentID) { (componentIndex, tableComponent: TableComponent) in
             let newColumn = tableComponent.componentDetail.appendNewColumn(columnTitle: "column")
-            tableComponent.persistenceState = .unsaved(isMustToStoreSnapshot: true)
+            tableComponent.setCaptureState(to: .needsCapture)
+            memoComponentCoredataReposotory.saveComponentsDetail(modifiedComponent: tableComponent)
             output.send(.didAppendColumnToTableView(componentIndex, newColumn))
         }
     }
@@ -306,7 +365,8 @@ extension MemoPageViewModel {
     private func applyTableCellValue(_ componentID: UUID, _ cellID: UUID, _ newCellValue: String) {
         performWithComponentAt(componentID) { (componentIndex, tableComponent: TableComponent) in
             let indices = tableComponent.componentDetail.editCellValeu(cellID, newCellValue)
-            tableComponent.persistenceState = .unsaved(isMustToStoreSnapshot: true)
+            tableComponent.setCaptureState(to: .needsCapture)
+            memoComponentCoredataReposotory.saveComponentsDetail(modifiedComponent: tableComponent)
             output.send(.didApplyTableCellValueChanges(componentIndex, indices.0, indices.1, newCellValue))
         }
     }
@@ -323,7 +383,8 @@ extension MemoPageViewModel {
     private func applyTableColumnChanges(componentID: UUID, columns: [TableComponentColumn]) {
         performWithComponentAt(componentID) { (componentIndex, tableComponent: TableComponent) in
             tableComponent.componentDetail.setColumn(columns)
-            tableComponent.persistenceState = .unsaved(isMustToStoreSnapshot: true)
+            tableComponent.setCaptureState(to: .needsCapture)
+            memoComponentCoredataReposotory.saveComponentsDetail(modifiedComponent: tableComponent)
             output.send(.didApplyTableColumnChanges(componentIndex, columns))
         }
     }
@@ -332,9 +393,11 @@ extension MemoPageViewModel {
 extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
 
     private func downloadAudio(componentID: UUID, with code: String) {
+        guard let audioComponentDataSource = audioCompoenntDataSources[componentID] else { return }
+
         performWithComponentAt(componentID) { (componentIndex, component: AudioComponent) in
-            let audioComponentDataSource = audioCompoenntDataSources[componentID]
-            let currentPlayingAudioTrackID = component.detail[audioComponentDataSource?.nowPlayingAudioIndex]?.id
+            let currentPlayingAudioTrackID = audioComponentDataSource.nowPlayingAudioIndex
+                .flatMap { component.detail.tracks[$0].id }
 
             audioDownloader.handleDownloadedProgressPercent = { [weak self] progress in
                 self?.output.send(.didUpdateAudioDownloadProgress(componentIndex, progress))
@@ -379,9 +442,11 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
                         case .success(let audioTracks):
                             let appendedIndices = component.addAudios(audiotracks: audioTracks)
 
-                            audioComponentDataSource?.tracks = component.detail.tracks
-                            audioComponentDataSource?.nowPlayingAudioIndex = component.detail.tracks
+                            audioComponentDataSource.tracks = component.detail.tracks
+                            audioComponentDataSource.nowPlayingAudioIndex = component.detail.tracks
                                 .firstIndex { $0.id == currentPlayingAudioTrackID }
+
+                            memoComponentCoredataReposotory.saveComponentsDetail(modifiedComponent: component)
 
                             output.send(.didAppendAudioTrackRows(componentIndex, appendedIndices))
 
@@ -405,6 +470,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
 
     private func importAudioFromLocalFileSystem(componentID: UUID, didPickDocumentsAt urls: [URL]) {
 
+        guard let audioComponentDataSource = audioCompoenntDataSources[componentID] else { return }
         var audioTracks: [AudioTrack] = []
 
         for audioFileUrl in urls {
@@ -435,16 +501,16 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
         }
 
         performWithComponentAt(componentID) { (componentIndex, component: AudioComponent) in
-            let audioComponentDataSource = audioCompoenntDataSources[componentID]
 
-            let currentPlayingAudioTrackID = component.detail[audioComponentDataSource?.nowPlayingAudioIndex]?.id
+            let currentPlayingAudioTrackID = audioComponentDataSource.nowPlayingAudioIndex
+                .flatMap { component.detail.tracks[$0].id }
             let appendedIndices = component.addAudios(audiotracks: audioTracks)
 
-            audioComponentDataSource?.tracks = component.detail.tracks
-            audioComponentDataSource?.nowPlayingAudioIndex = component.detail.tracks
-                .firstIndex {
-                    $0.id == currentPlayingAudioTrackID
-                }
+            audioComponentDataSource.tracks = component.detail.tracks
+            audioComponentDataSource.nowPlayingAudioIndex = component.detail.tracks
+                .firstIndex { $0.id == currentPlayingAudioTrackID }
+
+            memoComponentCoredataReposotory.saveComponentsDetail(modifiedComponent: component)
 
             output.send(.didAppendAudioTrackRows(componentIndex, appendedIndices))
         }
@@ -549,11 +615,14 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
     }
 
     private func applyAudioMetadataChanges(componentID: UUID, newMetadata: AudioTrackMetadata, trackIndex: Int) {
+        guard let audioComponentDataSource = audioCompoenntDataSources[componentID] else { return }
+
         performWithComponentAt(componentID) { (componentIndex, component: AudioComponent) in
-            let targetAudioTrackID = component.detail[trackIndex]?.id
-            let audioComponentDataSource = audioCompoenntDataSources[componentID]
-            let currentPlayingAudioTrackID = component.detail[audioComponentDataSource?.nowPlayingAudioIndex]?.id
-            let isEditCurrentlyPlayingAudio = audioComponentDataSource?.nowPlayingAudioIndex == trackIndex
+            let trackID = component.detail.tracks[trackIndex].id
+            let nowPlayingAudioIndex = audioComponentDataSource.nowPlayingAudioIndex
+            let currentPlayingAudioTrackID = nowPlayingAudioIndex.flatMap { component.detail.tracks[$0].id }
+
+            let isEditCurrentlyPlayingAudio = nowPlayingAudioIndex == trackIndex
             var trackIndexAfterApply: Int?
 
             if let newTitle = newMetadata.title {
@@ -566,20 +635,23 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
                 component.detail.tracks[trackIndex].thumbnail = newThumbnail
             }
 
-            component.persistenceState = .unsaved(isMustToStoreSnapshot: false)
+            memoComponentCoredataReposotory.saveComponentsDetail(modifiedComponent: component)
+            audioFileManager.writeAudioMetadata(audioTrack: component.detail.tracks[trackIndex])
 
             if component.detail.sortBy == .name {
                 component.detail.tracks.sort(by: { $0.title < $1.title })
-                trackIndexAfterApply = component.detail.tracks.firstIndex(where: { $0.id == targetAudioTrackID })
+                trackIndexAfterApply = component.detail.tracks.firstIndex {
+                    $0.id == trackID
+                }
 
                 if let currentPlayingAudioTrackID {
-                    audioComponentDataSource?.nowPlayingAudioIndex = component.detail.tracks.firstIndex {
+                    audioComponentDataSource.nowPlayingAudioIndex = component.detail.tracks.firstIndex {
                         $0.id == currentPlayingAudioTrackID
                     }
                 }
             }
 
-            audioComponentDataSource?.tracks = component.detail.tracks
+            audioComponentDataSource.tracks = component.detail.tracks
 
             output.send(
                 .didApplyAudioMetadataChanges(
@@ -615,29 +687,32 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
 
     private func moveAudioTrackOrder(componentID: UUID, src: Int, des: Int) {
         performWithComponentAt(componentID) { (_, audioComponent: AudioComponent) in
-            let datasource = audioCompoenntDataSources[componentID]
-            let currentPlayingAudioTrackID = audioComponent.detail[datasource?.nowPlayingAudioIndex]?.id
+            guard let datasource = audioCompoenntDataSources[componentID] else { return }
+            let currentPlayingAudioTrackID = datasource.nowPlayingAudioIndex
+                .flatMap { audioComponent.detail.tracks[$0].id }
 
             audioComponent.detail.tracks.moveElement(src: src, des: des)
             audioComponent.detail.sortBy = .manual
 
-            datasource?.tracks = audioComponent.detail.tracks
-            datasource?.sortBy = .manual
+            datasource.tracks = audioComponent.detail.tracks
+            datasource.sortBy = .manual
 
-            audioComponent.persistenceState = .unsaved(isMustToStoreSnapshot: false)
-            datasource?.nowPlayingAudioIndex = audioComponent.detail.tracks.firstIndex {
+            memoComponentCoredataReposotory.saveComponentsDetail(modifiedComponent: audioComponent)
+            
+            datasource.nowPlayingAudioIndex = audioComponent.detail.tracks.firstIndex {
                 $0.id == currentPlayingAudioTrackID
             }
         }
     }
 
     private func sortAudioTracks(componentID: UUID, sortBy: AudioTrackSortBy) {
+        guard let audioComponentDataSource = audioCompoenntDataSources[componentID] else { return }
+
         performWithComponentAt(componentID) { (componentIndex, audioComponent: AudioComponent) in
             audioComponent.detail.sortBy = sortBy
-            audioComponent.persistenceState = .unsaved(isMustToStoreSnapshot: false)
-            let datasource = audioCompoenntDataSources[componentID]
 
-            let currentPlayingAudioTrackID = audioComponent.detail[datasource?.nowPlayingAudioIndex]?.id
+            let currentPlayingAudioTrackID = audioComponentDataSource.nowPlayingAudioIndex
+                .flatMap { audioComponent.detail.tracks[$0].id }
 
             let before = audioComponent.trackNames
 
@@ -651,32 +726,36 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
                 case .manual:
                     break
             }
-            datasource?.nowPlayingAudioIndex = audioComponent.detail.tracks.firstIndex {
+            audioComponentDataSource.nowPlayingAudioIndex = audioComponent.detail.tracks.firstIndex {
                 $0.id == currentPlayingAudioTrackID
             }
 
             let after = audioComponent.trackNames
 
-            datasource?.tracks = audioComponent.detail.tracks
-            datasource?.sortBy = sortBy
+            audioComponentDataSource.tracks = audioComponent.detail.tracks
+            audioComponentDataSource.sortBy = sortBy
+
+            memoComponentCoredataReposotory.saveComponentsDetail(modifiedComponent: audioComponent)
 
             output.send(.didSortAudioTracks(componentIndex, before, after))
         }
     }
 
     private func removeAudioTrack(componentID: UUID, trackIndex: Int) {
+        guard let audioComponentDataSource = audioCompoenntDataSources[componentID] else { return }
+
         performWithComponentAt(componentID) { (componentIndex, component: AudioComponent) in
 
-            component.persistenceState = .unsaved(isMustToStoreSnapshot: false)
+            let currentPlayingAudioTrackID = audioComponentDataSource.nowPlayingAudioIndex
+                .flatMap { component.detail.tracks[$0].id }
 
-            let datasource = audioCompoenntDataSources[componentID]
-            let currentPlayingAudioTrackID = component.detail[datasource?.nowPlayingAudioIndex]?.id
             let removedAudioTrack = component.detail.tracks.remove(at: trackIndex)
 
             audioFileManager.removeAudio(with: removedAudioTrack)
-            datasource?.tracks = component.detail.tracks
+            audioComponentDataSource.tracks = component.detail.tracks
+            memoComponentCoredataReposotory.saveComponentsDetail(modifiedComponent: component)
 
-            if datasource?.nowPlayingAudioIndex != nil {
+            if audioComponentDataSource.nowPlayingAudioIndex != nil {
                 if component.detail.tracks.isEmpty {
                     audioTrackController.reset()
                     nowPlayingAudioComponentID = nil
@@ -685,7 +764,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
                     return
                 }
 
-                if datasource?.nowPlayingAudioIndex == trackIndex {
+                if audioComponentDataSource.nowPlayingAudioIndex == trackIndex {
                     if audioTrackController.isPlaying == true {
                         let nextPlayingAudioTrackIndex = min(trackIndex, component.detail.tracks.count - 1)
                         let audioTrackURL = audioFileManager.createAudioFileURL(
@@ -696,10 +775,10 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
                         audioTrackController.player?.delegate = self
                         audioTrackController.play()
 
-                        datasource?.nowPlayingAudioIndex = nextPlayingAudioTrackIndex
-                        datasource?.nowPlayingURL = audioTrackURL
-                        datasource?.audioSampleData = audioSampleData
-                        datasource?.getProgress = { [weak self] in
+                        audioComponentDataSource.nowPlayingAudioIndex = nextPlayingAudioTrackIndex
+                        audioComponentDataSource.nowPlayingURL = audioTrackURL
+                        audioComponentDataSource.audioSampleData = audioSampleData
+                        audioComponentDataSource.getProgress = { [weak self] in
                             guard let self else { return .zero }
                             return audioTrackController.currentTime! / audioTrackController.totalTime!
                         }
@@ -724,7 +803,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
                         output.send(.didRemoveAudioTrackAndStopPlaying(componentIndex, trackIndex))
                     }
                 } else {
-                    datasource?.nowPlayingAudioIndex = component.detail.tracks.firstIndex {
+                    audioComponentDataSource.nowPlayingAudioIndex = component.detail.tracks.firstIndex {
                         $0.id == currentPlayingAudioTrackID
                     }
                     output.send(.didRemoveAudioTrack(componentIndex, trackIndex))

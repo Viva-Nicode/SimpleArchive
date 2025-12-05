@@ -139,42 +139,35 @@ where ContentViewType: UIView {
     }
 
     func setupConstraints() {
-        containerStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
-        containerStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
-        containerStackView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor).isActive = true
-        containerStackView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor).isActive = true
+        NSLayoutConstraint.activate([
+            containerStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            containerStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            containerStackView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            containerStackView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
 
-        toolBarView.heightAnchor.constraint(equalToConstant: 35).isActive = true
-        toolBarView.leadingAnchor.constraint(equalTo: containerStackView.leadingAnchor).isActive = true
-        toolBarView.trailingAnchor.constraint(equalTo: containerStackView.trailingAnchor).isActive = true
+            toolBarView.heightAnchor.constraint(equalToConstant: 35),
+            toolBarView.leadingAnchor.constraint(equalTo: containerStackView.leadingAnchor),
+            toolBarView.trailingAnchor.constraint(equalTo: containerStackView.trailingAnchor),
 
-        circleStackView.centerYAnchor.constraint(equalTo: toolBarView.centerYAnchor).isActive = true
-        circleStackView.leadingAnchor.constraint(equalTo: toolBarView.leadingAnchor, constant: 10).isActive = true
+            circleStackView.centerYAnchor.constraint(equalTo: toolBarView.centerYAnchor),
+            circleStackView.leadingAnchor.constraint(equalTo: toolBarView.leadingAnchor, constant: 10),
 
-        titleStackView.centerXAnchor.constraint(equalTo: toolBarView.centerXAnchor).isActive = true
-        titleStackView.centerYAnchor.constraint(equalTo: toolBarView.centerYAnchor).isActive = true
+            titleStackView.centerXAnchor.constraint(equalTo: toolBarView.centerXAnchor),
+            titleStackView.centerYAnchor.constraint(equalTo: toolBarView.centerYAnchor),
 
-        titleLabel.widthAnchor.constraint(lessThanOrEqualToConstant: 150).isActive = true
+            titleLabel.widthAnchor.constraint(lessThanOrEqualToConstant: 150),
 
-        componentInformationView.heightAnchor.constraint(equalToConstant: 30).isActive = true
+            componentInformationView.heightAnchor.constraint(equalToConstant: 30),
 
-        componentContentViewContainer.topAnchor.constraint(equalTo: componentInformationView.bottomAnchor).isActive =
-            true
+            componentContentViewContainer.topAnchor.constraint(equalTo: componentInformationView.bottomAnchor),
 
-        componentContentView
-            .leadingAnchor
-            .constraint(equalTo: componentContentViewContainer.leadingAnchor, constant: 20)
-            .isActive = true
-        componentContentView
-            .trailingAnchor
-            .constraint(equalTo: componentContentViewContainer.trailingAnchor, constant: -20)
-            .isActive = true
-        componentContentView
-            .topAnchor
-            .constraint(equalTo: componentContentViewContainer.topAnchor).isActive = true
-        componentContentView
-            .bottomAnchor
-            .constraint(equalTo: componentContentViewContainer.bottomAnchor)
-            .isActive = true
+            componentContentView.leadingAnchor.constraint(
+                equalTo: componentContentViewContainer.leadingAnchor, constant: 20),
+
+            componentContentView.trailingAnchor.constraint(
+                equalTo: componentContentViewContainer.trailingAnchor, constant: -20),
+            componentContentView.topAnchor.constraint(equalTo: componentContentViewContainer.topAnchor),
+            componentContentView.bottomAnchor.constraint(equalTo: componentContentViewContainer.bottomAnchor),
+        ])
     }
 }

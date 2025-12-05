@@ -24,7 +24,7 @@ final class AudioProgressBar: UIControl {
     private var lastUpdateTime: CFTimeInterval = 0
     private(set) var isPlaying: Bool = false
 
-    let touchPadding: CGFloat = 17.0
+    let touchPadding: CGFloat = 13.0
     var minimumValue: TimeInterval = 0.0
     var maximumValue: TimeInterval = 1.0 {
         didSet { updateProgressLayout() }

@@ -4,13 +4,11 @@ import UIKit
 final class SingleTextEditorPageViewController: UIViewController, ViewControllerType, UITextViewDelegate,
     UIScrollViewDelegate, NavigationViewControllerDismissible, CaptureableComponentView
 {
-
     typealias Input = SingleTextEditorPageInput
     typealias ViewModelType = SingleTextEditorPageViewModel
 
     var input = PassthroughSubject<SingleTextEditorPageInput, Never>()
     var viewModel: SingleTextEditorPageViewModel
-    var detailSubject = PassthroughSubject<String, Never>()
     var subscriptions = Set<AnyCancellable>()
 
     var snapshotCapturePopupView: SnapshotCapturePopupView?
@@ -68,7 +66,7 @@ final class SingleTextEditorPageViewController: UIViewController, ViewController
 
     override func viewDidLoad() {
         bind()
-        input.send(.viewDidLoad(detailSubject))
+        input.send(.viewDidLoad)
     }
 
     init(viewModel: SingleTextEditorPageViewModel) {
@@ -204,7 +202,7 @@ final class SingleTextEditorPageViewController: UIViewController, ViewController
     }
 
     func textViewDidChange(_ textView: UITextView) {
-        detailSubject.send(textView.text!)
+        input.send(.willEditTextComponent(textView.text))
     }
 
     @objc private func keyboardWillChangeFrame(_ notification: Notification) {

@@ -7,7 +7,7 @@ class ComponentSnapshotViewController: UIViewController, ViewControllerType {
     var viewModel: ComponentSnapshotViewModel
     var subscriptions = Set<AnyCancellable>()
     private var hasRestore: Bool = false
-    private var restoreSubject = PassthroughSubject<Void, Never>()
+    private var restoreSubject = PassthroughSubject<Bool, Never>()
 
     private let backgroundView: UIStackView = {
         let backgroundView = UIStackView()
@@ -200,13 +200,12 @@ class ComponentSnapshotViewController: UIViewController, ViewControllerType {
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
-        restoreSubject.send(())
+        restoreSubject.send(hasRestore)
         subscriptions.removeAll()
     }
 
     var hasRestorePublisher: AnyPublisher<Bool, Never> {
         restoreSubject
-            .map { [weak self] in self?.hasRestore ?? false }
             .filter { $0 }
             .eraseToAnyPublisher()
     }

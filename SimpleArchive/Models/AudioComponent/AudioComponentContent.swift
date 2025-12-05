@@ -62,14 +62,6 @@ struct AudioComponentContent: Codable {
             return nil
         }
     }
-
-    subscript(idx: Int?) -> AudioTrack? {
-        guard let idx, (0..<tracks.count).contains(idx) else {
-            return nil
-        }
-        let target = tracks[idx]
-        return target
-    }
 }
 
 enum AudioTrackSortBy: String, Codable {

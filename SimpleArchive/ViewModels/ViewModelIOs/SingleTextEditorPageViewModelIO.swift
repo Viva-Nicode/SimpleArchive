@@ -2,12 +2,14 @@ import Combine
 import Foundation
 
 enum SingleTextEditorPageInput {
-    case viewDidLoad(PassthroughSubject<String, Never>)
+    case viewDidLoad
     case viewWillDisappear
     
     case willNavigateSnapshotView
     case willRestoreComponent
     case willCaptureComponent(String)
+    
+    case willEditTextComponent(String)
 }
 
 enum SingleTextEditorPageOutput {

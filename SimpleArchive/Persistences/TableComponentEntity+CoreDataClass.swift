@@ -11,7 +11,7 @@ public class TableComponentEntity: MemoComponentEntity {
             creationDate: self.creationDate,
             title: self.title,
             detail: TableComponentContent(jsonString: self.detail)!,
-            persistenceState: .synced,
+            captureState: .captured,
             componentSnapshots: self.snapshots
                 .map { $0.convertToModel() }
                 .sorted(by: { $0.makingDate > $1.makingDate }))

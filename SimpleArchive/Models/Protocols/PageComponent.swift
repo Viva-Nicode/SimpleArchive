@@ -14,11 +14,7 @@ protocol PageComponent: AnyObject, Identifiable, Codable {
     var detail: DetailType { get set }
     var renderingOrder: Int { get set }
     var isMinimumHeight: Bool { get set }
-    var persistenceState: PersistentState { get set }
     var componentDetail: DetailType { get }
-
-    func updatePersistenceState(to state: PersistentState)
-    func currentIfUnsaved() -> Self?
 
     @discardableResult
     func store<ComponentEntityType>(in ctx: NSManagedObjectContext, parentPage: MemoPageEntity)
@@ -29,23 +25,6 @@ protocol PageComponent: AnyObject, Identifiable, Codable {
         _ indexPath: IndexPath,
         subject: PassthroughSubject<MemoPageViewInput, Never>
     ) -> UICollectionViewCell
-}
-
-extension PageComponent {
-
-    func updatePersistenceState(to state: PersistentState) {
-        self.persistenceState = state
-    }
-
-    func currentIfUnsaved() -> Self? {
-        switch self.persistenceState {
-            case .unsaved:
-                return self
-
-            case .synced:
-                return nil
-        }
-    }
 }
 
 enum ComponentType: String, Codable, CaseIterable {
@@ -91,9 +70,4 @@ enum ComponentType: String, Codable, CaseIterable {
                 "music.note.list"
         }
     }
-}
-
-enum PersistentState: Codable, Equatable {
-    case unsaved(isMustToStoreSnapshot: Bool)
-    case synced
 }

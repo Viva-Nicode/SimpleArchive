@@ -60,6 +60,7 @@ final class SingleAudioPageViewController: UIViewController, ViewControllerType 
     }
 
     deinit {
+        subscriptions.removeAll()
         print("deinit SingleAudioPageViewController")
     }
 
@@ -344,12 +345,5 @@ final class SingleAudioPageViewController: UIViewController, ViewControllerType 
         {
             task(audioTableRow)
         }
-    }
-}
-
-extension SingleAudioPageViewController: NavigationViewControllerDismissible {
-    func onDismiss() {
-        input.send(.viewWillDisappear)
-        subscriptions.removeAll()
     }
 }

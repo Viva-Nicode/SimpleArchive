@@ -52,38 +52,49 @@ struct MemoComponentCoreDataRepository: MemoComponentCoreDataRepositoryType {
         }
     }
 
-    func saveComponentsDetail(changedComponents: [any PageComponent]) -> AnyPublisher<Void, Error> {
+    func saveComponentsDetail(modifiedComponent: any PageComponent) -> AnyPublisher<Void, any Error> {
         coredataStack.update { ctx in
-            for component in changedComponents {
-                let fetchRequest = MemoComponentEntity.findById(id: component.id)
+            let fetchRequest = MemoComponentEntity.findById(id: modifiedComponent.id)
+            let componentEntity = try ctx.fetch(fetchRequest).first!
+
+            componentEntity.setDetail(detail: modifiedComponent.componentDetail)
+
+            print("\(modifiedComponent.title)가 coredata에 저장됨")
+        }
+    }
+
+    func captureSnapshot(snapshotRestorableComponents: [any SnapshotRestorablePageComponent])
+        -> AnyPublisher<Void, Error>
+    {
+        coredataStack.update { ctx in
+            for snapshotRestorableComponent in snapshotRestorableComponents {
+                let fetchRequest = MemoComponentEntity.findById(id: snapshotRestorableComponent.id)
                 let componentEntity = try ctx.fetch(fetchRequest).first!
 
-                componentEntity.setDetail(detail: component.componentDetail)
+                let snapshot = snapshotRestorableComponent.makeSnapshot(desc: "", saveMode: .automatic)
+                snapshot.store(in: ctx, parentComponentId: snapshotRestorableComponent.id)
 
-                if case .unsaved(true) = component.persistenceState,
-                    let snapshotRestorableComponent = component as? any SnapshotRestorable
-                {
-                    let snapshot = snapshotRestorableComponent.makeSnapshot(desc: "", saveMode: .automatic)
-                    snapshot.store(in: ctx, parentComponentId: component.id)
-                }
-                component.updatePersistenceState(to: .synced)
+                snapshotRestorableComponent.setCaptureState(to: .captured)
+                print("\(componentEntity.title)가 켑쳐됨")
             }
         }
     }
 
-    func captureSnapshot(snapshotRestorableComponent: any SnapshotRestorable, desc: String) -> AnyPublisher<Void, Error>
-    {
+    func captureSnapshot(
+        snapshotRestorableComponent: any SnapshotRestorablePageComponent,
+        saveMode: SnapshotSaveMode,
+        snapShotDescription: String = ""
+    ) -> AnyPublisher<Void, Error> {
         coredataStack.update { ctx in
-            let pageComponent = (snapshotRestorableComponent as! any PageComponent)
-            let fetchRequest = MemoComponentEntity.findById(id: pageComponent.id)
+
+            let fetchRequest = MemoComponentEntity.findById(id: snapshotRestorableComponent.id)
             let componentEntity = try ctx.fetch(fetchRequest).first!
 
-            componentEntity.setDetail(detail: pageComponent.componentDetail)
+            let snapshot = snapshotRestorableComponent.makeSnapshot(desc: snapShotDescription, saveMode: saveMode)
+            snapshot.store(in: ctx, parentComponentId: snapshotRestorableComponent.id)
 
-            let snapshot = snapshotRestorableComponent.makeSnapshot(desc: desc, saveMode: .manual)
-            snapshot.store(in: ctx, parentComponentId: pageComponent.id)
-
-            pageComponent.updatePersistenceState(to: .synced)
+            snapshotRestorableComponent.setCaptureState(to: .captured)
+            print("\(componentEntity.title)가 켑쳐됨")
         }
     }
 }

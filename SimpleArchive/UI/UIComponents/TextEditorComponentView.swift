@@ -7,7 +7,6 @@ final class TextEditorComponentView: PageComponentView<UITextView, TextEditorCom
 
     static let identifierForUseCollectionView: String = "TextEditorComponentView"
     private var snapshotInputActionSubject: PassthroughSubject<ComponentSnapshotViewModelInput, Never>?
-    private var detailAssignSubject = PassthroughSubject<String, Never>()
     var snapshotCapturePopupView: SnapshotCapturePopupView?
 
     private let snapShotView: UIStackView = {
@@ -77,7 +76,7 @@ final class TextEditorComponentView: PageComponentView<UITextView, TextEditorCom
         snapShotView.trailingAnchor.constraint(equalTo: toolBarView.trailingAnchor, constant: -10).isActive = true
     }
 
-    // 페이지 뷰 전용 configure
+    // memoPage 뷰 전용 configure
     override func configure(
         component: TextEditorComponent,
         input subject: PassthroughSubject<MemoPageViewInput, Never>
@@ -85,10 +84,6 @@ final class TextEditorComponentView: PageComponentView<UITextView, TextEditorCom
         super.configure(component: component, input: subject)
 
         componentContentView.text = component.detail
-
-        component
-            .assignDetail(subject: detailAssignSubject)
-            .store(in: &subscriptions)
 
         captureButton.throttleTapPublisher()
             .flatMap { [weak self] _ -> AnyPublisher<String, Never> in
@@ -153,7 +148,7 @@ final class TextEditorComponentView: PageComponentView<UITextView, TextEditorCom
     }
 
     func textViewDidChange(_ textView: UITextView) {
-        detailAssignSubject.send(textView.text)
+        pageInputActionSubject?.send(.willEditTextComponent(componentID, textView.text))
         captureButton.isEnabled = !textView.text.isEmpty
     }
 

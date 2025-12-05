@@ -16,6 +16,9 @@ enum MemoPageViewInput {
     case willNavigateSnapshotView(UUID)
     case willCaptureComponent(UUID, String)
 
+    // MARK: - Text
+    case willEditTextComponent(UUID, String)
+
     // MARK: - Table
     case willAppendRowToTable(UUID)
     case willRemoveRowToTable(UUID, UUID)
@@ -36,7 +39,6 @@ enum MemoPageViewInput {
     case willApplyAudioMetadataChanges(AudioTrackMetadata, UUID, Int)
     case willSortAudioTracks(UUID, AudioTrackSortBy)
     case willMoveAudioTrackOrder(UUID, Int, Int)
-
 }
 
 enum MemoPageViewOutput {

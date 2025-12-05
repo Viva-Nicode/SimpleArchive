@@ -1,6 +1,6 @@
 import Foundation
 
-class TableComponentContent: Codable {
+final class TableComponentContent: Codable {
     enum TableComponentRowSortCriterias: Codable {
         case modify
         case name(columnID: UUID)

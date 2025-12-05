@@ -1,57 +1,6 @@
 import Combine
 import UIKit
 
-final class DoubleSubscription<S: Subscriber>: Subscription where S.Input == Double {
-
-    private var subscriber: S?
-    private let col: () -> Double
-
-    init(subscriber: S, col: @escaping () -> Double) {
-        self.subscriber = subscriber
-        self.col = col
-    }
-
-    func request(_ demand: Subscribers.Demand) {
-        guard demand > 0 else { return }
-        _ = subscriber?.receive(col())
-    }
-
-    func cancel() {
-        subscriber = nil
-    }
-
-    func emit() {
-        _ = subscriber?.receive(col())
-    }
-}
-
-class DoublePublisher: Publisher {
-
-    typealias Output = Double
-    typealias Failure = Never
-
-    private let col: () -> Double
-
-    private var subscription: DoubleSubscription<AnySubscriber<Double, Never>>?
-
-    init(col: @escaping () -> Double) {
-        self.col = col
-    }
-
-    func receive<S>(subscriber: S) where S: Subscriber, S.Input == Double, S.Failure == Never {
-
-        let anySub = AnySubscriber(subscriber)
-        let sub = DoubleSubscription(subscriber: anySub, col: col)
-
-        self.subscription = sub
-        subscriber.receive(subscription: sub)
-    }
-
-    func giveMeValue() {
-        subscription?.emit()
-    }
-}
-
 extension UIControl {
 
     final class GestureSubscription<S: Subscriber, Control: UIControl>: Subscription where S.Input == Control {

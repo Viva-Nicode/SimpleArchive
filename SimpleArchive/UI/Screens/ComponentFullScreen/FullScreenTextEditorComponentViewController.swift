@@ -1,15 +1,10 @@
 import Combine
 import UIKit
 
-final class FullScreenTextEditorComponentViewController: ComponentFullScreenView<UITextView>, UITextViewDelegate {
-
-    private var detailAssignSubject = PassthroughSubject<String, Never>()
+final class FullScreenTextEditorComponentViewController: ComponentFullScreenView<UITextView> {
 
     init(textEditorComponentModel: TextEditorComponent, componentTextView: UITextView) {
         super.init(componentContentView: componentTextView)
-        textEditorComponentModel
-            .assignDetail(subject: detailAssignSubject)
-            .store(in: &subscriptions)
 
         super.setupUI()
         super.setupConstraints()
@@ -17,7 +12,6 @@ final class FullScreenTextEditorComponentViewController: ComponentFullScreenView
         toolBarView.backgroundColor = UIColor(named: "TextEditorComponentToolbarColor")
 
         setupData(title: textEditorComponentModel.title, date: textEditorComponentModel.creationDate)
-        self.componentContentView.delegate = self
     }
 
     required init?(coder: NSCoder) {
@@ -40,9 +34,5 @@ final class FullScreenTextEditorComponentViewController: ComponentFullScreenView
                 dismiss(animated: true)
             }
             .store(in: &subscriptions)
-    }
-
-    func textViewDidChange(_ textView: UITextView) {
-        detailAssignSubject.send(textView.text)
     }
 }

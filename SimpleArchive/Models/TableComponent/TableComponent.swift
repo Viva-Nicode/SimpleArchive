@@ -1,6 +1,6 @@
 import Foundation
 
-final class TableComponent: NSObject, Codable, PageComponent, SnapshotRestorable {
+final class TableComponent: NSObject, Codable, SnapshotRestorablePageComponent {
 
     var id: UUID
     var renderingOrder: Int
@@ -10,7 +10,7 @@ final class TableComponent: NSObject, Codable, PageComponent, SnapshotRestorable
     var title: String
     var detail: TableComponentContent
     var componentDetail: TableComponentContent { detail }
-    var persistenceState: PersistentState
+    var captureState: CaptureState
     var snapshots: [TableComponentSnapshot] = []
 
     init(
@@ -20,7 +20,7 @@ final class TableComponent: NSObject, Codable, PageComponent, SnapshotRestorable
         creationDate: Date = Date(),
         title: String = "TableMemo",
         detail: DetailType = TableComponentContent(),
-        persistenceState: PersistentState = .synced,
+        captureState: CaptureState = .captured,
         componentSnapshots: [TableComponentSnapshot] = []
     ) {
         self.id = id
@@ -29,7 +29,7 @@ final class TableComponent: NSObject, Codable, PageComponent, SnapshotRestorable
         self.creationDate = creationDate
         self.title = title
         self.detail = detail
-        self.persistenceState = persistenceState
+        self.captureState = captureState
         self.snapshots = componentSnapshots
     }
 
@@ -45,15 +45,14 @@ final class TableComponent: NSObject, Codable, PageComponent, SnapshotRestorable
     func revertToSnapshot(snapshotID: UUID) throws(ComponentSnapshotViewModelError) {
         if let idx = snapshots.firstIndex(where: { $0.snapshotID == snapshotID }) {
             snapshots[idx].revert(component: self)
-            persistenceState = .unsaved(isMustToStoreSnapshot: false)
         } else {
             throw .canNotFoundSnapshot(snapshotID)
         }
     }
 
-    func removeSnapshot(snapshotID: UUID) throws(ComponentSnapshotViewModelError) -> (
-        nextViewedSnapshotIndex: Int?, removedSnapshotIndex: Int
-    ) {
+    func removeSnapshot(snapshotID: UUID) throws(ComponentSnapshotViewModelError)
+        -> (nextViewedSnapshotIndex: Int?, removedSnapshotIndex: Int)
+    {
         guard let removedIndex = snapshots.firstIndex(where: { $0.snapshotID == snapshotID }) else {
             throw ComponentSnapshotViewModelError.canNotFoundSnapshot(snapshotID)
         }

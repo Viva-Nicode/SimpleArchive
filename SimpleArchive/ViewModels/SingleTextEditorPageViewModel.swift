@@ -13,6 +13,8 @@ import UIKit
     private var textEditorComponent: TextEditorComponent
     private var pageTitle: String
 
+    private let captureDispatchSemaphore = DispatchSemaphore(value: 1)
+
     init(
         coredataReposotory: MemoSingleComponentRepositoryType,
         textEditorComponent: TextEditorComponent,
@@ -21,11 +23,19 @@ import UIKit
         self.coredataReposotory = coredataReposotory
         self.textEditorComponent = textEditorComponent
         self.pageTitle = pageTitle
+
         super.init()
+
         NotificationCenter.default.addObserver(
             self,
-            selector: #selector(saveComponentsChanges),
-            name: UIApplication.didEnterBackgroundNotification,
+            selector: #selector(captureComponentsChanges),
+            name: UIScene.didEnterBackgroundNotification,
+            object: nil)
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(captureComponentsChanges),
+            name: UIScene.didDisconnectNotification,
             object: nil)
     }
 
@@ -36,18 +46,17 @@ import UIKit
             guard let self else { return }
 
             switch event {
-                case .viewDidLoad(let subject):
-                    textEditorComponent
-                        .assignDetail(subject: subject)
-                        .store(in: &subscriptions)
+                case .viewDidLoad:
                     output.send(
                         .viewDidLoad(
                             pageTitle,
                             textEditorComponent.creationDate,
-                            textEditorComponent.detail))
+                            textEditorComponent.detail
+                        )
+                    )
 
                 case .viewWillDisappear:
-                    saveComponentsChanges()
+                    captureComponentsChangesOnDisappear()
 
                 case .willNavigateSnapshotView:
                     guard let repository = DIContainer.shared.resolve(ComponentSnapshotCoreDataRepository.self)
@@ -55,8 +64,7 @@ import UIKit
 
                     let componentSnapshotViewModel = ComponentSnapshotViewModel(
                         componentSnapshotCoreDataRepository: repository,
-                        snapshotRestorableComponent: textEditorComponent as (any SnapshotRestorable))
-
+                        snapshotRestorableComponent: textEditorComponent)
                     output.send(.didNavigateSnapshotView(componentSnapshotViewModel))
 
                 case .willRestoreComponent:
@@ -65,8 +73,15 @@ import UIKit
                 case .willCaptureComponent(let desc):
                     coredataReposotory.captureSnapshot(
                         snapshotRestorableComponent: textEditorComponent,
-                        desc: desc)
+                        saveMode: .manual,
+                        snapShotDescription: desc)
+
                     output.send(.didCompleteComponentCapture)
+
+                case .willEditTextComponent(let detail):
+                    textEditorComponent.detail = detail
+                    textEditorComponent.setCaptureState(to: .needsCapture)
+                    coredataReposotory.saveComponentsDetail(modifiedComponent: textEditorComponent)
             }
         }
         .store(in: &subscriptions)
@@ -74,9 +89,39 @@ import UIKit
         return output.eraseToAnyPublisher()
     }
 
-    @objc private func saveComponentsChanges() {
+    private func captureComponentsChangesOnDisappear() {
         if let changedTextEditorComponent = textEditorComponent.currentIfUnsaved() {
-            coredataReposotory.saveComponentsDetail(changedComponents: [changedTextEditorComponent])
+            coredataReposotory.captureSnapshot(snapshotRestorableComponents: [changedTextEditorComponent])
+        }
+    }
+
+    @objc private func captureComponentsChanges() {
+        var taskID: UIBackgroundTaskIdentifier = .invalid
+
+        taskID = UIApplication.shared.beginBackgroundTask {
+            UIApplication.shared.endBackgroundTask(taskID)
+            taskID = .invalid
+        }
+
+        captureDispatchSemaphore.wait()
+
+        if let changedTextEditorComponent = textEditorComponent.currentIfUnsaved() {
+            coredataReposotory.captureSnapshot(snapshotRestorableComponents: [changedTextEditorComponent])
+                .sinkToResult { result in
+                    switch result {
+                        case .success:
+                            print("capture successfully")
+                        case .failure(let failure):
+                            print("capture fail reason : \(failure.localizedDescription)")
+                    }
+                    UIApplication.shared.endBackgroundTask(taskID)
+                    self.captureDispatchSemaphore.signal()
+                }
+                .store(in: &subscriptions)
+        } else {
+            print("no components to capture")
+            UIApplication.shared.endBackgroundTask(taskID)
+            captureDispatchSemaphore.signal()
         }
     }
 }

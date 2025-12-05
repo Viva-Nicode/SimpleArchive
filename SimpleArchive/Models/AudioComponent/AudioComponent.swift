@@ -10,7 +10,6 @@ final class AudioComponent: NSObject, Codable, PageComponent {
     var type: ComponentType { .audio }
     var renderingOrder: Int
     var isMinimumHeight: Bool
-    var persistenceState: PersistentState
     var componentDetail: AudioComponentContent { detail }
     var detail: AudioComponentContent
 
@@ -20,8 +19,7 @@ final class AudioComponent: NSObject, Codable, PageComponent {
         isMinimumHeight: Bool = false,
         creationDate: Date = Date(),
         title: String = "AudioMemo",
-        detail: DetailType = AudioComponentContent(),
-        persistenceState: PersistentState = .synced,
+        detail: DetailType = AudioComponentContent()
     ) {
         self.id = id
         self.renderingOrder = renderingOrder
@@ -29,11 +27,10 @@ final class AudioComponent: NSObject, Codable, PageComponent {
         self.creationDate = creationDate
         self.title = title
         self.detail = detail
-        self.persistenceState = persistenceState
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, creationDate, title, renderingOrder, isMinimumHeight, persistenceState, detail
+        case id, creationDate, title, renderingOrder, isMinimumHeight, detail
     }
 
     deinit { print("deinit AudioComponentModel : \(title)") }
@@ -43,7 +40,6 @@ final class AudioComponent: NSObject, Codable, PageComponent {
     }
 
     func addAudios(audiotracks: [AudioTrack]) -> [Int] {
-        persistenceState = .unsaved(isMustToStoreSnapshot: false)
-        return detail.addAudios(audiotracks: audiotracks)
+        detail.addAudios(audiotracks: audiotracks)
     }
 }
