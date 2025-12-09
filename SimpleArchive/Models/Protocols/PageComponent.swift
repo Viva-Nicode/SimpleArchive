@@ -5,20 +5,21 @@ import UIKit
 
 protocol PageComponent: AnyObject, Identifiable, Codable {
 
-    associatedtype DetailType: Codable
+    associatedtype ContentType: Codable
 
     var id: UUID { get }
     var creationDate: Date { get set }
     var title: String { get set }
     var type: ComponentType { get }
-    var detail: DetailType { get set }
+    var componentContents: ContentType { get set }
     var renderingOrder: Int { get set }
     var isMinimumHeight: Bool { get set }
-    var componentDetail: DetailType { get }
 
     @discardableResult
     func store<ComponentEntityType>(in ctx: NSManagedObjectContext, parentPage: MemoPageEntity)
         -> ComponentEntityType where ComponentEntityType: MemoComponentEntity
+
+    func storeEntityContents(entity: MemoComponentEntity)
 
     func getCollectionViewComponentCell(
         _ collectionView: UICollectionView,

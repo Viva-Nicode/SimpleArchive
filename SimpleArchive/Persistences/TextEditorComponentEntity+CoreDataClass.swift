@@ -11,17 +11,13 @@ public class TextEditorComponentEntity: MemoComponentEntity {
             isMinimumHeight: self.isMinimumHeight,
             creationDate: self.creationDate,
             title: self.title,
-            detail: self.detail,
+            contents: self.detail,
             captureState: .captured,
             componentSnapshots: self.snapshots
                 .map { $0.convertToModel() }
                 .sorted(by: { $0.makingDate > $1.makingDate }))
 
         return textEditorComponent
-    }
-
-    override func setDetail<T:Codable>(detail: T) {
-        self.detail = detail as! String
     }
 
     override func removeSnapshot(ctx: NSManagedObjectContext, snapshotID: UUID) {

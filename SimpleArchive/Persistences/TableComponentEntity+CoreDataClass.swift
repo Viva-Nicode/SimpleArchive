@@ -10,17 +10,13 @@ public class TableComponentEntity: MemoComponentEntity {
             isMinimumHeight: self.isMinimumHeight,
             creationDate: self.creationDate,
             title: self.title,
-            detail: TableComponentContent(jsonString: self.detail)!,
+            contents: TableComponentContents(jsonString: self.detail)!,
             captureState: .captured,
             componentSnapshots: self.snapshots
                 .map { $0.convertToModel() }
                 .sorted(by: { $0.makingDate > $1.makingDate }))
 
         return tableComponent
-    }
-
-    override func setDetail<T: Codable>(detail: T) {
-        self.detail = (detail as! TableComponentContent).jsonString
     }
 
     override func removeSnapshot(ctx: NSManagedObjectContext, snapshotID: UUID) {

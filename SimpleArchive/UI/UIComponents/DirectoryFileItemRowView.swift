@@ -151,7 +151,7 @@ class DirectoryFileItemRowView: UITableViewCell {
                     case .text:
                         fileIconImageView.image = UIImage(named: "text")?.resized(to: .init(width: 40, height: 40))
                         containingFileCountLable.text =
-                            "\((page.getComponents.first as! TextEditorComponent).detail.count)"
+                            "\((page.getComponents.first as! TextEditorComponent).componentContents.count)"
 
                     case .table:
                         fileIconImageView.image = UIImage(named: "table")?.resized(to: .init(width: 40, height: 40))
@@ -160,7 +160,7 @@ class DirectoryFileItemRowView: UITableViewCell {
                     case .audio:
                         fileIconImageView.image = UIImage(named: "audio")?.resized(to: .init(width: 40, height: 40))
                         containingFileCountLable.text =
-                            "\((page.getComponents.first as! AudioComponent).detail.tracks.count)"
+                            "\((page.getComponents.first as! AudioComponent).componentContents.tracks.count)"
                 }
             } else {
                 fileIconImageView.image = UIImage(named: "multi")?.resized(to: .init(width: 40, height: 40))

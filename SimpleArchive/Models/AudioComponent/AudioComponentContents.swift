@@ -1,7 +1,7 @@
 import Foundation
 import UIKit
 
-struct AudioComponentContent: Codable {
+struct AudioComponentContents: Codable {
 
     var tracks: [AudioTrack]
     var sortBy: AudioTrackSortBy
@@ -57,7 +57,7 @@ struct AudioComponentContent: Codable {
         }
         do {
             let decoder = JSONDecoder()
-            self = try decoder.decode(AudioComponentContent.self, from: data)
+            self = try decoder.decode(AudioComponentContents.self, from: data)
         } catch {
             return nil
         }

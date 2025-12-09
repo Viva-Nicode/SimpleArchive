@@ -4,9 +4,9 @@ import Foundation
 protocol TableComponentActionDispatcher {
     func appendColumn(componentID: UUID)
     func appendRow(componentID: UUID)
-    func editCellValue(componentID: UUID, cellID: UUID, newValue: String)
+    func editCellValue(componentID: UUID, columnID: UUID, rowID: UUID, newValue: String)
     func removeRow(componentID: UUID, rowID: UUID)
-    func presentColumnEditPopup(componentID: UUID, columnIndex: Int)
+    func presentColumnEditPopup(componentID: UUID, columnID: UUID)
 }
 
 final class MemoPageTableComponentActionDispatcher: TableComponentActionDispatcher {
@@ -24,16 +24,16 @@ final class MemoPageTableComponentActionDispatcher: TableComponentActionDispatch
         subject.send(.willAppendRowToTable(componentID))
     }
 
-    func editCellValue(componentID: UUID, cellID: UUID, newValue: String) {
-        subject.send(.willApplyTableCellChanges(componentID, cellID, newValue))
+    func editCellValue(componentID: UUID, columnID: UUID, rowID: UUID, newValue: String) {
+        subject.send(.willApplyTableCellChanges(componentID, columnID, rowID, newValue))
     }
 
     func removeRow(componentID: UUID, rowID: UUID) {
         subject.send(.willRemoveRowToTable(componentID, rowID))
     }
 
-    func presentColumnEditPopup(componentID: UUID, columnIndex: Int) {
-        subject.send(.willPresentTableColumnEditingPopupView(componentID, columnIndex))
+    func presentColumnEditPopup(componentID: UUID, columnID: UUID) {
+        subject.send(.willPresentTableColumnEditingPopupView(componentID, columnID))
     }
 }
 
@@ -52,15 +52,15 @@ final class SinglePageTableComponentActionDispatcher: TableComponentActionDispat
         subject.send(.willAppendRowToTable)
     }
 
-    func editCellValue(componentID: UUID, cellID: UUID, newValue: String) {
-        subject.send(.willApplyTableCellChanges(cellID, newValue))
+    func editCellValue(componentID: UUID, columnID: UUID, rowID: UUID, newValue: String) {
+        subject.send(.willApplyTableCellChanges(columnID, rowID, newValue))
     }
 
     func removeRow(componentID: UUID, rowID: UUID) {
         subject.send(.willRemoveRowToTable(rowID))
     }
 
-    func presentColumnEditPopup(componentID: UUID, columnIndex: Int) {
-        subject.send(.willPresentTableColumnEditingPopupView(columnIndex))
+    func presentColumnEditPopup(componentID: UUID, columnID: UUID) {
+        subject.send(.willPresentTableColumnEditingPopupView(columnID))
     }
 }

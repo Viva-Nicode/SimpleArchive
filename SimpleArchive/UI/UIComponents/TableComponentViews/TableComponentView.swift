@@ -81,7 +81,8 @@ final class TableComponentView: PageComponentView<TableComponentContentView, Tab
         super.configure(component: component, input: subject)
 
         componentContentView.configure(
-            content: component.componentDetail,
+            columns: component.componentContents.columns,
+            rows: component.componentContents.cellValues,
             dispatcher: MemoPageTableComponentActionDispatcher(subject: subject),
             isMinimum: component.isMinimumHeight,
             componentID: componentID
@@ -114,7 +115,7 @@ final class TableComponentView: PageComponentView<TableComponentContentView, Tab
     // 스냅샷 뷰 전용 configure
     func configure(
         snapshotID: UUID,
-        snapshotDetail: TableComponentContent,
+        snapshotDetail: TableComponentContents,
         title: String,
         createDate: Date,
         input subject: PassthroughSubject<ComponentSnapshotViewModelInput, Never>
@@ -122,7 +123,9 @@ final class TableComponentView: PageComponentView<TableComponentContentView, Tab
         snapshotInputActionSubject = subject
         pageInputActionSubject = PassthroughSubject<MemoPageViewInput, Never>()
 
-        componentContentView.configure(content: snapshotDetail)
+        componentContentView.configure(
+            columns: snapshotDetail.columns,
+            rows: snapshotDetail.cellValues)
 
         creationDateLabel.text = "created at \(createDate.formattedDate)"
         titleLabel.text = title

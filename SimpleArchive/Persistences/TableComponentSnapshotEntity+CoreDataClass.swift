@@ -7,7 +7,7 @@ public class TableComponentSnapshotEntity: NSManagedObject {
         TableComponentSnapshot(
             snapshotID: self.snapshotID,
             makingDate: self.makingDate,
-            detail: TableComponentContent(jsonString: self.detail)!,
+            detail: TableComponentContents(jsonString: self.detail)!,
             description: self.snapShotDescription,
             saveMode: .init(rawValue: self.saveMode) ?? .automatic)
     }

@@ -8,10 +8,6 @@ public class MemoComponentEntity: NSManagedObject {
         fatalError("Method is not overridden.")
     }
 
-    func setDetail<T:Codable>(detail: T) {
-        fatalError("Method is not overridden.")
-    }
-
     func removeSnapshot(ctx: NSManagedObjectContext, snapshotID: UUID) {
         fatalError("Method is not overridden.")
     }

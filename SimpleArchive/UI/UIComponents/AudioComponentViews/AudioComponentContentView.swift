@@ -250,10 +250,10 @@ final class AudioComponentContentView: UIView, UIDocumentPickerDelegate {
         self.audioTrackTableView.dropDelegate = self
         self.audioTrackTableView.isPrefetchingEnabled = false
 
-        self.audioTrackTotal = audioComponent.detail.tracks.count
+        self.audioTrackTotal = audioComponent.componentContents.tracks.count
         totalAudioCountLabel.text = "\(audioTrackTotal) audios in total"
 
-        switch audioComponent.detail.sortBy {
+        switch audioComponent.componentContents.sortBy {
             case .name:
                 sortByNameButton.setTitleColor(.label, for: .normal)
 

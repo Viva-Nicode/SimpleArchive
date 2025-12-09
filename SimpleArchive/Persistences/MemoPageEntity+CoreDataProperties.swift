@@ -19,7 +19,6 @@ extension MemoPageEntity {
     @NSManaged public var components: Set<MemoComponentEntity>
     @NSManaged public var containingDirectory: MemoDirectoryEntity
     @NSManaged public var isSingleComponentPage:Bool
-
 }
 
 // MARK: Generated accessors for components

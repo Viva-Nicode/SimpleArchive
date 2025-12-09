@@ -84,8 +84,10 @@ final class SingleTablePageViewController: UIViewController, ViewControllerType,
                 case .viewDidLoad(let title, let date, let detail, let id):
                     setupUI(memoTitle: title, createDate: date)
                     setupConstraint()
+
                     tableComponentContentView.configure(
-                        content: detail,
+                        columns: detail.columns,
+                        rows: detail.cellValues,
                         dispatcher: SinglePageTableComponentActionDispatcher(subject: input),
                         isMinimum: false,
                         componentID: id)
@@ -112,7 +114,8 @@ final class SingleTablePageViewController: UIViewController, ViewControllerType,
                         UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0.0) { [weak self] in
                             guard let self else { return }
                             tableComponentContentView.configure(
-                                content: detail,
+                                columns: detail.columns,
+                                rows: detail.cellValues,
                                 dispatcher: SinglePageTableComponentActionDispatcher(subject: input),
                                 isMinimum: false,
                                 componentID: UUID())
@@ -124,14 +127,11 @@ final class SingleTablePageViewController: UIViewController, ViewControllerType,
                         }
                     }
 
-                case .didAppendColumnToTableView(let column):
-                    tableComponentContentView.appendColumnToColumnStackView(column)
-
                 case .didAppendRowToTableView(let row):
-                    tableComponentContentView.appendRowToRowStackView(row: row)
+                    tableComponentContentView.appendEmptyRowToStackView(rowID: row.id)
 
-                case .didRemoveRowToTableView(let removedRowIndex):
-                    tableComponentContentView.removeTableComponentRowView(idx: removedRowIndex)
+                case .didAppendColumnToTableView(let column):
+                    tableComponentContentView.appendEmptyColumnToStackView(column: column)
 
                 case .didApplyTableCellValueChanges(let row, let column, let newCellValue):
                     tableComponentContentView.updateUILabelText(
@@ -139,6 +139,9 @@ final class SingleTablePageViewController: UIViewController, ViewControllerType,
                         cellIndex: column,
                         with: newCellValue
                     )
+
+                case .didRemoveRowToTableView(let removedRowIndex):
+                    tableComponentContentView.removeTableComponentRowView(idx: removedRowIndex)
 
                 case .didPresentTableColumnEditPopupView(let columns, let columnIndex):
                     let tableComponentColumnEditPopupView = TableComponentColumnEditPopupView(

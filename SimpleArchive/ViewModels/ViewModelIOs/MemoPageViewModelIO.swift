@@ -24,8 +24,8 @@ enum MemoPageViewInput {
     case willRemoveRowToTable(UUID, UUID)
     case willAppendColumnToTable(UUID)
     case willApplyTableColumnChanges(UUID, [TableComponentColumn])
-    case willApplyTableCellChanges(UUID, UUID, String)
-    case willPresentTableColumnEditingPopupView(UUID, Int)
+    case willApplyTableCellChanges(UUID, UUID, UUID, String)
+    case willPresentTableColumnEditingPopupView(UUID, UUID)
 
     // MARK: - Audio
     case willDownloadMusicWithCode(UUID, String)
@@ -55,7 +55,7 @@ enum MemoPageViewOutput {
     // MARK: - Table
     case didAppendRowToTableView(Int, TableComponentRow)
     case didRemoveRowToTableView(Int, Int)
-    case didAppendColumnToTableView(Int, (TableComponentColumn, [TableComponentCell]))
+    case didAppendColumnToTableView(Int, TableComponentColumn)
     case didApplyTableCellValueChanges(Int, Int, Int, String)
     case didPresentTableColumnEditPopupView([TableComponentColumn], Int, UUID)
     case didApplyTableColumnChanges(Int, [TableComponentColumn])

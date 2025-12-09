@@ -99,9 +99,11 @@ final class TableComponentContentView: UIView, UIScrollViewDelegate {
     private var editCellPopupViewconfirmButtonStore: AnyCancellable?
     private var editCellPopupViewRemoveRowButtonStore: AnyCancellable?
 
-    private var dispatcher: TableComponentActionDispatcher?
+    // MARK: - Dispath To ViewModel
     private var componentID: UUID!
+    private var dispatcher: TableComponentActionDispatcher?
 
+    // MARK: - Minimization
     private var heightConstraints: [(NSLayoutConstraint, CGFloat)] = []
     private var stackViewConstraints: [NSLayoutConstraint] = []
 
@@ -135,8 +137,22 @@ final class TableComponentContentView: UIView, UIScrollViewDelegate {
         rowAddButton.addAction(
             UIAction { [weak self] _ in
                 guard let self else { return }
+                if columnsStackView.arrangedSubviews.isEmpty {
+                    dispatcher?.appendColumn(componentID: componentID!)
+                }
                 dispatcher?.appendRow(componentID: componentID!)
             }, for: .touchUpInside)
+
+        let presentCellEditPopupViewGestureRecognizer =
+            UITapGestureRecognizer(target: self, action: #selector(presentCellEditPopupView(_:)))
+        presentCellEditPopupViewGestureRecognizer.numberOfTapsRequired = 1
+        rowStackView.addGestureRecognizer(presentCellEditPopupViewGestureRecognizer)
+
+        let copyCellValueGestureRecognizer =
+            UITapGestureRecognizer(target: self, action: #selector(copyCellValue(_:)))
+        copyCellValueGestureRecognizer.numberOfTapsRequired = 2
+        rowStackView.addGestureRecognizer(copyCellValueGestureRecognizer)
+        presentCellEditPopupViewGestureRecognizer.require(toFail: copyCellValueGestureRecognizer)
 
         columnContainerView.addSubview(topBoundary)
         columnContainerView.addSubview(columnsStackView)
@@ -192,6 +208,11 @@ final class TableComponentContentView: UIView, UIScrollViewDelegate {
     }
 
     func prepareForReuse() {
+        columnsStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        rowStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
+
+        cellWidthConstraints = []
+
         NSLayoutConstraint.deactivate(heightConstraints.map { $0.0 } + stackViewConstraints)
         heightConstraints = []
         stackViewConstraints = []
@@ -199,7 +220,8 @@ final class TableComponentContentView: UIView, UIScrollViewDelegate {
 
     // 싱글 & 멀티 페이지 전용
     func configure(
-        content tableComponentContent: TableComponentContent,
+        columns: [TableComponentColumn],
+        rows: [(rowID: UUID, cells: [String])],
         dispatcher: TableComponentActionDispatcher,
         isMinimum: Bool,
         componentID: UUID
@@ -207,21 +229,16 @@ final class TableComponentContentView: UIView, UIScrollViewDelegate {
         self.dispatcher = dispatcher
         self.componentID = componentID
 
-        columnsStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        rowStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        columnWidths = Array(repeating: 0, count: tableComponentContent.columns.count)
-        cellWidthConstraints = []
-
+        columnWidths = Array(repeating: 0, count: columns.count)
         cellWidthConstraints.append([])
 
-        for (index, column) in tableComponentContent.columns.enumerated() {
-            let columnTitleLabel = TableComponentColumnLabel(columnID: column.id)
-            columnTitleLabel.text = column.columnTitle
+        for (index, column) in columns.enumerated() {
+            let columnTitleLabel = TableComponentColumnLabel(columnID: column.id, cellValue: column.title)
             columnTitleLabel.font = columnTitleFont
 
             let presentColumnEditPopupViewTapGesture =
                 TableColumnTapGestureRecognizer(target: self, action: #selector(presentColumnEditPopupView))
-            presentColumnEditPopupViewTapGesture.tappedColumnIndex = index
+            presentColumnEditPopupViewTapGesture.columnID = column.id
             columnTitleLabel.addGestureRecognizer(presentColumnEditPopupViewTapGesture)
 
             let constranint = columnTitleLabel.widthAnchor.constraint(equalToConstant: columnWidths[index])
@@ -231,8 +248,21 @@ final class TableComponentContentView: UIView, UIScrollViewDelegate {
             columnsStackView.addArrangedSubview(columnTitleLabel)
         }
 
-        for row in tableComponentContent.rows {
-            createTableComponentRowView(row: row)
+        for (rowID, cells) in rows {
+            let tableComponentRowView = TableComponentRowView(rowID: rowID)
+            cellWidthConstraints.append([])
+
+            for (cellIndex, cell) in cells.enumerated() {
+                let cellLabel = TableComponentCellLabel(cellValue: cell)
+                cellLabel.font = cellValueFont
+
+                let constraint = cellLabel.widthAnchor.constraint(equalToConstant: columnWidths[cellIndex])
+                cellWidthConstraints[cellWidthConstraints.count - 1].append(constraint)
+                constraint.isActive = true
+
+                tableComponentRowView.addArrangedSubLabel(with: cellLabel)
+            }
+            rowStackView.addArrangedSubview(tableComponentRowView)
         }
 
         adjustTableContentWidthToFit()
@@ -262,47 +292,23 @@ final class TableComponentContentView: UIView, UIScrollViewDelegate {
         rowScrollView.alpha = isMinimum ? 0 : 1
     }
 
-    func minimizeContentView(_ isMinimum: Bool) {
-        if isMinimum {
-            UIView.animate(withDuration: 0.3) { [weak self] in
-                guard let self else { return }
-                tableComponentToolBarStackView.alpha = 0
-                columnScrollView.alpha = 0
-                rowScrollView.alpha = 0
-
-                heightConstraints.forEach { $0.0.constant = .zero }
-                NSLayoutConstraint.deactivate(stackViewConstraints)
-            }
-        } else {
-            UIView.animate(withDuration: 0.3) { [weak self] in
-                guard let self else { return }
-
-                heightConstraints.forEach { $0.0.constant = $0.1 }
-                NSLayoutConstraint.activate(stackViewConstraints)
-
-                tableComponentToolBarStackView.alpha = 1
-                columnScrollView.alpha = 1
-                rowScrollView.alpha = 1
-            }
-        }
-    }
-
     // 스냅샷 전용
-    func configure(content tableComponentContent: TableComponentContent) {
-
+    func configure(
+        columns: [TableComponentColumn],
+        rows: [(rowID: UUID, cells: [String])]
+    ) {
         tableComponentToolBarStackView.removeFromSuperview()
         columnScrollView.topAnchor.constraint(equalTo: topAnchor).isActive = true
 
         columnsStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
         rowStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        columnWidths = Array(repeating: 0, count: tableComponentContent.columns.count)
+        columnWidths = Array(repeating: 0, count: columns.count)
         cellWidthConstraints = []
 
         cellWidthConstraints.append([])
 
-        for (index, column) in tableComponentContent.columns.enumerated() {
-            let columnTitleLabel = TableComponentColumnLabel(columnID: column.id)
-            columnTitleLabel.text = column.columnTitle
+        for (index, column) in columns.enumerated() {
+            let columnTitleLabel = TableComponentColumnLabel(columnID: column.id, cellValue: column.title)
             columnTitleLabel.font = columnTitleFont
 
             let constranint = columnTitleLabel.widthAnchor.constraint(equalToConstant: columnWidths[index])
@@ -311,12 +317,12 @@ final class TableComponentContentView: UIView, UIScrollViewDelegate {
             columnsStackView.addArrangedSubview(columnTitleLabel)
         }
 
-        for row in tableComponentContent.rows {
-            let tableComponentRowView = TableComponentRowView(rowID: row.id)
+        for (rowID, cells) in rows {
+            let tableComponentRowView = TableComponentRowView(rowID: rowID)
             cellWidthConstraints.append([])
 
-            for (cellIndex, cell) in row.cells.enumerated() {
-                let cellLabel = TableComponentCellLabel(cellValue: cell.value)
+            for (cellIndex, cell) in cells.enumerated() {
+                let cellLabel = TableComponentCellLabel(cellValue: cell)
                 cellLabel.font = cellValueFont
 
                 let constraint = cellLabel.widthAnchor.constraint(equalToConstant: columnWidths[cellIndex])
@@ -356,81 +362,6 @@ final class TableComponentContentView: UIView, UIScrollViewDelegate {
         rowScrollView.alpha = 1
     }
 
-    private func createTableComponentRowView(row: TableComponentRow) {
-        let tableComponentRowView = TableComponentRowView(rowID: row.id)
-        cellWidthConstraints.append([])
-
-        for (cellIndex, cell) in row.cells.enumerated() {
-            let cellLabel = TableComponentCellLabel(cellValue: cell.value)
-            cellLabel.font = cellValueFont
-
-            let constraint = cellLabel.widthAnchor.constraint(equalToConstant: columnWidths[cellIndex])
-            cellWidthConstraints[cellWidthConstraints.count - 1].append(constraint)
-            constraint.isActive = true
-
-            let singleTap = TableCellTapGestureRecognizer(target: self, action: #selector(presentCellEditPopupView))
-            singleTap.cellID = cell.id
-            singleTap.cellIndex = cellIndex
-            singleTap.row = tableComponentRowView
-            singleTap.rowIndex = cellWidthConstraints.count - 1
-            singleTap.numberOfTapsRequired = 1
-
-            cellLabel.addGestureRecognizer(singleTap)
-
-            if !cell.value.isEmpty {
-                let doubleTap = UITapGestureRecognizer(target: self, action: #selector(copyCellValue))
-                doubleTap.numberOfTapsRequired = 2
-                cellLabel.addGestureRecognizer(doubleTap)
-                singleTap.require(toFail: doubleTap)
-            }
-
-            tableComponentRowView.addArrangedSubLabel(with: cellLabel)
-        }
-
-        rowStackView.addArrangedSubview(tableComponentRowView)
-    }
-
-    private func createTableComponentColumnView(column: TableComponentColumn, cells: [TableComponentCell]) {
-        columnWidths.append(.zero)
-
-        let columnTitleLabel = TableComponentColumnLabel(columnID: column.id)
-        columnTitleLabel.text = column.columnTitle
-        columnTitleLabel.font = columnTitleFont
-
-        let presentColumnEditPopupViewTapGesture =
-            TableColumnTapGestureRecognizer(target: self, action: #selector(presentColumnEditPopupView))
-        presentColumnEditPopupViewTapGesture.tappedColumnIndex = columnWidths.count - 1
-        columnTitleLabel.addGestureRecognizer(presentColumnEditPopupViewTapGesture)
-
-        let constranint = columnTitleLabel.widthAnchor.constraint(equalToConstant: columnWidths[columnWidths.count - 1])
-        cellWidthConstraints[0].append(constranint)
-        constranint.isActive = true
-
-        columnsStackView.addArrangedSubview(columnTitleLabel)
-
-        for (index, cell) in cells.enumerated() {
-            let tableComponentRowView = rowStackView.arrangedSubviews[index] as! TableComponentRowView
-
-            let cellLabel = TableComponentCellLabel(cellValue: cell.value)
-            cellLabel.font = cellValueFont
-
-            let constraint = cellLabel.widthAnchor.constraint(equalToConstant: columnWidths[columnWidths.count - 1])
-            cellWidthConstraints[index + 1].append(constraint)
-            constraint.isActive = true
-
-            let singleTap = TableCellTapGestureRecognizer(target: self, action: #selector(presentCellEditPopupView))
-            singleTap.cellID = cell.id
-            singleTap.cellIndex = columnWidths.count - 1
-            singleTap.row = tableComponentRowView
-            singleTap.rowIndex = index + 1
-            singleTap.numberOfTapsRequired = 1
-
-            cellLabel.addGestureRecognizer(singleTap)
-
-            tableComponentRowView.addArrangedSubLabel(with: cellLabel)
-        }
-    }
-
     private func adjustTableContentWidthToFit() {
         layoutIfNeeded()
 
@@ -464,28 +395,100 @@ final class TableComponentContentView: UIView, UIScrollViewDelegate {
         }
 
         for columnIndex in 0..<columnsStackView.arrangedSubviews.count {
-            cellWidthConstraints.forEach { $0[columnIndex]?.constant = columnWidths[columnIndex] }
+            cellWidthConstraints.forEach { constraints in
+                constraints[columnIndex]?.constant = columnWidths[columnIndex]
+            }
         }
     }
 
-    func appendRowToRowStackView(row: TableComponentRow) {
-        createTableComponentRowView(row: row)
+    func minimizeContentView(_ isMinimum: Bool) {
+        if isMinimum {
+            UIView.animate(withDuration: 0.3) { [weak self] in
+                guard let self else { return }
+                tableComponentToolBarStackView.alpha = 0
+                columnScrollView.alpha = 0
+                rowScrollView.alpha = 0
+
+                heightConstraints.forEach { $0.0.constant = .zero }
+                NSLayoutConstraint.deactivate(stackViewConstraints)
+            }
+        } else {
+            UIView.animate(withDuration: 0.3) { [weak self] in
+                guard let self else { return }
+
+                heightConstraints.forEach { $0.0.constant = $0.1 }
+                NSLayoutConstraint.activate(stackViewConstraints)
+
+                tableComponentToolBarStackView.alpha = 1
+                columnScrollView.alpha = 1
+                rowScrollView.alpha = 1
+            }
+        }
+    }
+
+    func appendEmptyRowToStackView(rowID: UUID) {
+        let tableComponentRowView = TableComponentRowView(rowID: rowID)
+        cellWidthConstraints.append([])
+
+        for columnIndex in 0..<columnsStackView.arrangedSubviews.count {
+            let cellLabel = TableComponentCellLabel(cellValue: "")
+            cellLabel.font = cellValueFont
+
+            let constraint = cellLabel.widthAnchor.constraint(equalToConstant: columnWidths[columnIndex])
+            cellWidthConstraints[cellWidthConstraints.count - 1].append(constraint)
+            constraint.isActive = true
+
+            tableComponentRowView.addArrangedSubLabel(with: cellLabel)
+        }
+
+        rowStackView.addArrangedSubview(tableComponentRowView)
         adjustTableContentWidthToFit()
         layoutIfNeeded()
         rowScrollView.scrollToBottom(animated: true)
     }
 
-    func appendColumnToColumnStackView(_ column: (TableComponentColumn, [TableComponentCell])) {
-        createTableComponentColumnView(column: column.0, cells: column.1)
+    func appendEmptyColumnToStackView(column: TableComponentColumn) {
+        columnWidths.append(.zero)
+        if cellWidthConstraints.isEmpty { cellWidthConstraints.append([]) }
+
+        let columnTitleLabel = TableComponentColumnLabel(columnID: column.id, cellValue: column.title)
+        columnTitleLabel.font = columnTitleFont
+
+        let presentColumnEditPopupViewTapGesture =
+            TableColumnTapGestureRecognizer(target: self, action: #selector(presentColumnEditPopupView))
+        presentColumnEditPopupViewTapGesture.columnID = column.id
+        columnTitleLabel.addGestureRecognizer(presentColumnEditPopupViewTapGesture)
+
+        let constranint = columnTitleLabel.widthAnchor.constraint(equalToConstant: columnWidths[columnWidths.count - 1])
+        cellWidthConstraints[0].append(constranint)
+        constranint.isActive = true
+
+        columnsStackView.addArrangedSubview(columnTitleLabel)
+
+        for rowIndex in 0..<rowStackView.arrangedSubviews.count {
+            let tableComponentRowView = rowStackView.arrangedSubviews[rowIndex] as! TableComponentRowView
+
+            let cellLabel = TableComponentCellLabel(cellValue: "")
+            cellLabel.font = cellValueFont
+
+            let constraint = cellLabel.widthAnchor.constraint(equalToConstant: columnWidths[columnWidths.count - 1])
+            cellWidthConstraints[rowIndex + 1].append(constraint)
+            constraint.isActive = true
+
+            tableComponentRowView.addArrangedSubLabel(with: cellLabel)
+        }
         adjustTableContentWidthToFit()
         layoutIfNeeded()
         rowScrollView.scrollToTrailing(animated: true)
     }
 
     func removeTableComponentRowView(idx: Int) {
-        let view = rowStackView.arrangedSubviews[idx]
-        rowStackView.removeArrangedSubview(view)
-        view.removeFromSuperview()
+        let tableComponentRowView = rowStackView.arrangedSubviews[idx]
+        rowStackView.removeArrangedSubview(tableComponentRowView)
+        tableComponentRowView.removeFromSuperview()
+
+        let constraints = cellWidthConstraints.remove(at: idx + 1)
+        NSLayoutConstraint.deactivate(constraints.compactMap { $0 })
         adjustTableContentWidthToFit()
     }
 
@@ -498,14 +501,22 @@ final class TableComponentContentView: UIView, UIScrollViewDelegate {
             moves.append(columns.firstIndex { $0.id == columnLabel.columnID })
         }
 
-        let removeIndexSet = IndexSet(moves.enumerated().filter { i, v in v == nil }.map { i, v in return i })
+        //        move[0] = 3 원래 0번째에있던게 3번으로 갔더라.
+        //        move[1] = nil 원래 1번째에있던게 삭제되었다.
+
+        let removeIndexSet = IndexSet(
+            moves.enumerated()
+                .filter { i, v in v == nil }
+                .map { i, v in return i }
+        )
+
         columnWidths.remove(atOffsets: removeIndexSet)
 
         for (i, move) in moves.enumerated() {
             let tableComponentColumnLabel = columnsStackView.arrangedSubviews[i] as! TableComponentColumnLabel
             if let move {
                 newUIVies[move] = tableComponentColumnLabel
-                tableComponentColumnLabel.text = columns[move].columnTitle
+                tableComponentColumnLabel.setLabelText(columns[move].title)
             }
         }
 
@@ -533,11 +544,17 @@ final class TableComponentContentView: UIView, UIScrollViewDelegate {
                 $0.removeFromSuperview()
             }
 
-            views.forEach { tableComponentRowView.addArrangedSubLabel(with: $0 as! TableComponentCellLabel) }
+            views.forEach {
+                tableComponentRowView.addArrangedSubLabel(with: $0 as! TableComponentCellLabel)
+            }
+
+            if tableComponentRowView.arrangedSubviews.isEmpty {
+                rowStackView.removeArrangedSubview(tableComponentRowView)
+                tableComponentRowView.removeFromSuperview()
+            }
         }
 
         for rowIndex in 0..<cellWidthConstraints.count {
-
             var constraints = [NSLayoutConstraint](repeating: NSLayoutConstraint(), count: columns.count)
 
             for (i, move) in moves.enumerated() {
@@ -546,12 +563,13 @@ final class TableComponentContentView: UIView, UIScrollViewDelegate {
                 if let move {
                     constraints[move] = res!
                 }
-
             }
             cellWidthConstraints[rowIndex] = constraints
         }
+
+        cellWidthConstraints = cellWidthConstraints.filter { !$0.isEmpty }
+
         adjustTableContentWidthToFit()
-        //  2차원 DP를 이용해서 O(n)으로 푸는방법 있을거같은데
     }
 
     func updateUILabelText(rowIndex: Int, cellIndex: Int, with newCellValue: String) {
@@ -559,79 +577,76 @@ final class TableComponentContentView: UIView, UIScrollViewDelegate {
         let cellLabel = tableComponentRowView[cellIndex]
 
         cellLabel.setLabelText(newCellValue)
-
-        if newCellValue.isEmpty {
-            let doubleTap = cellLabel.gestureRecognizers?
-                .filter { type(of: $0) == UITapGestureRecognizer.self }
-                .first!
-
-            cellLabel.removeGestureRecognizer(doubleTap!)
-        } else {
-            let singleTap = cellLabel.gestureRecognizers?
-                .filter { type(of: $0) == TableCellTapGestureRecognizer.self }
-                .first!
-
-            let doubleTap = UITapGestureRecognizer(target: self, action: #selector(copyCellValue))
-            doubleTap.numberOfTapsRequired = 2
-            cellLabel.addGestureRecognizer(doubleTap)
-            singleTap!.require(toFail: doubleTap)
-        }
-
         adjustTableContentWidthToFit()
     }
 
-    @objc private func presentCellEditPopupView(_ gesture: TableCellTapGestureRecognizer) {
-        guard
-            let row = gesture.row,
-            let index = gesture.cellIndex,
-            let id = gesture.cellID,
-            let rowIndex = gesture.rowIndex
-        else { return }
+    @objc func presentCellEditPopupView(_ sender: UITapGestureRecognizer) {
+        let location = sender.location(in: rowStackView)
 
-        let tableComponentCellEditPopupView =
-            TableComponentCellEditPopupView(
-                columnTitles: columnsStackView.arrangedSubviews.map { ($0 as! UILabel).text! },
-                cellValues: row.cellValues,
-                cellIndex: index,
-                rowIndex: rowIndex
-            )
+        if let tappedView = rowStackView.hitTest(location, with: nil) {
+            if let cellLabel = tappedView as? TableComponentCellLabel {
+                let tableComponentRowView = cellLabel.superview as! TableComponentRowView
+                let rowStackView = tableComponentRowView.superview as! UIStackView
+                let columnIndex = tableComponentRowView.arrangedSubviews.firstIndex(of: cellLabel)!
+                let rowIndex = rowStackView.arrangedSubviews.firstIndex(of: tableComponentRowView)!
+                let columnID = (columnsStackView.arrangedSubviews[columnIndex] as! TableComponentColumnLabel).columnID
 
-        editCellPopupViewconfirmButtonStore = tableComponentCellEditPopupView
-            .confirmButtonPublisher
-            .sink { [weak self] newCellValue in
-                guard let self else { return }
-                dispatcher?.editCellValue(componentID: componentID!, cellID: id, newValue: newCellValue)
+                let tableComponentCellEditPopupView =
+                    TableComponentCellEditPopupView(
+                        columnTitles: columnsStackView.arrangedSubviews.map { ($0 as! UILabel).text! },
+                        cellValues: tableComponentRowView.cellValues,
+                        cellIndex: columnIndex,
+                        rowIndex: rowIndex
+                    )
+
+                editCellPopupViewconfirmButtonStore = tableComponentCellEditPopupView
+                    .confirmButtonPublisher
+                    .sink { [weak self] newCellValue in
+                        guard let self else { return }
+                        dispatcher?
+                            .editCellValue(
+                                componentID: componentID!,
+                                columnID: columnID,
+                                rowID: tableComponentRowView.rowID,
+                                newValue: newCellValue)
+                    }
+
+                editCellPopupViewRemoveRowButtonStore = tableComponentCellEditPopupView
+                    .removeRowButtonPublisher
+                    .sink { [weak self] _ in
+                        guard let self else { return }
+                        dispatcher?.removeRow(componentID: componentID!, rowID: tableComponentRowView.rowID)
+                    }
+
+                tableComponentCellEditPopupView.show()
             }
+        }
+    }
 
-        editCellPopupViewRemoveRowButtonStore = tableComponentCellEditPopupView
-            .removeRowButtonPublisher
-            .sink { [weak self] _ in
-                guard let self else { return }
-                dispatcher?.removeRow(componentID: componentID!, rowID: row.rowID)
+    @objc func copyCellValue(_ sender: UITapGestureRecognizer) {
+        let location = sender.location(in: rowStackView)
+
+        if let tappedView = rowStackView.hitTest(location, with: nil) {
+            if let cellLabel = tappedView as? TableComponentCellLabel {
+
+                if cellLabel.cellValue.isEmpty { return }
+
+                UIPasteboard.general.string = cellLabel.cellValue
+
+                UIView.transition(with: cellLabel, duration: 0.4, options: .transitionCrossDissolve) {
+                    cellLabel.textColor = .systemPink
+                } completion: { _ in
+                    UIView.transition(with: cellLabel, duration: 0.4, options: .transitionCrossDissolve) {
+                        cellLabel.textColor = .label
+                    }
+                }
             }
-
-        tableComponentCellEditPopupView.show()
+        }
     }
 
     @objc private func presentColumnEditPopupView(_ gesture: TableColumnTapGestureRecognizer) {
-        let tappedColumnIndex = gesture.tappedColumnIndex
-        dispatcher?.presentColumnEditPopup(componentID: componentID!, columnIndex: tappedColumnIndex!)
-    }
-
-    @objc private func copyCellValue(_ gesture: UITapGestureRecognizer) {
-        guard let label = gesture.view as? UILabel else { return }
-        guard let text = label.text else { return }
-
-        UIPasteboard.general.string = text
-
-        UIView.transition(with: label, duration: 0.4, options: .transitionCrossDissolve) {
-            label.textColor = .systemPink
-
-        } completion: { _ in
-            UIView.transition(with: label, duration: 0.4, options: .transitionCrossDissolve) {
-                label.textColor = .label
-            }
-        }
+        let tappedColumnID = gesture.columnID
+        dispatcher?.presentColumnEditPopup(componentID: componentID!, columnID: tappedColumnID!)
     }
 
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
@@ -653,14 +668,7 @@ final class TableComponentContentView: UIView, UIScrollViewDelegate {
         isSyncing = false
     }
 
-    final class TableCellTapGestureRecognizer: UITapGestureRecognizer {
-        var cellIndex: Int?
-        var rowIndex: Int?
-        var cellID: UUID?
-        var row: TableComponentRowView?
-    }
-
     final class TableColumnTapGestureRecognizer: UITapGestureRecognizer {
-        var tappedColumnIndex: Int?
+        var columnID: UUID?
     }
 }

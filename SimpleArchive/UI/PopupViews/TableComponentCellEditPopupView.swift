@@ -354,7 +354,7 @@ final class TableComponentCellEditPopupView: PopupView {
         ])
 
         let lineLabel = UILabel()
-        lineLabel.text = "\(rowIndex)번째 행"
+        lineLabel.text = "\(rowIndex + 1)번째 행"
         lineLabel.textColor = .black
         accessionalButtonsStackView.addArrangedSubview(lineLabel)
         accessionalButtonsStackView.addArrangedSubview(UIView.spacerView)

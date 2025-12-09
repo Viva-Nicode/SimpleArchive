@@ -38,6 +38,7 @@ final class TableComponentColumnEditPopupView: PopupView, UITextViewDelegate {
         let removeColumnButton = UIButton()
         removeColumnButton.setTitle("remove column", for: .normal)
         removeColumnButton.setTitleColor(.systemBlue, for: .normal)
+        removeColumnButton.setTitleColor(.gray, for: .disabled)
         removeColumnButton.titleLabel?.font = .systemFont(ofSize: 15)
         return removeColumnButton
     }()
@@ -97,12 +98,13 @@ final class TableComponentColumnEditPopupView: PopupView, UITextViewDelegate {
     init(columns: [TableComponentColumn], tappedColumnIndex: Int) {
         self.columns = columns
         self.tappedColumnIndex = tappedColumnIndex
-        self.tableComponentColumnTitleTextView.text = columns[tappedColumnIndex].columnTitle
+        self.tableComponentColumnTitleTextView.text = columns[tappedColumnIndex].title
         super.init()
     }
 
     func textViewDidChange(_ textView: UITextView) {
-        columns[tappedColumnIndex].setColumnTitle(textView.text!)
+        columns[tappedColumnIndex].title = textView.text!
+
         if let item =
             collectionView
             .cellForItem(at: .init(item: tappedColumnIndex, section: 0))
@@ -110,6 +112,11 @@ final class TableComponentColumnEditPopupView: PopupView, UITextViewDelegate {
         {
             item.setColumnTitle(columnTitle: textView.text!)
         }
+
+        collectionView.scrollToItem(
+            at: IndexPath(item: tappedColumnIndex, section: .zero),
+            at: .centeredHorizontally,
+            animated: true)
     }
 
     @MainActor required init?(coder: NSCoder) {
@@ -147,6 +154,31 @@ final class TableComponentColumnEditPopupView: PopupView, UITextViewDelegate {
                 guard let self else { return }
                 columns.remove(at: tappedColumnIndex)
                 collectionView.deleteItems(at: [IndexPath(item: tappedColumnIndex, section: 0)])
+                tappedColumnIndex = max(0, min(columns.count - 1, tappedColumnIndex))
+
+                if columns.isEmpty {
+                    tableComponentColumnTitleTextView.delegate = nil
+                    tableComponentColumnTitleTextView.text = ""
+                    tableComponentColumnTitleTextView.isEditable = false
+                    removeColumnButton.isEnabled = false
+                } else {
+                    if let item = collectionView.cellForItem(at: .init(item: tappedColumnIndex, section: 0))
+                        as? ColumnCarouselCollectionCell
+                    {
+                        item.setIsSelected(isSelected: true)
+                    }
+
+                    tableComponentColumnTitleTextView.delegate = nil
+                    tableComponentColumnTitleTextView.text = columns[tappedColumnIndex].title
+                    tableComponentColumnTitleTextView.delegate = self
+
+                    layoutIfNeeded()
+
+                    collectionView.scrollToItem(
+                        at: IndexPath(item: tappedColumnIndex, section: .zero),
+                        at: .centeredHorizontally,
+                        animated: true)
+                }
             }, for: .touchUpInside)
 
         buttonContainerStackView.addArrangedSubview(cancelButton)
@@ -162,7 +194,9 @@ final class TableComponentColumnEditPopupView: PopupView, UITextViewDelegate {
         layoutIfNeeded()
 
         collectionView.scrollToItem(
-            at: IndexPath(item: tappedColumnIndex, section: .zero), at: .centeredHorizontally, animated: true)
+            at: IndexPath(item: tappedColumnIndex, section: .zero),
+            at: .centeredHorizontally,
+            animated: true)
     }
 }
 
@@ -180,7 +214,7 @@ extension TableComponentColumnEditPopupView: UICollectionViewDataSource {
                 for: indexPath) as! ColumnCarouselCollectionCell
 
         cell.setIsSelected(isSelected: indexPath.item == tappedColumnIndex)
-        cell.setColumnTitle(columnTitle: columns[indexPath.item].columnTitle)
+        cell.setColumnTitle(columnTitle: columns[indexPath.item].title)
         return cell
     }
 }
@@ -196,7 +230,7 @@ extension TableComponentColumnEditPopupView: UICollectionViewDelegate {
         }
         tappedColumnIndex = indexPath.item
         tableComponentColumnTitleTextView.delegate = nil
-        tableComponentColumnTitleTextView.text = columns[tappedColumnIndex].columnTitle
+        tableComponentColumnTitleTextView.text = columns[tappedColumnIndex].title
         if let item = collectionView.cellForItem(at: indexPath) as? ColumnCarouselCollectionCell {
             item.setIsSelected(isSelected: true)
         }
@@ -212,7 +246,7 @@ extension TableComponentColumnEditPopupView: UICollectionViewDragDelegate, UICol
         at indexPath: IndexPath
     ) -> [UIDragItem] {
         let model = columns[indexPath.item]
-        let itemProvider = NSItemProvider(object: model.columnTitle as NSString)
+        let itemProvider = NSItemProvider(object: model.title as NSString)
         let dragItem = UIDragItem(itemProvider: itemProvider)
         dragItem.localObject = model
         return [dragItem]
@@ -244,11 +278,14 @@ extension TableComponentColumnEditPopupView: UICollectionViewDragDelegate, UICol
 
         if let item = coordinator.items.first, let sourceIndexPath = item.sourceIndexPath {
             collectionView.performBatchUpdates({
+                let editingColumnID = columns[tappedColumnIndex].id
 
                 let item = columns.remove(at: sourceIndexPath.item)
                 columns.insert(item, at: destIndexPath.item)
 
                 collectionView.moveItem(at: sourceIndexPath, to: destIndexPath)
+
+                tappedColumnIndex = columns.firstIndex(where: { $0.id == editingColumnID })!
             })
 
             coordinator.drop(

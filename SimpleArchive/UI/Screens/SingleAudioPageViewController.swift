@@ -75,8 +75,8 @@ final class SingleAudioPageViewController: UIViewController, ViewControllerType 
                     setupUI(pageTitle: pageTitle)
                     setupConstraints()
                     audioComponentContentView.configure(
-                        trackCount: audioComponent.detail.tracks.count,
-                        sortBy: audioComponent.detail.sortBy,
+                        trackCount: audioComponent.componentContents.tracks.count,
+                        sortBy: audioComponent.componentContents.sortBy,
                         datasource: dataSource,
                         dispatcher: SinglePageAudioComponentActionDispatcher(subject: input),
                         componentID: audioComponent.id)

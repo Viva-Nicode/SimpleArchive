@@ -8,8 +8,7 @@ final class TableComponent: NSObject, Codable, SnapshotRestorablePageComponent {
     var type: ComponentType { .table }
     var creationDate: Date
     var title: String
-    var detail: TableComponentContent
-    var componentDetail: TableComponentContent { detail }
+    var componentContents: TableComponentContents
     var captureState: CaptureState
     var snapshots: [TableComponentSnapshot] = []
 
@@ -19,7 +18,7 @@ final class TableComponent: NSObject, Codable, SnapshotRestorablePageComponent {
         isMinimumHeight: Bool = false,
         creationDate: Date = Date(),
         title: String = "TableMemo",
-        detail: DetailType = TableComponentContent(),
+        contents: ContentType = TableComponentContents(),
         captureState: CaptureState = .captured,
         componentSnapshots: [TableComponentSnapshot] = []
     ) {
@@ -28,7 +27,7 @@ final class TableComponent: NSObject, Codable, SnapshotRestorablePageComponent {
         self.isMinimumHeight = isMinimumHeight
         self.creationDate = creationDate
         self.title = title
-        self.detail = detail
+        self.componentContents = contents
         self.captureState = captureState
         self.snapshots = componentSnapshots
     }
@@ -37,7 +36,7 @@ final class TableComponent: NSObject, Codable, SnapshotRestorablePageComponent {
 
     @discardableResult
     func makeSnapshot(desc: String, saveMode: SnapshotSaveMode) -> TableComponentSnapshot {
-        let snapshot = TableComponentSnapshot(detail: self.detail, description: desc, saveMode: saveMode)
+        let snapshot = TableComponentSnapshot(detail: componentContents, description: desc, saveMode: saveMode)
         snapshots.insert(snapshot, at: 0)
         return snapshot
     }

@@ -10,12 +10,8 @@ public class AudioComponentEntity: MemoComponentEntity {
             isMinimumHeight: self.isMinimumHeight,
             creationDate: self.creationDate,
             title: self.title,
-            detail: AudioComponentContent(jsonString: self.detail)!)
+            contents: AudioComponentContents(jsonString: self.detail)!)
 
         return audioComponent
-    }
-
-    override func setDetail<T: Codable>(detail: T) {
-        self.detail = (detail as! AudioComponentContent).jsonString
     }
 }

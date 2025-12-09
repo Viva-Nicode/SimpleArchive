@@ -37,6 +37,9 @@ final class ColumnCarouselCollectionCell: UICollectionViewCell {
         let columnTitleLable = UILabel()
         columnTitleLable.textColor = .black
         columnTitleLable.font = .systemFont(ofSize: 14)
+        columnTitleLable.textAlignment = .center
+        columnTitleLable.adjustsFontSizeToFitWidth = true
+        columnTitleLable.minimumScaleFactor = 0.75
         columnTitleLable.translatesAutoresizingMaskIntoConstraints = false
         return columnTitleLable
     }()
@@ -140,6 +143,7 @@ final class ColumnCarouselCollectionCell: UICollectionViewCell {
 
         columnTitleLable.centerXAnchor.constraint(equalTo: containerView.centerXAnchor).isActive = true
         columnTitleLable.heightAnchor.constraint(equalToConstant: 50).isActive = true
+        columnTitleLable.widthAnchor.constraint(equalTo: containerView.widthAnchor, constant: -8).isActive = true
         columnTitleLable.bottomAnchor.constraint(equalTo: containerView.bottomAnchor).isActive = true
     }
 

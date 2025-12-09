@@ -24,6 +24,6 @@ struct TextEditorComponentSnapshot: ComponentSnapshotType {
     }
 
     func revert(component: TextEditorComponent) {
-        component.detail = self.detail
+        component.componentContents = self.detail
     }
 }

@@ -28,6 +28,11 @@
         <attribute name="id" attributeType="UUID" usesScalarValueType="NO"/>
         <attribute name="name" attributeType="String"/>
     </entity>
+    <entity name="TableComponentCellEntity" representedClassName="TableComponentCellEntity" syncable="YES">
+        <attribute name="attribute" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="cellID" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="value" optional="YES" attributeType="String"/>
+    </entity>
     <entity name="TableComponentEntity" representedClassName="TableComponentEntity" parentEntity="MemoComponentEntity" syncable="YES">
         <attribute name="detail" attributeType="String"/>
         <relationship name="snapshots" toMany="YES" deletionRule="Cascade" destinationEntity="TableComponentSnapshotEntity" inverseName="component" inverseEntity="TableComponentSnapshotEntity"/>

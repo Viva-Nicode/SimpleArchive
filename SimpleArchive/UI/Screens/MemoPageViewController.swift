@@ -164,17 +164,17 @@ class MemoPageViewController: UIViewController, ViewControllerType {
 
                 case .didAppendRowToTableView(let componentIndex, let row):
                     performWithComponentViewAt(componentIndex) { (_: TableComponentView, contentView) in
-                        contentView.appendRowToRowStackView(row: row)
+                        contentView.appendEmptyRowToStackView(rowID: row.id)
                     }
 
                 case .didAppendColumnToTableView(let componentIndex, let column):
                     performWithComponentViewAt(componentIndex) { (_: TableComponentView, contentView) in
-                        contentView.appendColumnToColumnStackView(column)
+                        contentView.appendEmptyColumnToStackView(column: column)
                     }
 
-                case let .didApplyTableCellValueChanges(componentIndex, rowIndex, cellIndex, newCellValue):
+                case let .didApplyTableCellValueChanges(componentIndex, rowIndex, colIndex, newCellValue):
                     performWithComponentViewAt(componentIndex) { (_: TableComponentView, contentView) in
-                        contentView.updateUILabelText(rowIndex: rowIndex, cellIndex: cellIndex, with: newCellValue)
+                        contentView.updateUILabelText(rowIndex: rowIndex, cellIndex: colIndex, with: newCellValue)
                     }
 
                 case .didRemoveRowToTableView(let componentIndex, let removedRowIndex):
@@ -196,6 +196,7 @@ class MemoPageViewController: UIViewController, ViewControllerType {
                             self?.input.send(.willApplyTableColumnChanges(componentID, colums))
                         }
                         .store(in: &subscriptions)
+
                     tableComponentColumnEditPopupView.show()
 
                 // MARK: - Audio

@@ -2,17 +2,15 @@ import Combine
 import Foundation
 
 final class TextEditorComponent: NSObject, Codable, SnapshotRestorablePageComponent {
-
+    
     var id: UUID
     var renderingOrder: Int
     var isMinimumHeight: Bool
     var type: ComponentType { .text }
     var creationDate: Date
     var title: String
-    var detail: String
+    var componentContents: String
     var captureState: CaptureState
-    var componentDetail: String { detail }
-
     var snapshots: [TextEditorComponentSnapshot] = []
 
     init(
@@ -21,7 +19,7 @@ final class TextEditorComponent: NSObject, Codable, SnapshotRestorablePageCompon
         isMinimumHeight: Bool = false,
         creationDate: Date = Date(),
         title: String = "Memo",
-        detail: DetailType = "",
+        contents: ContentType = "",
         captureState: CaptureState = .captured,
         componentSnapshots: [TextEditorComponentSnapshot] = []
     ) {
@@ -30,7 +28,7 @@ final class TextEditorComponent: NSObject, Codable, SnapshotRestorablePageCompon
         self.isMinimumHeight = isMinimumHeight
         self.creationDate = creationDate
         self.title = title
-        self.detail = detail
+        self.componentContents = contents
         self.captureState = captureState
         self.snapshots = componentSnapshots
     }
@@ -39,7 +37,7 @@ final class TextEditorComponent: NSObject, Codable, SnapshotRestorablePageCompon
 
     @discardableResult
     func makeSnapshot(desc: String, saveMode: SnapshotSaveMode) -> TextEditorComponentSnapshot {
-        let snapshot = TextEditorComponentSnapshot(detail: self.detail, description: desc, saveMode: saveMode)
+        let snapshot = TextEditorComponentSnapshot(detail: componentContents, description: desc, saveMode: saveMode)
         snapshots.insert(snapshot, at: 0)
         return snapshot
     }

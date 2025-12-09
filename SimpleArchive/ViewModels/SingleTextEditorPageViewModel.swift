@@ -51,7 +51,7 @@ import UIKit
                         .viewDidLoad(
                             pageTitle,
                             textEditorComponent.creationDate,
-                            textEditorComponent.detail
+                            textEditorComponent.componentContents
                         )
                     )
 
@@ -68,7 +68,7 @@ import UIKit
                     output.send(.didNavigateSnapshotView(componentSnapshotViewModel))
 
                 case .willRestoreComponent:
-                    output.send(.didRestoreComponent(textEditorComponent.detail))
+                    output.send(.didRestoreComponent(textEditorComponent.componentContents))
 
                 case .willCaptureComponent(let desc):
                     coredataReposotory.captureSnapshot(
@@ -79,7 +79,7 @@ import UIKit
                     output.send(.didCompleteComponentCapture)
 
                 case .willEditTextComponent(let detail):
-                    textEditorComponent.detail = detail
+                    textEditorComponent.componentContents = detail
                     textEditorComponent.setCaptureState(to: .needsCapture)
                     coredataReposotory.saveComponentsDetail(modifiedComponent: textEditorComponent)
             }

@@ -42,13 +42,19 @@ extension TextEditorComponent {
         textEditorComponentEntity.type = self.type.rawValue
         textEditorComponentEntity.isMinimumHeight = self.isMinimumHeight
         textEditorComponentEntity.title = self.title
-        textEditorComponentEntity.detail = self.detail
+        textEditorComponentEntity.detail = self.componentContents
         textEditorComponentEntity.snapshots = []
 
         self.snapshots.forEach { $0.store(in: ctx, parentComponentId: self.id) }
 
         parentPage.addToComponents(textEditorComponentEntity)
         return textEditorComponentEntity as! ComponentEntityType
+    }
+
+    func storeEntityContents(entity: MemoComponentEntity) {
+        if let textEditorComponentEntity = entity as? TextEditorComponentEntity {
+            textEditorComponentEntity.detail = self.componentContents
+        }
     }
 }
 
@@ -63,13 +69,19 @@ extension TableComponent {
         tableComponentEntity.type = self.type.rawValue
         tableComponentEntity.isMinimumHeight = self.isMinimumHeight
         tableComponentEntity.title = self.title
-        tableComponentEntity.detail = self.detail.jsonString
+        tableComponentEntity.detail = self.componentContents.jsonString
         tableComponentEntity.snapshots = []
 
         self.snapshots.forEach { $0.store(in: ctx, parentComponentId: self.id) }
 
         parentPage.addToComponents(tableComponentEntity)
         return tableComponentEntity as! ComponentEntityType
+    }
+
+    func storeEntityContents(entity: MemoComponentEntity) {
+        if let tableComponentEntity = entity as? TableComponentEntity {
+            tableComponentEntity.detail = componentContents.jsonString
+        }
     }
 }
 
@@ -83,9 +95,15 @@ extension AudioComponent {
         audioComponentEntity.type = self.type.rawValue
         audioComponentEntity.isMinimumHeight = self.isMinimumHeight
         audioComponentEntity.title = self.title
-        audioComponentEntity.detail = self.detail.jsonString
+        audioComponentEntity.detail = self.componentContents.jsonString
         parentPage.addToComponents(audioComponentEntity)
         return audioComponentEntity as! ComponentEntityType
+    }
+
+    func storeEntityContents(entity: MemoComponentEntity) {
+        if let audioComponentEntity = entity as? AudioComponentEntity {
+            audioComponentEntity.detail = componentContents.jsonString
+        }
     }
 }
 
@@ -111,7 +129,7 @@ extension TableComponentSnapshot {
     func store(in ctx: NSManagedObjectContext, parentComponentId: UUID) {
         let fetchRequest = TableComponentEntity.findTableComponentEntityById(id: parentComponentId)
         let parentComponent = try! ctx.fetch(fetchRequest).first!
-        
+
         let tableComponentSnapshotEntity = TableComponentSnapshotEntity(context: ctx)
         tableComponentSnapshotEntity.snapshotID = self.snapshotID
         tableComponentSnapshotEntity.makingDate = self.makingDate

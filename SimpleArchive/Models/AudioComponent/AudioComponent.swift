@@ -10,8 +10,7 @@ final class AudioComponent: NSObject, Codable, PageComponent {
     var type: ComponentType { .audio }
     var renderingOrder: Int
     var isMinimumHeight: Bool
-    var componentDetail: AudioComponentContent { detail }
-    var detail: AudioComponentContent
+    var componentContents: AudioComponentContents
 
     init(
         id: UUID = UUID(),
@@ -19,27 +18,27 @@ final class AudioComponent: NSObject, Codable, PageComponent {
         isMinimumHeight: Bool = false,
         creationDate: Date = Date(),
         title: String = "AudioMemo",
-        detail: DetailType = AudioComponentContent()
+        contents: ContentType = AudioComponentContents()
     ) {
         self.id = id
         self.renderingOrder = renderingOrder
         self.isMinimumHeight = isMinimumHeight
         self.creationDate = creationDate
         self.title = title
-        self.detail = detail
+        self.componentContents = contents
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, creationDate, title, renderingOrder, isMinimumHeight, detail
+        case id, creationDate, title, renderingOrder, isMinimumHeight, componentContents
     }
 
     deinit { print("deinit AudioComponentModel : \(title)") }
 
     var trackNames: [String] {
-        detail.tracks.map { "\($0.id).\($0.fileExtension)" }
+        componentContents.tracks.map { "\($0.id).\($0.fileExtension)" }
     }
 
     func addAudios(audiotracks: [AudioTrack]) -> [Int] {
-        detail.addAudios(audiotracks: audiotracks)
+        componentContents.addAudios(audiotracks: audiotracks)
     }
 }

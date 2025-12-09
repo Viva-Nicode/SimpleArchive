@@ -83,7 +83,7 @@ final class TextEditorComponentView: PageComponentView<UITextView, TextEditorCom
     ) {
         super.configure(component: component, input: subject)
 
-        componentContentView.text = component.detail
+        componentContentView.text = component.componentContents
 
         captureButton.throttleTapPublisher()
             .flatMap { [weak self] _ -> AnyPublisher<String, Never> in
@@ -101,7 +101,7 @@ final class TextEditorComponentView: PageComponentView<UITextView, TextEditorCom
             }
             .store(in: &subscriptions)
 
-        captureButton.isEnabled = !component.detail.isEmpty
+        captureButton.isEnabled = !component.componentContents.isEmpty
 
         snapshotButton.throttleTapPublisher()
             .sink { [weak self] _ in

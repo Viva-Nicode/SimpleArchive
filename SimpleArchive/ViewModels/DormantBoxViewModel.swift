@@ -57,7 +57,7 @@ import UIKit
                         let audioComponents = page.getComponents.compactMap { $0 as? AudioComponent }
 
                         for audioComponent in audioComponents {
-                            for audioTrack in audioComponent.detail.tracks {
+                            for audioTrack in audioComponent.componentContents.tracks {
                                 audioFileManager.removeAudio(with: audioTrack)
                             }
                         }
