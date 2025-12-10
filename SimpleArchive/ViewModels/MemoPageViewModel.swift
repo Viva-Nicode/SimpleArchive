@@ -171,8 +171,7 @@ import UIKit
         let newComponent = componentFactory.createComponent()
 
         memoPage.appendChildComponent(component: newComponent)
-        memoComponentCoredataReposotory.createComponentEntity(
-            parentPageID: memoPage.id, component: newComponent)
+        memoComponentCoredataReposotory.createComponentEntity(parentPageID: memoPage.id, component: newComponent)
         output.send(.didAppendComponentAt(memoPage.compnentSize - 1))
     }
 
@@ -340,6 +339,7 @@ extension MemoPageViewModel {
         performWithComponentAt(componentID) { (componentIndex, tableComponent: TableComponent) in
             let newRow = tableComponent.componentContents.appendNewRow()
             tableComponent.setCaptureState(to: .needsCapture)
+            tableComponent.actions.append(.appendRow(row: newRow))
             memoComponentCoredataReposotory.saveComponentsDetail(modifiedComponent: tableComponent)
             output.send(.didAppendRowToTableView(componentIndex, newRow))
         }
@@ -349,6 +349,7 @@ extension MemoPageViewModel {
         performWithComponentAt(componentID) { (componentIndex, tableComponent: TableComponent) in
             let removedRowIndex = tableComponent.componentContents.removeRow(rowID)
             tableComponent.setCaptureState(to: .needsCapture)
+            tableComponent.actions.append(.removeRow(rowID: rowID))
             memoComponentCoredataReposotory.saveComponentsDetail(modifiedComponent: tableComponent)
             output.send(.didRemoveRowToTableView(componentIndex, removedRowIndex))
         }
@@ -358,6 +359,7 @@ extension MemoPageViewModel {
         performWithComponentAt(componentID) { (componentIndex, tableComponent: TableComponent) in
             let newColumn = tableComponent.componentContents.appendNewColumn(title: "column")
             tableComponent.setCaptureState(to: .needsCapture)
+            tableComponent.actions.append(.appendColumn(column: newColumn))
             memoComponentCoredataReposotory.saveComponentsDetail(modifiedComponent: tableComponent)
             output.send(.didAppendColumnToTableView(componentIndex, newColumn))
         }
@@ -369,9 +371,11 @@ extension MemoPageViewModel {
                 .componentContents
                 .editCellValeu(rowID: rowID, colID: colID, newValue: newCellValue)
             tableComponent.setCaptureState(to: .needsCapture)
+            tableComponent.actions.append(.editCellValue(rowID: rowID, columnID: colID, value: newCellValue))
             memoComponentCoredataReposotory.saveComponentsDetail(modifiedComponent: tableComponent)
             output.send(
-                .didApplyTableCellValueChanges(componentIndex, indices.rowIndex, indices.columnIndex, newCellValue))
+                .didApplyTableCellValueChanges(componentIndex, indices.rowIndex, indices.columnIndex, newCellValue)
+            )
         }
     }
 
@@ -389,6 +393,7 @@ extension MemoPageViewModel {
         performWithComponentAt(componentID) { (componentIndex, tableComponent: TableComponent) in
             tableComponent.componentContents.setColumn(columns: columns)
             tableComponent.setCaptureState(to: .needsCapture)
+            tableComponent.actions.append(.editColumn(columns: columns))
             memoComponentCoredataReposotory.saveComponentsDetail(modifiedComponent: tableComponent)
             output.send(.didApplyTableColumnChanges(componentIndex, columns))
         }

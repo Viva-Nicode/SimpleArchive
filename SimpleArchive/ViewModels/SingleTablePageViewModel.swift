@@ -80,31 +80,36 @@ import UIKit
 
                     output.send(.didCompleteComponentCapture)
 
+                case .willAppendRowToTable:
+                    let newRow = tableComponent.componentContents.appendNewRow()
+                    tableComponent.setCaptureState(to: .needsCapture)
+                    tableComponent.actions.append(.appendRow(row: newRow))
+                    coredataReposotory.saveComponentsDetail(modifiedComponent: tableComponent)
+                    output.send(.didAppendRowToTableView(newRow))
+
                 case .willRemoveRowToTable(let rowID):
                     let removedRowIndex = tableComponent.componentContents.removeRow(rowID)
                     tableComponent.setCaptureState(to: .needsCapture)
+                    tableComponent.actions.append(.removeRow(rowID: rowID))
                     coredataReposotory.saveComponentsDetail(modifiedComponent: tableComponent)
                     output.send(.didRemoveRowToTableView(removedRowIndex))
+
+                case .willAppendColumnToTable:
+                    let newColumn = tableComponent.componentContents.appendNewColumn(title: "column")
+                    tableComponent.setCaptureState(to: .needsCapture)
+                    tableComponent.actions.append(.appendColumn(column: newColumn))
+                    coredataReposotory.saveComponentsDetail(modifiedComponent: tableComponent)
+                    output.send(.didAppendColumnToTableView(newColumn))
 
                 case .willApplyTableCellChanges(let colID, let rowID, let newCellValue):
                     let indices = tableComponent
                         .componentContents
                         .editCellValeu(rowID: rowID, colID: colID, newValue: newCellValue)
                     tableComponent.setCaptureState(to: .needsCapture)
+                    tableComponent.actions.append(
+                        .editCellValue(rowID: rowID, columnID: colID, value: newCellValue))
                     coredataReposotory.saveComponentsDetail(modifiedComponent: tableComponent)
                     output.send(.didApplyTableCellValueChanges(indices.rowIndex, indices.columnIndex, newCellValue))
-
-                case .willAppendColumnToTable:
-                    let newColumn = tableComponent.componentContents.appendNewColumn(title: "column")
-                    tableComponent.setCaptureState(to: .needsCapture)
-                    coredataReposotory.saveComponentsDetail(modifiedComponent: tableComponent)
-                    output.send(.didAppendColumnToTableView(newColumn))
-
-                case .willAppendRowToTable:
-                    let newRow = tableComponent.componentContents.appendNewRow()
-                    tableComponent.setCaptureState(to: .needsCapture)
-                    coredataReposotory.saveComponentsDetail(modifiedComponent: tableComponent)
-                    output.send(.didAppendRowToTableView(newRow))
 
                 case .willPresentTableColumnEditingPopupView(let columnID):
                     let columnIndex = tableComponent.componentContents.columns.firstIndex(where: { $0.id == columnID })!
@@ -115,6 +120,7 @@ import UIKit
                 case .willApplyTableColumnChanges(let editedColumns):
                     tableComponent.componentContents.setColumn(columns: editedColumns)
                     tableComponent.setCaptureState(to: .needsCapture)
+                    tableComponent.actions.append(.editColumn(columns: editedColumns))
                     coredataReposotory.saveComponentsDetail(modifiedComponent: tableComponent)
                     output.send(.didApplyTableColumnChanges(editedColumns))
             }

@@ -37,7 +37,7 @@ final class TextEditorComponent: NSObject, Codable, SnapshotRestorablePageCompon
 
     @discardableResult
     func makeSnapshot(desc: String, saveMode: SnapshotSaveMode) -> TextEditorComponentSnapshot {
-        let snapshot = TextEditorComponentSnapshot(detail: componentContents, description: desc, saveMode: saveMode)
+        let snapshot = TextEditorComponentSnapshot(contents: componentContents, description: desc, saveMode: saveMode)
         snapshots.insert(snapshot, at: 0)
         return snapshot
     }

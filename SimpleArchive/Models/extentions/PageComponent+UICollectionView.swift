@@ -35,7 +35,7 @@ extension TextEditorComponent {
 
         cell.configure(
             snapshotID: snapshots[index.item].snapshotID,
-            snapshotDetail: snapshots[index.item].detail,
+            snapshotDetail: snapshots[index.item].contents,
             title: title,
             createDate: creationDate,
             input: subject)
@@ -76,7 +76,7 @@ extension TableComponent {
 
         cell.configure(
             snapshotID: snapshots[indexPath.item].snapshotID,
-            snapshotDetail: snapshots[indexPath.item].detail,
+            snapshotDetail: snapshots[indexPath.item].contents,
             title: title,
             createDate: creationDate,
             input: subject)

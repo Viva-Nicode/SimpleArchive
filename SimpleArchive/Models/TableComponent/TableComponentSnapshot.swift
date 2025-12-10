@@ -7,24 +7,24 @@ struct TableComponentSnapshot: ComponentSnapshotType {
     var makingDate: Date
     var description: String
     var saveMode: SnapshotSaveMode
-    var detail: TableComponentContents
+    var contents: TableComponentContents
 
     init(
         snapshotID: UUID = UUID(),
         makingDate: Date = Date(),
-        detail: TableComponentContents,
+        contents: TableComponentContents,
         description: String,
         saveMode: SnapshotSaveMode
     ) {
         self.snapshotID = snapshotID
         self.makingDate = makingDate
-        self.detail = detail
+        self.contents = contents
         self.description = description
         self.saveMode = saveMode
     }
 
     func revert(component: TableComponent) {
-        component.componentContents = self.detail
+        component.componentContents = self.contents
     }
 }
 

@@ -1,5 +1,5 @@
-import Foundation
 import CoreData
+import Foundation
 
 extension MemoPageEntity {
 
@@ -15,10 +15,9 @@ extension MemoPageEntity {
         return fetchRequest
     }
 
-    
     @NSManaged public var components: Set<MemoComponentEntity>
     @NSManaged public var containingDirectory: MemoDirectoryEntity
-    @NSManaged public var isSingleComponentPage:Bool
+    @NSManaged public var isSingleComponentPage: Bool
 }
 
 // MARK: Generated accessors for components

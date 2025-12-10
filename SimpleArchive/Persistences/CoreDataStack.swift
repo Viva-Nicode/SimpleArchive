@@ -105,7 +105,15 @@ class CoreDataStack: PersistentStore {
 
         if let deletedObjects = userInfo[NSDeletedObjectsKey] as? Set<NSManagedObject> {
             for deletedObject in deletedObjects {
-                AppDelegate.prettyPrint("deleted : \(type(of: deletedObject))")
+                if let columnEntity = deletedObject as? TableComponentColumnEntity {
+                    print("columnEntity deleted : \(columnEntity.title)")
+                } else if deletedObject as? TableComponentRowEntity != nil {
+                    print("rowEntity deleted")
+                } else if let cellEntity = deletedObject as? TableComponentCellEntity {
+                    print("cellEntity deleted :\(cellEntity.value)")
+                } else {
+                    AppDelegate.prettyPrint("deleted : \(type(of: deletedObject))")
+                }
             }
         }
 

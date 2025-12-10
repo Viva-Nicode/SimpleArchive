@@ -21,7 +21,7 @@ extension MemoDirectoryEntity {
     @NSManaged public var childDirectories: Set<MemoDirectoryEntity>
     @NSManaged public var pages: Set<MemoPageEntity>
     @NSManaged public var parentDirectory: MemoDirectoryEntity?
-
+    
 }
 
 // MARK: Generated accessors for childDirectories

@@ -29,16 +29,31 @@
         <attribute name="name" attributeType="String"/>
     </entity>
     <entity name="TableComponentCellEntity" representedClassName="TableComponentCellEntity" syncable="YES">
-        <attribute name="attribute" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
-        <attribute name="cellID" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
-        <attribute name="value" optional="YES" attributeType="String"/>
+        <attribute name="value" attributeType="String"/>
+        <relationship name="column" maxCount="1" deletionRule="Nullify" destinationEntity="TableComponentColumnEntity" inverseName="cells" inverseEntity="TableComponentColumnEntity"/>
+        <relationship name="row" maxCount="1" deletionRule="Nullify" destinationEntity="TableComponentRowEntity" inverseName="cells" inverseEntity="TableComponentRowEntity"/>
+    </entity>
+    <entity name="TableComponentColumnEntity" representedClassName="TableComponentColumnEntity" syncable="YES">
+        <attribute name="id" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="title" attributeType="String"/>
+        <relationship name="cells" toMany="YES" deletionRule="Cascade" destinationEntity="TableComponentCellEntity" inverseName="column" inverseEntity="TableComponentCellEntity"/>
+        <relationship name="tableComponent" maxCount="1" deletionRule="Nullify" destinationEntity="TableComponentEntity" inverseName="columns" inverseEntity="TableComponentEntity"/>
     </entity>
     <entity name="TableComponentEntity" representedClassName="TableComponentEntity" parentEntity="MemoComponentEntity" syncable="YES">
-        <attribute name="detail" attributeType="String"/>
+        <attribute name="sortBy" optional="YES" attributeType="String"/>
+        <relationship name="columns" toMany="YES" deletionRule="Cascade" ordered="YES" destinationEntity="TableComponentColumnEntity" inverseName="tableComponent" inverseEntity="TableComponentColumnEntity"/>
+        <relationship name="rows" toMany="YES" deletionRule="Cascade" ordered="YES" destinationEntity="TableComponentRowEntity" inverseName="tableComponent" inverseEntity="TableComponentRowEntity"/>
         <relationship name="snapshots" toMany="YES" deletionRule="Cascade" destinationEntity="TableComponentSnapshotEntity" inverseName="component" inverseEntity="TableComponentSnapshotEntity"/>
     </entity>
+    <entity name="TableComponentRowEntity" representedClassName="TableComponentRowEntity" syncable="YES">
+        <attribute name="createdAt" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="id" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="modifiedAt" attributeType="Date" usesScalarValueType="NO"/>
+        <relationship name="cells" toMany="YES" deletionRule="Cascade" destinationEntity="TableComponentCellEntity" inverseName="row" inverseEntity="TableComponentCellEntity"/>
+        <relationship name="tableComponent" maxCount="1" deletionRule="Nullify" destinationEntity="TableComponentEntity" inverseName="rows" inverseEntity="TableComponentEntity"/>
+    </entity>
     <entity name="TableComponentSnapshotEntity" representedClassName="TableComponentSnapshotEntity" syncable="YES">
-        <attribute name="detail" attributeType="String"/>
+        <attribute name="contents" attributeType="String"/>
         <attribute name="makingDate" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="saveMode" attributeType="String"/>
         <attribute name="snapShotDescription" attributeType="String"/>
@@ -46,11 +61,11 @@
         <relationship name="component" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="TableComponentEntity" inverseName="snapshots" inverseEntity="TableComponentEntity"/>
     </entity>
     <entity name="TextEditorComponentEntity" representedClassName="TextEditorComponentEntity" parentEntity="MemoComponentEntity" syncable="YES">
-        <attribute name="detail" optional="YES" attributeType="String"/>
+        <attribute name="contents" optional="YES" attributeType="String"/>
         <relationship name="snapshots" toMany="YES" deletionRule="Cascade" destinationEntity="TextEditorComponentSnapshotEntity" inverseName="component" inverseEntity="TextEditorComponentSnapshotEntity"/>
     </entity>
     <entity name="TextEditorComponentSnapshotEntity" representedClassName="TextEditorComponentSnapshotEntity" syncable="YES">
-        <attribute name="detail" optional="YES" attributeType="String"/>
+        <attribute name="contents" optional="YES" attributeType="String"/>
         <attribute name="makingDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="saveMode" optional="YES" attributeType="String"/>
         <attribute name="snapShotDescription" optional="YES" attributeType="String"/>

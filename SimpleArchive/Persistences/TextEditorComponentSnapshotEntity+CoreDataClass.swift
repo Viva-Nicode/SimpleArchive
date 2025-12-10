@@ -7,7 +7,7 @@ public class TextEditorComponentSnapshotEntity: NSManagedObject {
         TextEditorComponentSnapshot(
             snapshotID: self.snapshotID,
             makingDate: self.makingDate,
-            detail: self.detail,
+            contents: self.contents,
             description: self.snapShotDescription,
             saveMode: .init(rawValue: self.saveMode) ?? .automatic)
     }

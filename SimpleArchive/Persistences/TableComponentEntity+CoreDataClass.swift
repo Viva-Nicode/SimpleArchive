@@ -10,7 +10,7 @@ public class TableComponentEntity: MemoComponentEntity {
             isMinimumHeight: self.isMinimumHeight,
             creationDate: self.creationDate,
             title: self.title,
-            contents: TableComponentContents(jsonString: self.detail)!,
+            contents: TableComponentContents(entity: self),
             captureState: .captured,
             componentSnapshots: self.snapshots
                 .map { $0.convertToModel() }

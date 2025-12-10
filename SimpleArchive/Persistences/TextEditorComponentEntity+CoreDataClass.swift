@@ -11,7 +11,7 @@ public class TextEditorComponentEntity: MemoComponentEntity {
             isMinimumHeight: self.isMinimumHeight,
             creationDate: self.creationDate,
             title: self.title,
-            contents: self.detail,
+            contents: self.contents,
             captureState: .captured,
             componentSnapshots: self.snapshots
                 .map { $0.convertToModel() }

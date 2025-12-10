@@ -5,25 +5,25 @@ struct TextEditorComponentSnapshot: ComponentSnapshotType {
 
     let snapshotID: UUID
     let makingDate: Date
-    let detail: String
+    let contents: String
     let description: String
     let saveMode: SnapshotSaveMode
 
     init(
         snapshotID: UUID = UUID(),
         makingDate: Date = Date(),
-        detail: String,
+        contents: String,
         description: String,
         saveMode: SnapshotSaveMode
     ) {
         self.snapshotID = snapshotID
         self.makingDate = makingDate
-        self.detail = detail
+        self.contents = contents
         self.description = description
         self.saveMode = saveMode
     }
 
     func revert(component: TextEditorComponent) {
-        component.componentContents = self.detail
+        component.componentContents = self.contents
     }
 }

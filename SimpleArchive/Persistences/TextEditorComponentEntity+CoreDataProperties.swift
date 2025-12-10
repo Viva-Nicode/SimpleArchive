@@ -15,7 +15,7 @@ extension TextEditorComponentEntity {
         return fetchRequest
     }
 
-    @NSManaged public var detail: String
+    @NSManaged public var contents: String
     @NSManaged public var snapshots: Set<TextEditorComponentSnapshotEntity>
 
 }

@@ -1,5 +1,13 @@
 import Foundation
 
+enum TableComponentAction: Codable {
+    case appendRow(row: TableComponentRow)
+    case removeRow(rowID: UUID)
+    case appendColumn(column: TableComponentColumn)
+    case editColumn(columns: [TableComponentColumn])
+    case editCellValue(rowID: UUID, columnID: UUID, value: String)
+}
+
 final class TableComponent: NSObject, Codable, SnapshotRestorablePageComponent {
 
     var id: UUID
@@ -11,6 +19,7 @@ final class TableComponent: NSObject, Codable, SnapshotRestorablePageComponent {
     var componentContents: TableComponentContents
     var captureState: CaptureState
     var snapshots: [TableComponentSnapshot] = []
+    var actions: [TableComponentAction] = []
 
     init(
         id: UUID = UUID(),
@@ -36,7 +45,7 @@ final class TableComponent: NSObject, Codable, SnapshotRestorablePageComponent {
 
     @discardableResult
     func makeSnapshot(desc: String, saveMode: SnapshotSaveMode) -> TableComponentSnapshot {
-        let snapshot = TableComponentSnapshot(detail: componentContents, description: desc, saveMode: saveMode)
+        let snapshot = TableComponentSnapshot(contents: componentContents, description: desc, saveMode: saveMode)
         snapshots.insert(snapshot, at: 0)
         return snapshot
     }
