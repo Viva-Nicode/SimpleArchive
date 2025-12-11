@@ -10,7 +10,7 @@ public class AudioComponentEntity: MemoComponentEntity {
             isMinimumHeight: self.isMinimumHeight,
             creationDate: self.creationDate,
             title: self.title,
-            contents: AudioComponentContents(jsonString: self.detail)!)
+            contents: AudioComponentContents(entity: self))
 
         return audioComponent
     }

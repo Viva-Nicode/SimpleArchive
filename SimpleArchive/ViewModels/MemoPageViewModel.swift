@@ -423,10 +423,11 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
                     let audioMetadata = audioFileManager.readAudioMetadata(audioURL: audioURL)
 
                     var fileTitle = audioURL.deletingPathExtension().lastPathComponent
-                    if fileTitle.isEmpty { fileTitle = "no title" }
-                    if let metadataTitle = audioMetadata.title { fileTitle = metadataTitle }
+                    if fileTitle.isEmpty { fileTitle = .emptyAudioTitle }
+                    if let metadataTitle = audioMetadata.title, !metadataTitle.isEmpty { fileTitle = metadataTitle }
 
-                    let artist: String = audioMetadata.artist ?? "Unknown"
+                    let artist = audioMetadata.artist ?? .emptyAudioArtist
+                    let lyrics = audioMetadata.lyrics ?? ""
 
                     let defaultAudioThumbnailImage = UIImage(named: "defaultMusicThumbnail")!
                     let thumnnailImageData =
@@ -441,7 +442,8 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
                         title: fileTitle,
                         artist: artist,
                         thumbnail: thumnnailImageData,
-                        fileExtension: audioURL.pathExtension)
+                        lyrics: lyrics,
+                        fileExtension: .init(rawValue: audioURL.pathExtension)!)
 
                     audioFileManager.writeAudioMetadata(audioTrack: track)
                     return track
@@ -456,6 +458,8 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
                             audioComponentDataSource.nowPlayingAudioIndex = component.componentContents.tracks
                                 .firstIndex { $0.id == currentPlayingAudioTrackID }
 
+                            component.actions.append(
+                                .appendAudio(appendedIndices: appendedIndices, tracks: audioTracks))
                             memoComponentCoredataReposotory.saveComponentsDetail(modifiedComponent: component)
 
                             output.send(.didAppendAudioTrackRows(componentIndex, appendedIndices))
@@ -491,10 +495,11 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
             let audioMetadata = audioFileManager.readAudioMetadata(audioURL: storedFileURL)
 
             var fileTitle = audioFileUrl.deletingPathExtension().lastPathComponent
-            if fileTitle.isEmpty { fileTitle = "no title" }
-            if let metadataTile = audioMetadata.title { fileTitle = metadataTile }
+            if fileTitle.isEmpty { fileTitle = .emptyAudioTitle }
+            if let metadataTitle = audioMetadata.title, !metadataTitle.isEmpty { fileTitle = metadataTitle }
 
-            let artist: String = audioMetadata.artist ?? "Unknown"
+            let artist = audioMetadata.artist ?? .emptyAudioArtist
+            let lyrics = audioMetadata.lyrics ?? ""
 
             let defaultAudioThumbnail = UIImage(named: "defaultMusicThumbnail")!
             let thumnnailImageData = audioMetadata.thumbnail ?? defaultAudioThumbnail.jpegData(compressionQuality: 1.0)!
@@ -504,7 +509,8 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
                 title: fileTitle,
                 artist: artist,
                 thumbnail: thumnnailImageData,
-                fileExtension: storedFileURL.pathExtension)
+                lyrics: lyrics,
+                fileExtension: .init(rawValue: storedFileURL.pathExtension)!)
 
             audioFileManager.writeAudioMetadata(audioTrack: track)
             audioTracks.append(track)
@@ -520,6 +526,8 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
             audioComponentDataSource.nowPlayingAudioIndex = component.componentContents.tracks
                 .firstIndex { $0.id == currentPlayingAudioTrackID }
 
+            component.actions.append(
+                .appendAudio(appendedIndices: appendedIndices, tracks: audioTracks))
             memoComponentCoredataReposotory.saveComponentsDetail(modifiedComponent: component)
 
             output.send(.didAppendAudioTrackRows(componentIndex, appendedIndices))
@@ -538,6 +546,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
 
         performWithComponentAt(componentID) { (componentIndex, component: AudioComponent) in
 
+            let audioTrack = component.componentContents.tracks[trackIndex]
             let audioTrackURL = audioFileManager.createAudioFileURL(fileName: component.trackNames[trackIndex])
             let audioSampleData = audioFileManager.readAudioSampleData(audioURL: audioTrackURL)
 
@@ -557,7 +566,11 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
             }
 
             let audioTotalDuration = audioTrackController.totalTime
-            let audioMetadata = audioFileManager.readAudioMetadata(audioURL: audioTrackURL)
+            let audioMetadata = AudioTrackMetadata(
+                title: audioTrack.title,
+                artist: audioTrack.artist,
+                lyrics: audioTrack.lyrics,
+                thumbnail: audioTrack.thumbnail)
 
             output.send(
                 .didPlayAudioTrack(
@@ -641,10 +654,14 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
             if let newArtist = newMetadata.artist {
                 component.componentContents.tracks[trackIndex].artist = newArtist
             }
+            if let newLyrics = newMetadata.lyrics {
+                component.componentContents.tracks[trackIndex].lyrics = newLyrics
+            }
             if let newThumbnail = newMetadata.thumbnail {
                 component.componentContents.tracks[trackIndex].thumbnail = newThumbnail
             }
 
+            component.actions.append(.applyAudioMetadata(audioID: trackID, metadata: newMetadata))
             memoComponentCoredataReposotory.saveComponentsDetail(modifiedComponent: component)
             audioFileManager.writeAudioMetadata(audioTrack: component.componentContents.tracks[trackIndex])
 
@@ -707,6 +724,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
             datasource.tracks = audioComponent.componentContents.tracks
             datasource.sortBy = .manual
 
+            audioComponent.actions.append(.moveAudioOrder(src: src, des: des))
             memoComponentCoredataReposotory.saveComponentsDetail(modifiedComponent: audioComponent)
 
             datasource.nowPlayingAudioIndex = audioComponent.componentContents.tracks.firstIndex {
@@ -745,6 +763,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
             audioComponentDataSource.tracks = audioComponent.componentContents.tracks
             audioComponentDataSource.sortBy = sortBy
 
+            audioComponent.actions.append(.sortAudioTracks(sortBy: sortBy))
             memoComponentCoredataReposotory.saveComponentsDetail(modifiedComponent: audioComponent)
 
             output.send(.didSortAudioTracks(componentIndex, before, after))
@@ -763,6 +782,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
 
             audioFileManager.removeAudio(with: removedAudioTrack)
             audioComponentDataSource.tracks = component.componentContents.tracks
+            component.actions.append(.removeAudio(removedAudioID: removedAudioTrack.id))
             memoComponentCoredataReposotory.saveComponentsDetail(modifiedComponent: component)
 
             if audioComponentDataSource.nowPlayingAudioIndex != nil {

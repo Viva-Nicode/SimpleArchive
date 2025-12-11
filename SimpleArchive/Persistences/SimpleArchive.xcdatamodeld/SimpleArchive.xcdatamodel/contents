@@ -1,7 +1,18 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="23788" systemVersion="24G90" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
     <entity name="AudioComponentEntity" representedClassName="AudioComponentEntity" parentEntity="MemoComponentEntity" syncable="YES">
-        <attribute name="detail" attributeType="String"/>
+        <attribute name="sortBy" attributeType="String"/>
+        <relationship name="audios" toMany="YES" deletionRule="Cascade" ordered="YES" destinationEntity="AudioComponentTrackEntity" inverseName="audioComponent" inverseEntity="AudioComponentTrackEntity"/>
+    </entity>
+    <entity name="AudioComponentTrackEntity" representedClassName="AudioComponentTrackEntity" syncable="YES">
+        <attribute name="artist" attributeType="String"/>
+        <attribute name="createData" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="fileExtension" attributeType="String"/>
+        <attribute name="id" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="lyrics" attributeType="String"/>
+        <attribute name="thumbnail" attributeType="Binary"/>
+        <attribute name="title" attributeType="String"/>
+        <relationship name="audioComponent" maxCount="1" deletionRule="Nullify" destinationEntity="AudioComponentEntity" inverseName="audios" inverseEntity="AudioComponentEntity"/>
     </entity>
     <entity name="MemoComponentEntity" representedClassName="MemoComponentEntity" isAbstract="YES" syncable="YES">
         <attribute name="creationDate" attributeType="Date" usesScalarValueType="NO"/>

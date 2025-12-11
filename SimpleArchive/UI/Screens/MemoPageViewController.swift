@@ -558,7 +558,7 @@ extension MemoPageViewController {
             if let row = contentView.audioTrackTableView.cellForRow(at: .init(row: targetTrackIndex, section: .zero)),
                 let audioTableRowView = row as? AudioTableRowView
             {
-                audioTableRowView.update(metadata)
+                audioTableRowView.updateAudioMetadata(metadata)
             }
 
             if isNowPlayingTrack {

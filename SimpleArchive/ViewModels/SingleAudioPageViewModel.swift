@@ -114,10 +114,11 @@ import UIKit
                 let audioMetadata = audioFileManager.readAudioMetadata(audioURL: audioURL)
 
                 var fileTitle = audioURL.deletingPathExtension().lastPathComponent
-                if fileTitle.isEmpty { fileTitle = "no title" }
+                if fileTitle.isEmpty { fileTitle = .emptyAudioTitle }
                 if let metadataTitle = audioMetadata.title { fileTitle = metadataTitle }
 
-                let artist: String = audioMetadata.artist ?? "Unknown"
+                let artist = audioMetadata.artist ?? .emptyAudioArtist
+                let lyrics = audioMetadata.lyrics ?? ""
 
                 let defaultAudioThumbnailImage = UIImage(named: "defaultMusicThumbnail")!
                 let thumnnailImageData =
@@ -132,7 +133,8 @@ import UIKit
                     title: fileTitle,
                     artist: artist,
                     thumbnail: thumnnailImageData,
-                    fileExtension: audioURL.pathExtension)
+                    lyrics: lyrics,
+                    fileExtension: .init(rawValue: audioURL.pathExtension)!)
 
                 audioFileManager.writeAudioMetadata(audioTrack: track)
                 return track
@@ -149,6 +151,8 @@ import UIKit
                                 $0.id == currentPlayingAudioTrackID
                             }
 
+                        audioComponent.actions.append(
+                            .appendAudio(appendedIndices: appendedIndices, tracks: audioTracks))
                         coredataReposotory.saveComponentsDetail(modifiedComponent: audioComponent)
 
                         output.send(.didAppendAudioTrackRows(appendedIndices))
@@ -183,10 +187,11 @@ import UIKit
 
             var fileTitle = audioFileUrl.deletingPathExtension().lastPathComponent
 
-            if fileTitle.isEmpty { fileTitle = "no title" }
+            if fileTitle.isEmpty { fileTitle = .emptyAudioTitle }
             if let metadataTitle = audioMetadata.title { fileTitle = metadataTitle }
 
-            let artist: String = audioMetadata.artist ?? "Unknown"
+            let artist = audioMetadata.artist ?? .emptyAudioArtist
+            let lyrics = audioMetadata.lyrics ?? ""
 
             let defaultAudioThumbnail = UIImage(named: "defaultMusicThumbnail")!
             let thumnnailImageData = audioMetadata.thumbnail ?? defaultAudioThumbnail.jpegData(compressionQuality: 1.0)!
@@ -196,7 +201,8 @@ import UIKit
                 title: fileTitle,
                 artist: artist,
                 thumbnail: thumnnailImageData,
-                fileExtension: storedFileURL.pathExtension)
+                lyrics: lyrics,
+                fileExtension: .init(rawValue: storedFileURL.pathExtension)!)
 
             audioFileManager.writeAudioMetadata(audioTrack: track)
             audioTracks.append(track)
@@ -211,6 +217,8 @@ import UIKit
             $0.id == currentPlayingAudioTrackID
         }
 
+        audioComponent.actions.append(
+            .appendAudio(appendedIndices: appendedIndices, tracks: audioTracks))
         coredataReposotory.saveComponentsDetail(modifiedComponent: audioComponent)
 
         output.send(.didAppendAudioTrackRows(appendedIndices))
@@ -218,6 +226,7 @@ import UIKit
 
     private func playAudioTrack(trackIndex: Int) {
 
+        let audioTrack = audioComponent.componentContents.tracks[trackIndex]
         let audioTrackURL = audioFileManager.createAudioFileURL(fileName: audioComponent.trackNames[trackIndex])
         let audioSampleData = audioFileManager.readAudioSampleData(audioURL: audioTrackURL)
 
@@ -235,7 +244,11 @@ import UIKit
         }
 
         let audioTotalDuration = audioTrackController.totalTime
-        let audioMetadata = audioFileManager.readAudioMetadata(audioURL: audioTrackURL)
+        let audioMetadata = AudioTrackMetadata(
+            title: audioTrack.title,
+            artist: audioTrack.artist,
+            lyrics: audioTrack.lyrics,
+            thumbnail: audioTrack.thumbnail)
 
         output.send(
             .didPlayAudioTrack(
@@ -301,10 +314,14 @@ import UIKit
         if let newArtist = newMetadata.artist {
             audioComponent.componentContents.tracks[trackIndex].artist = newArtist
         }
+        if let newLyrics = newMetadata.lyrics {
+            audioComponent.componentContents.tracks[trackIndex].lyrics = newLyrics
+        }
         if let newThumbnail = newMetadata.thumbnail {
             audioComponent.componentContents.tracks[trackIndex].thumbnail = newThumbnail
         }
 
+        audioComponent.actions.append(.applyAudioMetadata(audioID: targetAudioTrackID, metadata: newMetadata))
         coredataReposotory.saveComponentsDetail(modifiedComponent: audioComponent)
         audioFileManager.writeAudioMetadata(audioTrack: audioComponent.componentContents.tracks[trackIndex])
 
@@ -341,6 +358,7 @@ import UIKit
         audioContentTableDataSource.tracks = audioComponent.componentContents.tracks
         audioContentTableDataSource.sortBy = .manual
 
+        audioComponent.actions.append(.moveAudioOrder(src: src, des: des))
         coredataReposotory.saveComponentsDetail(modifiedComponent: audioComponent)
 
         audioContentTableDataSource.nowPlayingAudioIndex = audioComponent.componentContents.tracks.firstIndex {
@@ -366,6 +384,7 @@ import UIKit
                 break
         }
 
+        audioComponent.actions.append(.sortAudioTracks(sortBy: sortBy))
         coredataReposotory.saveComponentsDetail(modifiedComponent: audioComponent)
 
         audioContentTableDataSource.nowPlayingAudioIndex = audioComponent.componentContents.tracks.firstIndex {
@@ -387,6 +406,7 @@ import UIKit
 
         audioFileManager.removeAudio(with: removedAudioTrack)
         audioContentTableDataSource.tracks = audioComponent.componentContents.tracks
+        audioComponent.actions.append(.removeAudio(removedAudioID: removedAudioTrack.id))
         coredataReposotory.saveComponentsDetail(modifiedComponent: audioComponent)
 
         if audioContentTableDataSource.nowPlayingAudioIndex != nil {

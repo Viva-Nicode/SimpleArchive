@@ -29,3 +29,8 @@ extension Float {
         return String(format: "%d:%02d", minutes, seconds)
     }
 }
+
+extension String {
+    static var emptyAudioTitle: Self { "no title" }
+    static var emptyAudioArtist: Self { "unknown" }
+}

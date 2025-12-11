@@ -253,11 +253,15 @@ final class AudioControlBarView: UIView {
     }
 
     func applyUpdatedMetadata(with data: AudioTrackMetadata) {
-        titleLabel.text = data.title
-        nowPlayingInfoCenter.nowPlayingInfo?[MPMediaItemPropertyTitle] = data.title
+        if let title = data.title {
+            titleLabel.text = title
+            nowPlayingInfoCenter.nowPlayingInfo?[MPMediaItemPropertyTitle] = title
+        }
 
-        artistLabel.text = data.artist
-        nowPlayingInfoCenter.nowPlayingInfo?[MPMediaItemPropertyArtist] = data.artist
+        if let artist = data.artist {
+            artistLabel.text = artist
+            nowPlayingInfoCenter.nowPlayingInfo?[MPMediaItemPropertyArtist] = artist
+        }
 
         if let thumbnailData = data.thumbnail,
             let thumbnailImage = UIImage(data: thumbnailData)
@@ -357,7 +361,7 @@ final class AudioControlBarView: UIView {
         audioProgressBar.isScrubbingEnabled = false
 
         titleLabel.text = "Not Playing"
-        artistLabel.text = "UnKnown"
+        artistLabel.text = "unknown"
         thumbnailImageView.image = UIImage(named: "defaultMusicThumbnail")
         playPauseButton.isEnabled = false
         previousButton.isEnabled = false

@@ -2,6 +2,14 @@ import AVFAudio
 import Foundation
 import UIKit
 
+enum AudioComponentAction: Codable {
+    case appendAudio(appendedIndices: [Int], tracks: [AudioTrack])
+    case removeAudio(removedAudioID: UUID)
+    case applyAudioMetadata(audioID: UUID, metadata: AudioTrackMetadata)
+    case sortAudioTracks(sortBy: AudioTrackSortBy)
+    case moveAudioOrder(src: Int, des: Int)
+}
+
 final class AudioComponent: NSObject, Codable, PageComponent {
 
     var id: UUID
@@ -11,6 +19,7 @@ final class AudioComponent: NSObject, Codable, PageComponent {
     var renderingOrder: Int
     var isMinimumHeight: Bool
     var componentContents: AudioComponentContents
+    var actions: [AudioComponentAction] = []
 
     init(
         id: UUID = UUID(),

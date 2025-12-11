@@ -87,19 +87,44 @@ final class AudioTrackEditPopupView: PopupView {
 
     var confirmButtonPublisher: AnyPublisher<AudioTrackMetadata, Never> {
         confirmButton.throttleTapPublisher()
-            .map { _ in
-                AudioTrackMetadata(
-                    title: self.audioTrackTitleTextField.text,
-                    artist: self.audioTrackArtistTextField.text,
-                    thumbnail: self.thumbnailImage.image?.jpegData(compressionQuality: 1.0))
+            .map { [weak self] _ in
+                guard let self else { return AudioTrackMetadata() }
+
+                var title =
+                    originTitle == audioTrackTitleTextField.text
+                    ? nil : audioTrackTitleTextField.text?.trimmingCharacters(in: .whitespaces)
+                title = title != nil && title!.isEmpty ? .emptyAudioTitle : title
+
+                var artist =
+                    originArtist == audioTrackArtistTextField.text
+                    ? nil : audioTrackArtistTextField.text?.trimmingCharacters(in: .whitespaces)
+                artist = artist != nil && artist!.isEmpty ? .emptyAudioArtist : artist
+
+                let thumbnail =
+                    originThumbnail == thumbnailImage.image
+                    ? nil : thumbnailImage.image?.jpegData(compressionQuality: 1.0)
+
+                return AudioTrackMetadata(
+                    title: title,
+                    artist: artist,
+                    thumbnail: thumbnail)
             }
             .eraseToAnyPublisher()
     }
 
+    var originTitle: String?
+    var originArtist: String?
+    var originThumbnail: UIImage?
+
     init(title: String?, artist: String?, thumbnail: UIImage?) {
-        thumbnailImage.image = thumbnail
+        originTitle = title
         audioTrackTitleTextField.text = title
+
+        originArtist = artist
         audioTrackArtistTextField.text = artist
+
+        originThumbnail = thumbnail
+        thumbnailImage.image = thumbnail
         super.init()
     }
 

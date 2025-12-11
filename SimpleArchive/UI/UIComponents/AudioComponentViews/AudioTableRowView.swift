@@ -110,9 +110,13 @@ final class AudioTableRowView: UITableViewCell {
         thumbnailImageView.image = UIImage(data: audioTrack.thumbnail)
     }
 
-    func update(_ data: AudioTrackMetadata) {
-        titleLabel.text = data.title
-        artistLabel.text = data.artist
+    func updateAudioMetadata(_ data: AudioTrackMetadata) {
+        if let title = data.title {
+            titleLabel.text = title
+        }
+        if let artist = data.artist {
+            artistLabel.text = artist
+        }
         if let thumbnailData = data.thumbnail {
             thumbnailImageView.image = UIImage(data: thumbnailData)
         }

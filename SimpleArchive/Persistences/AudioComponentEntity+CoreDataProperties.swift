@@ -16,5 +16,7 @@ extension AudioComponentEntity {
         return NSFetchRequest<AudioComponentEntity>(entityName: "AudioComponentEntity")
     }
 
-    @NSManaged public var detail: String
+    @NSManaged public var audios: NSMutableOrderedSet
+    @NSManaged public var sortBy: String
+    
 }

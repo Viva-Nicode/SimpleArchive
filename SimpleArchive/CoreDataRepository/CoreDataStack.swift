@@ -78,9 +78,10 @@ class CoreDataStack: PersistentStore {
                                 try context.save()
                             }
                             promise(.success(result))
-                        } catch {
+                        } catch let error as NSError {
                             context.reset()
-                            print(error.localizedDescription)
+                            print("coredataStack : \(error.localizedDescription)")
+                            print(error.code)
                             promise(.failure(error))
                         }
                     }
@@ -111,6 +112,8 @@ class CoreDataStack: PersistentStore {
                     print("rowEntity deleted")
                 } else if let cellEntity = deletedObject as? TableComponentCellEntity {
                     print("cellEntity deleted :\(cellEntity.value)")
+                } else if let audioEntity = deletedObject as? AudioComponentTrackEntity {
+                    print("TrackEntity deleted : \(audioEntity.title)")
                 } else {
                     AppDelegate.prettyPrint("deleted : \(type(of: deletedObject))")
                 }

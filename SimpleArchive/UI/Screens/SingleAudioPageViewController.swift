@@ -227,7 +227,7 @@ final class SingleAudioPageViewController: UIViewController, ViewControllerType 
         trackIndexAfterEditing: Int?
     ) {
         performWithAudioTrackRowAt(targetTrackIndex) { row in
-            row.update(metadata)
+            row.updateAudioMetadata(metadata)
         }
 
         if isNowPlayingTrack {

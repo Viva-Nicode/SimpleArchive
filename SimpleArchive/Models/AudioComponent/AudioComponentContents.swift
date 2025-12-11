@@ -1,5 +1,11 @@
+import CoreData
 import Foundation
-import UIKit
+
+enum AudioTrackSortBy: String, Codable {
+    case name = "name"
+    case createDate = "createDate"
+    case manual = "manual"
+}
 
 struct AudioComponentContents: Codable {
 
@@ -34,38 +40,45 @@ struct AudioComponentContents: Codable {
         }
         return appendedIndex
     }
-
-    var jsonString: String {
-        do {
-            let encoder = JSONEncoder()
-            encoder.outputFormatting = .prettyPrinted
-
-            let jsonData = try encoder.encode(self)
-            if let jsonString = String(data: jsonData, encoding: .utf8) {
-                return jsonString
-            } else {
-                return ""
-            }
-        } catch {
-            return ""
-        }
-    }
-
-    init?(jsonString: String) {
-        guard let data = jsonString.data(using: .utf8) else {
-            return nil
-        }
-        do {
-            let decoder = JSONDecoder()
-            self = try decoder.decode(AudioComponentContents.self, from: data)
-        } catch {
-            return nil
-        }
-    }
 }
 
-enum AudioTrackSortBy: String, Codable {
-    case name = "name"
-    case createDate = "createDate"
-    case manual = "manual"
+extension AudioComponentContents {
+    func storeAudioComponentContent(for audioComponentEntity: AudioComponentEntity, in ctx: NSManagedObjectContext) {
+        audioComponentEntity.sortBy = sortBy.rawValue
+
+        let audioEntities = audioComponentEntity.mutableOrderedSetValue(forKey: "audios")
+
+        for audioTrack in tracks {
+            let audioEntity = AudioComponentTrackEntity(context: ctx)
+
+            audioEntity.id = audioTrack.id
+            audioEntity.title = audioTrack.title
+            audioEntity.artist = audioTrack.artist
+            audioEntity.createData = audioTrack.createData
+            audioEntity.fileExtension = audioTrack.fileExtension.rawValue
+            audioEntity.thumbnail = audioTrack.thumbnail
+            audioEntity.lyrics = audioTrack.lyrics
+            audioEntity.audioComponent = audioComponentEntity
+
+            audioEntities.add(audioEntity)
+        }
+    }
+
+    init(entity: AudioComponentEntity) {
+        self.sortBy = .init(rawValue: entity.sortBy)!
+
+        let audioEntities = entity.mutableOrderedSetValue(forKey: "audios")
+        let audioList = audioEntities.array as! [AudioComponentTrackEntity]
+
+        self.tracks = audioList.map {
+            AudioTrack(
+                id: $0.id,
+                title: $0.title,
+                artist: $0.artist,
+                thumbnail: $0.thumbnail,
+                lyrics: $0.lyrics,
+                fileExtension: .init(rawValue: $0.fileExtension)!,
+                createData: $0.createData)
+        }
+    }
 }

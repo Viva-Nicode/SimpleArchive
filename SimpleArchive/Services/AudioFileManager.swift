@@ -41,7 +41,7 @@ final class AudioFileManager: NSObject, AudioFileManagerType {
         let trackURL =
             archiveURL
             .appendingPathComponent("\(audio.id)")
-            .appendingPathExtension(audio.fileExtension)
+            .appendingPathExtension(audio.fileExtension.rawValue)
         try? fileManager.removeItem(at: trackURL)
     }
 
@@ -80,11 +80,12 @@ final class AudioFileManager: NSObject, AudioFileManagerType {
             if let metadataTitle = audioFile.metadata.title, !metadataTitle.isEmpty {
                 metadata.title = metadataTitle
             }
-
             if let metadataArtist = audioFile.metadata.artist, !metadataArtist.isEmpty {
                 metadata.artist = metadataArtist
             }
-
+            if let metadataLyrics = audioFile.metadata.lyrics, !metadataLyrics.isEmpty {
+                metadata.lyrics = metadataLyrics
+            }
             if let metadataThumbnail = audioFile.metadata.attachedPictures(ofType: .frontCover).first {
                 metadata.thumbnail = metadataThumbnail.imageData
             } else if let metadataOtherThumbnail = audioFile.metadata.attachedPictures(ofType: .other).first {
@@ -148,6 +149,7 @@ final class AudioFileManager: NSObject, AudioFileManagerType {
                 .attachedPictures: [picture.dictionaryRepresentation] as NSArray,
                 .title: NSString(string: audioTrack.title),
                 .artist: NSString(string: audioTrack.artist),
+                .lyrics: NSString(string: audioTrack.lyrics),
             ])
 
             audioFile.metadata = audioMetadata
@@ -156,9 +158,10 @@ final class AudioFileManager: NSObject, AudioFileManagerType {
     }
 }
 
-struct AudioTrackMetadata: Equatable {
+struct AudioTrackMetadata: Equatable, Codable {
     var title: String?
     var artist: String?
+    var lyrics: String?
     var thumbnail: Data?
 }
 
