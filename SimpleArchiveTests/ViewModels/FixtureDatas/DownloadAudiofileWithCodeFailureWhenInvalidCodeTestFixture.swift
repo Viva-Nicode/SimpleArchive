@@ -3,7 +3,7 @@ import Foundation
 @testable import SimpleArchive
 
 final class DownloadAudiofileWithCodeFailureWhenInvalidCodeTestFixture: TestFixtureType {
-    typealias GivenFixtureDataType = MemoPageModel
+    typealias GivenFixtureDataType = (MemoPageModel, UUID, AudioComponentDataSource)
     typealias TestTargetInputType = (UUID, String)
     typealias ExpectedOutputType = Int
 
@@ -40,11 +40,14 @@ final class DownloadAudiofileWithCodeFailureWhenInvalidCodeTestFixture: TestFixt
         let audioComponent = AudioComponent()
         audioComponentID = audioComponent.id
 
+        let datasource = AudioComponentDataSource(
+            tracks: audioComponent.componentContents.tracks,
+            sortBy: audioComponent.componentContents.sortBy)
+
         testPage.appendChildComponent(component: audioComponent)
 
-        let targetComponent = TextEditorComponent()
-        testPage.appendChildComponent(component: targetComponent)
+        testPage.appendChildComponent(component: TextEditorComponent())
 
-        return testPage
+        return (testPage, audioComponentID, datasource)
     }
 }

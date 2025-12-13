@@ -141,7 +141,6 @@ final class TableComponentView: PageComponentView<TableComponentContentView, Tab
         yellowCircleView.backgroundColor = .systemGray5
         greenCircleView.backgroundColor = .systemGray5
 
-        pencilButton.removeFromSuperview()
         captureButton.removeFromSuperview()
         snapshotButton.removeFromSuperview()
     }

@@ -3,7 +3,7 @@ import Foundation
 @testable import SimpleArchive
 
 final class RemoveAudioTrackWhenRemovingAudioIsPauseTestFixture: TestFixtureType {
-    typealias GivenFixtureDataType = (MemoPageModel, UUID)
+    typealias GivenFixtureDataType = (MemoPageModel, UUID, AudioComponentDataSource)
     typealias TestTargetInputType = (UUID, Int)
     typealias ExpectedOutputType = (Int, Int)
 
@@ -39,21 +39,21 @@ final class RemoveAudioTrackWhenRemovingAudioIsPauseTestFixture: TestFixtureType
         testPage.appendChildComponent(component: TextEditorComponent())
         let audioComponent = AudioComponent()
 
-        audioComponent.detail.sortBy = .name
+        audioComponent.componentContents.sortBy = .name
         _ = audioComponent.addAudios(audiotracks: [
-            AudioTrack(title: "a audio", artist: "artist", thumbnail: Data(), fileExtension: ".mp3"),
-            AudioTrack(title: "b audio", artist: "artist", thumbnail: Data(), fileExtension: ".mp3"),
-            AudioTrack(title: "d audio", artist: "artist", thumbnail: Data(), fileExtension: ".mp3"),
-            AudioTrack(title: "e audio", artist: "artist", thumbnail: Data(), fileExtension: ".mp3"),
-            AudioTrack(title: "f audio", artist: "artist", thumbnail: Data(), fileExtension: ".mp3"),
-            AudioTrack(title: "g audio", artist: "artist", thumbnail: Data(), fileExtension: ".mp3"),
-            AudioTrack(title: "k audio", artist: "artist", thumbnail: Data(), fileExtension: ".mp3"),
-            AudioTrack(title: "m audio", artist: "artist", thumbnail: Data(), fileExtension: ".mp3"),
+            AudioTrack(title: "a audio", artist: "artist", thumbnail: Data(), lyrics: "", fileExtension: .mp3),
+            AudioTrack(title: "b audio", artist: "artist", thumbnail: Data(), lyrics: "", fileExtension: .mp3),
+            AudioTrack(title: "d audio", artist: "artist", thumbnail: Data(), lyrics: "", fileExtension: .mp3),
+            AudioTrack(title: "e audio", artist: "artist", thumbnail: Data(), lyrics: "", fileExtension: .mp3),
+            AudioTrack(title: "f audio", artist: "artist", thumbnail: Data(), lyrics: "", fileExtension: .mp3),
+            AudioTrack(title: "g audio", artist: "artist", thumbnail: Data(), lyrics: "", fileExtension: .mp3),
+            AudioTrack(title: "k audio", artist: "artist", thumbnail: Data(), lyrics: "", fileExtension: .mp3),
+            AudioTrack(title: "m audio", artist: "artist", thumbnail: Data(), lyrics: "", fileExtension: .mp3),
         ])
 
         let audioComponentDataSource = AudioComponentDataSource(
-            tracks: audioComponent.detail.tracks,
-            sortBy: audioComponent.detail.sortBy
+            tracks: audioComponent.componentContents.tracks,
+            sortBy: audioComponent.componentContents.sortBy
         )
 
         audioComponentDataSource.nowPlayingAudioIndex = 3
@@ -67,11 +67,9 @@ final class RemoveAudioTrackWhenRemovingAudioIsPauseTestFixture: TestFixtureType
         )
         audioComponentDataSource.getProgress = { .zero }
 
-        audioComponent.datasource = audioComponentDataSource
-
         testPage.appendChildComponent(component: audioComponent)
         self.audioComponent = audioComponent
 
-        return (testPage, audioComponent.id)
+        return (testPage, audioComponent.id, audioComponentDataSource)
     }
 }

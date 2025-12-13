@@ -3,7 +3,7 @@ import Foundation
 @testable import SimpleArchive
 
 final class ImportAudioFromLocalFileSystemSuccessfulllyTestFixture: TestFixtureType {
-    typealias GivenFixtureDataType = MemoPageModel
+    typealias GivenFixtureDataType = (MemoPageModel, UUID, AudioComponentDataSource)
     typealias TestTargetInputType = (UUID, [URL])
     typealias ExpectedOutputType = (Int, [Int])
 
@@ -46,14 +46,18 @@ final class ImportAudioFromLocalFileSystemSuccessfulllyTestFixture: TestFixtureT
         testPage.appendChildComponent(component: TextEditorComponent())
         let audioComponent = AudioComponent()
 
-        audioComponent.detail.sortBy = .name
+        audioComponent.componentContents.sortBy = .name
         _ = audioComponent.addAudios(audiotracks: [
-            AudioTrack(title: "a audio", artist: "artist", thumbnail: Data(), fileExtension: ".mp3"),
-            AudioTrack(title: "b audio", artist: "artist", thumbnail: Data(), fileExtension: ".mp3"),
-            AudioTrack(title: "d audio", artist: "artist", thumbnail: Data(), fileExtension: ".mp3"),
-            AudioTrack(title: "e audio", artist: "artist", thumbnail: Data(), fileExtension: ".mp3"),
-            AudioTrack(title: "h audio", artist: "artist", thumbnail: Data(), fileExtension: ".mp3"),
+            AudioTrack(title: "a audio", artist: "artist", thumbnail: Data(), lyrics: "", fileExtension: .mp3),
+            AudioTrack(title: "b audio", artist: "artist", thumbnail: Data(), lyrics: "", fileExtension: .mp3),
+            AudioTrack(title: "d audio", artist: "artist", thumbnail: Data(), lyrics: "", fileExtension: .mp3),
+            AudioTrack(title: "e audio", artist: "artist", thumbnail: Data(), lyrics: "", fileExtension: .mp3),
+            AudioTrack(title: "h audio", artist: "artist", thumbnail: Data(), lyrics: "", fileExtension: .mp3),
         ])
+
+        let datasource = AudioComponentDataSource(
+            tracks: audioComponent.componentContents.tracks,
+            sortBy: audioComponent.componentContents.sortBy)
 
         testPage.appendChildComponent(component: audioComponent)
         audioComponentID = audioComponent.id
@@ -61,6 +65,6 @@ final class ImportAudioFromLocalFileSystemSuccessfulllyTestFixture: TestFixtureT
         let targetComponent = TextEditorComponent()
         testPage.appendChildComponent(component: targetComponent)
 
-        return testPage
+        return (testPage, audioComponentID, datasource)
     }
 }

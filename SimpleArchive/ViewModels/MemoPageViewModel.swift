@@ -101,7 +101,10 @@ import UIKit
                 // MARK: - Text
 
                 case .willEditTextComponent(let componentID, let detail):
-                    saveTextEditorComponentChanged(componentID: componentID, detail: detail)
+                    saveTextEditorComponentChanged(componentID: componentID, contents: detail)
+
+                case .willUndoTextComponentContents(let componentID):
+                    undoTextEditorComponentContents(componentID: componentID)
 
                 // MARK: - Table
 
@@ -159,6 +162,7 @@ import UIKit
 
                 case .willImportAudioFileFromFileSystem(let componentID, let tempURLs):
                     importAudioFromLocalFileSystem(componentID: componentID, didPickDocumentsAt: tempURLs)
+
             }
         }
         .store(in: &subscriptions)
@@ -238,7 +242,6 @@ import UIKit
             if let snapshotRestorableComponent = component as? any SnapshotRestorablePageComponent {
                 memoComponentCoredataReposotory.captureSnapshot(
                     snapshotRestorableComponent: snapshotRestorableComponent,
-                    saveMode: .manual,
                     snapShotDescription: description)
                 output.send(.didCompleteComponentCapture(index))
             }
@@ -325,11 +328,76 @@ import UIKit
 }
 
 extension MemoPageViewModel {
-    func saveTextEditorComponentChanged(componentID: UUID, detail: String) {
+    private func saveTextEditorComponentChanged(componentID: UUID, contents: String) {
         performWithComponentAt(componentID) { (componentIndex, textEditorComponent: TextEditorComponent) in
-            textEditorComponent.componentContents = detail
+            let action = makeTextEditActionFromContentsDiff(
+                originContents: textEditorComponent.componentContents,
+                editedContents: contents)
+            textEditorComponent.componentContents = contents
             textEditorComponent.setCaptureState(to: .needsCapture)
-            memoComponentCoredataReposotory.saveComponentsDetail(modifiedComponent: textEditorComponent)
+            textEditorComponent.actions.append(action)
+            memoComponentCoredataReposotory.updateComponentContentChanges(modifiedComponent: textEditorComponent)
+        }
+    }
+
+    private func undoTextEditorComponentContents(componentID: UUID) {
+        performWithComponentAt(componentID) { (componentIndex, textEditorComponent: TextEditorComponent) in
+            guard let action = textEditorComponent.actions.popLast() else { return }
+            let currentContents = textEditorComponent.componentContents
+            let undidText = undoingText(action: action, contents: currentContents)
+
+            textEditorComponent.componentContents = undidText
+            memoComponentCoredataReposotory.updateComponentContentChanges(modifiedComponent: textEditorComponent)
+            output.send(.didUndoTextComponentContents(componentIndex, undidText))
+        }
+    }
+
+    private func makeTextEditActionFromContentsDiff(originContents: String, editedContents: String)
+        -> TextEditorComponentAction
+    {
+        let originChars = Array(originContents)
+        let editedChars = Array(editedContents)
+
+        var prefix = 0
+        while prefix < min(originChars.count, editedChars.count),
+            originChars[prefix] == editedChars[prefix]
+        {
+            prefix += 1
+        }
+
+        var suffix = 0
+        while suffix < min(originChars.count - prefix, editedChars.count - prefix),
+            originChars[originChars.count - 1 - suffix] == editedChars[editedChars.count - 1 - suffix]
+        {
+            suffix += 1
+        }
+
+        let oldRange = prefix..<(originChars.count - suffix)
+        let newRange = prefix..<(editedChars.count - suffix)
+
+        let removedText = String(originChars[oldRange])
+        let insertedText = String(editedChars[newRange])
+
+        if removedText.isEmpty, !insertedText.isEmpty {
+            return .insert(range: prefix..<prefix, text: insertedText)
+        } else {
+            return .replace(range: oldRange, from: removedText, to: insertedText)
+        }
+    }
+
+    private func undoingText(action: TextEditorComponentAction, contents: String) -> String {
+        switch action {
+            case let .insert(range, insertedText):
+                let start = contents.index(contents.startIndex, offsetBy: range.lowerBound)
+                let end = contents.index(start, offsetBy: insertedText.count)
+
+                return contents.replacingCharacters(in: start..<end, with: "")
+
+            case let .replace(range, fromText, toText):
+                let start = contents.index(contents.startIndex, offsetBy: range.lowerBound)
+                let end = contents.index(start, offsetBy: toText.count)
+
+                return contents.replacingCharacters(in: start..<end, with: fromText)
         }
     }
 }
@@ -340,7 +408,7 @@ extension MemoPageViewModel {
             let newRow = tableComponent.componentContents.appendNewRow()
             tableComponent.setCaptureState(to: .needsCapture)
             tableComponent.actions.append(.appendRow(row: newRow))
-            memoComponentCoredataReposotory.saveComponentsDetail(modifiedComponent: tableComponent)
+            memoComponentCoredataReposotory.updateComponentContentChanges(modifiedComponent: tableComponent)
             output.send(.didAppendRowToTableView(componentIndex, newRow))
         }
     }
@@ -350,7 +418,7 @@ extension MemoPageViewModel {
             let removedRowIndex = tableComponent.componentContents.removeRow(rowID)
             tableComponent.setCaptureState(to: .needsCapture)
             tableComponent.actions.append(.removeRow(rowID: rowID))
-            memoComponentCoredataReposotory.saveComponentsDetail(modifiedComponent: tableComponent)
+            memoComponentCoredataReposotory.updateComponentContentChanges(modifiedComponent: tableComponent)
             output.send(.didRemoveRowToTableView(componentIndex, removedRowIndex))
         }
     }
@@ -360,7 +428,7 @@ extension MemoPageViewModel {
             let newColumn = tableComponent.componentContents.appendNewColumn(title: "column")
             tableComponent.setCaptureState(to: .needsCapture)
             tableComponent.actions.append(.appendColumn(column: newColumn))
-            memoComponentCoredataReposotory.saveComponentsDetail(modifiedComponent: tableComponent)
+            memoComponentCoredataReposotory.updateComponentContentChanges(modifiedComponent: tableComponent)
             output.send(.didAppendColumnToTableView(componentIndex, newColumn))
         }
     }
@@ -372,7 +440,7 @@ extension MemoPageViewModel {
                 .editCellValeu(rowID: rowID, colID: colID, newValue: newCellValue)
             tableComponent.setCaptureState(to: .needsCapture)
             tableComponent.actions.append(.editCellValue(rowID: rowID, columnID: colID, value: newCellValue))
-            memoComponentCoredataReposotory.saveComponentsDetail(modifiedComponent: tableComponent)
+            memoComponentCoredataReposotory.updateComponentContentChanges(modifiedComponent: tableComponent)
             output.send(
                 .didApplyTableCellValueChanges(componentIndex, indices.rowIndex, indices.columnIndex, newCellValue)
             )
@@ -394,7 +462,7 @@ extension MemoPageViewModel {
             tableComponent.componentContents.setColumn(columns: columns)
             tableComponent.setCaptureState(to: .needsCapture)
             tableComponent.actions.append(.editColumn(columns: columns))
-            memoComponentCoredataReposotory.saveComponentsDetail(modifiedComponent: tableComponent)
+            memoComponentCoredataReposotory.updateComponentContentChanges(modifiedComponent: tableComponent)
             output.send(.didApplyTableColumnChanges(componentIndex, columns))
         }
     }
@@ -460,7 +528,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
 
                             component.actions.append(
                                 .appendAudio(appendedIndices: appendedIndices, tracks: audioTracks))
-                            memoComponentCoredataReposotory.saveComponentsDetail(modifiedComponent: component)
+                            memoComponentCoredataReposotory.updateComponentContentChanges(modifiedComponent: component)
 
                             output.send(.didAppendAudioTrackRows(componentIndex, appendedIndices))
 
@@ -528,7 +596,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
 
             component.actions.append(
                 .appendAudio(appendedIndices: appendedIndices, tracks: audioTracks))
-            memoComponentCoredataReposotory.saveComponentsDetail(modifiedComponent: component)
+            memoComponentCoredataReposotory.updateComponentContentChanges(modifiedComponent: component)
 
             output.send(.didAppendAudioTrackRows(componentIndex, appendedIndices))
         }
@@ -662,7 +730,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
             }
 
             component.actions.append(.applyAudioMetadata(audioID: trackID, metadata: newMetadata))
-            memoComponentCoredataReposotory.saveComponentsDetail(modifiedComponent: component)
+            memoComponentCoredataReposotory.updateComponentContentChanges(modifiedComponent: component)
             audioFileManager.writeAudioMetadata(audioTrack: component.componentContents.tracks[trackIndex])
 
             if component.componentContents.sortBy == .name {
@@ -725,7 +793,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
             datasource.sortBy = .manual
 
             audioComponent.actions.append(.moveAudioOrder(src: src, des: des))
-            memoComponentCoredataReposotory.saveComponentsDetail(modifiedComponent: audioComponent)
+            memoComponentCoredataReposotory.updateComponentContentChanges(modifiedComponent: audioComponent)
 
             datasource.nowPlayingAudioIndex = audioComponent.componentContents.tracks.firstIndex {
                 $0.id == currentPlayingAudioTrackID
@@ -764,7 +832,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
             audioComponentDataSource.sortBy = sortBy
 
             audioComponent.actions.append(.sortAudioTracks(sortBy: sortBy))
-            memoComponentCoredataReposotory.saveComponentsDetail(modifiedComponent: audioComponent)
+            memoComponentCoredataReposotory.updateComponentContentChanges(modifiedComponent: audioComponent)
 
             output.send(.didSortAudioTracks(componentIndex, before, after))
         }
@@ -783,7 +851,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
             audioFileManager.removeAudio(with: removedAudioTrack)
             audioComponentDataSource.tracks = component.componentContents.tracks
             component.actions.append(.removeAudio(removedAudioID: removedAudioTrack.id))
-            memoComponentCoredataReposotory.saveComponentsDetail(modifiedComponent: component)
+            memoComponentCoredataReposotory.updateComponentContentChanges(modifiedComponent: component)
 
             if audioComponentDataSource.nowPlayingAudioIndex != nil {
                 if component.componentContents.tracks.isEmpty {
@@ -938,6 +1006,10 @@ extension MemoPageViewModel: UICollectionViewDataSource {
     extension MemoPageViewModel {
         func setNowPlayingAudioComponentID(_ id: UUID) {
             self.nowPlayingAudioComponentID = id
+        }
+
+        func setAudioTrackDataSource(id: UUID, datasource: AudioComponentDataSource) {
+            self.audioCompoenntDataSources[id] = datasource
         }
     }
 #endif

@@ -134,7 +134,7 @@ final class MemoDirectoryCoreDataRepositoryTests: XCTestCase, FixtureProvidingTe
 
         coreDataStack
             .fetch(fetchReuqest) { $0 }
-            .map { $0.first! }
+            .tryMap { try XCTUnwrap($0.first, "\(#function) : can not found entity") }
             .sinkToResult { result in
                 switch result {
                     case .success(let dormantBoxEntity):
@@ -171,7 +171,7 @@ final class MemoDirectoryCoreDataRepositoryTests: XCTestCase, FixtureProvidingTe
 
         coreDataStack
             .fetch(fetchReuqest) { $0 }
-            .map { $0.first! }
+            .tryMap { try XCTUnwrap($0.first, "\(#function) : can not found entity") }
             .sinkToResult { result in
                 switch result {
                     case .success(let dormantBoxEntity):

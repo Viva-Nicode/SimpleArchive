@@ -35,10 +35,10 @@ final class RemoveSnapshotWhenOnlySnapshotIsDeletedTestFixture: TestFixtureType 
     private func provideGivenFixture() -> GivenFixtureDataType {
         testTextEditorComponent = TextEditorComponent(
             title: "singleSnapshotStub",
-            detail: "This is a single snapshot.",
+            contents: "single snapshot.",
             componentSnapshots: [
                 TextEditorComponentSnapshot(
-                    detail: "Only Snapshot",
+                    contents: "Only Snapshot",
                     description: "Single Snapshot Description",
                     saveMode: .manual)
             ]

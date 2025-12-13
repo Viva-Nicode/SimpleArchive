@@ -6,12 +6,11 @@ protocol MemoSingleComponentRepositoryType {
     func updateComponentChanges(componentChanges: PageComponentChangeObject) -> AnyPublisher<Void, Error>
 
     @discardableResult
-    func saveComponentsDetail(modifiedComponent: any PageComponent) -> AnyPublisher<Void, Error>
+    func updateComponentContentChanges(modifiedComponent: any PageComponent) -> AnyPublisher<Void, Error>
 
     @discardableResult
     func captureSnapshot(
         snapshotRestorableComponent: any SnapshotRestorablePageComponent,
-        saveMode: SnapshotSaveMode,
         snapShotDescription: String,
     ) -> AnyPublisher<Void, Error>
 

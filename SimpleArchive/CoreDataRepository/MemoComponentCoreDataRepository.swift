@@ -52,7 +52,7 @@ struct MemoComponentCoreDataRepository: MemoComponentCoreDataRepositoryType {
         }
     }
 
-    func saveComponentsDetail(modifiedComponent: any PageComponent) -> AnyPublisher<Void, any Error> {
+    func updateComponentContentChanges(modifiedComponent: any PageComponent) -> AnyPublisher<Void, any Error> {
         coredataStack.update { ctx in
             let fetchRequest = MemoComponentEntity.findById(id: modifiedComponent.id)
             let componentEntity = try ctx.fetch(fetchRequest).first!
@@ -82,7 +82,6 @@ struct MemoComponentCoreDataRepository: MemoComponentCoreDataRepositoryType {
 
     func captureSnapshot(
         snapshotRestorableComponent: any SnapshotRestorablePageComponent,
-        saveMode: SnapshotSaveMode,
         snapShotDescription: String = ""
     ) -> AnyPublisher<Void, Error> {
         coredataStack.update { ctx in
@@ -90,7 +89,7 @@ struct MemoComponentCoreDataRepository: MemoComponentCoreDataRepositoryType {
             let fetchRequest = MemoComponentEntity.findById(id: snapshotRestorableComponent.id)
             let componentEntity = try ctx.fetch(fetchRequest).first!
 
-            let snapshot = snapshotRestorableComponent.makeSnapshot(desc: snapShotDescription, saveMode: saveMode)
+            let snapshot = snapshotRestorableComponent.makeSnapshot(desc: snapShotDescription, saveMode: .manual)
             snapshot.store(in: ctx, parentComponentId: snapshotRestorableComponent.id)
 
             snapshotRestorableComponent.setCaptureState(to: .captured)

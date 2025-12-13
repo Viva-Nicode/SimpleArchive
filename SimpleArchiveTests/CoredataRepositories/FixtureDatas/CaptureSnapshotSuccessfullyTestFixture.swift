@@ -24,12 +24,12 @@ final class CaptureSnapshotSuccessfullyTestFixture: TestFixtureType {
             case .testTargetInput:
                 provideState = .testVerifyOutput
                 snapshotDescription = "fourth Desc"
-                testTextEditorComponent.detail = "fourth Detail"
+                testTextEditorComponent.componentContents = "fourth contents"
                 return (testTextEditorComponent, snapshotDescription)
 
             case .testVerifyOutput:
                 provideState = .allDataConsumed
-                return (4, testTextEditorComponent.detail, snapshotDescription)
+                return (4, "fourth contents", "fourth Desc")
 
             default:
                 return ()
@@ -41,12 +41,13 @@ final class CaptureSnapshotSuccessfullyTestFixture: TestFixtureType {
         let testPage = MemoPageModel(name: "Test Page", parentDirectory: testDirectory)
         testTextEditorComponent = TextEditorComponent()
 
-        testTextEditorComponent.detail = "first Detail"
-        testTextEditorComponent.makeSnapshot(desc: "first Desc", saveMode: .automatic)
-        testTextEditorComponent.detail = "second Detail"
-        testTextEditorComponent.makeSnapshot(desc: "second Desc", saveMode: .automatic)
-        testTextEditorComponent.detail = "third Detail"
-        testTextEditorComponent.makeSnapshot(desc: "third Desc", saveMode: .automatic)
+        testTextEditorComponent.componentContents = "first contents"
+        testTextEditorComponent.makeSnapshot(desc: "first Desc", saveMode: .manual)
+        testTextEditorComponent.componentContents = "second contents"
+        testTextEditorComponent.makeSnapshot(desc: "second Desc", saveMode: .manual)
+        testTextEditorComponent.componentContents = "third contents"
+        testTextEditorComponent.makeSnapshot(desc: "third Desc", saveMode: .manual)
+        
 
         testPage.appendChildComponent(component: testTextEditorComponent)
 

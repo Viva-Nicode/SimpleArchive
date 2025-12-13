@@ -57,8 +57,10 @@ final class DormantBoxCoreDataRepositoryTests: XCTestCase, FixtureProvidingTestC
         wait(for: [expectation], timeout: 1)
 
         let mainDirectoryID = SystemDirectories.mainDirectory.getId()!
-        coreDataStack.fetch(MemoDirectoryEntity.findDirectoryEntityById(id: mainDirectoryID)) { $0 }
-            .map { $0.first! }
+        let fetchRequest = MemoDirectoryEntity.findDirectoryEntityById(id: mainDirectoryID)
+        
+        coreDataStack.fetch(fetchRequest) { $0 }
+            .tryMap { try XCTUnwrap($0.first, "\(#function) : can not found entity") }
             .sinkToResult { result in
                 switch result {
                     case .success(let mainDirectoryEntity):

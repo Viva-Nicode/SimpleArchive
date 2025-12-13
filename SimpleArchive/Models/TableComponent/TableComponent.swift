@@ -53,6 +53,7 @@ final class TableComponent: NSObject, Codable, SnapshotRestorablePageComponent {
     func revertToSnapshot(snapshotID: UUID) throws(ComponentSnapshotViewModelError) {
         if let idx = snapshots.firstIndex(where: { $0.snapshotID == snapshotID }) {
             snapshots[idx].revert(component: self)
+            setCaptureState(to: .captured)
         } else {
             throw .canNotFoundSnapshot(snapshotID)
         }

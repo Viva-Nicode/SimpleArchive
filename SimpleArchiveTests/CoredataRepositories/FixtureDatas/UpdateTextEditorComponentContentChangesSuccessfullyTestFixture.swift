@@ -2,29 +2,34 @@ import Foundation
 
 @testable import SimpleArchive
 
-final class UpdateComponentChangesSuccessfullyTestFixture: TestFixtureType {
+final class UpdateTextEditorComponentContentChangesSuccessfullyTestFixture: TestFixtureType {
+
     typealias GivenFixtureDataType = MemoDirectoryModel
-    typealias TestTargetInputType = PageComponentChangeObject
+    typealias TestTargetInputType = TextEditorComponent
     typealias ExpectedOutputType = String
 
-    let testTargetName = "test_updateComponentChanges_successfully()"
-
+    let testTargetName = "test_updateTextEditorComponentContentChanges_successfully()"
     private var provideState: TestDataProvideState = .givenFixtureData
-    private var testTextEditorComponent: TextEditorComponent!
+
+    private var testDirectory: MemoDirectoryModel!
+    private var textEditorComponent: TextEditorComponent!
 
     func getFixtureData() -> Any {
         switch provideState {
+
             case .givenFixtureData:
                 provideState = .testTargetInput
                 return provideGivenFixture()
 
             case .testTargetInput:
                 provideState = .testVerifyOutput
-                return provideTestTargetInput()
+                textEditorComponent.componentContents = "textEditorComponent modified contents"
+                textEditorComponent.setCaptureState(to: .needsCapture)
+                return textEditorComponent!
 
             case .testVerifyOutput:
                 provideState = .allDataConsumed
-                return "changed title"
+                return "textEditorComponent modified contents"
 
             default:
                 return ()
@@ -32,21 +37,12 @@ final class UpdateComponentChangesSuccessfullyTestFixture: TestFixtureType {
     }
 
     private func provideGivenFixture() -> GivenFixtureDataType {
-        let testDirectory = MemoDirectoryModel(name: "Test Directory")
+        testDirectory = MemoDirectoryModel(name: "Test Directory")
         let testPage = MemoPageModel(name: "Test Page", parentDirectory: testDirectory)
 
-        testTextEditorComponent = TextEditorComponent()
-        testPage.appendChildComponent(component: testTextEditorComponent)
+        textEditorComponent = TextEditorComponent()
+        testPage.appendChildComponent(component: textEditorComponent)
 
         return testDirectory
-    }
-
-    private func provideTestTargetInput() -> TestTargetInputType {
-        testTextEditorComponent.title = "changed title"
-
-        return PageComponentChangeObject(
-            componentIdChanged: testTextEditorComponent.id,
-            title: "changed title"
-        )
     }
 }

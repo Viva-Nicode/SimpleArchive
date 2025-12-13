@@ -159,6 +159,14 @@ class MemoPageViewController: UIViewController, ViewControllerType {
                     {
                         captureableComponentView.completeSnapshotCapturePopupView()
                     }
+                
+                // MARK: - Text
+
+                case .didUndoTextComponentContents(let componentIndex, let contents):
+                    performWithComponentViewAt(componentIndex) {
+                        (componentView: TextEditorComponentView, contentView) in
+                        componentView.redoContents(contents: contents)
+                    }
 
                 // MARK: - Table
 
@@ -265,6 +273,7 @@ class MemoPageViewController: UIViewController, ViewControllerType {
 
                 case .didRemoveAudioTrackAndStopPlaying(let componentIndex, let trackIndex):
                     removeAudioTrackAndStopPlaying(componentIndex: componentIndex, trackIndex: trackIndex)
+
             }
         }
         .store(in: &subscriptions)

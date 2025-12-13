@@ -5,7 +5,6 @@ struct PageComponentChangeObject {
     var componentIdChanged: UUID
     var title: String?
     var isMinimumHeight: Bool?
-
     var componentIdListRenderingOrdered: [UUID]?
 
     init(

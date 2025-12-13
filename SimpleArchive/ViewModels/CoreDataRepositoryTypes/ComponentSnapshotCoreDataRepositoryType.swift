@@ -5,5 +5,5 @@ protocol ComponentSnapshotCoreDataRepositoryType {
     func removeSnapshot(componentID: UUID, snapshotID: UUID)
     
     @discardableResult
-    func saveComponentsDetail(modifiedComponent: any PageComponent) -> AnyPublisher<Void, Error>
+    func updateComponentContentChanges(modifiedComponent: any PageComponent) -> AnyPublisher<Void, Error>
 }

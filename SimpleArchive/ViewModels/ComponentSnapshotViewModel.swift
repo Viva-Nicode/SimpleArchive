@@ -10,7 +10,7 @@ import UIKit
     private var errorOutput = PassthroughSubject<ComponentSnapshotViewModelError, Never>()
     private var subscriptions = Set<AnyCancellable>()
 
-    private var snapshotRestorableComponent: any SnapshotRestorablePageComponent
+    private(set) var snapshotRestorableComponent: any SnapshotRestorablePageComponent
     private var currentViewedSnapshotID: UUID?
     private var componentSnapshotCoreDataRepository: ComponentSnapshotCoreDataRepositoryType
 
@@ -56,7 +56,7 @@ import UIKit
             if let currentViewedSnapshotID {
                 try snapshotRestorableComponent.revertToSnapshot(snapshotID: currentViewedSnapshotID)
                 componentSnapshotCoreDataRepository
-                    .saveComponentsDetail(modifiedComponent: snapshotRestorableComponent)
+                    .updateComponentContentChanges(modifiedComponent: snapshotRestorableComponent)
                 output.send(.didCompleteRestoreSnapshot)
             } else {
                 errorOutput.send(.unownedError)
@@ -75,18 +75,15 @@ import UIKit
             return
         }
 
-        defer {
-            let componentID = snapshotRestorableComponent.id
-            componentSnapshotCoreDataRepository
-                .removeSnapshot(componentID: componentID, snapshotID: tappedSnapshotID)
-        }
-
         do {
             let removeResult = try snapshotRestorableComponent.removeSnapshot(snapshotID: tappedSnapshotID)
+            componentSnapshotCoreDataRepository.removeSnapshot(
+                componentID: snapshotRestorableComponent.id, snapshotID: tappedSnapshotID)
 
             if let nextViewedSnapshotIndex = removeResult.nextViewedSnapshotIndex {
                 let nextViewedSnapshot = snapshotRestorableComponent.snapshots[nextViewedSnapshotIndex]
                 currentViewedSnapshotID = nextViewedSnapshot.snapshotID
+
                 let nextViewedSnapshotMetadata = nextViewedSnapshot.getSnapshotMetaData()
                 output.send(.didCompleteRemoveSnapshot(nextViewedSnapshotMetadata, removeResult.removedSnapshotIndex))
             } else {

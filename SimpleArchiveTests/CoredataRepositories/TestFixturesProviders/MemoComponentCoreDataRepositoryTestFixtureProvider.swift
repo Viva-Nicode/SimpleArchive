@@ -8,8 +8,7 @@ final class MemoComponentCoreDataRepositoryTestFixtureProvider: TestFixtureProvi
     init() {
         let fixtures: [any TestFixtureType] = [
             CreateComponentSuccessfullyTestFixture(),
-            SaveComponentDetailSuccessfullyTestFixture(),
-            SaveComponentDetailWithRestoredComponentsSuccessfullyTestFixture(),
+            UpdateTextEditorComponentContentChangesSuccessfullyTestFixture(),
             UpdateComponentChangesSuccessfullyTestFixture(),
             CaptureSnapshotSuccessfullyTestFixture(),
         ]

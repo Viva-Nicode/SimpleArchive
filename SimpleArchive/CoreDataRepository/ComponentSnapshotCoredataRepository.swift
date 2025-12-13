@@ -16,7 +16,7 @@ struct ComponentSnapshotCoreDataRepository: ComponentSnapshotCoreDataRepositoryT
         }
     }
 
-    func saveComponentsDetail(modifiedComponent: any PageComponent) -> AnyPublisher<Void, any Error> {
+    func updateComponentContentChanges(modifiedComponent: any PageComponent) -> AnyPublisher<Void, any Error> {
         coredataStack.update { ctx in
             let fetchRequest = MemoComponentEntity.findById(id: modifiedComponent.id)
             let componentEntity = try ctx.fetch(fetchRequest).first!

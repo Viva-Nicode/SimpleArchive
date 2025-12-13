@@ -94,7 +94,7 @@ final class MemoPageViewModelTests: XCTestCase, @preconcurrency FixtureProviding
             audioTrackController: mockAudioTrackController,
             page: page)
 
-        mockMemoComponentCoredataReposotory.actions = .init(expected: [.captureSnapshot])
+        mockMemoComponentCoredataReposotory.actions = .init(expected: [.captureManualSnapshot])
 
         let expectation = XCTestExpectation(description: "")
         let factualOutput = FactualOutput<MemoPageViewModel.Output>()
@@ -164,7 +164,8 @@ final class MemoPageViewModelTests: XCTestCase, @preconcurrency FixtureProviding
         typealias FixtureType = DownloadAudioTracksSuccessfullyTestFixture
         let fixture = fixtureProvider.getFixture()
 
-        let page = fixture.getFixtureData() as! FixtureType.GivenFixtureDataType
+        let (page, audioComponentID, audioComponentDatasource) =
+            fixture.getFixtureData() as! FixtureType.GivenFixtureDataType
 
         sut = MemoPageViewModel(
             componentFactory: mockComponentFactory,
@@ -173,6 +174,8 @@ final class MemoPageViewModelTests: XCTestCase, @preconcurrency FixtureProviding
             audioFileManager: mockAudioFileManager,
             audioTrackController: mockAudioTrackController,
             page: page)
+
+        sut.setAudioTrackDataSource(id: audioComponentID, datasource: audioComponentDatasource)
 
         mockAudioDownloader.actions = .init(expected: [.downloadAudioTask])
         mockAudioFileManager.actions = .init(
@@ -184,6 +187,7 @@ final class MemoPageViewModelTests: XCTestCase, @preconcurrency FixtureProviding
                         .writeAudioMetadata,
                     ], count: 3)
         )
+        mockMemoComponentCoredataReposotory.actions = .init(expected: [.updateComponentContentChanges])
 
         let downloadTaskResultURL = URL(fileURLWithPath: "Documents/downloaded_music_temp.zip")
         mockAudioDownloader.downloadTaskResult = .success(downloadTaskResultURL)
@@ -227,13 +231,15 @@ final class MemoPageViewModelTests: XCTestCase, @preconcurrency FixtureProviding
 
         mockAudioDownloader.verify()
         mockAudioFileManager.verify()
+        mockMemoComponentCoredataReposotory.verify()
     }
 
     func test_downloadAudiofileWithCode_failure_WhenInvalidCode() throws {
         typealias FixtureType = DownloadAudiofileWithCodeFailureWhenInvalidCodeTestFixture
         let fixture = fixtureProvider.getFixture()
 
-        let page = fixture.getFixtureData() as! FixtureType.GivenFixtureDataType
+        let (page, audioComponentID, audioComponentDatasource) =
+            fixture.getFixtureData() as! FixtureType.GivenFixtureDataType
 
         sut = MemoPageViewModel(
             componentFactory: mockComponentFactory,
@@ -242,6 +248,8 @@ final class MemoPageViewModelTests: XCTestCase, @preconcurrency FixtureProviding
             audioFileManager: mockAudioFileManager,
             audioTrackController: mockAudioTrackController,
             page: page)
+
+        sut.setAudioTrackDataSource(id: audioComponentID, datasource: audioComponentDatasource)
 
         mockAudioDownloader.actions = .init(expected: [.downloadAudioTask])
         mockAudioDownloader.downloadTaskResult = .failure(AudioDownloadError.invalidCode)
@@ -267,14 +275,18 @@ final class MemoPageViewModelTests: XCTestCase, @preconcurrency FixtureProviding
         }
 
         XCTAssertEqual(expectedComponentIndex, factualComponentIndex)
+
         mockAudioDownloader.verify()
+        mockAudioFileManager.verify()
+        mockMemoComponentCoredataReposotory.verify()
     }
 
     func test_importAudioFromLocalFileSystem_successfullly() throws {
         typealias FixtureType = ImportAudioFromLocalFileSystemSuccessfulllyTestFixture
         let fixture = fixtureProvider.getFixture()
 
-        let page = fixture.getFixtureData() as! FixtureType.GivenFixtureDataType
+        let (page, audioComponentID, audioComponentDatasource) =
+            fixture.getFixtureData() as! FixtureType.GivenFixtureDataType
 
         sut = MemoPageViewModel(
             componentFactory: mockComponentFactory,
@@ -284,6 +296,8 @@ final class MemoPageViewModelTests: XCTestCase, @preconcurrency FixtureProviding
             audioTrackController: mockAudioTrackController,
             page: page)
 
+        sut.setAudioTrackDataSource(id: audioComponentID, datasource: audioComponentDatasource)
+
         mockAudioFileManager.actions = .init(
             expected: mockAudioFileManager.repeatingActions(
                 actions: [
@@ -292,6 +306,7 @@ final class MemoPageViewModelTests: XCTestCase, @preconcurrency FixtureProviding
                     .writeAudioMetadata,
                 ], count: 3)
         )
+        mockMemoComponentCoredataReposotory.actions = .init(expected: [.updateComponentContentChanges])
 
         mockAudioFileManager.copyFilesToAppDirectoryResult = [
             URL(fileURLWithPath: "Documents/SimpleArchiveMusics/c audio.mp3"),
@@ -331,6 +346,7 @@ final class MemoPageViewModelTests: XCTestCase, @preconcurrency FixtureProviding
         XCTAssertEqual(expectedAppededIndices, factualAppendedIndicies)
 
         mockAudioFileManager.verify()
+        mockMemoComponentCoredataReposotory.verify()
     }
 
     func test_playAudioTrack_successfullly() throws {
@@ -339,9 +355,11 @@ final class MemoPageViewModelTests: XCTestCase, @preconcurrency FixtureProviding
 
         let (
             givenPageModel,
+            audioComponentID,
             archiveDirectoryAudioPath,
             readAudioSampleDataResult,
-            readAudioMetadataResult
+            readAudioMetadataResult,
+            audioComponentDataSource
         ) = fixture.getFixtureData() as! FixtureType.GivenFixtureDataType
 
         sut = MemoPageViewModel(
@@ -352,7 +370,9 @@ final class MemoPageViewModelTests: XCTestCase, @preconcurrency FixtureProviding
             audioTrackController: mockAudioTrackController,
             page: givenPageModel)
 
-        mockAudioFileManager.actions = .init(expected: [.createAudioFileURL, .readAudioSampleData, .readAudioMetadata])
+        sut.setAudioTrackDataSource(id: audioComponentID, datasource: audioComponentDataSource)
+
+        mockAudioFileManager.actions = .init(expected: [.createAudioFileURL, .readAudioSampleData])
         mockAudioFileManager.createAudioFileURLResult = [archiveDirectoryAudioPath]
         mockAudioFileManager.readAudioSampleDataResult = readAudioSampleDataResult
         mockAudioFileManager.readAudioMetadataResult = [readAudioMetadataResult]
@@ -403,8 +423,7 @@ final class MemoPageViewModelTests: XCTestCase, @preconcurrency FixtureProviding
         XCTAssertEqual(expectedMetadata, factualMetadata)
         XCTAssertEqual(expectedSampleData, factualSampleData)
 
-        let nowPlayingAudioComponentDataSource = try XCTUnwrap(
-            (sut.memoPage.getComponents[3] as? AudioComponent)?.datasource)
+        let nowPlayingAudioComponentDataSource = try XCTUnwrap(sut.audioCompoenntDataSources[audioComponentID])
 
         XCTAssertEqual(true, nowPlayingAudioComponentDataSource.isPlaying)
         XCTAssertEqual(expectedTrackIndex, nowPlayingAudioComponentDataSource.nowPlayingAudioIndex)
@@ -423,6 +442,9 @@ final class MemoPageViewModelTests: XCTestCase, @preconcurrency FixtureProviding
         let (
             page,
             previousPlayingComponentID,
+            previousPlayingComponentDatasource,
+            audioComponentID,
+            audioComponentDatasource,
             archiveDirectoryAudioPath,
             readAudioSampleDataResult,
             readAudioMetadataResult,
@@ -437,8 +459,10 @@ final class MemoPageViewModelTests: XCTestCase, @preconcurrency FixtureProviding
             page: page)
 
         sut.setNowPlayingAudioComponentID(previousPlayingComponentID)
+        sut.setAudioTrackDataSource(id: previousPlayingComponentID, datasource: previousPlayingComponentDatasource)
+        sut.setAudioTrackDataSource(id: audioComponentID, datasource: audioComponentDatasource)
 
-        mockAudioFileManager.actions = .init(expected: [.createAudioFileURL, .readAudioSampleData, .readAudioMetadata])
+        mockAudioFileManager.actions = .init(expected: [.createAudioFileURL, .readAudioSampleData])
         mockAudioFileManager.createAudioFileURLResult = [archiveDirectoryAudioPath]
         mockAudioFileManager.readAudioSampleDataResult = readAudioSampleDataResult
         mockAudioFileManager.readAudioMetadataResult = [readAudioMetadataResult]
@@ -492,16 +516,14 @@ final class MemoPageViewModelTests: XCTestCase, @preconcurrency FixtureProviding
 
         XCTAssertEqual(expectedNowPlayingAudioComponentID, sut.nowPlayingAudioComponentID)
 
-        let nowPlayingAudioComponentDataSource = try XCTUnwrap(
-            (sut.memoPage.getComponents[3] as? AudioComponent)?.datasource)
+        let nowPlayingAudioComponentDataSource = try XCTUnwrap(sut.audioCompoenntDataSources[audioComponentID])
 
         XCTAssertEqual(true, nowPlayingAudioComponentDataSource.isPlaying)
         XCTAssertEqual(expectedTrackIndex, nowPlayingAudioComponentDataSource.nowPlayingAudioIndex)
         XCTAssertEqual(expectedSampleData, nowPlayingAudioComponentDataSource.audioSampleData)
         XCTAssertEqual(expectedNowPlayingURL, nowPlayingAudioComponentDataSource.nowPlayingURL)
 
-        let previousAudioComponentDataSource = try XCTUnwrap(
-            (sut.memoPage.getComponents[4] as? AudioComponent)?.datasource)
+        let previousAudioComponentDataSource = try XCTUnwrap(sut.audioCompoenntDataSources[previousPlayingComponentID])
 
         XCTAssertNil(previousAudioComponentDataSource.isPlaying)
         XCTAssertNil(previousAudioComponentDataSource.nowPlayingURL)
@@ -512,12 +534,13 @@ final class MemoPageViewModelTests: XCTestCase, @preconcurrency FixtureProviding
         mockAudioTrackController.verify()
     }
 
-    // 정렬 기준이name이고 현재 재생중인 곡의 이름을 수정했을 때
+    // 정렬 기준이 name이고 현재 재생중인 곡의 이름을 수정했을 때
     func test_ApplyAudioMetadataChanges_whenEditingCurrentlyPlayingTrack() throws {
         typealias FixtureType = ApplyAudioMetadataChangesWhenEditingCurrentlyPlayingTrackTestFixture
         let fixture = fixtureProvider.getFixture()
 
-        let page = fixture.getFixtureData() as! FixtureType.GivenFixtureDataType
+        let (page, audioComponentID, audioComponentDatasource) =
+            fixture.getFixtureData() as! FixtureType.GivenFixtureDataType
 
         sut = MemoPageViewModel(
             componentFactory: mockComponentFactory,
@@ -526,6 +549,11 @@ final class MemoPageViewModelTests: XCTestCase, @preconcurrency FixtureProviding
             audioFileManager: mockAudioFileManager,
             audioTrackController: mockAudioTrackController,
             page: page)
+
+        sut.setNowPlayingAudioComponentID(audioComponentID)
+        sut.setAudioTrackDataSource(id: audioComponentID, datasource: audioComponentDatasource)
+
+        mockMemoComponentCoredataReposotory.actions = .init(expected: [.updateComponentContentChanges])
 
         let expectation = XCTestExpectation(description: "")
         let factualOutput = FactualOutput<MemoPageViewModel.Output>()
@@ -565,6 +593,8 @@ final class MemoPageViewModelTests: XCTestCase, @preconcurrency FixtureProviding
         XCTAssertEqual(expectedMetadata, factualMetadata)
         XCTAssertEqual(expectedIsEditingCurrentlyPlayingAudio, factualIsEditingCurrentlyPlayingAudio)
         XCTAssertEqual(expectedTrackIndexAfterApply, factualTrackIndexAfterApply)
+
+        mockMemoComponentCoredataReposotory.verify()
     }
 
     // 곡이 여러개 있고 중간에 재생중인 곡삭제했을 때
@@ -575,6 +605,7 @@ final class MemoPageViewModelTests: XCTestCase, @preconcurrency FixtureProviding
         let (
             givenPage,
             nowPlayingComponentID,
+            audioComponentDatasource,
             audioFileURL,
             audioSampleData,
             audioMetadata,
@@ -591,6 +622,7 @@ final class MemoPageViewModelTests: XCTestCase, @preconcurrency FixtureProviding
             page: givenPage)
 
         sut.setNowPlayingAudioComponentID(nowPlayingComponentID)
+        sut.setAudioTrackDataSource(id: nowPlayingComponentID, datasource: audioComponentDatasource)
 
         mockAudioFileManager.actions = .init(expected: [
             .removeAudio, .createAudioFileURL, .readAudioSampleData, .readAudioMetadata,
@@ -602,6 +634,8 @@ final class MemoPageViewModelTests: XCTestCase, @preconcurrency FixtureProviding
         mockAudioTrackController.actions = .init(expected: [.isPlaying, .setAudioURL, .play, .totalTime])
         mockAudioTrackController.isPlayingResult = isPlayingResult
         mockAudioTrackController.totalTimeResult = nextPlayAudioDuration
+
+        mockMemoComponentCoredataReposotory.actions = .init(expected: [.updateComponentContentChanges])
 
         let expectation = XCTestExpectation(description: "")
         let factualOutput = FactualOutput<MemoPageViewModel.Output>()
@@ -646,8 +680,7 @@ final class MemoPageViewModelTests: XCTestCase, @preconcurrency FixtureProviding
         XCTAssertEqual(expectedNextPlayAudioMetadata, factualAudioMetadata)
         XCTAssertEqual(expectedNextPlayAudioSampledata, factualAudioSampleData)
 
-        let nowPlayingAudioComponentDataSource = try XCTUnwrap(
-            (sut.memoPage.getComponents[3] as? AudioComponent)?.datasource)
+        let nowPlayingAudioComponentDataSource = try XCTUnwrap(sut.audioCompoenntDataSources[nowPlayingComponentID])
 
         XCTAssertEqual(expectedNowPlayingURL, nowPlayingAudioComponentDataSource.nowPlayingURL)
         XCTAssertEqual(expectedNextPlayingAudioTrackIndex, nowPlayingAudioComponentDataSource.nowPlayingAudioIndex)
@@ -655,6 +688,7 @@ final class MemoPageViewModelTests: XCTestCase, @preconcurrency FixtureProviding
 
         mockAudioFileManager.verify()
         mockAudioTrackController.verify()
+        mockMemoComponentCoredataReposotory.verify()
     }
 
     // 곡이 여러개 있고 pause 상태인 곡삭제했을 때
@@ -664,7 +698,8 @@ final class MemoPageViewModelTests: XCTestCase, @preconcurrency FixtureProviding
 
         let (
             givenPage,
-            nowPlayComponentID
+            nowPlayComponentID,
+            audioComponentDatasource
         ) = fixture.getFixtureData() as! FixtureType.GivenFixtureDataType
 
         sut = MemoPageViewModel(
@@ -676,11 +711,14 @@ final class MemoPageViewModelTests: XCTestCase, @preconcurrency FixtureProviding
             page: givenPage)
 
         sut.setNowPlayingAudioComponentID(nowPlayComponentID)
+        sut.setAudioTrackDataSource(id: nowPlayComponentID, datasource: audioComponentDatasource)
 
         mockAudioFileManager.actions = .init(expected: [.removeAudio])
 
         mockAudioTrackController.actions = .init(expected: [.isPlaying, .reset])
         mockAudioTrackController.isPlayingResult = false
+
+        mockMemoComponentCoredataReposotory.actions = .init(expected: [.updateComponentContentChanges])
 
         let expectation = XCTestExpectation(description: "")
         let factualOutput = FactualOutput<MemoPageViewModel.Output>()
@@ -712,8 +750,7 @@ final class MemoPageViewModelTests: XCTestCase, @preconcurrency FixtureProviding
         XCTAssertEqual(expectedComponentIndex, factualComponentIndex)
         XCTAssertEqual(expectedTrackIndex, factualTrackIndex)
 
-        let nowPlayingAudioComponentDataSource = try XCTUnwrap(
-            (sut.memoPage.getComponents[3] as? AudioComponent)?.datasource)
+        let nowPlayingAudioComponentDataSource = try XCTUnwrap(sut.audioCompoenntDataSources[nowPlayComponentID])
 
         XCTAssertNil(sut.nowPlayingAudioComponentID)
         XCTAssertNil(nowPlayingAudioComponentDataSource.nowPlayingAudioIndex)
@@ -724,6 +761,7 @@ final class MemoPageViewModelTests: XCTestCase, @preconcurrency FixtureProviding
 
         mockAudioFileManager.verify()
         mockAudioTrackController.verify()
+        mockMemoComponentCoredataReposotory.verify()
     }
 
     // 재생중일때 하나뿐인 곡 삭제

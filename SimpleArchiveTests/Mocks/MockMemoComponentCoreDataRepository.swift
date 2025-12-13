@@ -9,13 +9,16 @@ final class MockMemoComponentCoreDataRepository: Mock, MemoComponentCoreDataRepo
         case createComponentEntity
         case removeComponent
         case updateComponentChanges
-        case saveComponentsDetail
-        case captureSnapshot
+        case updateComponentContentChanges
+        case captureAutomaticSnapshot
+        case captureManualSnapshot
     }
 
     var actions = MockActions<Action>(expected: [])
 
-    func createComponentEntity(parentPageID: UUID, component: any PageComponent) -> AnyPublisher<Void, Error> {
+    func createComponentEntity(parentPageID: UUID, component: any PageComponent)
+        -> AnyPublisher<Void, Error>
+    {
         register(.createComponentEntity)
         return Just<Void>.withErrorType(Error.self)
     }
@@ -24,21 +27,31 @@ final class MockMemoComponentCoreDataRepository: Mock, MemoComponentCoreDataRepo
         register(.removeComponent)
     }
 
-    func updateComponentChanges(componentChanges: PageComponentChangeObject) -> AnyPublisher<Void, Error> {
+    func updateComponentChanges(componentChanges: PageComponentChangeObject)
+        -> AnyPublisher<Void, Error>
+    {
         register(.updateComponentChanges)
         return Just<Void>.withErrorType(Error.self)
     }
 
-    func saveComponentsDetail(changedComponents: [any PageComponent]) -> AnyPublisher<Void, Error> {
-        register(.saveComponentsDetail)
-        return Just<Void>.withErrorType(Error.self)
-    }
-
-    func captureSnapshot(snapshotRestorableComponent: any SnapshotRestorable, desc: String)
+    func updateComponentContentChanges(modifiedComponent: any PageComponent)
         -> AnyPublisher<Void, Error>
     {
-        register(.captureSnapshot)
+        register(.updateComponentContentChanges)
         return Just<Void>.withErrorType(Error.self)
     }
 
+    func captureSnapshot(snapshotRestorableComponent: any SnapshotRestorablePageComponent, snapShotDescription: String)
+        -> AnyPublisher<Void, Error>
+    {
+        register(.captureManualSnapshot)
+        return Just<Void>.withErrorType(Error.self)
+    }
+
+    func captureSnapshot(snapshotRestorableComponents: [any SnapshotRestorablePageComponent])
+        -> AnyPublisher<Void, Error>
+    {
+        register(.captureAutomaticSnapshot)
+        return Just<Void>.withErrorType(Error.self)
+    }
 }

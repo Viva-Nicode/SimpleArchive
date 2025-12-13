@@ -3,7 +3,9 @@ import Foundation
 @testable import SimpleArchive
 
 final class PlayAudioTrackSuccessfulllyTestFixture: TestFixtureType {
-    typealias GivenFixtureDataType = (MemoPageModel, URL, AudioSampleData, AudioTrackMetadata)
+    typealias GivenFixtureDataType = (
+        MemoPageModel, UUID, URL, AudioSampleData, AudioTrackMetadata, AudioComponentDataSource
+    )
     typealias TestTargetInputType = (UUID, Int)
     typealias ExpectedOutputType = (
         Int?, Int, Int, TimeInterval?, AudioTrackMetadata, AudioSampleData?, URL
@@ -17,7 +19,7 @@ final class PlayAudioTrackSuccessfulllyTestFixture: TestFixtureType {
         scaledSampleData: [-0.11, -0.21, 0.73, -0.24, -0.23, 0.332, -0.587, 0.57],
         sampleRate: 44100.0
     )
-    private let audioMetadata = AudioTrackMetadata(title: "e audio", artist: "artist", thumbnail: Data())
+    private let audioMetadata = AudioTrackMetadata(title: "e audio", artist: "artist", lyrics: "", thumbnail: Data())
 
     private var provideState: TestDataProvideState = .givenFixtureData
 
@@ -52,20 +54,19 @@ final class PlayAudioTrackSuccessfulllyTestFixture: TestFixtureType {
         testPage.appendChildComponent(component: TextEditorComponent())
         let audioComponent = AudioComponent()
 
-        audioComponent.detail.sortBy = .name
+        audioComponent.componentContents.sortBy = .name
         _ = audioComponent.addAudios(audiotracks: [
-            AudioTrack(title: "a audio", artist: "artist", thumbnail: Data(), fileExtension: ".mp3"),
-            AudioTrack(title: "b audio", artist: "artist", thumbnail: Data(), fileExtension: ".mp3"),
-            AudioTrack(title: "d audio", artist: "artist", thumbnail: Data(), fileExtension: ".mp3"),
-            AudioTrack(title: "e audio", artist: "artist", thumbnail: Data(), fileExtension: ".mp3"),
-            AudioTrack(title: "h audio", artist: "artist", thumbnail: Data(), fileExtension: ".mp3"),
+            AudioTrack(title: "a audio", artist: "artist", thumbnail: Data(), lyrics: "", fileExtension: .mp3),
+            AudioTrack(title: "b audio", artist: "artist", thumbnail: Data(), lyrics: "", fileExtension: .mp3),
+            AudioTrack(title: "d audio", artist: "artist", thumbnail: Data(), lyrics: "", fileExtension: .mp3),
+            AudioTrack(title: "e audio", artist: "artist", thumbnail: Data(), lyrics: "", fileExtension: .mp3),
+            AudioTrack(title: "h audio", artist: "artist", thumbnail: Data(), lyrics: "", fileExtension: .mp3),
         ])
 
         let audioComponentDataSource = AudioComponentDataSource(
-            tracks: audioComponent.detail.tracks,
-            sortBy: audioComponent.detail.sortBy
+            tracks: audioComponent.componentContents.tracks,
+            sortBy: audioComponent.componentContents.sortBy
         )
-        audioComponent.datasource = audioComponentDataSource
 
         testPage.appendChildComponent(component: audioComponent)
         self.audioComponent = audioComponent
@@ -73,6 +74,9 @@ final class PlayAudioTrackSuccessfulllyTestFixture: TestFixtureType {
         let targetComponent = TextEditorComponent()
         testPage.appendChildComponent(component: targetComponent)
 
-        return (testPage, archiveDirectoryAudioPath, audioSampleData, audioMetadata)
+        return (
+            testPage, audioComponent.id, archiveDirectoryAudioPath, audioSampleData, audioMetadata,
+            audioComponentDataSource
+        )
     }
 }

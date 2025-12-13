@@ -26,27 +26,27 @@ final class RestoreSnapshotFailureWhenNotFoundSnapshotTestFixture: TestFixtureTy
     private func provideGivenFixture() -> GivenFixtureDataType {
         let testTextEditorComponent = TextEditorComponent(
             title: "populatedTextEditorComponentStub",
-            detail: "This is a test detail.",
+            contents: "test contents.",
             componentSnapshots: [
                 TextEditorComponentSnapshot(
-                    detail: "Snapshot 1 detail",
+                    contents: "Snapshot 1 contents",
                     description: "First Snapshot",
                     saveMode: .manual),
                 TextEditorComponentSnapshot(
-                    detail: "Snapshot 2 detail",
-                    description: "Second Snapshot",
+                    contents: "Snapshot 2 contents",
+                    description: "",
                     saveMode: .automatic),
                 TextEditorComponentSnapshot(
-                    detail: "Snapshot 3 detail",
+                    contents: "Snapshot 3 contents",
                     description: "Third Snapshot",
                     saveMode: .manual),
                 TextEditorComponentSnapshot(
-                    detail: "Snapshot 4 detail",
+                    contents: "Snapshot 4 contents",
                     description: "fourth Snapshot",
                     saveMode: .manual),
                 TextEditorComponentSnapshot(
-                    detail: "Snapshot 5 detail",
-                    description: "fifth Snapshot",
+                    contents: "Snapshot 5 contents",
+                    description: "",
                     saveMode: .automatic),
             ]
         )

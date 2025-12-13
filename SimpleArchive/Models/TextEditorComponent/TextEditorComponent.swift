@@ -1,8 +1,13 @@
 import Combine
 import Foundation
 
+enum TextEditorComponentAction: Codable {
+    case insert(range: Range<Int>, text: String)
+    case replace(range: Range<Int>, from: String, to: String)
+}
+
 final class TextEditorComponent: NSObject, Codable, SnapshotRestorablePageComponent {
-    
+
     var id: UUID
     var renderingOrder: Int
     var isMinimumHeight: Bool
@@ -12,6 +17,7 @@ final class TextEditorComponent: NSObject, Codable, SnapshotRestorablePageCompon
     var componentContents: String
     var captureState: CaptureState
     var snapshots: [TextEditorComponentSnapshot] = []
+    var actions: [TextEditorComponentAction] = []
 
     init(
         id: UUID = UUID(),
@@ -45,6 +51,7 @@ final class TextEditorComponent: NSObject, Codable, SnapshotRestorablePageCompon
     func revertToSnapshot(snapshotID: UUID) throws(ComponentSnapshotViewModelError) {
         if let idx = snapshots.firstIndex(where: { $0.snapshotID == snapshotID }) {
             snapshots[idx].revert(component: self)
+            setCaptureState(to: .captured)
         } else {
             throw .canNotFoundSnapshot(snapshotID)
         }

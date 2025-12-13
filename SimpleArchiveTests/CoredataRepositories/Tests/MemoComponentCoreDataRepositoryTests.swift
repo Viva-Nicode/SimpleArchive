@@ -42,8 +42,8 @@ final class MemoComponentCoreDataRepositoryTests: XCTestCase, FixtureProvidingTe
         wait(for: [expectation], timeout: 1)
     }
 
-    func test_saveComponentDetail_successfully() throws {
-        typealias FixtureType = SaveComponentDetailSuccessfullyTestFixture
+    func test_updateTextEditorComponentContentChanges_successfully() throws {
+        typealias FixtureType = UpdateTextEditorComponentContentChangesSuccessfullyTestFixture
         let fixture = fixtureProvider.getFixture()
 
         let givenFixtureData = fixture.getFixtureData() as! FixtureType.GivenFixtureDataType
@@ -51,81 +51,43 @@ final class MemoComponentCoreDataRepositoryTests: XCTestCase, FixtureProvidingTe
             storageItem: givenFixtureData,
             systemDirectory: .mainDirectory)
 
-        let changedComponents = fixture.getFixtureData() as! FixtureType.TestTargetInputType
+        let changedComponent = fixture.getFixtureData() as! FixtureType.TestTargetInputType
         let expectation = XCTestExpectation(description: "")
 
         sut
-            .saveComponentsDetail(changedComponents: changedComponents)
+            .updateComponentContentChanges(modifiedComponent: changedComponent)
             .sinkToFulfill(expectation)
             .store(in: &subscriptions)
 
         wait(for: [expectation], timeout: 1)
 
-        let expectedOutput = fixture.getFixtureData() as! FixtureType.ExpectedOutputType
+        let expectedContents = fixture.getFixtureData() as! FixtureType.ExpectedOutputType
 
-        for (changedComponent, (persistentState, snapshotCount, detail)) in zip(changedComponents, expectedOutput) {
-            let fetchRequest = TextEditorComponentEntity.findTextComponentEntityById(id: changedComponent.id)
+        let fetchRequest = TextEditorComponentEntity.findTextComponentEntityById(id: changedComponent.id)
 
-            coreDataStack
-                .fetch(fetchRequest) { $0 }
-                .map { $0.first! }
-                .sinkToResult { result in
-                    switch result {
-                        case .success(let factual):
-                            XCTAssertEqual(factual.detail, detail)
-                            XCTAssertEqual(factual.snapshots.count, snapshotCount)
-                            XCTAssertEqual(changedComponent.persistenceState, persistentState)
+        coreDataStack
+            .fetch(fetchRequest) { $0 }
+            .tryMap { try XCTUnwrap($0.first, "\(#function) : can not found entity") }
+            .sinkToResult { result in
+                switch result {
+                    case .success(let factual):
+                        XCTAssertEqual(factual.contents, expectedContents)
 
-                        case .failure(let error):
-                            XCTFail(error.localizedDescription)
-                    }
+                    case .failure(let error):
+                        XCTFail(error.localizedDescription)
                 }
-                .store(in: &subscriptions)
-        }
+            }
+            .store(in: &subscriptions)
     }
 
-    func test_saveComponentDetail_withRestoredComponents_successfully() throws {
-        typealias FixtureType = SaveComponentDetailWithRestoredComponentsSuccessfullyTestFixture
-        let fixture = fixtureProvider.getFixture()
+    
+    func test_updateTableComponentContentChanges_successfully() throws {
+        
+//        TableComponentEntity.findTableComponentEntityById(id: )
+    }
 
-        let givenFixtureData = fixture.getFixtureData() as! FixtureType.GivenFixtureDataType
-        try coreDataStack.prepareCoreDataEntities(
-            storageItem: givenFixtureData,
-            systemDirectory: .mainDirectory)
-
-        let changedComponents = fixture.getFixtureData() as! FixtureType.TestTargetInputType
-        let expectation = XCTestExpectation(description: "")
-
-        sut
-            .saveComponentsDetail(changedComponents: changedComponents)
-            .sinkToFulfill(expectation)
-            .store(in: &subscriptions)
-
-        wait(for: [expectation], timeout: 1)
-
-        let expectedOutput = fixture.getFixtureData() as! FixtureType.ExpectedOutputType
-
-        for (changedComponent, (persistentState, snapshotCount, detail))
-            in zip(changedComponents, expectedOutput)
-        {
-            let fetchRequest = TextEditorComponentEntity.findTextComponentEntityById(id: changedComponent.id)
-
-            coreDataStack
-                .fetch(fetchRequest) { $0 }
-                .map { $0.first! }
-                .sinkToResult { result in
-                    switch result {
-                        case .success(let factual):
-                            XCTAssertEqual(factual.detail, detail)
-                            XCTAssertEqual(factual.snapshots.count, snapshotCount)
-                            XCTAssertEqual(changedComponent.persistenceState, persistentState)
-
-                        case .failure(let error):
-                            XCTFail(error.localizedDescription)
-                    }
-                }
-                .store(in: &subscriptions)
-        }
+    func test_updateAudioComponentContentChanges_successfully() throws {
+        
     }
 
     func test_updateComponentChanges_successfully() throws {
@@ -146,19 +108,18 @@ final class MemoComponentCoreDataRepositoryTests: XCTestCase, FixtureProvidingTe
             .store(in: &subscriptions)
 
         wait(for: [expectation], timeout: 1)
-        let (expectedTitle, expectedIsMinimum) = fixture.getFixtureData() as! FixtureType.ExpectedOutputType
+        let expectedTitle = fixture.getFixtureData() as! FixtureType.ExpectedOutputType
 
         let fetchRequest = TextEditorComponentEntity.findTextComponentEntityById(
             id: componentChanges.componentIdChanged)
 
         coreDataStack
             .fetch(fetchRequest) { $0 }
-            .map { $0.first! }
+            .tryMap { try XCTUnwrap($0.first, "\(#function) : can not found entity") }
             .sinkToResult { result in
                 switch result {
                     case .success(let factual):
                         XCTAssertEqual(factual.title, expectedTitle)
-                        XCTAssertEqual(factual.isMinimumHeight, expectedIsMinimum)
 
                     case .failure(let error):
                         XCTFail(error.localizedDescription)
@@ -180,27 +141,28 @@ final class MemoComponentCoreDataRepositoryTests: XCTestCase, FixtureProvidingTe
         let expectation = XCTestExpectation(description: "")
 
         sut
-            .captureSnapshot(snapshotRestorableComponent: snapshotRestorableComponent, desc: description)
+            .captureSnapshot(snapshotRestorableComponent: snapshotRestorableComponent, snapShotDescription: description)
             .sinkToFulfill(expectation)
             .store(in: &subscriptions)
 
         wait(for: [expectation], timeout: 1)
 
-        let fetchRequest = TextEditorComponentEntity.findTextComponentEntityById(
-            id: snapshotRestorableComponent.id)
-        let (snapshotCount, snapshotDetail, snapshotDescription) =
+        let fetchRequest =
+            TextEditorComponentEntity
+            .findTextComponentEntityById(id: snapshotRestorableComponent.id)
+        let (snapshotCount, snapshotContents, snapshotDescription) =
             fixture.getFixtureData() as! FixtureType.ExpectedOutputType
 
         coreDataStack
             .fetch(fetchRequest) { $0 }
-            .map { $0.first! }
+            .tryMap { try XCTUnwrap($0.first, "\(#function) : can not found entity") }
             .sinkToResult { result in
                 switch result {
                     case .success(let factual):
                         let mostRecentSnapshot = factual.snapshots.max { $0.makingDate < $1.makingDate }!
 
                         XCTAssertEqual(factual.snapshots.count, snapshotCount)
-                        XCTAssertEqual(mostRecentSnapshot.detail, snapshotDetail)
+                        XCTAssertEqual(mostRecentSnapshot.contents, snapshotContents)
                         XCTAssertEqual(mostRecentSnapshot.snapShotDescription, snapshotDescription)
 
                     case .failure(let error):

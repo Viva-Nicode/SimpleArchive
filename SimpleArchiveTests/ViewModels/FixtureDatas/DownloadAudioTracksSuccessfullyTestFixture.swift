@@ -3,7 +3,7 @@ import Foundation
 @testable import SimpleArchive
 
 final class DownloadAudioTracksSuccessfullyTestFixture: TestFixtureType {
-    typealias GivenFixtureDataType = MemoPageModel
+    typealias GivenFixtureDataType = (MemoPageModel, UUID, AudioComponentDataSource)
     typealias TestTargetInputType = (UUID, String)
     typealias ExpectedOutputType = (Int, [Int])
 
@@ -39,21 +39,25 @@ final class DownloadAudioTracksSuccessfullyTestFixture: TestFixtureType {
         testPage.appendChildComponent(component: TextEditorComponent())
         let audioComponent = AudioComponent()
 
-        audioComponent.detail.sortBy = .name
+        audioComponent.componentContents.sortBy = .name
         _ = audioComponent.addAudios(audiotracks: [
-            AudioTrack(title: "a audio", artist: "artist", thumbnail: Data(), fileExtension: ".mp3"),
-            AudioTrack(title: "b audio", artist: "artist", thumbnail: Data(), fileExtension: ".mp3"),
-            AudioTrack(title: "d audio", artist: "artist", thumbnail: Data(), fileExtension: ".mp3"),
-            AudioTrack(title: "e audio", artist: "artist", thumbnail: Data(), fileExtension: ".mp3"),
-            AudioTrack(title: "h audio", artist: "artist", thumbnail: Data(), fileExtension: ".mp3"),
+            AudioTrack(title: "a audio", artist: "artist", thumbnail: Data(), lyrics: "", fileExtension: .mp3),
+            AudioTrack(title: "b audio", artist: "artist", thumbnail: Data(), lyrics: "", fileExtension: .mp3),
+            AudioTrack(title: "d audio", artist: "artist", thumbnail: Data(), lyrics: "", fileExtension: .mp3),
+            AudioTrack(title: "e audio", artist: "artist", thumbnail: Data(), lyrics: "", fileExtension: .mp3),
+            AudioTrack(title: "h audio", artist: "artist", thumbnail: Data(), lyrics: "", fileExtension: .mp3),
         ])
 
         testPage.appendChildComponent(component: audioComponent)
         audioComponentID = audioComponent.id
 
+        let datasource = AudioComponentDataSource(
+            tracks: audioComponent.componentContents.tracks,
+            sortBy: audioComponent.componentContents.sortBy)
+
         let targetComponent = TextEditorComponent()
         testPage.appendChildComponent(component: targetComponent)
 
-        return testPage
+        return (testPage, audioComponentID, datasource)
     }
 }

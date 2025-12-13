@@ -153,7 +153,7 @@ import UIKit
 
                         audioComponent.actions.append(
                             .appendAudio(appendedIndices: appendedIndices, tracks: audioTracks))
-                        coredataReposotory.saveComponentsDetail(modifiedComponent: audioComponent)
+                        coredataReposotory.updateComponentContentChanges(modifiedComponent: audioComponent)
 
                         output.send(.didAppendAudioTrackRows(appendedIndices))
 
@@ -219,7 +219,7 @@ import UIKit
 
         audioComponent.actions.append(
             .appendAudio(appendedIndices: appendedIndices, tracks: audioTracks))
-        coredataReposotory.saveComponentsDetail(modifiedComponent: audioComponent)
+        coredataReposotory.updateComponentContentChanges(modifiedComponent: audioComponent)
 
         output.send(.didAppendAudioTrackRows(appendedIndices))
     }
@@ -322,7 +322,7 @@ import UIKit
         }
 
         audioComponent.actions.append(.applyAudioMetadata(audioID: targetAudioTrackID, metadata: newMetadata))
-        coredataReposotory.saveComponentsDetail(modifiedComponent: audioComponent)
+        coredataReposotory.updateComponentContentChanges(modifiedComponent: audioComponent)
         audioFileManager.writeAudioMetadata(audioTrack: audioComponent.componentContents.tracks[trackIndex])
 
         if audioComponent.componentContents.sortBy == .name {
@@ -359,7 +359,7 @@ import UIKit
         audioContentTableDataSource.sortBy = .manual
 
         audioComponent.actions.append(.moveAudioOrder(src: src, des: des))
-        coredataReposotory.saveComponentsDetail(modifiedComponent: audioComponent)
+        coredataReposotory.updateComponentContentChanges(modifiedComponent: audioComponent)
 
         audioContentTableDataSource.nowPlayingAudioIndex = audioComponent.componentContents.tracks.firstIndex {
             $0.id == currentPlayingAudioTrackID
@@ -385,7 +385,7 @@ import UIKit
         }
 
         audioComponent.actions.append(.sortAudioTracks(sortBy: sortBy))
-        coredataReposotory.saveComponentsDetail(modifiedComponent: audioComponent)
+        coredataReposotory.updateComponentContentChanges(modifiedComponent: audioComponent)
 
         audioContentTableDataSource.nowPlayingAudioIndex = audioComponent.componentContents.tracks.firstIndex {
             $0.id == currentPlayingAudioTrackID
@@ -407,7 +407,7 @@ import UIKit
         audioFileManager.removeAudio(with: removedAudioTrack)
         audioContentTableDataSource.tracks = audioComponent.componentContents.tracks
         audioComponent.actions.append(.removeAudio(removedAudioID: removedAudioTrack.id))
-        coredataReposotory.saveComponentsDetail(modifiedComponent: audioComponent)
+        coredataReposotory.updateComponentContentChanges(modifiedComponent: audioComponent)
 
         if audioContentTableDataSource.nowPlayingAudioIndex != nil {
             if audioComponent.componentContents.tracks.isEmpty {

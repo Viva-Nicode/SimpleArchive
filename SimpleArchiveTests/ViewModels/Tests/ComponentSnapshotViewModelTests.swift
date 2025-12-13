@@ -8,19 +8,19 @@ final class ComponentSnapshotViewModelTests: XCTestCase, @preconcurrency Fixture
 
     var sut: ComponentSnapshotViewModel!
     var fixtureProvider = ComponentSnapshotViewModelTestFixtureProvider()
-    var componentSnapshotCoreDataRepository: MockComponentSnapshotCoreDataRepository!
+    var mockComponentSnapshotCoreDataRepository: MockComponentSnapshotCoreDataRepository!
     var subscriptions: Set<AnyCancellable>!
     var input: PassthroughSubject<ComponentSnapshotViewModel.Input, Never>!
 
     override func setUpWithError() throws {
-        componentSnapshotCoreDataRepository = MockComponentSnapshotCoreDataRepository()
+        mockComponentSnapshotCoreDataRepository = MockComponentSnapshotCoreDataRepository()
         input = PassthroughSubject<ComponentSnapshotViewModel.Input, Never>()
         subscriptions = []
     }
 
     override func tearDownWithError() throws {
         fixtureProvider.removeUsedFixtureData()
-        componentSnapshotCoreDataRepository = nil
+        mockComponentSnapshotCoreDataRepository = nil
         sut = nil
         input = nil
         subscriptions = nil
@@ -33,8 +33,10 @@ final class ComponentSnapshotViewModelTests: XCTestCase, @preconcurrency Fixture
         let givenFixtureData = fixture.getFixtureData() as! FixtureType.GivenFixtureDataType
 
         sut = ComponentSnapshotViewModel(
-            componentSnapshotCoreDataRepository: componentSnapshotCoreDataRepository,
+            componentSnapshotCoreDataRepository: mockComponentSnapshotCoreDataRepository,
             snapshotRestorableComponent: givenFixtureData)
+        
+        mockComponentSnapshotCoreDataRepository.actions = .init(expected: [.removeSnapshot])
 
         let expectation = XCTestExpectation(description: "")
         let factualOutput = FactualOutput<ComponentSnapshotViewModel.Output>()
@@ -59,6 +61,8 @@ final class ComponentSnapshotViewModelTests: XCTestCase, @preconcurrency Fixture
 
         XCTAssertEqual(factualRemovedSnapshotIndex, expectedRemovedSnapshotIndex)
         XCTAssertEqual(factualMetadata, expectedNextMetaData)
+        
+        mockComponentSnapshotCoreDataRepository.verify()
     }
 
     func test_removeSnapshot_whenMiddleSnapshotIsDeleted() throws {
@@ -69,8 +73,10 @@ final class ComponentSnapshotViewModelTests: XCTestCase, @preconcurrency Fixture
 
         sut = ComponentSnapshotViewModel(
             snapshotRestorableComponent: givenFixtureData,
-            componentSnapshotCoreDataRepository: componentSnapshotCoreDataRepository,
+            componentSnapshotCoreDataRepository: mockComponentSnapshotCoreDataRepository,
             initialViewedSnapshotID: initialViewedSnapshotID)
+        
+        mockComponentSnapshotCoreDataRepository.actions = .init(expected: [.removeSnapshot])
 
         let expectation = XCTestExpectation(description: "")
         let factualOutput = FactualOutput<ComponentSnapshotViewModel.Output>()
@@ -93,6 +99,8 @@ final class ComponentSnapshotViewModelTests: XCTestCase, @preconcurrency Fixture
         }
         XCTAssertEqual(removedSnapshotIndex, expectedRemovedSnapshotIndex)
         XCTAssertEqual(metadata, expectedNextMetaData)
+        
+        mockComponentSnapshotCoreDataRepository.verify()
     }
 
     func test_removeSnapshot_whenLastSnapshotIsDeleted() throws {
@@ -103,8 +111,10 @@ final class ComponentSnapshotViewModelTests: XCTestCase, @preconcurrency Fixture
 
         sut = ComponentSnapshotViewModel(
             snapshotRestorableComponent: givenFixtureData,
-            componentSnapshotCoreDataRepository: componentSnapshotCoreDataRepository,
+            componentSnapshotCoreDataRepository: mockComponentSnapshotCoreDataRepository,
             initialViewedSnapshotID: initialViewedSnapshotID)
+        
+        mockComponentSnapshotCoreDataRepository.actions = .init(expected: [.removeSnapshot])
 
         let expectation = XCTestExpectation(description: "")
         let factualOutput = FactualOutput<ComponentSnapshotViewModel.Output>()
@@ -128,6 +138,8 @@ final class ComponentSnapshotViewModelTests: XCTestCase, @preconcurrency Fixture
         }
         XCTAssertEqual(removedSnapshotIndex, expectedRemovedSnapshotIndex)
         XCTAssertEqual(metadata, expectedNextMetaData)
+        
+        mockComponentSnapshotCoreDataRepository.verify()
     }
 
     func test_removeSnapshot_whenOnlySnapshotIsDeleted() throws {
@@ -137,8 +149,10 @@ final class ComponentSnapshotViewModelTests: XCTestCase, @preconcurrency Fixture
         let givenFixtureData = fixture.getFixtureData() as! FixtureType.GivenFixtureDataType
 
         sut = ComponentSnapshotViewModel(
-            componentSnapshotCoreDataRepository: componentSnapshotCoreDataRepository,
+            componentSnapshotCoreDataRepository: mockComponentSnapshotCoreDataRepository,
             snapshotRestorableComponent: givenFixtureData)
+        
+        mockComponentSnapshotCoreDataRepository.actions = .init(expected: [.removeSnapshot])
 
         let expectation = XCTestExpectation(description: "")
         let factualOutput = FactualOutput<ComponentSnapshotViewModel.Output>()
@@ -162,6 +176,8 @@ final class ComponentSnapshotViewModelTests: XCTestCase, @preconcurrency Fixture
 
         XCTAssertEqual(removedSnapshotIndex, expectedRemovedSnapshotIndex)
         XCTAssertNil(metadata)
+        
+        mockComponentSnapshotCoreDataRepository.verify()
     }
 
     func test_removeSnapshot_failureWhenSnapshotMismatch() throws {
@@ -171,7 +187,7 @@ final class ComponentSnapshotViewModelTests: XCTestCase, @preconcurrency Fixture
         let givenFixtureData = fixture.getFixtureData() as! FixtureType.GivenFixtureDataType
 
         sut = ComponentSnapshotViewModel(
-            componentSnapshotCoreDataRepository: componentSnapshotCoreDataRepository,
+            componentSnapshotCoreDataRepository: mockComponentSnapshotCoreDataRepository,
             snapshotRestorableComponent: givenFixtureData)
 
         let expectation = XCTestExpectation(description: "")
@@ -197,6 +213,8 @@ final class ComponentSnapshotViewModelTests: XCTestCase, @preconcurrency Fixture
             XCTFail("Unexpected output")
             return
         }
+        
+        mockComponentSnapshotCoreDataRepository.verify()
     }
 
     func test_removeSnapshot_failureWhenNotFoundSnapshot() throws {
@@ -207,7 +225,7 @@ final class ComponentSnapshotViewModelTests: XCTestCase, @preconcurrency Fixture
 
         sut = ComponentSnapshotViewModel(
             snapshotRestorableComponent: testComponent,
-            componentSnapshotCoreDataRepository: componentSnapshotCoreDataRepository,
+            componentSnapshotCoreDataRepository: mockComponentSnapshotCoreDataRepository,
             initialViewedSnapshotID: notExistID)
 
         let expectation = XCTestExpectation(description: "")
@@ -233,6 +251,8 @@ final class ComponentSnapshotViewModelTests: XCTestCase, @preconcurrency Fixture
             XCTFail("Unexpected output")
             return
         }
+        
+        mockComponentSnapshotCoreDataRepository.verify()
     }
 
     func test_restoreSnapshot_successfully() throws {
@@ -242,8 +262,10 @@ final class ComponentSnapshotViewModelTests: XCTestCase, @preconcurrency Fixture
         let givenFixtureData = fixture.getFixtureData() as! FixtureType.GivenFixtureDataType
 
         sut = ComponentSnapshotViewModel(
-            componentSnapshotCoreDataRepository: componentSnapshotCoreDataRepository,
+            componentSnapshotCoreDataRepository: mockComponentSnapshotCoreDataRepository,
             snapshotRestorableComponent: givenFixtureData)
+        
+        mockComponentSnapshotCoreDataRepository.actions = .init(expected: [.updateComponentContentChanges])
 
         let expectation = XCTestExpectation(description: "")
         let factualOutput = FactualOutput<ComponentSnapshotViewModel.Output>()
@@ -257,15 +279,17 @@ final class ComponentSnapshotViewModelTests: XCTestCase, @preconcurrency Fixture
         wait(for: [expectation], timeout: 1)
 
         let output = try factualOutput.getOutput()
-
+        let (expectedContents, expectedCaptureState) = fixture.getFixtureData() as! FixtureType.ExpectedOutputType
+        
         guard case .didCompleteRestoreSnapshot = output else {
             XCTFail("Unexpected output")
             return
         }
-
-        XCTAssertEqual(givenFixtureData.detail, "Snapshot 1 detail")
-        XCTAssertEqual(givenFixtureData.persistenceState, .unsaved(isMustToStoreSnapshot: false))
-        // 이거 왜 기븐을 테스트하냐
+        
+        XCTAssertEqual((sut.snapshotRestorableComponent as! TextEditorComponent).componentContents, expectedContents)
+        XCTAssertEqual(sut.snapshotRestorableComponent.captureState, expectedCaptureState)
+        
+        mockComponentSnapshotCoreDataRepository.verify()
     }
 
     func test_restoreSnapshot_failureWhenNotFoundSnapshot() throws {
@@ -276,7 +300,7 @@ final class ComponentSnapshotViewModelTests: XCTestCase, @preconcurrency Fixture
 
         sut = ComponentSnapshotViewModel(
             snapshotRestorableComponent: givenFixtureData,
-            componentSnapshotCoreDataRepository: componentSnapshotCoreDataRepository,
+            componentSnapshotCoreDataRepository: mockComponentSnapshotCoreDataRepository,
             initialViewedSnapshotID: notExistID)
 
         let expectation = XCTestExpectation(description: "")
@@ -299,5 +323,7 @@ final class ComponentSnapshotViewModelTests: XCTestCase, @preconcurrency Fixture
             XCTFail("Unexpected output")
             return
         }
+        
+        mockComponentSnapshotCoreDataRepository.verify()
     }
 }

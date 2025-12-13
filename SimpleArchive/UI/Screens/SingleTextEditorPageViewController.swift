@@ -47,6 +47,14 @@ final class SingleTextEditorPageViewController: UIViewController, ViewController
         textEditorView.translatesAutoresizingMaskIntoConstraints = false
         return textEditorView
     }()
+    private let undoButton: UIButton = {
+        let snapshotButton = UIButton()
+        let config = UIImage.SymbolConfiguration(pointSize: 20)
+        let snapshowUIImage = UIImage(systemName: "arrowshape.turn.up.backward.fill", withConfiguration: config)
+        snapshotButton.setImage(snapshowUIImage, for: .normal)
+        snapshotButton.translatesAutoresizingMaskIntoConstraints = false
+        return snapshotButton
+    }()
     private(set) var captureButton: UIButton = {
         let snapshotButton = UIButton()
         let config = UIImage.SymbolConfiguration(pointSize: 22)
@@ -107,7 +115,7 @@ final class SingleTextEditorPageViewController: UIViewController, ViewController
                         .store(in: &subscriptions)
                     navigationController?.pushViewController(snapshotView, animated: true)
 
-                case .didRestoreComponent(let detail):
+                case .didRestoreComponent(let contents):
                     UIView.animateKeyframes(withDuration: 0.5, delay: 0, options: []) {
 
                         UIView.addKeyframe(withRelativeStartTime: 0.0, relativeDuration: 0.5) { [weak self] in
@@ -118,7 +126,7 @@ final class SingleTextEditorPageViewController: UIViewController, ViewController
                         UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0.0) { [weak self] in
                             guard let self else { return }
                             textEditorView.delegate = nil
-                            textEditorView.text = detail
+                            textEditorView.text = contents
                         }
 
                         UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0.5) { [weak self] in
@@ -133,6 +141,11 @@ final class SingleTextEditorPageViewController: UIViewController, ViewController
 
                 case .didCompleteComponentCapture:
                     completeSnapshotCapturePopupView()
+
+                case .didUndoTextComponentContents(let contents):
+                    textEditorView.delegate = nil
+                    textEditorView.text = contents
+                    textEditorView.delegate = self
             }
         }
         .store(in: &subscriptions)
@@ -143,6 +156,14 @@ final class SingleTextEditorPageViewController: UIViewController, ViewController
         view.addSubview(headerView)
         headerView.addSubview(titleLable)
         headerView.addSubview(createDateLabel)
+
+        headerView.addSubview(undoButton)
+
+        undoButton.addAction(
+            UIAction { _ in
+                self.input.send(.willUndoTextComponentContents)
+            }, for: .touchUpInside)
+
         headerView.addSubview(captureButton)
 
         captureButton.throttleTapPublisher()
@@ -194,6 +215,9 @@ final class SingleTextEditorPageViewController: UIViewController, ViewController
 
         captureButton.trailingAnchor.constraint(equalTo: snapshotButton.leadingAnchor, constant: -10).isActive = true
         captureButton.centerYAnchor.constraint(equalTo: headerView.centerYAnchor).isActive = true
+
+        undoButton.trailingAnchor.constraint(equalTo: captureButton.leadingAnchor, constant: -10).isActive = true
+        undoButton.centerYAnchor.constraint(equalTo: headerView.centerYAnchor).isActive = true
 
         textEditorView.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 10).isActive = true
         textEditorView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true

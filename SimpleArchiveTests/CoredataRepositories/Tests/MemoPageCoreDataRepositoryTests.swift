@@ -40,9 +40,10 @@ final class MemoPageCoreDataRepositoryTests: XCTestCase, FixtureProvidingTestCas
         wait(for: [expectation], timeout: 1)
 
         let fixedDirectoryID = SystemDirectories.fixedFileDirectory.getId()!
+        let fetchRequest = MemoDirectoryEntity.findDirectoryEntityById(id: fixedDirectoryID)
 
-        coreDataStack.fetch(MemoDirectoryEntity.findDirectoryEntityById(id: fixedDirectoryID)) { $0 }
-            .map { $0.first! }
+        coreDataStack.fetch(fetchRequest) { $0 }
+            .tryMap { try XCTUnwrap($0.first, "\(#function) : can not found entity") }
             .sinkToResult { result in
                 switch result {
                     case .success(let fixedDirectoryEntity):
@@ -73,8 +74,10 @@ final class MemoPageCoreDataRepositoryTests: XCTestCase, FixtureProvidingTestCas
 
         wait(for: [expectation], timeout: 1)
 
-        coreDataStack.fetch(MemoDirectoryEntity.findDirectoryEntityById(id: testDirectoryID)) { $0 }
-            .map { $0.first! }
+        let fetchRequest = MemoDirectoryEntity.findDirectoryEntityById(id: testDirectoryID)
+
+        coreDataStack.fetch(fetchRequest) { $0 }
+            .tryMap { try XCTUnwrap($0.first, "\(#function) : can not found entity") }
             .sinkToResult { result in
                 switch result {
                     case .success(let targetDirectory):

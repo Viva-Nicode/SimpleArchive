@@ -5,7 +5,7 @@ import Foundation
 final class RestoreSnapshotSuccessfullyTestFixture: TestFixtureType {
     typealias GivenFixtureDataType = TextEditorComponent
     typealias TestTargetInputType = NoUsed
-    typealias ExpectedOutputType = NoUsed
+    typealias ExpectedOutputType = (String, CaptureState)
 
     let testTargetName = "test_restoreSnapshot_successfully()"
 
@@ -16,9 +16,13 @@ final class RestoreSnapshotSuccessfullyTestFixture: TestFixtureType {
         switch provideState {
 
             case .givenFixtureData:
-                provideState = .testTargetInput
+                provideState = .testVerifyOutput
                 return provideGivenFixture()
 
+            case .testVerifyOutput:
+                provideState = .allDataConsumed
+                return ExpectedOutputType("Snapshot 1 contents", .captured)
+            
             default:
                 return ()
         }
@@ -27,27 +31,27 @@ final class RestoreSnapshotSuccessfullyTestFixture: TestFixtureType {
     private func provideGivenFixture() -> GivenFixtureDataType {
         testTextEditorComponent = TextEditorComponent(
             title: "populatedTextEditorComponentStub",
-            detail: "This is a test detail.",
+            contents: "test contents.",
             componentSnapshots: [
                 TextEditorComponentSnapshot(
-                    detail: "Snapshot 1 detail",
+                    contents: "Snapshot 1 contents",
                     description: "First Snapshot",
                     saveMode: .manual),
                 TextEditorComponentSnapshot(
-                    detail: "Snapshot 2 detail",
-                    description: "Second Snapshot",
+                    contents: "Snapshot 2 contents",
+                    description: "",
                     saveMode: .automatic),
                 TextEditorComponentSnapshot(
-                    detail: "Snapshot 3 detail",
+                    contents: "Snapshot 3 contents",
                     description: "Third Snapshot",
                     saveMode: .manual),
                 TextEditorComponentSnapshot(
-                    detail: "Snapshot 4 detail",
+                    contents: "Snapshot 4 contents",
                     description: "fourth Snapshot",
                     saveMode: .manual),
                 TextEditorComponentSnapshot(
-                    detail: "Snapshot 5 detail",
-                    description: "fifth Snapshot",
+                    contents: "Snapshot 5 contents",
+                    description: "",
                     saveMode: .automatic),
             ]
         )

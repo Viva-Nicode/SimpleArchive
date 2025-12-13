@@ -82,15 +82,6 @@ where
         circleView.heightAnchor.constraint(equalToConstant: 18).isActive = true
         return circleView
     }()
-
-    var titleStackView: UIStackView = {
-        let titleStackView = UIStackView()
-        titleStackView.axis = .horizontal
-        titleStackView.alignment = .center
-        titleStackView.spacing = 2
-        titleStackView.translatesAutoresizingMaskIntoConstraints = false
-        return titleStackView
-    }()
     var titleLabel: UILabel = {
         let titleLabel = UILabel()
         titleLabel.font = .systemFont(ofSize: 18, weight: .regular)
@@ -98,19 +89,12 @@ where
         titleLabel.textAlignment = .center
         titleLabel.numberOfLines = 1
         titleLabel.lineBreakMode = .byTruncatingTail
+        titleLabel.isUserInteractionEnabled = true
         titleLabel.adjustsFontSizeToFitWidth = true
         titleLabel.minimumScaleFactor = 0.8
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
         return titleLabel
     }()
-    var pencilButton: UIButton = {
-        let pencilButton = UIButton()
-        let config = UIImage.SymbolConfiguration(pointSize: 20)
-        let pencilUIImage = UIImage(systemName: "pencil.circle", withConfiguration: config)
-        pencilButton.setImage(pencilUIImage, for: .normal)
-        pencilButton.tintColor = UIColor(named: "MyGray")
-        return pencilButton
-    }()
-
     var componentInformationView: UIStackView = {
         let componentInformationView = UIStackView()
         componentInformationView.axis = .vertical
@@ -141,9 +125,7 @@ where
         circleStackView.addArrangedSubview(greenCircleView)
         toolBarView.addSubview(circleStackView)
 
-        titleStackView.addArrangedSubview(titleLabel)
-        titleStackView.addArrangedSubview(pencilButton)
-        toolBarView.addSubview(titleStackView)
+        toolBarView.addSubview(titleLabel)
 
         componentInformationView.addArrangedSubview(creationDateLabel)
 
@@ -164,10 +146,10 @@ where
         circleStackView.centerYAnchor.constraint(equalTo: toolBarView.centerYAnchor).isActive = true
         circleStackView.leadingAnchor.constraint(equalTo: toolBarView.leadingAnchor, constant: 10).isActive = true
 
-        titleStackView.centerXAnchor.constraint(equalTo: toolBarView.centerXAnchor).isActive = true
-        titleStackView.centerYAnchor.constraint(equalTo: toolBarView.centerYAnchor).isActive = true
+        titleLabel.centerXAnchor.constraint(equalTo: toolBarView.centerXAnchor).isActive = true
+        titleLabel.centerYAnchor.constraint(equalTo: toolBarView.centerYAnchor).isActive = true
 
-        titleLabel.widthAnchor.constraint(lessThanOrEqualToConstant: 150).isActive = true
+        titleLabel.widthAnchor.constraint(lessThanOrEqualToConstant: 130).isActive = true
 
         toolBarView.topAnchor.constraint(equalTo: containerView.topAnchor).isActive = true
         toolBarView.heightAnchor.constraint(equalToConstant: 35).isActive = true
@@ -191,8 +173,26 @@ where
     ) {
         pageInputActionSubject = subject
         componentID = component.id
+        titleLabel.text = component.title
+        creationDateLabel.text = "created at \(component.creationDate.formattedDate)"
 
         subscriptions.removeAll()
+
+        redCircleView.throttleUIViewTapGesturePublisher()
+            .sink { [weak self] _ in
+                guard let self else { return }
+                contentView.endEditing(true)
+                pageInputActionSubject?.send(.willRemoveComponent(componentID))
+            }
+            .store(in: &subscriptions)
+
+        yellowCircleView.throttleUIViewTapGesturePublisher()
+            .sink { [weak self] _ in
+                guard let self else { return }
+                contentView.endEditing(true)
+                pageInputActionSubject?.send(.willToggleComponentSize(componentID))
+            }
+            .store(in: &subscriptions)
 
         greenCircleView.throttleUIViewTapGesturePublisher()
             .sink { [weak self] _ in
@@ -217,26 +217,7 @@ where
             }
             .store(in: &subscriptions)
 
-        creationDateLabel.text = "created at \(component.creationDate.formattedDate)"
-        titleLabel.text = component.title
-
-        redCircleView.throttleUIViewTapGesturePublisher()
-            .sink { [weak self] _ in
-                guard let self else { return }
-                contentView.endEditing(true)
-                pageInputActionSubject?.send(.willRemoveComponent(componentID))
-            }
-            .store(in: &subscriptions)
-
-        yellowCircleView.throttleUIViewTapGesturePublisher()
-            .sink { [weak self] _ in
-                guard let self else { return }
-                contentView.endEditing(true)
-                pageInputActionSubject?.send(.willToggleComponentSize(componentID))
-            }
-            .store(in: &subscriptions)
-
-        pencilButton.throttleTapPublisher()
+        titleLabel.throttleUIViewTapGesturePublisher()
             .sink { [weak self] _ in
                 guard let self else { return }
                 let popupView = ChangeComponentNamePopupView(
@@ -248,7 +229,6 @@ where
                 popupView.show()
             }
             .store(in: &subscriptions)
-
     }
 
     func resetupComponentContentViewToDismissFullScreenAnimation() {

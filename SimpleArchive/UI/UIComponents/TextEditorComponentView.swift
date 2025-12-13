@@ -25,6 +25,14 @@ final class TextEditorComponentView: PageComponentView<UITextView, TextEditorCom
         snapshotButton.tintColor = UIColor(named: "MyGray")
         return snapshotButton
     }()
+    private let undoButton: UIButton = {
+        let snapshotButton = UIButton()
+        let config = UIImage.SymbolConfiguration(pointSize: 20)
+        let snapshowUIImage = UIImage(systemName: "arrowshape.turn.up.backward.fill", withConfiguration: config)
+        snapshotButton.setImage(snapshowUIImage, for: .normal)
+        snapshotButton.tintColor = UIColor(named: "MyGray")
+        return snapshotButton
+    }()
     private let snapshotButton: UIButton = {
         let snapshotButton = UIButton()
         let config = UIImage.SymbolConfiguration(pointSize: 20)
@@ -65,6 +73,7 @@ final class TextEditorComponentView: PageComponentView<UITextView, TextEditorCom
 
         toolBarView.backgroundColor = UIColor(named: "TextEditorComponentToolbarColor")
 
+        snapShotView.addArrangedSubview(undoButton)
         snapShotView.addArrangedSubview(captureButton)
         snapShotView.addArrangedSubview(snapshotButton)
         toolBarView.addSubview(snapShotView)
@@ -84,6 +93,11 @@ final class TextEditorComponentView: PageComponentView<UITextView, TextEditorCom
         super.configure(component: component, input: subject)
 
         componentContentView.text = component.componentContents
+
+        undoButton.addAction(
+            UIAction { _ in
+                subject.send(.willUndoTextComponentContents(component.id))
+            }, for: .touchUpInside)
 
         captureButton.throttleTapPublisher()
             .flatMap { [weak self] _ -> AnyPublisher<String, Never> in
@@ -126,6 +140,7 @@ final class TextEditorComponentView: PageComponentView<UITextView, TextEditorCom
         snapshotInputActionSubject = subject
 
         creationDateLabel.text = "created at \(createDate.formattedDate)"
+
         titleLabel.text = title
         componentContentView.text = snapshotDetail
 
@@ -142,7 +157,6 @@ final class TextEditorComponentView: PageComponentView<UITextView, TextEditorCom
         greenCircleView.backgroundColor = .systemGray5
 
         componentContentView.isEditable = false
-        pencilButton.removeFromSuperview()
         captureButton.removeFromSuperview()
         snapshotButton.removeFromSuperview()
     }
@@ -159,5 +173,11 @@ final class TextEditorComponentView: PageComponentView<UITextView, TextEditorCom
                 self?.componentContentView.alpha = isMinimize ? 0 : 1
             }
         )
+    }
+
+    func redoContents(contents: String) {
+        componentContentView.delegate = nil
+        componentContentView.text = contents
+        componentContentView.delegate = self
     }
 }
