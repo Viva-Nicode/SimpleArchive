@@ -10,7 +10,7 @@ protocol ComponentSnapshotType: Codable {
 
     func revert(component: ComponentType)
     func getSnapshotMetaData() -> SnapshotMetaData
-    func store(in ctx: NSManagedObjectContext, parentComponentId: UUID)
+    func store(in ctx: NSManagedObjectContext, entity: MemoComponentEntity)
 }
 
 extension ComponentSnapshotType {

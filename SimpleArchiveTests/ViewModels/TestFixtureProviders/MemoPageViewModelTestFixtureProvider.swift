@@ -16,7 +16,8 @@ final class MemoPageViewModelTestFixtureProvider: TestFixtureProvidable {
             PlayAudioTrackSuccessfulllyWhenTrackIsAlreadyPlayingTestFixture(),
             ApplyAudioMetadataChangesWhenEditingCurrentlyPlayingTrackTestFixture(),
             RemoveAudioTrackWhenRemovingCurrentlyPlayingAudioTestFixture(),
-            RemoveAudioTrackWhenRemovingAudioIsPauseTestFixture()
+            RemoveAudioTrackWhenRemovingAudioIsPauseTestFixture(),
+            RemoveAudioTrackWhenLastAudioIsPlayingTestFixture(),
         ]
         fixtures.forEach { fixtureContainer[$0.testTargetName] = $0 }
     }

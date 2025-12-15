@@ -48,6 +48,7 @@ import UIKit
 
                 case .willRemovePageFromDormantBox(let id):
                     dormantBoxCoredataRepository.permanentRemoveFile(pageID: id)
+
                     if let item = dormantBoxDirectory[id],
                         let page = item.item as? MemoPageModel
                     {

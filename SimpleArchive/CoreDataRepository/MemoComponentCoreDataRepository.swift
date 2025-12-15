@@ -70,10 +70,9 @@ struct MemoComponentCoreDataRepository: MemoComponentCoreDataRepositoryType {
             for snapshotRestorableComponent in snapshotRestorableComponents {
                 let fetchRequest = MemoComponentEntity.findById(id: snapshotRestorableComponent.id)
                 let componentEntity = try ctx.fetch(fetchRequest).first!
-
                 let snapshot = snapshotRestorableComponent.makeSnapshot(desc: "", saveMode: .automatic)
-                snapshot.store(in: ctx, parentComponentId: snapshotRestorableComponent.id)
 
+                snapshot.store(in: ctx, entity: componentEntity)
                 snapshotRestorableComponent.setCaptureState(to: .captured)
                 print("\(componentEntity.title)가 켑쳐됨")
             }
@@ -88,10 +87,9 @@ struct MemoComponentCoreDataRepository: MemoComponentCoreDataRepositoryType {
 
             let fetchRequest = MemoComponentEntity.findById(id: snapshotRestorableComponent.id)
             let componentEntity = try ctx.fetch(fetchRequest).first!
-
             let snapshot = snapshotRestorableComponent.makeSnapshot(desc: snapShotDescription, saveMode: .manual)
-            snapshot.store(in: ctx, parentComponentId: snapshotRestorableComponent.id)
 
+            snapshot.store(in: ctx, entity: componentEntity)
             snapshotRestorableComponent.setCaptureState(to: .captured)
             print("\(componentEntity.title)가 켑쳐됨")
         }

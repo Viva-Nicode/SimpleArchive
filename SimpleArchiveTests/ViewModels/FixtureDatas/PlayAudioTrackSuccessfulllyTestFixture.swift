@@ -4,7 +4,7 @@ import Foundation
 
 final class PlayAudioTrackSuccessfulllyTestFixture: TestFixtureType {
     typealias GivenFixtureDataType = (
-        MemoPageModel, UUID, URL, AudioSampleData, AudioTrackMetadata, AudioComponentDataSource
+        MemoPageModel, UUID, URL, AudioSampleData, AudioComponentDataSource
     )
     typealias TestTargetInputType = (UUID, Int)
     typealias ExpectedOutputType = (
@@ -75,7 +75,7 @@ final class PlayAudioTrackSuccessfulllyTestFixture: TestFixtureType {
         testPage.appendChildComponent(component: targetComponent)
 
         return (
-            testPage, audioComponent.id, archiveDirectoryAudioPath, audioSampleData, audioMetadata,
+            testPage, audioComponent.id, archiveDirectoryAudioPath, audioSampleData,
             audioComponentDataSource
         )
     }

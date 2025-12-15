@@ -23,13 +23,13 @@ final class UpdateTextEditorComponentContentChangesSuccessfullyTestFixture: Test
 
             case .testTargetInput:
                 provideState = .testVerifyOutput
-                textEditorComponent.componentContents = "textEditorComponent modified contents"
+                textEditorComponent.componentContents = "textEditorComponent contents has Changes"
                 textEditorComponent.setCaptureState(to: .needsCapture)
                 return textEditorComponent!
 
             case .testVerifyOutput:
                 provideState = .allDataConsumed
-                return "textEditorComponent modified contents"
+                return "textEditorComponent contents has Changes"
 
             default:
                 return ()
@@ -41,6 +41,7 @@ final class UpdateTextEditorComponentContentChangesSuccessfullyTestFixture: Test
         let testPage = MemoPageModel(name: "Test Page", parentDirectory: testDirectory)
 
         textEditorComponent = TextEditorComponent()
+        textEditorComponent.componentContents = "textEditorComponent Contents"
         testPage.appendChildComponent(component: textEditorComponent)
 
         return testDirectory

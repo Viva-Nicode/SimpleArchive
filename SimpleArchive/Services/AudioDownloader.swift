@@ -17,7 +17,6 @@ enum AudioDownloadError: Error {
 final class AudioDownloader: NSObject, AudioDownloaderType {
     var handleDownloadedProgressPercent: progressClosure?
     private var zipURL: URL!
-    deinit { print("deinit AudioDownloader") }
 
     private var totalDownloaded: Float = 0 {
         didSet {
@@ -25,20 +24,38 @@ final class AudioDownloader: NSObject, AudioDownloaderType {
         }
     }
 
-    private lazy var session: URLSession = {
-        let session = URLSession(configuration: .default, delegate: self, delegateQueue: .main)
-        return session
-    }()
+    //    private lazy var session: URLSession = {
+    //        let session = URLSession(configuration: .default, delegate: self, delegateQueue: .main)
+    //        return session
+    //    }()
 
     private var promise: ((Result<URL, AudioDownloadError>) -> Void)!
+    private var session: URLSession?
+    private var url: String
+
+    init(
+        configuration: URLSessionConfiguration = .default,
+        urlString: String = "http://1.246.134.84/simpleArchive/downloadMusic?code="
+    ) {
+        self.url = urlString
+        super.init()
+        self.session = URLSession(
+            configuration: configuration,
+            delegate: self,
+            delegateQueue: .main
+        )
+    }
+
+    deinit { print("deinit AudioDownloader") }
 
     func downloadTask(with code: String) -> AnyPublisher<URL, AudioDownloadError> {
-        Future<URL, AudioDownloadError> { promise in
+        let downloadUrl = URL(string: self.url + code)!
+        let downloadTask = self.session?.downloadTask(with: downloadUrl)
+
+        return Future<URL, AudioDownloadError> { promise in
             self.promise = promise
-            let url = URL(string: "http://1.246.134.84/simpleArchive/downloadMusic?code=\(code)")!
-            self.session
-                .downloadTask(with: url)
-                .resume()
+
+            downloadTask?.resume()
         }
         .receive(on: DispatchQueue.main)
         .eraseToAnyPublisher()
@@ -80,10 +97,11 @@ extension AudioDownloader: URLSessionDownloadDelegate {
         downloadTask: URLSessionDownloadTask,
         didFinishDownloadingTo location: URL
     ) {
+
         let fileManager = FileManager.default
         let documentsDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
         zipURL = documentsDir.appendingPathComponent("downloaded_music_temp.zip")
-//        file:///Users/nicode./Library/Developer/CoreSimulator/Devices/C4906AB1-BB48-4D3E-A7A8-397C29A281D3/data/Containers/Data/Application/B7AA7C02-DC03-4B6B-A9F5-814AAB804962/Documents/downloaded_music_temp.zip
+
         do {
             if fileManager.fileExists(atPath: zipURL.path) {
                 try fileManager.removeItem(at: zipURL)
@@ -94,3 +112,7 @@ extension AudioDownloader: URLSessionDownloadDelegate {
         }
     }
 }
+
+/**
+       file:///Users/nicode./Library/Developer/CoreSimulator/Devices/C4906AB1-BB48-4D3E-A7A8-397C29A281D3/data/Containers/Data/Application/B7AA7C02-DC03-4B6B-A9F5-814AAB804962/Documents/downloaded_music_temp.zip
+ */

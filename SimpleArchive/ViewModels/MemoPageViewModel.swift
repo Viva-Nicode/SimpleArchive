@@ -864,7 +864,9 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
 
                 if audioComponentDataSource.nowPlayingAudioIndex == trackIndex {
                     if audioTrackController.isPlaying == true {
+
                         let nextPlayingAudioTrackIndex = min(trackIndex, component.componentContents.tracks.count - 1)
+                        let nextPlayingAudioTrack = component.componentContents.tracks[nextPlayingAudioTrackIndex]
                         let audioTrackURL = audioFileManager.createAudioFileURL(
                             fileName: component.trackNames[nextPlayingAudioTrackIndex])
                         let audioSampleData = audioFileManager.readAudioSampleData(audioURL: audioTrackURL)
@@ -882,7 +884,11 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
                         }
 
                         let audioTotalDuration = audioTrackController.totalTime
-                        let audioMetadata = audioFileManager.readAudioMetadata(audioURL: audioTrackURL)
+                        let audioMetadata = AudioTrackMetadata(
+                            title: nextPlayingAudioTrack.title,
+                            artist: nextPlayingAudioTrack.artist,
+                            lyrics: nextPlayingAudioTrack.lyrics,
+                            thumbnail: nextPlayingAudioTrack.thumbnail)
 
                         output.send(
                             .didRemoveAudioTrackAndPlayNextAudio(

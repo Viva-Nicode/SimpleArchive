@@ -4,8 +4,7 @@ import Foundation
 
 final class PlayAudioTrackSuccessfulllyWhenTrackIsAlreadyPlayingTestFixture: TestFixtureType {
     typealias GivenFixtureDataType = (
-        MemoPageModel, UUID, AudioComponentDataSource, UUID, AudioComponentDataSource, URL, AudioSampleData,
-        AudioTrackMetadata
+        MemoPageModel, UUID, AudioComponentDataSource, UUID, AudioComponentDataSource, URL, AudioSampleData
     )
     typealias TestTargetInputType = (UUID, Int)
     typealias ExpectedOutputType = (
@@ -120,7 +119,6 @@ final class PlayAudioTrackSuccessfulllyWhenTrackIsAlreadyPlayingTestFixture: Tes
             audioComponentDataSource,
             archiveDirectoryAudioPath,
             audioSampleData,
-            audioMetadata
         )
     }
 }

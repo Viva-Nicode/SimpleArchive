@@ -43,7 +43,7 @@ extension TextEditorComponent {
         textEditorComponentEntity.contents = self.componentContents
         textEditorComponentEntity.snapshots = []
 
-        self.snapshots.forEach { $0.store(in: ctx, parentComponentId: self.id) }
+        self.snapshots.forEach { $0.store(in: ctx, entity: textEditorComponentEntity) }
 
         parentPage.addToComponents(textEditorComponentEntity)
     }
@@ -68,7 +68,7 @@ extension TableComponent {
         self.componentContents.storeTableComponentContent(for: tableComponentEntity, in: ctx)
 
         tableComponentEntity.snapshots = []
-        self.snapshots.forEach { $0.store(in: ctx, parentComponentId: self.id) }
+        self.snapshots.forEach { $0.store(in: ctx, entity: tableComponentEntity) }
 
         parentPage.addToComponents(tableComponentEntity)
     }
@@ -188,7 +188,7 @@ extension AudioComponent {
                         audioEntity.fileExtension = audioTrack.fileExtension.rawValue
                         audioEntity.thumbnail = audioTrack.thumbnail
                         audioEntity.lyrics = audioTrack.lyrics
-                        audioEntity.audioComponent = audioComponentEntity
+
                         audioEntities.insert(audioEntity, at: index)
                     }
 
@@ -260,10 +260,8 @@ extension AudioComponent {
 }
 
 extension TextEditorComponentSnapshot {
-    func store(in ctx: NSManagedObjectContext, parentComponentId: UUID) {
-
-        let fetchRequest = TextEditorComponentEntity.findTextComponentEntityById(id: parentComponentId)
-        let parentComponent = try! ctx.fetch(fetchRequest).first!
+    func store(in ctx: NSManagedObjectContext, entity: MemoComponentEntity) {
+        guard let textEditorComponentEntity = entity as? TextEditorComponentEntity else { return }
 
         let textEditorComponentSnapshotEntity = TextEditorComponentSnapshotEntity(context: ctx)
         textEditorComponentSnapshotEntity.snapshotID = self.snapshotID
@@ -272,15 +270,14 @@ extension TextEditorComponentSnapshot {
         textEditorComponentSnapshotEntity.snapShotDescription = self.description
         textEditorComponentSnapshotEntity.saveMode = self.saveMode.rawValue
 
-        parentComponent.snapshots.insert(textEditorComponentSnapshotEntity)
-        textEditorComponentSnapshotEntity.component = parentComponent
+        textEditorComponentEntity.addToSnapshots(textEditorComponentSnapshotEntity)
+        textEditorComponentSnapshotEntity.component = textEditorComponentEntity
     }
 }
 
 extension TableComponentSnapshot {
-    func store(in ctx: NSManagedObjectContext, parentComponentId: UUID) {
-        let fetchRequest = TableComponentEntity.findTableComponentEntityById(id: parentComponentId)
-        let parentComponent = try! ctx.fetch(fetchRequest).first!
+    func store(in ctx: NSManagedObjectContext, entity: MemoComponentEntity) {
+        guard let tableComponentEntity = entity as? TableComponentEntity else { return }
 
         let tableComponentSnapshotEntity = TableComponentSnapshotEntity(context: ctx)
         tableComponentSnapshotEntity.snapshotID = self.snapshotID
@@ -289,7 +286,7 @@ extension TableComponentSnapshot {
         tableComponentSnapshotEntity.snapShotDescription = self.description
         tableComponentSnapshotEntity.saveMode = self.saveMode.rawValue
 
-        parentComponent.snapshots.insert(tableComponentSnapshotEntity)
-        tableComponentSnapshotEntity.component = parentComponent
+        tableComponentEntity.addToSnapshots(tableComponentSnapshotEntity)
+        tableComponentSnapshotEntity.component = tableComponentEntity
     }
 }

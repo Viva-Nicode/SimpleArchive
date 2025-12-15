@@ -4,7 +4,7 @@ import Foundation
 
 final class RemoveAudioTrackWhenRemovingCurrentlyPlayingAudioTestFixture: TestFixtureType {
     typealias GivenFixtureDataType = (
-        MemoPageModel, UUID, AudioComponentDataSource, URL, AudioSampleData, AudioTrackMetadata, TimeInterval, Bool
+        MemoPageModel, UUID, AudioComponentDataSource, URL, AudioSampleData, TimeInterval, Bool
     )
     typealias TestTargetInputType = (UUID, Int)
     typealias ExpectedOutputType = (Int, Int, Int, TimeInterval, AudioTrackMetadata, AudioSampleData, URL)
@@ -20,7 +20,9 @@ final class RemoveAudioTrackWhenRemovingCurrentlyPlayingAudioTestFixture: TestFi
         scaledSampleData: [-0.1341, -0.221, 0.473, -0.324, -0.4323, 0.2332, -0.587, 0.537],
         sampleRate: 44100.0
     )
-    private var audioMetadata = AudioTrackMetadata(title: "f audio", artist: "artist", thumbnail: Data())
+    private var audioMetadata = AudioTrackMetadata(
+        title: "f audio", artist: "artist", lyrics: "", thumbnail: Data()
+    )
 
     func getFixtureData() -> Any {
         switch provideState {
@@ -80,7 +82,7 @@ final class RemoveAudioTrackWhenRemovingCurrentlyPlayingAudioTestFixture: TestFi
         self.audioComponent = audioComponent
 
         return (
-            testPage, audioComponent.id, audioComponentDataSource, audioFileURL, audioSampleData, audioMetadata,
+            testPage, audioComponent.id, audioComponentDataSource, audioFileURL, audioSampleData,
             audioDuration, true
         )
     }

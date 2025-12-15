@@ -134,15 +134,18 @@ extension TableComponentContents {
 
         tableComponentEntity.sortBy = self.sortBy.rawValue
 
+        let orderedColumns = tableComponentEntity.mutableOrderedSetValue(forKey: "columns")
+
         for col in self.columns {
             let colEntity = TableComponentColumnEntity(context: ctx)
             colEntity.id = col.id
             colEntity.title = col.title
             colEntity.tableComponent = tableComponentEntity
 
-            let orderedRows = tableComponentEntity.mutableOrderedSetValue(forKey: "columns")
-            orderedRows.add(colEntity)
+            orderedColumns.add(colEntity)
         }
+
+        let orderedRows = tableComponentEntity.mutableOrderedSetValue(forKey: "rows")
 
         for row in self.rows {
             let rowEntity = TableComponentRowEntity(context: ctx)
@@ -151,7 +154,6 @@ extension TableComponentContents {
             rowEntity.modifiedAt = row.modifiedAt
             rowEntity.tableComponent = tableComponentEntity
 
-            let orderedRows = tableComponentEntity.mutableOrderedSetValue(forKey: "rows")
             orderedRows.add(rowEntity)
         }
 
@@ -183,8 +185,13 @@ extension TableComponentContents {
     }
 
     var jsonString: String {
-        guard let data = try? JSONEncoder().encode(self) else { return "" }
-        let result = String(data: data, encoding: .utf8) ?? ""
-        return result
+        guard let encoded = try? JSONEncoder().encode(self),
+            let jsonObject = try? JSONSerialization.jsonObject(with: encoded),
+            let sortedData = try? JSONSerialization.data(withJSONObject: jsonObject, options: [.sortedKeys])
+        else {
+            return ""
+        }
+
+        return String(data: sortedData, encoding: .utf8) ?? ""
     }
 }

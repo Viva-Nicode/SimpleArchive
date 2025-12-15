@@ -420,6 +420,7 @@ import UIKit
             if audioContentTableDataSource.nowPlayingAudioIndex == trackIndex {
                 if audioTrackController.isPlaying == true {
                     let nextPlayingAudioTrackIndex = min(trackIndex, audioComponent.componentContents.tracks.count - 1)
+                    let nextPlayingAudioTrack = audioComponent.componentContents.tracks[nextPlayingAudioTrackIndex]
                     let audioTrackURL = audioFileManager.createAudioFileURL(
                         fileName: audioComponent.trackNames[nextPlayingAudioTrackIndex])
                     let audioSampleData = audioFileManager.readAudioSampleData(audioURL: audioTrackURL)
@@ -437,7 +438,12 @@ import UIKit
                     }
 
                     let audioTotalDuration = audioTrackController.totalTime
-                    let audioMetadata = audioFileManager.readAudioMetadata(audioURL: audioTrackURL)
+                    let audioMetadata = AudioTrackMetadata(
+                        title: nextPlayingAudioTrack.title,
+                        artist: nextPlayingAudioTrack.artist,
+                        lyrics: nextPlayingAudioTrack.lyrics,
+                        thumbnail: nextPlayingAudioTrack.thumbnail
+                    )
 
                     output.send(
                         .didRemoveAudioTrackAndPlayNextAudio(

@@ -1,5 +1,5 @@
 final class MemoComponentCoreDataRepositoryTestFixtureProvider: TestFixtureProvidable {
-    
+
     typealias TargetTestClassType = MemoComponentCoreDataRepositoryTests
 
     private var fixtureContainer: [String: any TestFixtureType] = [:]
@@ -9,8 +9,11 @@ final class MemoComponentCoreDataRepositoryTestFixtureProvider: TestFixtureProvi
         let fixtures: [any TestFixtureType] = [
             CreateComponentSuccessfullyTestFixture(),
             UpdateTextEditorComponentContentChangesSuccessfullyTestFixture(),
+            UpdateTableComponentContentChangesWithAppendColumnSuccessfullyTestFixture(),
+            UpdateAudioComponentContentChangesWithAppendAudiosSuccessfullyTestFixture(),
             UpdateComponentChangesSuccessfullyTestFixture(),
-            CaptureSnapshotSuccessfullyTestFixture(),
+            CaptureSnapshotWithManualSuccessfullyTestFixture(),
+            CaptureSnapshotWithAutoMaticSuccessfullyTestFixture(),
         ]
         fixtures.forEach { fixtureContainer[$0.testTargetName] = $0 }
     }

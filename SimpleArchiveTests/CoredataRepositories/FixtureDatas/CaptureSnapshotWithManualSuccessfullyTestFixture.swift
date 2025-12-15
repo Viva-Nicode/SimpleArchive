@@ -2,17 +2,15 @@ import Foundation
 
 @testable import SimpleArchive
 
-final class CaptureSnapshotSuccessfullyTestFixture: TestFixtureType {
+final class CaptureSnapshotWithManualSuccessfullyTestFixture: TestFixtureType {
     typealias GivenFixtureDataType = MemoDirectoryModel
     typealias TestTargetInputType = (TextEditorComponent, String)
-    typealias ExpectedOutputType = (Int, String, String)
+    typealias ExpectedOutputType = (UUID, Int, String, String)
 
-    let testTargetName = "test_captureSnapshot_successfully()"
+    let testTargetName = "test_captureSnapshot_withManual_successfully()"
 
     private var provideState: TestDataProvideState = .givenFixtureData
-
     private var testTextEditorComponent: TextEditorComponent!
-    private var snapshotDescription: String!
 
     func getFixtureData() -> Any {
         switch provideState {
@@ -23,13 +21,11 @@ final class CaptureSnapshotSuccessfullyTestFixture: TestFixtureType {
 
             case .testTargetInput:
                 provideState = .testVerifyOutput
-                snapshotDescription = "fourth Desc"
-                testTextEditorComponent.componentContents = "fourth contents"
-                return (testTextEditorComponent, snapshotDescription)
+                return (testTextEditorComponent, "fourth Desc")
 
             case .testVerifyOutput:
                 provideState = .allDataConsumed
-                return (4, "fourth contents", "fourth Desc")
+                return (testTextEditorComponent.id, 4, "textEditorComponentContents has Changes", "fourth Desc")
 
             default:
                 return ()
@@ -39,15 +35,16 @@ final class CaptureSnapshotSuccessfullyTestFixture: TestFixtureType {
     private func provideGivenFixture() -> GivenFixtureDataType {
         let testDirectory = MemoDirectoryModel(name: "Test Directory")
         let testPage = MemoPageModel(name: "Test Page", parentDirectory: testDirectory)
-        testTextEditorComponent = TextEditorComponent()
 
-        testTextEditorComponent.componentContents = "first contents"
-        testTextEditorComponent.makeSnapshot(desc: "first Desc", saveMode: .manual)
-        testTextEditorComponent.componentContents = "second contents"
-        testTextEditorComponent.makeSnapshot(desc: "second Desc", saveMode: .manual)
-        testTextEditorComponent.componentContents = "third contents"
-        testTextEditorComponent.makeSnapshot(desc: "third Desc", saveMode: .manual)
-        
+        testTextEditorComponent = TextEditorComponent(
+            contents: "textEditorComponentContents has Changes",
+            captureState: .needsCapture,
+            componentSnapshots: [
+                .init(contents: "first contents", description: "first Desc", saveMode: .manual),
+                .init(contents: "second contents", description: "second Desc", saveMode: .manual),
+                .init(contents: "third contents", description: "third Desc", saveMode: .manual),
+            ]
+        )
 
         testPage.appendChildComponent(component: testTextEditorComponent)
 

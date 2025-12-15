@@ -152,24 +152,23 @@ extension NSManagedObjectContext {
 
         func cleanAllCoreDataEntities() {
             do {
-                let context = container.viewContext
-                let entityDescriptions = container.managedObjectModel.entities
+                let coordinator = container.persistentStoreCoordinator
 
-                for entityDescription in entityDescriptions {
+                for store in coordinator.persistentStores {
+                    guard let url = store.url else { continue }
 
-                    guard let entityName = entityDescription.name else { continue }
-                    if entityDescription.isAbstract { continue }
+                    try coordinator.destroyPersistentStore(
+                        at: url,
+                        ofType: store.type,
+                        options: nil
+                    )
 
-                    let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: entityName)
-
-                    let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
-                    deleteRequest.resultType = .resultTypeObjectIDs
-
-                    let result = try context.execute(deleteRequest) as? NSBatchDeleteResult
-                    if let objectIDs = result?.result as? [NSManagedObjectID] {
-                        let changes: [AnyHashable: Any] = [NSDeletedObjectsKey: objectIDs]
-                        NSManagedObjectContext.mergeChanges(fromRemoteContextSave: changes, into: [context])
-                    }
+                    try coordinator.addPersistentStore(
+                        ofType: store.type,
+                        configurationName: store.configurationName,
+                        at: url,
+                        options: nil
+                    )
                 }
             } catch {
                 print("Failed to delete all data: \(error.localizedDescription)")
@@ -179,39 +178,18 @@ extension NSManagedObjectContext {
         func cleanAllCoreDataEntitiesExceptSystemDirectories() {
             do {
                 let context = container.viewContext
-                let entityDescriptions = container.managedObjectModel.entities
 
-                for entityDescription in entityDescriptions {
+                let request = NSFetchRequest<MemoDirectoryEntity>(entityName: "MemoDirectoryEntity")
+                request.predicate = NSPredicate(format: "parentDirectory == nil")
 
-                    guard let entityName = entityDescription.name else { continue }
-                    if entityDescription.isAbstract { continue }
+                let systemDirectories = try context.fetch(request)
 
-                    if entityName == "MemoDirectoryEntity" {
-                        let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: entityName)
-
-                        let predicate = NSPredicate(format: "parentDirectory != nil")
-                        fetchRequest.predicate = predicate
-
-                        let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
-                        deleteRequest.resultType = .resultTypeObjectIDs
-
-                        let result = try context.execute(deleteRequest) as? NSBatchDeleteResult
-                        if let objectIDs = result?.result as? [NSManagedObjectID] {
-                            let changes: [AnyHashable: Any] = [NSDeletedObjectsKey: objectIDs]
-                            NSManagedObjectContext.mergeChanges(fromRemoteContextSave: changes, into: [context])
-                        }
-                        continue
+                for systemDirectory in systemDirectories {
+                    for childDir in systemDirectory.childDirectories {
+                        context.delete(childDir)
                     }
-
-                    let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: entityName)
-
-                    let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
-                    deleteRequest.resultType = .resultTypeObjectIDs
-
-                    let result = try context.execute(deleteRequest) as? NSBatchDeleteResult
-                    if let objectIDs = result?.result as? [NSManagedObjectID] {
-                        let changes: [AnyHashable: Any] = [NSDeletedObjectsKey: objectIDs]
-                        NSManagedObjectContext.mergeChanges(fromRemoteContextSave: changes, into: [context])
+                    for childPage in systemDirectory.pages {
+                        context.delete(childPage)
                     }
                 }
             } catch {
@@ -223,11 +201,7 @@ extension NSManagedObjectContext {
             let systemDirectoryID = systemDirectory.getId()!
             let ctx = self.container.viewContext
             let mainDirectoryEntity = try ctx
-                .fetch(
-                    MemoDirectoryEntity
-                        .findDirectoryEntityById(id: systemDirectoryID)
-                )
-                .first!
+                .fetch(MemoDirectoryEntity.findDirectoryEntityById(id: systemDirectoryID)).first!
 
             storageItem.store(in: ctx, parentDirectory: mainDirectoryEntity)
             try ctx.save()
@@ -247,6 +221,58 @@ extension NSManagedObjectContext {
                 }
             } catch {
                 print("Failed to fetch entities: \(error.localizedDescription)")
+            }
+        }
+
+        func cleanAllCoreDataEntitiesExceptSystemDirectoriesWithBatchDelete() {
+            do {
+                let context = container.viewContext
+                let entityDescriptions = [
+                    "TextEditorComponentEntity",
+                    "TextEditorComponentSnapshotEntity",
+
+                    "TableComponentColumnEntity",
+                    "TableComponentRowEntity",
+                    "TableComponentCellEntity",
+                    "TableComponentEntity",
+                    "TableComponentSnapshotEntity",
+
+                    "AudioComponentTrackEntity",
+                    "AudioComponentEntity",
+                    "MemoPageEntity",
+                    "MemoDirectoryEntity",
+                ]
+
+                for entityName in entityDescriptions {
+                    if entityName == "MemoDirectoryEntity" {
+                        let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: entityName)
+
+                        let predicate = NSPredicate(format: "parentDirectory != nil")
+                        fetchRequest.predicate = predicate
+
+                        let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
+                        deleteRequest.resultType = .resultTypeObjectIDs
+
+                        let result = try context.execute(deleteRequest) as? NSBatchDeleteResult
+                        if let objectIDs = result?.result as? [NSManagedObjectID] {
+                            let changes: [AnyHashable: Any] = [NSDeletedObjectsKey: objectIDs]
+                            NSManagedObjectContext.mergeChanges(fromRemoteContextSave: changes, into: [context])
+                        }
+                    } else {
+                        let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: entityName)
+
+                        let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
+                        deleteRequest.resultType = .resultTypeObjectIDs
+
+                        let result = try context.execute(deleteRequest) as? NSBatchDeleteResult
+                        if let objectIDs = result?.result as? [NSManagedObjectID] {
+                            let changes: [AnyHashable: Any] = [NSDeletedObjectsKey: objectIDs]
+                            NSManagedObjectContext.mergeChanges(fromRemoteContextSave: changes, into: [context])
+                        }
+                    }
+                }
+            } catch {
+                print("Failed to delete all data: \(error.localizedDescription)")
             }
         }
     }
