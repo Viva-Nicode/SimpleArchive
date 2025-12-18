@@ -89,12 +89,12 @@ final class SingleAudioPageViewController: UIViewController, ViewControllerType 
                 case .didAppendAudioTrackRows(let appededIndices):
                     insertNewAudioTracks(appededIndices: appededIndices)
 
-                case let .didPlayAudioTrack(trackIndex, duration, metadata, audioSampleData):
+                case let .didPlayAudioTrack(trackIndex, duration, metadata, waveformData):
                     playAudioTrack(
                         trackIndex: trackIndex,
                         duration: duration,
                         audioMetadata: metadata,
-                        audioSampleData: audioSampleData)
+                        audioWaveformData: waveformData)
 
                 case let .didApplyAudioMetadataChanges(
                     trackIndex, editedMetadata, isNowPlayingTrack, trackIndexAfterEdit):
@@ -127,13 +127,13 @@ final class SingleAudioPageViewController: UIViewController, ViewControllerType 
                     audioComponentContentView.removeRow(trackIndex: trackIndex)
 
                 case let .didRemoveAudioTrackAndPlayNextAudio(
-                    removeTrackIndex, nextPlayTrackIndex, duration, metadata, sampleData):
+                    removeTrackIndex, nextPlayTrackIndex, duration, metadata, waveformData):
                     removeAudioTrackAndPlayNextAudio(
                         removeTrackIndex: removeTrackIndex,
                         nextPlayTrackIndex: nextPlayTrackIndex,
                         duration: duration,
                         metadata: metadata,
-                        sampleData: sampleData)
+                        audioWaveformData: waveformData)
 
                 case .didRemoveAudioTrackAndStopPlaying(let removeTrackIndex):
                     removeAudioTrackAndStopPlaying(removeTrackIndex: removeTrackIndex)
@@ -190,7 +190,7 @@ final class SingleAudioPageViewController: UIViewController, ViewControllerType 
         trackIndex: Int,
         duration: TimeInterval?,
         audioMetadata: AudioTrackMetadata,
-        audioSampleData: AudioSampleData?
+        audioWaveformData: AudioWaveformData?
     ) {
         audioComponentContentView
             .audioTrackTableView
@@ -205,11 +205,11 @@ final class SingleAudioPageViewController: UIViewController, ViewControllerType 
         audioControlBar.isHidden = false
 
         performWithAudioTrackRowAt(trackIndex) { row in
-            if let audioSampleData {
+            if let audioWaveformData {
                 row.audioVisualizer.activateAudioVisualizer(
-                    samplesCount: audioSampleData.sampleDataCount,
-                    scaledSamples: audioSampleData.scaledSampleData,
-                    sampleRate: audioSampleData.sampleRate
+                    samplesCount: audioWaveformData.sampleDataCount,
+                    scaledSamples: audioWaveformData.waveformData,
+                    sampleRate: audioWaveformData.sampleRate
                 )
             }
         }
@@ -250,7 +250,7 @@ final class SingleAudioPageViewController: UIViewController, ViewControllerType 
         audioControlBar.state = isPlaying ? .resume : .pause
         performWithAudioTrackRowAt(nowPlayingAudioIndex) { row in
             if isPlaying {
-                row.audioVisualizer.restartVisuzlization()
+                row.audioVisualizer.resumeVisuzlization()
             } else {
                 row.audioVisualizer.pauseVisuzlization()
             }
@@ -269,7 +269,7 @@ final class SingleAudioPageViewController: UIViewController, ViewControllerType 
         nextPlayTrackIndex: Int,
         duration: TimeInterval?,
         metadata: AudioTrackMetadata,
-        sampleData: AudioSampleData?
+        audioWaveformData: AudioWaveformData?
     ) {
         performWithAudioTrackRowAt(removeTrackIndex) { row in
             row.audioVisualizer.removeVisuzlization()
@@ -284,11 +284,11 @@ final class SingleAudioPageViewController: UIViewController, ViewControllerType 
         audioControlBar.isHidden = false
 
         performWithAudioTrackRowAt(nextPlayTrackIndex) { row in
-            if let sampleData {
+            if let audioWaveformData {
                 row.audioVisualizer.activateAudioVisualizer(
-                    samplesCount: sampleData.sampleDataCount,
-                    scaledSamples: sampleData.scaledSampleData,
-                    sampleRate: sampleData.sampleRate
+                    samplesCount: audioWaveformData.sampleDataCount,
+                    scaledSamples: audioWaveformData.waveformData,
+                    sampleRate: audioWaveformData.sampleRate
                 )
             }
         }

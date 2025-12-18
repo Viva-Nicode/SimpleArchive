@@ -4,19 +4,17 @@ import Foundation
 
 final class PlayAudioTrackSuccessfulllyWhenTrackIsAlreadyPlayingTestFixture: TestFixtureType {
     typealias GivenFixtureDataType = (
-        MemoPageModel, UUID, AudioComponentDataSource, UUID, AudioComponentDataSource, URL, AudioSampleData
+        MemoPageModel, UUID, Double, AudioComponentDataSource, UUID, AudioComponentDataSource, URL, AudioPCMData
     )
     typealias TestTargetInputType = (UUID, Int)
     typealias ExpectedOutputType = (
-        Int?, Int, Int, TimeInterval?, AudioTrackMetadata, AudioSampleData?, URL, UUID
+        Int?, Int, Int, TimeInterval?, AudioTrackMetadata, URL, UUID, Int
     )
 
     private let archiveDirectoryAudioPath = URL(fileURLWithPath: "Documents/SimpleArchiveMusics/e audio.mp3")
-    private let audioSampleData = AudioSampleData(
-        sampleDataCount: 8,
-        scaledSampleData: [-0.11, -0.21, 0.73, -0.24, -0.23, 0.332, -0.587, 0.57],
-        sampleRate: 44100.0
-    )
+    private let audioPCMData = AudioPCMData(
+        sampleRate: 44100.0,
+        PCMData: (0..<5 * 44_100).map { _ in Float.random(in: -1.0...1.0) })
     private let audioMetadata = AudioTrackMetadata(title: "e audio", artist: "artist", lyrics: "", thumbnail: Data())
 
     let testTargetName = "test_playAudioTrack_successfullly_whenTrackIsAlreadyPlaying()"
@@ -37,11 +35,11 @@ final class PlayAudioTrackSuccessfulllyWhenTrackIsAlreadyPlayingTestFixture: Tes
             case .testVerifyOutput:
                 provideState = .allDataConsumed
                 return ExpectedOutputType(
-                    4, 3, 3, 134.34,
+                    4, 3, 3, 5.0,
                     audioMetadata,
-                    audioSampleData,
                     archiveDirectoryAudioPath,
-                    nextComponentID
+                    nextComponentID,
+                    210
                 )
 
             default:
@@ -99,11 +97,11 @@ final class PlayAudioTrackSuccessfulllyWhenTrackIsAlreadyPlayingTestFixture: Tes
         previousPlayingAudioComponentDataSource.nowPlayingURL =
             URL(fileURLWithPath: "Documents/SimpleArchiveMusics/spring audio.mp3")
         previousPlayingAudioComponentDataSource.getProgress = { .zero }
-        previousPlayingAudioComponentDataSource.audioSampleData =
-            AudioSampleData(
-                sampleDataCount: 8,
-                scaledSampleData: [-0.11, -0.21, 0.73, -0.24, -0.23, 0.332, -0.587, 0.57],
-                sampleRate: 44100.0
+        previousPlayingAudioComponentDataSource.audioVisualizerData =
+            AudioWaveformData(
+                sampleDataCount: 92 * 44_100,
+                sampleRate: 44100.0,
+                waveformData: (0..<92 * 6).map { _ in (0..<7).map { _ in Float.random(in: 0...1.0) } }
             )
 
         testPage.appendChildComponent(component: previousPlayingAudioComponent)
@@ -114,11 +112,12 @@ final class PlayAudioTrackSuccessfulllyWhenTrackIsAlreadyPlayingTestFixture: Tes
         return (
             testPage,
             previousPlayingAudioComponent.id,
+            5.0,
             previousPlayingAudioComponentDataSource,
             audioComponent.id,
             audioComponentDataSource,
             archiveDirectoryAudioPath,
-            audioSampleData,
+            audioPCMData,
         )
     }
 }

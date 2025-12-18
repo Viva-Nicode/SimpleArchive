@@ -501,9 +501,6 @@ final class TableComponentContentView: UIView, UIScrollViewDelegate {
             moves.append(columns.firstIndex { $0.id == columnLabel.columnID })
         }
 
-        //        move[0] = 3 원래 0번째에있던게 3번으로 갔더라.
-        //        move[1] = nil 원래 1번째에있던게 삭제되었다.
-
         let removeIndexSet = IndexSet(
             moves.enumerated()
                 .filter { i, v in v == nil }
@@ -511,7 +508,7 @@ final class TableComponentContentView: UIView, UIScrollViewDelegate {
         )
 
         columnWidths.remove(atOffsets: removeIndexSet)
-
+        
         for (i, move) in moves.enumerated() {
             let tableComponentColumnLabel = columnsStackView.arrangedSubviews[i] as! TableComponentColumnLabel
             if let move {

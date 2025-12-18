@@ -12,7 +12,7 @@ final class MockAudioFileManager: Mock, AudioFileManagerType {
         case extractAudioFileURLs
         case createAudioFileURL
         case readAudioMetadata
-        case readAudioSampleData
+        case readAudioPCMData
         case writeAudioMetadata
     }
 
@@ -22,7 +22,7 @@ final class MockAudioFileManager: Mock, AudioFileManagerType {
     var createAudioFileURLResult: [URL]!
     var extractAudioFileURLsResult: [URL]!
     var readAudioMetadataResult: [AudioTrackMetadata]!
-    var readAudioSampleDataResult: AudioSampleData!
+    var readAudioPCMDataResult: AudioPCMData!
 
     func createAudioFileURL(fileName: String) -> URL {
         register(.createAudioFileURL)
@@ -52,9 +52,9 @@ final class MockAudioFileManager: Mock, AudioFileManagerType {
         return readAudioMetadataResult.removeFirst()
     }
 
-    func readAudioSampleData(audioURL: URL?) -> AudioSampleData? {
-        register(.readAudioSampleData)
-        return readAudioSampleDataResult
+    func readAudioPCMData(audioURL: URL?) -> AudioPCMData? {
+        register(.readAudioPCMData)
+        return readAudioPCMDataResult
     }
 
     func writeAudioMetadata(audioTrack: AudioTrack) {

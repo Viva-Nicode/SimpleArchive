@@ -11,7 +11,7 @@ protocol AudioFileManagerType {
     func moveItem(src: URL, fileName: String) throws
 
     func readAudioMetadata(audioURL: URL) -> AudioTrackMetadata
-    func readAudioSampleData(audioURL: URL?) -> AudioSampleData?
+    func readAudioPCMData(audioURL: URL?) -> AudioPCMData?
     func writeAudioMetadata(audioTrack: AudioTrack)
 }
 
@@ -24,7 +24,7 @@ final class AudioFileManager: NSObject, AudioFileManagerType {
         let fileManager = FileManager.default
         let documentsDir = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
 
-        self.archiveURL = documentsDir.appendingPathComponent("SimpleArchiveMusics")
+        archiveURL = documentsDir.appendingPathComponent("SimpleArchiveMusics")
 
         if !fileManager.fileExists(atPath: archiveURL.path) {
             try? fileManager.createDirectory(at: archiveURL, withIntermediateDirectories: true)
@@ -95,46 +95,27 @@ final class AudioFileManager: NSObject, AudioFileManagerType {
         return metadata
     }
 
-    func readAudioSampleData(audioURL: URL?) -> AudioSampleData? {
+    func readAudioPCMData(audioURL: URL?) -> AudioPCMData? {
         guard let audioURL, let file = try? AVAudioFile(forReading: audioURL) else {
             return nil
         }
 
         let audioFormat = file.processingFormat
         let audioFrameCount = UInt32(file.length)
+
         guard let buffer = AVAudioPCMBuffer(pcmFormat: audioFormat, frameCapacity: audioFrameCount)
         else { return nil }
+
         do {
             try file.read(into: buffer)
         } catch {
-            print(error)
+            print("\(#function) : \(error)")
+            return nil
         }
 
-        let floatArray = UnsafeBufferPointer(start: buffer.floatChannelData![0], count: Int(buffer.frameLength))
-
-        let sampleRate = file.fileFormat.sampleRate
-
-        let samplesPerBar = Int(sampleRate / Double(7))
-        var result: [Float] = []
-
-        for i in 0..<(floatArray.count / samplesPerBar) {
-            let segment = floatArray[i * samplesPerBar..<(i + 1) * samplesPerBar]
-            let avg = segment.map { abs($0) }.reduce(0, +) / Float(segment.count)
-            result.append(avg)
-        }
-
-        guard let maxValue = result.max(), maxValue > 0 else {
-            return AudioSampleData(
-                sampleDataCount: floatArray.count,
-                scaledSampleData: result,
-                sampleRate: sampleRate)
-        }
-        let scaled = result.map { ($0 / maxValue) }
-
-        return AudioSampleData(
-            sampleDataCount: floatArray.count,
-            scaledSampleData: scaled,
-            sampleRate: sampleRate)
+        let PCMData = UnsafeBufferPointer(start: buffer.floatChannelData![0], count: Int(buffer.frameLength))
+        let sampleRate = audioFormat.sampleRate
+        return AudioPCMData(sampleRate: sampleRate, PCMData: Array(PCMData))
     }
 
     func writeAudioMetadata(audioTrack: AudioTrack) {
@@ -158,15 +139,36 @@ final class AudioFileManager: NSObject, AudioFileManagerType {
     }
 }
 
-struct AudioTrackMetadata: Equatable, Codable {
+struct AudioTrackMetadata: Codable, Equatable {
     var title: String?
     var artist: String?
     var lyrics: String?
     var thumbnail: Data?
 }
 
-struct AudioSampleData: Codable, Equatable {
-    var sampleDataCount: Int
-    var scaledSampleData: [Float]
-    var sampleRate: Double
+struct AudioPCMData: Codable, Equatable {
+    let sampleRate: Double
+    let PCMData: [Float]
 }
+
+#if DEBUG
+    extension AudioFileManager {
+        func cleanFileSystem() {
+            guard fileManager.fileExists(atPath: archiveURL.path) else { return }
+
+            do {
+                let contents = try fileManager.contentsOfDirectory(
+                    at: archiveURL,
+                    includingPropertiesForKeys: nil,
+                    options: []
+                )
+
+                for url in contents {
+                    try fileManager.removeItem(at: url)
+                }
+            } catch {
+                assertionFailure("Failed to clean audio file system: \(error)")
+            }
+        }
+    }
+#endif

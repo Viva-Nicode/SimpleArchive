@@ -60,10 +60,10 @@ final class RemoveAudioTrackWhenRemovingAudioIsPauseTestFixture: TestFixtureType
         audioComponentDataSource.isPlaying = true
         audioComponentDataSource.nowPlayingURL =
             URL(fileURLWithPath: "Documents/SimpleArchiveMusics/e audio.mp3")
-        audioComponentDataSource.audioSampleData = AudioSampleData(
-            sampleDataCount: 8,
-            scaledSampleData: [-0.11, -0.21, 0.73, -0.24, -0.23, 0.332, -0.587, 0.57],
-            sampleRate: 44100.0
+        audioComponentDataSource.audioVisualizerData = AudioWaveformData(
+            sampleDataCount: 92 * 44_100,
+            sampleRate: 44100.0,
+            waveformData: (0..<92 * 6).map { _ in (0..<7).map { _ in Float.random(in: 0...1.0) } }
         )
         audioComponentDataSource.getProgress = { .zero }
 

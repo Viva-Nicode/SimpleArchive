@@ -24,11 +24,6 @@ final class AudioDownloader: NSObject, AudioDownloaderType {
         }
     }
 
-    //    private lazy var session: URLSession = {
-    //        let session = URLSession(configuration: .default, delegate: self, delegateQueue: .main)
-    //        return session
-    //    }()
-
     private var promise: ((Result<URL, AudioDownloadError>) -> Void)!
     private var session: URLSession?
     private var url: String
@@ -112,7 +107,3 @@ extension AudioDownloader: URLSessionDownloadDelegate {
         }
     }
 }
-
-/**
-       file:///Users/nicode./Library/Developer/CoreSimulator/Devices/C4906AB1-BB48-4D3E-A7A8-397C29A281D3/data/Containers/Data/Application/B7AA7C02-DC03-4B6B-A9F5-814AAB804962/Documents/downloaded_music_temp.zip
- */

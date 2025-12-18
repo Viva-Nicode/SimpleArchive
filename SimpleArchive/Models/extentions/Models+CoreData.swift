@@ -47,12 +47,6 @@ extension TextEditorComponent {
 
         parentPage.addToComponents(textEditorComponentEntity)
     }
-
-    func updatePageComponentEntityContents(in ctx: NSManagedObjectContext, entity: MemoComponentEntity) {
-        if let textEditorComponentEntity = entity as? TextEditorComponentEntity {
-            textEditorComponentEntity.contents = self.componentContents
-        }
-    }
 }
 
 extension TableComponent {
@@ -72,88 +66,6 @@ extension TableComponent {
 
         parentPage.addToComponents(tableComponentEntity)
     }
-
-    func updatePageComponentEntityContents(in ctx: NSManagedObjectContext, entity: MemoComponentEntity) {
-        if let tableComponentEntity = entity as? TableComponentEntity,
-            let mostRecentAction = actions.last
-        {
-            switch mostRecentAction {
-                case .appendRow(let row):
-                    let rowEntity = TableComponentRowEntity(context: ctx)
-                    rowEntity.id = row.id
-                    rowEntity.createdAt = row.createdAt
-                    rowEntity.modifiedAt = row.modifiedAt
-                    rowEntity.tableComponent = tableComponentEntity
-
-                    for case let columnEntity as TableComponentColumnEntity in tableComponentEntity.columns {
-                        let cellEntity = TableComponentCellEntity(context: ctx)
-                        cellEntity.value = ""
-
-                        cellEntity.column = columnEntity
-                        cellEntity.row = rowEntity
-
-                        rowEntity.addToCells(cellEntity)
-                        columnEntity.addToCells(cellEntity)
-                    }
-
-                    let orderedRows = tableComponentEntity.mutableOrderedSetValue(forKey: "rows")
-                    orderedRows.add(rowEntity)
-
-                case .appendColumn(let column):
-                    let columnEntity = TableComponentColumnEntity(context: ctx)
-                    columnEntity.id = column.id
-                    columnEntity.title = column.title
-                    columnEntity.tableComponent = tableComponentEntity
-
-                    for case let rowEntity as TableComponentRowEntity in tableComponentEntity.rows {
-                        let cellEntity = TableComponentCellEntity(context: ctx)
-                        cellEntity.value = ""
-
-                        cellEntity.row = rowEntity
-                        cellEntity.column = columnEntity
-
-                        columnEntity.addToCells(cellEntity)
-                        rowEntity.addToCells(cellEntity)
-                    }
-
-                    let orderedColumns = tableComponentEntity.mutableOrderedSetValue(forKey: "columns")
-                    orderedColumns.add(columnEntity)
-
-                case .removeRow(let rowID):
-                    let fetchRequest = TableComponentRowEntity.findRowByID(rowID)
-                    if let rowEntity = try? ctx.fetch(fetchRequest).first {
-                        ctx.delete(rowEntity)
-                    }
-
-                case .editColumn(let columns):
-                    let columnEntities = tableComponentEntity.mutableOrderedSetValue(forKey: "columns")
-                    var columnList = columnEntities.array as! [TableComponentColumnEntity]
-
-                    for (index, column) in columns.enumerated() {
-                        if let fromIndex = columnList.firstIndex(where: { $0.id == column.id }) {
-                            let fromIndexSet = IndexSet(integer: fromIndex)
-
-                            columnEntities.moveObjects(at: fromIndexSet, to: index)
-                            columnList.moveElement(src: fromIndex, des: index)
-                            columnList[index].title = column.title
-                        }
-                    }
-
-                    if columns.count < columnList.count {
-                        for i in columns.count..<columnList.count {
-                            ctx.delete(columnList[i])
-                        }
-                    }
-
-                case .editCellValue(let rowID, let columnID, let value):
-                    let fetchRequest = TableComponentCellEntity.findCellByID(rowID: rowID, colID: columnID)
-
-                    if let cellEntity = try? ctx.fetch(fetchRequest).first {
-                        cellEntity.value = value
-                    }
-            }
-        }
-    }
 }
 
 extension AudioComponent {
@@ -168,94 +80,6 @@ extension AudioComponent {
 
         componentContents.storeAudioComponentContent(for: audioComponentEntity, in: ctx)
         parentPage.addToComponents(audioComponentEntity)
-    }
-
-    func updatePageComponentEntityContents(in ctx: NSManagedObjectContext, entity: MemoComponentEntity) {
-        if let audioComponentEntity = entity as? AudioComponentEntity,
-            let mostRecentAction = actions.last
-        {
-            switch mostRecentAction {
-                case .appendAudio(let appendedIndices, let tracks):
-                    let audioEntities = audioComponentEntity.mutableOrderedSetValue(forKey: "audios")
-
-                    for (index, audioTrack) in zip(appendedIndices, tracks).sorted(by: { $0.0 < $1.0 }) {
-                        let audioEntity = AudioComponentTrackEntity(context: ctx)
-
-                        audioEntity.id = audioTrack.id
-                        audioEntity.title = audioTrack.title
-                        audioEntity.artist = audioTrack.artist
-                        audioEntity.createData = audioTrack.createData
-                        audioEntity.fileExtension = audioTrack.fileExtension.rawValue
-                        audioEntity.thumbnail = audioTrack.thumbnail
-                        audioEntity.lyrics = audioTrack.lyrics
-
-                        audioEntities.insert(audioEntity, at: index)
-                    }
-
-                case .removeAudio(let removedAudioID):
-                    let fetch = AudioComponentTrackEntity.findTrackByID(removedAudioID)
-                    if let trackEntity = try? ctx.fetch(fetch).first {
-                        ctx.delete(trackEntity)
-                    }
-
-                case .applyAudioMetadata(let audioID, let metadata):
-                    let fetch = AudioComponentTrackEntity.findTrackByID(audioID)
-                    if let trackEntity = try? ctx.fetch(fetch).first {
-                        if let title = metadata.title {
-                            trackEntity.title = title
-                        }
-                        if let artist = metadata.artist {
-                            trackEntity.artist = artist
-                        }
-                        if let thumbnail = metadata.thumbnail {
-                            trackEntity.thumbnail = thumbnail
-                        }
-                        if let lyrics = metadata.lyrics {
-                            trackEntity.lyrics = lyrics
-                        }
-                    }
-
-                    if audioComponentEntity.sortBy == AudioTrackSortBy.name.rawValue {
-                        let audioEntities = audioComponentEntity.mutableOrderedSetValue(forKey: "audios")
-                        let audioEntityList = audioEntities.array
-                            .map { $0 as! AudioComponentTrackEntity }
-                            .sorted(by: { $0.title < $1.title })
-                        audioEntities.removeAllObjects()
-                        audioEntityList.forEach { audioEntities.add($0) }
-                    }
-
-                case .sortAudioTracks(let sortBy):
-                    audioComponentEntity.sortBy = sortBy.rawValue
-                    let audioEntities = audioComponentEntity.mutableOrderedSetValue(forKey: "audios")
-
-                    switch sortBy {
-                        case .name:
-                            // NSSortDescriptor를 이용한 정렬과 sorted가 다국어 정렬순서가 다름.
-                            // NSSortDescriptor : 영어 -> 한국어 -> 일본어
-                            // sorted : 영어 -> 일본어 -> 한국어
-                            let audioEntityList = audioEntities.array
-                                .map { $0 as! AudioComponentTrackEntity }
-                                .sorted(by: { $0.title < $1.title })
-
-                            audioEntities.removeAllObjects()
-                            audioEntityList.forEach { audioEntities.add($0) }
-
-                        case .createDate:
-                            let sortDescriptor = NSSortDescriptor(key: "createData", ascending: false)
-                            audioEntities.sort(using: [sortDescriptor])
-
-                        default:
-                            break
-                    }
-
-                case .moveAudioOrder(let src, let des):
-                    let audioEntities = audioComponentEntity.mutableOrderedSetValue(forKey: "audios")
-                    let fromIndexSet = IndexSet(integer: src)
-
-                    audioEntities.moveObjects(at: fromIndexSet, to: des)
-                    audioComponentEntity.sortBy = AudioTrackSortBy.manual.rawValue
-            }
-        }
     }
 }
 

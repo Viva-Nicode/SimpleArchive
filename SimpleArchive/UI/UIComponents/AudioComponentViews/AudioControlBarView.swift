@@ -234,14 +234,14 @@ final class AudioControlBarView: UIView {
 
         nextButton.throttleTapPublisher(interval: 1.0)
             .sink { [weak self] _ in
-                self?.audioProgressBar.pause()
+                self?.audioProgressBar.pauseProgress()
                 self?.dispatcher?.playNextAudioTrack()
             }
             .store(in: &subscriptions)
 
         previousButton.throttleTapPublisher(interval: 1.0)
             .sink { [weak self] _ in
-                self?.audioProgressBar.pause()
+                self?.audioProgressBar.pauseProgress()
                 self?.dispatcher?.playPreviousAudioTrack()
             }
             .store(in: &subscriptions)
@@ -249,7 +249,7 @@ final class AudioControlBarView: UIView {
 
     func seek(seek: TimeInterval) {
         currentTime = seek
-        audioProgressBar.setValue(seek)
+        audioProgressBar.setCurrentProgress(seek)
     }
 
     func applyUpdatedMetadata(with data: AudioTrackMetadata) {
@@ -283,12 +283,12 @@ final class AudioControlBarView: UIView {
             case .resume:
                 playPauseButton.setImage(UIImage(systemName: "pause.fill"), for: .normal)
                 nowPlayingInfoCenter.nowPlayingInfo?[MPNowPlayingInfoPropertyPlaybackRate] = 1.0
-                audioProgressBar.start()
+                audioProgressBar.startProgress()
 
             case .pause:
                 playPauseButton.setImage(UIImage(systemName: "play.fill"), for: .normal)
                 nowPlayingInfoCenter.nowPlayingInfo?[MPNowPlayingInfoPropertyPlaybackRate] = 0.0
-                audioProgressBar.pause()
+                audioProgressBar.pauseProgress()
 
             case .stop:
                 updateControlBarStateToStopped()
@@ -315,7 +315,6 @@ final class AudioControlBarView: UIView {
         playPauseButton.setImage(UIImage(systemName: "pause.fill"), for: .normal)
 
         audioProgressBar.isScrubbingEnabled = true
-        audioProgressBar.addTarget(self, action: #selector(sliderValueChanged(_:)), for: .valueChanged)
         audioProgressBar.addTarget(
             self,
             action: #selector(sliderValuecomp(_:)),
@@ -336,8 +335,8 @@ final class AudioControlBarView: UIView {
 
                 audioProgressBar.minimumValue = .zero
                 audioProgressBar.maximumValue = duration
-                audioProgressBar.setValue(.zero)
-                audioProgressBar.start()
+                audioProgressBar.setCurrentProgress(.zero)
+                audioProgressBar.startProgress()
 
                 var info: [String: Any] = [
                     MPMediaItemPropertyTitle: title,
@@ -357,7 +356,7 @@ final class AudioControlBarView: UIView {
     }
 
     private func updateControlBarStateToStopped() {
-        audioProgressBar.setValue(.zero)
+        audioProgressBar.setCurrentProgress(.zero)
         audioProgressBar.isScrubbingEnabled = false
 
         titleLabel.text = "Not Playing"
@@ -415,11 +414,7 @@ final class AudioControlBarView: UIView {
         }
     }
 
-    @objc private func sliderValueChanged(_ sender: AudioProgressBar) {
-        currentTime = sender.value
-    }
-
     @objc private func sliderValuecomp(_ sender: AudioProgressBar) {
-        dispatcher?.seekAudioTrack(seek: TimeInterval(sender.value))
+        dispatcher?.seekAudioTrack(seek: sender.currentProgress)
     }
 }

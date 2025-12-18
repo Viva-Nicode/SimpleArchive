@@ -16,7 +16,6 @@ protocol PageComponent: AnyObject, Identifiable, Codable {
     var isMinimumHeight: Bool { get set }
 
     func storePageComponentEntity(in ctx: NSManagedObjectContext, parentPage: MemoPageEntity)
-    func updatePageComponentEntityContents(in ctx: NSManagedObjectContext, entity: MemoComponentEntity)
     func getCollectionViewComponentCell(
         _ collectionView: UICollectionView,
         _ indexPath: IndexPath,

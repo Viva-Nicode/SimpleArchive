@@ -228,7 +228,8 @@ import UIKit
 
         let audioTrack = audioComponent.componentContents.tracks[trackIndex]
         let audioTrackURL = audioFileManager.createAudioFileURL(fileName: audioComponent.trackNames[trackIndex])
-        let audioSampleData = audioFileManager.readAudioSampleData(audioURL: audioTrackURL)
+        let audioPCMData = audioFileManager.readAudioPCMData(audioURL: audioTrackURL)
+        let waveformData = scalingPCMDataToWaveformData(pcmData: audioPCMData)
 
         audioTrackController.setAudioURL(audioURL: audioTrackURL)
         audioTrackController.player?.delegate = self
@@ -237,7 +238,7 @@ import UIKit
         audioContentTableDataSource.isPlaying = true
         audioContentTableDataSource.nowPlayingAudioIndex = trackIndex
         audioContentTableDataSource.nowPlayingURL = audioTrackController.audioTrackURL
-        audioContentTableDataSource.audioSampleData = audioSampleData
+        audioContentTableDataSource.audioVisualizerData = waveformData
         audioContentTableDataSource.getProgress = { [weak self] in
             guard let self else { return .zero }
             return audioTrackController.currentTime! / audioTrackController.totalTime!
@@ -255,7 +256,7 @@ import UIKit
                 trackIndex,
                 audioTotalDuration,
                 audioMetadata,
-                audioSampleData
+                waveformData
             )
         )
     }
@@ -423,7 +424,8 @@ import UIKit
                     let nextPlayingAudioTrack = audioComponent.componentContents.tracks[nextPlayingAudioTrackIndex]
                     let audioTrackURL = audioFileManager.createAudioFileURL(
                         fileName: audioComponent.trackNames[nextPlayingAudioTrackIndex])
-                    let audioSampleData = audioFileManager.readAudioSampleData(audioURL: audioTrackURL)
+                    let audioPCMData = audioFileManager.readAudioPCMData(audioURL: audioTrackURL)
+                    let waveformData = scalingPCMDataToWaveformData(pcmData: audioPCMData)
 
                     audioTrackController.setAudioURL(audioURL: audioTrackURL)
                     audioTrackController.player?.delegate = self
@@ -431,7 +433,7 @@ import UIKit
 
                     audioContentTableDataSource.nowPlayingAudioIndex = nextPlayingAudioTrackIndex
                     audioContentTableDataSource.nowPlayingURL = audioTrackController.audioTrackURL
-                    audioContentTableDataSource.audioSampleData = audioSampleData
+                    audioContentTableDataSource.audioVisualizerData = waveformData
                     audioContentTableDataSource.getProgress = { [weak self] in
                         guard let self else { return .zero }
                         return audioTrackController.currentTime! / audioTrackController.totalTime!
@@ -451,7 +453,7 @@ import UIKit
                             nextPlayingAudioTrackIndex,
                             audioTotalDuration,
                             audioMetadata,
-                            audioSampleData
+                            waveformData
                         )
                     )
                 } else {
@@ -470,11 +472,41 @@ import UIKit
         }
     }
 
+    private func scalingPCMDataToWaveformData(pcmData: AudioPCMData?) -> AudioWaveformData? {
+        guard let pcmData else { return nil }
+        let visualizerBarCount = 7
+        let timerIntervalDivisor = 6.0
+        let samplesPerBar = Int(pcmData.sampleRate / timerIntervalDivisor)
+        var averagedPCMData: [Float] = []
+
+        for i in 0..<(pcmData.PCMData.count / samplesPerBar) {
+            let PCMDataSegment = pcmData.PCMData[i * samplesPerBar..<(i + 1) * samplesPerBar]
+            let avg = PCMDataSegment.map { abs($0) }.reduce(0, +) / Float(PCMDataSegment.count)
+            averagedPCMData.append(avg)
+        }
+
+        let maximumData = averagedPCMData.max()!
+        let scaledPCMData =
+            averagedPCMData
+            .map { ($0 / maximumData) }
+            .map { baseBarHeight in
+                (0..<visualizerBarCount)
+                    .map { _ in
+                        max(0.1, min(1.0, baseBarHeight + Float.random(in: -0.25...0.25)))
+                    }
+            }
+
+        return AudioWaveformData(
+            sampleDataCount: pcmData.PCMData.count,
+            sampleRate: pcmData.sampleRate,
+            waveformData: scaledPCMData)
+    }
+
     private func cleanDatasource() {
         audioContentTableDataSource.nowPlayingAudioIndex = nil
         audioContentTableDataSource.nowPlayingURL = nil
         audioContentTableDataSource.isPlaying = nil
-        audioContentTableDataSource.audioSampleData = nil
+        audioContentTableDataSource.audioVisualizerData = nil
         audioContentTableDataSource.getProgress = nil
     }
 

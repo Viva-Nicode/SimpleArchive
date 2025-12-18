@@ -1,9 +1,36 @@
 import Foundation
 import ZIPFoundation
 
-enum ZipArchiveBuilder {
+@testable import SimpleArchive
 
-    static func makeAudioZip(fileCount: Int, fileSize: Int = 8_192) -> Data? {
+final class ExtractAudioFileURLsSuccessfullyTestFixture: TestFixtureType {
+    typealias GivenFixtureDataType = NoUsed
+    typealias TestTargetInputType = URL?
+    typealias ExpectedOutputType = Int
+
+    let testTargetName = "test_extractAudioFileURLs_successfully()"
+    private var provideState: TestDataProvideState = .testTargetInput
+
+    private var zipURL: URL?
+
+    func getFixtureData() -> Any {
+        switch provideState {
+
+            case .testTargetInput:
+                provideState = .testVerifyOutput
+                makeAudioZip(fileCount: 3)
+                return zipURL as Any
+
+            case .testVerifyOutput:
+                provideState = .allDataConsumed
+                return 3
+
+            default:
+                return ()
+        }
+    }
+
+    private func makeAudioZip(fileCount: Int, fileSize: Int = 8_192) {
 
         let fileManager = FileManager.default
         let tempDir = fileManager.temporaryDirectory
@@ -33,14 +60,13 @@ enum ZipArchiveBuilder {
                     }
                 )
             }
-
-            return try Data(contentsOf: zipURL)
+            self.zipURL = zipURL
         } catch {
-            return nil
+
         }
     }
 
-    private static func makeDummyMP3Data(size: Int) -> Data {
+    private func makeDummyMP3Data(size: Int) -> Data {
         var data = Data()
         data.append(contentsOf: [0x49, 0x44, 0x33])  // ID3
         let remaining = max(0, size - data.count)

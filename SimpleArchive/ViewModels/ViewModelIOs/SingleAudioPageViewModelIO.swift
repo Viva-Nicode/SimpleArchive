@@ -21,14 +21,14 @@ enum SingleAudioPageOutput {
     case viewDidLoad(String, AudioComponent, AudioComponentDataSource)
     
     case didAppendAudioTrackRows([Int])
-    case didPlayAudioTrack(Int, TimeInterval?, AudioTrackMetadata, AudioSampleData?)
+    case didPlayAudioTrack(Int, TimeInterval?, AudioTrackMetadata, AudioWaveformData?)
     case didApplyAudioMetadataChanges(Int, AudioTrackMetadata, Bool, Int?)
     case didToggleAudioPlayingState(Bool, Int?)
     case didUpdateAudioDownloadProgress(Float)
     case didSeekAudioTrack(TimeInterval, TimeInterval?, Int?)
     case didSortAudioTracks([String], [String])
     case didRemoveAudioTrack(Int)
-    case didRemoveAudioTrackAndPlayNextAudio(Int, Int, TimeInterval?, AudioTrackMetadata, AudioSampleData?)
+    case didRemoveAudioTrackAndPlayNextAudio(Int, Int, TimeInterval?, AudioTrackMetadata, AudioWaveformData?)
     case didPresentInvalidDownloadCode
     case didRemoveAudioTrackAndStopPlaying(Int)
 }

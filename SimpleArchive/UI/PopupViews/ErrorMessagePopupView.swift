@@ -1,5 +1,5 @@
-import UIKit
 import Combine
+import UIKit
 
 class ErrorMessagePopupView: PopupView {
 
@@ -39,7 +39,8 @@ class ErrorMessagePopupView: PopupView {
         confirmButton.tintColor = .white
         confirmButton.layer.cornerRadius = 5
         confirmButton.configuration = .plain()
-        confirmButton.configuration?.contentInsets = NSDirectionalEdgeInsets(top: 12, leading: 0, bottom: 12, trailing: 0)
+        confirmButton.configuration?.contentInsets = NSDirectionalEdgeInsets(
+            top: 12, leading: 0, bottom: 12, trailing: 0)
 
         var titleAttr = AttributedString.init("damn it!")
         titleAttr.font = .systemFont(ofSize: 15, weight: .regular)
@@ -48,15 +49,15 @@ class ErrorMessagePopupView: PopupView {
         return confirmButton
     }()
 
-    init(error: any MessageErrorType, confirmButtomAction: (() -> ())? = nil) {
+    init(error: any MessageErrorType, confirmButtomAction: (() -> Void)? = nil) {
         errorMessageLabel.text = error.errorMessage
         super.init()
         cancelable = confirmButton.throttleTapPublisher()
             .map { _ in confirmButtomAction?() }
             .sink {
-            self.dismiss()
-            self.cancelable = nil
-        }
+                self.dismiss()
+                self.cancelable = nil
+            }
     }
 
     required init?(coder: NSCoder) {
@@ -72,14 +73,5 @@ class ErrorMessagePopupView: PopupView {
         alertContainer.addArrangedSubview(popupViewHeaderStackView)
         alertContainer.addArrangedSubview(errorMessageLabel)
         alertContainer.addArrangedSubview(confirmButton)
-
-//        let buttonAction = UIAction { [weak self] _ in
-//            self?.dismiss()
-//        }
-//
-//        confirmButton.addAction(buttonAction, for: .touchUpInside)
     }
-
-
 }
-

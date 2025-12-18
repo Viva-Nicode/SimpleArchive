@@ -216,14 +216,14 @@ class MemoPageViewController: UIViewController, ViewControllerType {
                     presentInvalidDownloadCodePopupView(componentIndex: componentIndex)
 
                 case let .didPlayAudioTrack(
-                    previousComponentIndex, componentIndex, trackIndex, duration, metadata, sampleData):
+                    previousComponentIndex, componentIndex, trackIndex, duration, metadata, waveformData):
                     playAudioTrack(
                         previousComponentIndex: previousComponentIndex,
                         componentIndex: componentIndex,
                         trackIndex: trackIndex,
                         duration: duration,
                         audioMetadata: metadata,
-                        audioSampleData: sampleData)
+                        audioWaveformData: waveformData)
 
                 case let .didApplyAudioMetadataChanges(
                     componentIndex, trackIndex, editedMetadata, isNowPlayingTrack, trackIndexAfterEdit):
@@ -261,14 +261,14 @@ class MemoPageViewController: UIViewController, ViewControllerType {
                     removeAudioTrack(componentIndex: componentIndex, trackIndex: trackIndex)
 
                 case let .didRemoveAudioTrackAndPlayNextAudio(
-                    componentIndex, trackIndex, nextIndex, duration, audioMetadata, audioSampleData):
+                    componentIndex, trackIndex, nextIndex, duration, audioMetadata, waveformData):
                     removeAudioTrackAndPlayNextAudio(
                         componentIndex: componentIndex,
                         removeAudioRowIndex: trackIndex,
                         nextPlayingAudioRowIndex: nextIndex,
                         duration: duration,
                         audioMetadata: audioMetadata,
-                        audioSampleData: audioSampleData
+                        audioWaveformData: waveformData
                     )
 
                 case .didRemoveAudioTrackAndStopPlaying(let componentIndex, let trackIndex):
@@ -516,7 +516,7 @@ extension MemoPageViewController {
         trackIndex: Int,
         duration: TimeInterval?,
         audioMetadata: AudioTrackMetadata,
-        audioSampleData: AudioSampleData?
+        audioWaveformData: AudioWaveformData?
     ) {
         if let previousComponentIndex {
             performWithComponentViewAt(previousComponentIndex) { (_: AudioComponentView, contentView) in
@@ -539,11 +539,11 @@ extension MemoPageViewController {
             if let row = contentView.audioTrackTableView.cellForRow(at: trackIndexPath),
                 let targetPlayingAudioRow = row as? AudioTableRowView
             {
-                if let audioSampleData {
+                if let audioWaveformData {
                     targetPlayingAudioRow.audioVisualizer.activateAudioVisualizer(
-                        samplesCount: audioSampleData.sampleDataCount,
-                        scaledSamples: audioSampleData.scaledSampleData,
-                        sampleRate: audioSampleData.sampleRate)
+                        samplesCount: audioWaveformData.sampleDataCount,
+                        scaledSamples: audioWaveformData.waveformData,
+                        sampleRate: audioWaveformData.sampleRate)
                 }
             }
         }
@@ -593,7 +593,7 @@ extension MemoPageViewController {
                 let audioRow = row as? AudioTableRowView
             {
                 if isPlaying {
-                    audioRow.audioVisualizer.restartVisuzlization()
+                    audioRow.audioVisualizer.resumeVisuzlization()
                 } else {
                     audioRow.audioVisualizer.pauseVisuzlization()
                 }
@@ -631,7 +631,7 @@ extension MemoPageViewController {
         nextPlayingAudioRowIndex: Int,
         duration: TimeInterval?,
         audioMetadata: AudioTrackMetadata,
-        audioSampleData: AudioSampleData?
+        audioWaveformData: AudioWaveformData?
     ) {
         performWithComponentViewAt(componentIndex) { (_: AudioComponentView, contentView) in
 
@@ -649,11 +649,11 @@ extension MemoPageViewController {
             if let row = contentView.audioTrackTableView.cellForRow(at: trackIndexPath),
                 let targetPlayingAudioRow = row as? AudioTableRowView
             {
-                if let audioSampleData {
+                if let audioWaveformData {
                     targetPlayingAudioRow.audioVisualizer.activateAudioVisualizer(
-                        samplesCount: audioSampleData.sampleDataCount,
-                        scaledSamples: audioSampleData.scaledSampleData,
-                        sampleRate: audioSampleData.sampleRate)
+                        samplesCount: audioWaveformData.sampleDataCount,
+                        scaledSamples: audioWaveformData.waveformData,
+                        sampleRate: audioWaveformData.sampleRate)
                 }
             }
         }

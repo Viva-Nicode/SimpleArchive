@@ -4,29 +4,29 @@ import Foundation
 
 final class RemoveAudioTrackWhenRemovingCurrentlyPlayingAudioTestFixture: TestFixtureType {
     typealias GivenFixtureDataType = (
-        MemoPageModel, UUID, AudioComponentDataSource, URL, AudioSampleData, TimeInterval, Bool
+        MemoPageModel, UUID, AudioComponentDataSource, URL, AudioPCMData, TimeInterval, Bool
     )
     typealias TestTargetInputType = (UUID, Int)
-    typealias ExpectedOutputType = (Int, Int, Int, TimeInterval, AudioTrackMetadata, AudioSampleData, URL)
+    typealias ExpectedOutputType = (Int, Int, Int, TimeInterval, AudioTrackMetadata, URL,Int)
 
     let testTargetName = "test_removeAudioTrack_whenRemovingCurrentlyPlayingAudio()"
     private var provideState: TestDataProvideState = .givenFixtureData
     private var audioComponent: AudioComponent!
 
     private var audioFileURL = URL(fileURLWithPath: "Documents/SimpleArchiveMusics/f audio.mp3")
-    private let audioDuration: TimeInterval = 134.4
-    private var audioSampleData = AudioSampleData(
-        sampleDataCount: 8,
-        scaledSampleData: [-0.1341, -0.221, 0.473, -0.324, -0.4323, 0.2332, -0.587, 0.537],
-        sampleRate: 44100.0
+    private let audioDuration: TimeInterval = 5.0
+    private let audioPCMData = AudioPCMData(
+        sampleRate: 44100.0,
+        PCMData: (0..<5 * 44_100).map { _ in Float.random(in: -1.0...1.0) }
     )
+    
     private var audioMetadata = AudioTrackMetadata(
         title: "f audio", artist: "artist", lyrics: "", thumbnail: Data()
     )
 
     func getFixtureData() -> Any {
         switch provideState {
-
+            
             case .givenFixtureData:
                 provideState = .testTargetInput
                 return provideGivenFixture()
@@ -37,7 +37,7 @@ final class RemoveAudioTrackWhenRemovingCurrentlyPlayingAudioTestFixture: TestFi
 
             case .testVerifyOutput:
                 provideState = .allDataConsumed
-                return ExpectedOutputType(3, 3, 3, audioDuration, audioMetadata, audioSampleData, audioFileURL)
+                return ExpectedOutputType(3, 3, 3, audioDuration, audioMetadata, audioFileURL, 210)
 
             default:
                 return ()
@@ -71,10 +71,10 @@ final class RemoveAudioTrackWhenRemovingCurrentlyPlayingAudioTestFixture: TestFi
         audioComponentDataSource.nowPlayingAudioIndex = 3
         audioComponentDataSource.isPlaying = true
         audioComponentDataSource.nowPlayingURL = URL(fileURLWithPath: "Documents/SimpleArchiveMusics/e audio.mp3")
-        audioComponentDataSource.audioSampleData = AudioSampleData(
-            sampleDataCount: 8,
-            scaledSampleData: [-0.11, -0.21, 0.73, -0.24, -0.23, 0.332, -0.587, 0.57],
-            sampleRate: 44100.0
+        audioComponentDataSource.audioVisualizerData = AudioWaveformData(
+            sampleDataCount: 5 * 44_100,
+            sampleRate: 44100.0,
+            waveformData: (0..<5 * 6).map { _ in (0..<7).map { _ in Float.random(in: 0...1.0) } }
         )
         audioComponentDataSource.getProgress = { .zero }
 
@@ -82,7 +82,7 @@ final class RemoveAudioTrackWhenRemovingCurrentlyPlayingAudioTestFixture: TestFi
         self.audioComponent = audioComponent
 
         return (
-            testPage, audioComponent.id, audioComponentDataSource, audioFileURL, audioSampleData,
+            testPage, audioComponent.id, audioComponentDataSource, audioFileURL, audioPCMData,
             audioDuration, true
         )
     }

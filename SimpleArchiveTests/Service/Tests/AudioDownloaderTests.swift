@@ -19,6 +19,7 @@ final class AudioDownloaderTests: XCTestCase, FixtureProvidingTestCase {
     }
 
     override func tearDownWithError() throws {
+        fixtureProvider.removeUsedFixtureData()
         subscriptions = nil
         sut = nil
     }

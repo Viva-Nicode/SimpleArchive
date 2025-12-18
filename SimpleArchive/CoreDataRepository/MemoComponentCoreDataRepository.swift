@@ -57,9 +57,7 @@ struct MemoComponentCoreDataRepository: MemoComponentCoreDataRepositoryType {
             let fetchRequest = MemoComponentEntity.findById(id: modifiedComponent.id)
             let componentEntity = try ctx.fetch(fetchRequest).first!
 
-            modifiedComponent.updatePageComponentEntityContents(in: ctx, entity: componentEntity)
-
-            print("\(modifiedComponent.title)가 coredata에 저장됨")
+            componentEntity.updatePageComponentEntityContents(in: ctx, componentModel: modifiedComponent)
         }
     }
 

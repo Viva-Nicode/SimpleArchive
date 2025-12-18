@@ -9,7 +9,7 @@ final class AudioVisualizerView: UIView {
     private var waveSpacing: CGFloat
     private var audioVisualizeTimer: Timer?
     private var viewHeight: CGFloat = 0
-    private var heights: [Float] = []
+    private var barHeights: [[Float]] = []
     private var totalFrames: Int = 0
     private var visualizerProgress = 0
     private var duration: TimeInterval = .zero
@@ -36,13 +36,13 @@ final class AudioVisualizerView: UIView {
 
     deinit { removeVisuzlization() }
 
-    func activateAudioVisualizer(samplesCount: Int, scaledSamples: [Float], sampleRate: Double) {
-        let viewSize = self.frame.size
+    func activateAudioVisualizer(samplesCount: Int, scaledSamples: [[Float]], sampleRate: Double) {
+        let visualizerSize = self.frame.size
         bars.forEach { self.addSubview($0) }
 
         bars.enumerated()
             .forEach { i, v in
-                let barWidth = viewSize.width / CGFloat(barCount)
+                let barWidth = visualizerSize.width / CGFloat(barCount)
                 v.frame = CGRect(
                     x: CGFloat(i) * barWidth,
                     y: 0,
@@ -53,16 +53,16 @@ final class AudioVisualizerView: UIView {
             }
 
         startAnimatingBars(
-            heights: scaledSamples,
-            viewHeight: viewSize.height,
+            barHeights: scaledSamples,
+            viewHeight: visualizerSize.height,
             duration: Double(samplesCount) / sampleRate)
     }
 
-    private func startAnimatingBars(heights: [Float], viewHeight: CGFloat, duration: TimeInterval) {
-        guard !heights.isEmpty else { return }
+    private func startAnimatingBars(barHeights: [[Float]], viewHeight: CGFloat, duration: TimeInterval) {
+        guard !barHeights.isEmpty else { return }
         self.viewHeight = viewHeight
-        self.heights = heights
-        self.totalFrames = heights.count
+        self.barHeights = barHeights
+        self.totalFrames = barHeights.count
         self.duration = duration
 
         let interval = duration / Double(totalFrames)
@@ -75,11 +75,9 @@ final class AudioVisualizerView: UIView {
                 return
             }
 
-            let barHeights = self.makeBarSet(from: heights[self.visualizerProgress])
-
             UIView.animate(withDuration: interval) {
                 for (i, bar) in self.bars.enumerated() {
-                    let barHeight = CGFloat(barHeights[i]) * viewHeight
+                    let barHeight = viewHeight * CGFloat(barHeights[self.visualizerProgress][i])
                     let y = (viewHeight - barHeight) / 2
                     bar.frame.origin.y = y
                     bar.frame.size.height = barHeight
@@ -90,20 +88,12 @@ final class AudioVisualizerView: UIView {
         }
         RunLoop.main.add(audioVisualizeTimer!, forMode: .common)
     }
-
-    private func makeBarSet(from baseValue: Float) -> [Float] {
-        (0..<barCount)
-            .map { _ in
-                let variation = Float.random(in: -0.3...0.3)
-                return max(0.05, min(1.0, baseValue + variation))
-            }
-    }
 }
 
 extension AudioVisualizerView: AudioVisualizerController {
 
-    func restartVisuzlization() {
-        let totalFrames = heights.count
+    func resumeVisuzlization() {
+        let totalFrames = barHeights.count
         let interval = duration / Double(totalFrames)
         audioVisualizeTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] timer in
             guard let self else { return }
@@ -113,11 +103,9 @@ extension AudioVisualizerView: AudioVisualizerController {
                 return
             }
 
-            let barHeights = self.makeBarSet(from: self.heights[self.visualizerProgress])
-
             UIView.animate(withDuration: interval) {
                 for (i, bar) in self.bars.enumerated() {
-                    let barHeight = CGFloat(barHeights[i]) * self.viewHeight
+                    let barHeight = self.viewHeight * CGFloat(self.barHeights[self.visualizerProgress][i])
                     let y = (self.viewHeight - barHeight) / 2
                     bar.frame.origin.y = y
                     bar.frame.size.height = barHeight
@@ -156,6 +144,6 @@ extension AudioVisualizerView: AudioVisualizerController {
 protocol AudioVisualizerController: AnyObject {
     func pauseVisuzlization()
     func removeVisuzlization()
-    func restartVisuzlization()
+    func resumeVisuzlization()
     func seekVisuzlization(rate: TimeInterval)
 }

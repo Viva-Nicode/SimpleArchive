@@ -1,5 +1,5 @@
-import Foundation
 import CoreData
+import Foundation
 
 @objc(TextEditorComponentEntity)
 public class TextEditorComponentEntity: MemoComponentEntity {
@@ -24,6 +24,15 @@ public class TextEditorComponentEntity: MemoComponentEntity {
         if let removedSnapshotIndex = snapshots.firstIndex(where: { $0.snapshotID == snapshotID }) {
             let removedSnapshot = snapshots.remove(at: removedSnapshotIndex)
             ctx.delete(removedSnapshot)
+        }
+    }
+
+    override func updatePageComponentEntityContents(
+        in ctx: NSManagedObjectContext,
+        componentModel: any PageComponent
+    ) {
+        if let textEditorComponent = componentModel as? TextEditorComponent {
+            self.contents = textEditorComponent.componentContents
         }
     }
 }

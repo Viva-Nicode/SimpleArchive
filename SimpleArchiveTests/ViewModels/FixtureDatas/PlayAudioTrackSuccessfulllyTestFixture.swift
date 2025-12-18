@@ -3,24 +3,19 @@ import Foundation
 @testable import SimpleArchive
 
 final class PlayAudioTrackSuccessfulllyTestFixture: TestFixtureType {
-    typealias GivenFixtureDataType = (
-        MemoPageModel, UUID, URL, AudioSampleData, AudioComponentDataSource
-    )
+    typealias GivenFixtureDataType = (MemoPageModel, UUID, URL, Double, AudioPCMData, AudioComponentDataSource)
     typealias TestTargetInputType = (UUID, Int)
-    typealias ExpectedOutputType = (
-        Int?, Int, Int, TimeInterval?, AudioTrackMetadata, AudioSampleData?, URL
-    )
+    typealias ExpectedOutputType = (Int?, Int, Int, TimeInterval?, AudioTrackMetadata, URL, Int)
 
     let testTargetName = "test_playAudioTrack_successfullly()"
-    private var audioComponent: AudioComponent!
+    private var audioComponent: SimpleArchive.AudioComponent!
     private let archiveDirectoryAudioPath = URL(fileURLWithPath: "Documents/SimpleArchiveMusics/e audio.mp3")
-    private let audioSampleData = AudioSampleData(
-        sampleDataCount: 8,
-        scaledSampleData: [-0.11, -0.21, 0.73, -0.24, -0.23, 0.332, -0.587, 0.57],
-        sampleRate: 44100.0
+    private let audioPCMData = AudioPCMData(
+        sampleRate: 44100.0,
+        PCMData: (0..<5 * 44_100).map { _ in Float.random(in: -1.0...1.0) }
     )
-    private let audioMetadata = AudioTrackMetadata(title: "e audio", artist: "artist", lyrics: "", thumbnail: Data())
 
+    private let audioMetadata = AudioTrackMetadata(title: "e audio", artist: "artist", lyrics: "", thumbnail: Data())
     private var provideState: TestDataProvideState = .givenFixtureData
 
     func getFixtureData() -> Any {
@@ -36,10 +31,9 @@ final class PlayAudioTrackSuccessfulllyTestFixture: TestFixtureType {
             case .testVerifyOutput:
                 provideState = .allDataConsumed
                 return ExpectedOutputType(
-                    nil, 3, 3, 134.34,
+                    nil, 3, 3, 5,
                     audioMetadata,
-                    audioSampleData,
-                    archiveDirectoryAudioPath
+                    archiveDirectoryAudioPath, 210
                 )
 
             default:
@@ -75,7 +69,7 @@ final class PlayAudioTrackSuccessfulllyTestFixture: TestFixtureType {
         testPage.appendChildComponent(component: targetComponent)
 
         return (
-            testPage, audioComponent.id, archiveDirectoryAudioPath, audioSampleData,
+            testPage, audioComponent.id, archiveDirectoryAudioPath, 5.0, audioPCMData,
             audioComponentDataSource
         )
     }

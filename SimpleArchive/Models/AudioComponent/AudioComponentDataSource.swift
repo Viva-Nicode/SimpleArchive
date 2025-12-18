@@ -1,5 +1,11 @@
 import UIKit
 
+struct AudioWaveformData: Codable, Equatable {
+    var sampleDataCount: Int
+    var sampleRate: Double
+    var waveformData: [[Float]]
+}
+
 class AudioComponentDataSource: NSObject, UITableViewDataSource {
 
     var tracks: [AudioTrack]
@@ -7,7 +13,7 @@ class AudioComponentDataSource: NSObject, UITableViewDataSource {
     var nowPlayingAudioIndex: Int?
     var nowPlayingURL: URL?
     var isPlaying: Bool?
-    var audioSampleData: AudioSampleData?
+    var audioVisualizerData: AudioWaveformData?
     var getProgress: (() -> Double)?
 
     init(tracks: [AudioTrack], sortBy: AudioTrackSortBy) {
@@ -28,12 +34,12 @@ class AudioComponentDataSource: NSObject, UITableViewDataSource {
 
         audioTableRowView.configure(audioTrack: track)
 
-        if let audioSampleData, let progress = getProgress?(), indexPath.row == nowPlayingAudioIndex {
+        if let audioVisualizerData, let progress = getProgress?(), indexPath.row == nowPlayingAudioIndex {
             DispatchQueue.main.async {
                 audioTableRowView.audioVisualizer.activateAudioVisualizer(
-                    samplesCount: audioSampleData.sampleDataCount,
-                    scaledSamples: audioSampleData.scaledSampleData,
-                    sampleRate: audioSampleData.sampleRate)
+                    samplesCount: audioVisualizerData.sampleDataCount,
+                    scaledSamples: audioVisualizerData.waveformData,
+                    sampleRate: audioVisualizerData.sampleRate)
                 audioTableRowView.audioVisualizer.seekVisuzlization(rate: progress)
                 if self.isPlaying == false {
                     audioTableRowView.audioVisualizer.pauseVisuzlization()
