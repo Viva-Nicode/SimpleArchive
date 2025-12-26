@@ -133,7 +133,7 @@ final class AudioProgressBar: UIControl {
         if currentProgress < maximumValue {
             currentProgress += deltaTime
         } else {
-            pause()
+            pauseProgress()
         }
     }
 }
