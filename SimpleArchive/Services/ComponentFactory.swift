@@ -1,12 +1,11 @@
 import CoreData
 
 protocol ComponentFactoryType {
-
     func setCreator(creator: any ComponentCreatorType)
     func createComponent() -> any PageComponent
 }
 
-class ComponentFactory: ComponentFactoryType {
+final class ComponentFactory: ComponentFactoryType {
 
     private var creator: any ComponentCreatorType
 

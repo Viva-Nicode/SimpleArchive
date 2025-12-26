@@ -398,7 +398,7 @@ import UIKit
         output.send(.didChangedFileName(newName, fileIndexBeforeRename, fileIndexAfterRename))
     }
 
-    private func changeSortCriteria(sortBy: SortCriterias) {
+    private func changeSortCriteria(sortBy: DirectoryContentsSortCriterias) {
         let sortingResult = directoryStack.last!.setSortCriteria(sortBy)
 
         memoDirectoryCoredataReposotory.saveFileSortCriteria(

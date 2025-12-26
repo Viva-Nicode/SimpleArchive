@@ -130,7 +130,6 @@ extension MemoHomeDirectoryContentCellDataSource: UITableViewDropDelegate {
     func tableView(_ tableView: UITableView, canHandle session: UIDropSession) -> Bool {
         session.canLoadObjects(ofClass: NSString.self)
     }
-
 }
 
 extension MemoHomeDirectoryContentCellDataSource: UIDropInteractionDelegate {

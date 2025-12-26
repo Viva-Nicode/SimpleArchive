@@ -8,7 +8,7 @@ enum MemoHomeViewInput {
     case willNavigateFixedPageView(Int)
     case willAppendPageToFixedTable([UUID])
     case willChangeFileName(UUID, String)
-    case willSortDirectoryItems(SortCriterias)
+    case willSortDirectoryItems(DirectoryContentsSortCriterias)
     case willToggleAscendingOrder
 }
 
@@ -23,10 +23,10 @@ enum MemoHomeSubViewInput {
 }
 
 enum MemoHomeViewOutput {
-    case didFetchMemoData(UUID, SortCriterias, FixedFileCollectionViewDataSource, Int)
+    case didFetchMemoData(UUID, DirectoryContentsSortCriterias, FixedFileCollectionViewDataSource, Int)
     case didInsertRowToHomeTable(Int, [Int])
-    case didMovePreviousDirectoryPath([Int], SortCriterias, Int)
-    case didMoveToFollowingDirectory(String, UUID, SortCriterias, Int)
+    case didMovePreviousDirectoryPath([Int], DirectoryContentsSortCriterias, Int)
+    case didMoveToFollowingDirectory(String, UUID, DirectoryContentsSortCriterias, Int)
     case didPresentFileInformationPopupView(StorageItemInformationType)
     case didMoveFileToDormantBox(Int)
     case didNavigateDormantBoxView(DormantBoxViewModel)

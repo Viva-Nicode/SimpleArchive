@@ -61,6 +61,9 @@ final class AudioProgressBar: UIControl {
 
     func startProgress() {
         lastUpdateTime = CACurrentMediaTime()
+        displayLink?.invalidate()
+        displayLink = nil
+
         displayLink = CADisplayLink(target: self, selector: #selector(updatePlaybackProgress))
         displayLink?.add(to: .main, forMode: .common)
     }

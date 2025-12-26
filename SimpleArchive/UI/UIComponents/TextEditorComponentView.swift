@@ -157,6 +157,7 @@ final class TextEditorComponentView: PageComponentView<UITextView, TextEditorCom
         greenCircleView.backgroundColor = .systemGray5
 
         componentContentView.isEditable = false
+        undoButton.removeFromSuperview()
         captureButton.removeFromSuperview()
         snapshotButton.removeFromSuperview()
     }

@@ -4,7 +4,7 @@ import UIKit
 class MemoHomeViewController: UIViewController, ViewControllerType {
 
     typealias Input = MemoHomeViewInput
-    typealias ViewModelType = MemoHomeViewModel
+    typealias ViewModel = MemoHomeViewModel
 
     var input = PassthroughSubject<MemoHomeViewInput, Never>()
     var viewModel: MemoHomeViewModel
@@ -514,7 +514,7 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
         directoryCollectionView.scrollToItem(at: newIndexPath, at: .right, animated: true)
     }
 
-    private func updateDirectoryInfo(fileCount: Int, sortCriteria: SortCriterias) {
+    private func updateDirectoryInfo(fileCount: Int, sortCriteria: DirectoryContentsSortCriterias) {
         directoryFileCount = fileCount
         switch sortCriteria {
             case .name:

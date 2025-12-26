@@ -13,7 +13,6 @@ struct MemoDirectoryCoreDataRepository: MemoDirectoryCoreDataRepositoryType {
     func fetchSystemDirectoryEntities(fileCreator: any FileCreatorType)
         -> AnyPublisher<[SystemDirectories: MemoDirectoryModel], Error>
     {
-
         let fetchAllDirectoriesRequest = MemoDirectoryEntity.fetchAllRootDirectoriesRequest()
 
         return coredataStack.fetch(fetchAllDirectoriesRequest) { $0.convertToModel() }
@@ -79,7 +78,7 @@ struct MemoDirectoryCoreDataRepository: MemoDirectoryCoreDataRepositoryType {
         }
     }
 
-    func saveFileSortCriteria(fileID: UUID, newSortCriteria: SortCriterias) {
+    func saveFileSortCriteria(fileID: UUID, newSortCriteria: DirectoryContentsSortCriterias) {
         coredataStack.update { ctx in
             let fetchRequest = MemoDirectoryEntity.findDirectoryEntityById(id: fileID)
             let fetchResult = try ctx.fetch(fetchRequest).first!

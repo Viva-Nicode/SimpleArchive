@@ -3,9 +3,8 @@ import Foundation
 
 protocol MemoDirectoryCoreDataRepositoryType {
 
-    func fetchSystemDirectoryEntities(fileCreator: any FileCreatorType) -> AnyPublisher<
-        [SystemDirectories: MemoDirectoryModel], Error
-    >
+    func fetchSystemDirectoryEntities(fileCreator: any FileCreatorType)
+        -> AnyPublisher<[SystemDirectories: MemoDirectoryModel], Error>
 
     @discardableResult
     func createStorageItem(storageItem: any StorageItem) -> AnyPublisher<Void, Error>
@@ -15,5 +14,5 @@ protocol MemoDirectoryCoreDataRepositoryType {
 
     func saveFileNameChange(fileID: UUID, newName: String)
 
-    func saveFileSortCriteria(fileID: UUID, newSortCriteria: SortCriterias)
+    func saveFileSortCriteria(fileID: UUID, newSortCriteria: DirectoryContentsSortCriterias)
 }

@@ -1,5 +1,5 @@
-import Foundation
 import Combine
+import Foundation
 
 struct OperationResultItem<T> {
     var index: Int
@@ -9,9 +9,9 @@ struct OperationResultItem<T> {
 struct StorageItemContainer {
 
     private var items: [any StorageItem]
-    private var sortCriteriable: any SortCriteriaType
+    private var sortCriteriable: any DirectoryContentsSortCriteriaType
 
-    init(items: [any StorageItem], sortCriteriable: any SortCriteriaType) {
+    init(items: [any StorageItem], sortCriteriable: any DirectoryContentsSortCriteriaType) {
         self.items = items
         self.sortCriteriable = sortCriteriable
         self.items.sort(by: sortCriteriable.howToSort)
@@ -21,7 +21,7 @@ struct StorageItemContainer {
 
     func getItems() -> [any StorageItem] { items }
 
-    func getSortBy() -> SortCriterias { sortCriteriable.sortBy }
+    func getSortBy() -> DirectoryContentsSortCriterias { sortCriteriable.sortBy }
 
     func findItemByID(with itemID: UUID) -> OperationResultItem<any StorageItem>? {
         guard let index = items.firstIndex(where: { $0.id == itemID }) else { return nil }
@@ -56,7 +56,7 @@ struct StorageItemContainer {
         return items.firstIndex { $0.id == fileID }
     }
 
-    mutating func setSortCriteria(newSortCriterias: SortCriterias) -> [(Int, Int)] {
+    mutating func setSortCriteria(newSortCriterias: DirectoryContentsSortCriterias) -> [(Int, Int)] {
         sortCriteriable = newSortCriterias.getSortCriteriaObject()
         let afterSorted = items.sorted(by: sortCriteriable.howToSort)
         var result: [(Int, Int)] = []
@@ -84,4 +84,3 @@ struct StorageItemContainer {
         return result
     }
 }
-

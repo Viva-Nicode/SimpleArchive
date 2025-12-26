@@ -7,12 +7,10 @@ protocol ComponentCreatorType {
 }
 
 struct TextEditorComponentCreator: ComponentCreatorType {
-    typealias CreatingComponentType = TextEditorComponent
-    func createEmptyComponent() -> CreatingComponentType { TextEditorComponent() }
+    func createEmptyComponent() -> TextEditorComponent { TextEditorComponent() }
 }
 
 struct TableComponentCreator: ComponentCreatorType {
-    typealias CreatingComponentType = TableComponent
     func createEmptyComponent() -> TableComponent { TableComponent() }
 }
 

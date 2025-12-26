@@ -13,7 +13,7 @@ final class MemoDirectoryModel: NSObject, StorageItem {
         id: UUID = UUID(),
         creationDate: Date = Date(),
         name: String,
-        sortBy: SortCriterias = .name,
+        sortBy: DirectoryContentsSortCriterias = .name,
         parentDirectory: MemoDirectoryModel? = nil
     ) {
         self.id = id
@@ -68,7 +68,7 @@ final class MemoDirectoryModel: NSObject, StorageItem {
         childItems.removeItemByID(with: id)
     }
 
-    func getSortBy() -> SortCriterias {
+    func getSortBy() -> DirectoryContentsSortCriterias {
         childItems.getSortBy()
     }
 
@@ -76,7 +76,7 @@ final class MemoDirectoryModel: NSObject, StorageItem {
         childItems.getItems()
     }
 
-    func setSortCriteria(_ sortCriterias: SortCriterias) -> [(Int, Int)] {
+    func setSortCriteria(_ sortCriterias: DirectoryContentsSortCriterias) -> [(Int, Int)] {
         childItems.setSortCriteria(newSortCriterias: sortCriterias)
     }
 
