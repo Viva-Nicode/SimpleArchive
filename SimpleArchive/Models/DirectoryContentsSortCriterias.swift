@@ -1,8 +1,8 @@
-enum SortCriterias: String, CaseIterable {
+enum DirectoryContentsSortCriterias: String, CaseIterable {
     case name = "NAME"
     case creationDate = "CREATION_DATE"
 
-    func getSortCriteriaObject() -> any SortCriteriaType {
+    func getSortCriteriaObject() -> any DirectoryContentsSortCriteriaType {
         switch self {
         case .name:
             NameSortCriteria()
@@ -21,17 +21,17 @@ enum SortCriterias: String, CaseIterable {
     }
 }
 
-protocol SortCriteriaType {
+protocol DirectoryContentsSortCriteriaType {
 
-    var sortBy: SortCriterias { get }
+    var sortBy: DirectoryContentsSortCriterias { get }
     var isAscending: Bool { get set }
 
     func howToSort(lhs: any StorageItem, rhs: any StorageItem) -> Bool
 }
 
-struct NameSortCriteria: SortCriteriaType {
+struct NameSortCriteria: DirectoryContentsSortCriteriaType {
 
-    var sortBy: SortCriterias { .name }
+    var sortBy: DirectoryContentsSortCriterias { .name }
     var isAscending: Bool = true
 
     func howToSort(lhs: any StorageItem, rhs: any StorageItem) -> Bool {
@@ -39,9 +39,9 @@ struct NameSortCriteria: SortCriteriaType {
     }
 }
 
-struct CreationDateSortCirteria: SortCriteriaType {
+struct CreationDateSortCirteria: DirectoryContentsSortCriteriaType {
 
-    var sortBy: SortCriterias { .creationDate }
+    var sortBy: DirectoryContentsSortCriterias { .creationDate }
     var isAscending: Bool = true
 
     func howToSort(lhs: any StorageItem, rhs: any StorageItem) -> Bool {
