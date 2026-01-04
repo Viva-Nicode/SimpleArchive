@@ -1,6 +1,28 @@
 import CoreData
 import Foundation
 
+struct TableComponentColumn: Codable, Identifiable, Hashable {
+    let id: UUID
+    var title: String
+
+    init(id: UUID = UUID(), title: String) {
+        self.id = id
+        self.title = title
+    }
+}
+
+struct TableComponentRow: Codable, Identifiable, Hashable {
+    let id: UUID
+    var createdAt: Date
+    var modifiedAt: Date
+
+    init(id: UUID = UUID()) {
+        self.id = id
+        self.createdAt = Date()
+        self.modifiedAt = Date()
+    }
+}
+
 struct TableComponentContents: Codable {
 
     private(set) var columns: [TableComponentColumn]
@@ -68,30 +90,7 @@ struct TableComponentContents: Codable {
     }
 }
 
-struct TableComponentColumn: Codable, Identifiable, Hashable {
-    let id: UUID
-    var title: String
-
-    init(id: UUID = UUID(), title: String) {
-        self.id = id
-        self.title = title
-    }
-}
-
-struct TableComponentRow: Codable, Identifiable, Hashable {
-    let id: UUID
-    var createdAt: Date
-    var modifiedAt: Date
-
-    init(id: UUID = UUID()) {
-        self.id = id
-        self.createdAt = Date()
-        self.modifiedAt = Date()
-    }
-}
-
 extension TableComponentContents {
-
     init(entity: TableComponentEntity) {
 
         self.sortBy = TableRowSortCriteria(rawValue: entity.sortBy)!

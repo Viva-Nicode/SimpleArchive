@@ -13,9 +13,6 @@ class MemoPageViewController: UIViewController, ViewControllerType {
 
     var selectedPageComponentCell: (any PageComponentViewType)?
     var pageComponentContentViewRect: CGRect?
-
-    private var audioControlBar = AudioControlBarView()
-
     var selectedComponentIndexForMoveSnapshotView: Int?
 
     private let backgroundView: UIStackView = {
@@ -62,6 +59,7 @@ class MemoPageViewController: UIViewController, ViewControllerType {
         return componentPlusButton
     }()
     private(set) var collectionView: UICollectionView!
+    private var audioControlBar = AudioControlBarView()
 
     init(viewModel: MemoPageViewModel) {
         self.viewModel = viewModel

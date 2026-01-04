@@ -77,7 +77,6 @@ final class TableComponentView: PageComponentView<TableComponentContentView, Tab
         component: TableComponent,
         input subject: PassthroughSubject<MemoPageViewInput, Never>
     ) {
-
         super.configure(component: component, input: subject)
 
         componentContentView.configure(

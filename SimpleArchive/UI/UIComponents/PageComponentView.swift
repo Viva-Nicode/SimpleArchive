@@ -17,13 +17,9 @@ protocol PageComponentViewType {
 }
 
 class PageComponentView<ComponentContentType, PageComponentType>: UICollectionViewCell, PageComponentViewType
-where
-    ComponentContentType: UIView,
-    PageComponentType: PageComponent
-{
-    func getContentView() -> ComponentContentType {
-        self.componentContentView
-    }
+where ComponentContentType: UIView, PageComponentType: PageComponent {
+
+    func getContentView() -> ComponentContentType { self.componentContentView }
 
     var subscriptions = Set<AnyCancellable>()
     var pageInputActionSubject: PassthroughSubject<MemoPageViewInput, Never>?
@@ -137,7 +133,6 @@ where
     }
 
     func setupConstraints() {
-
         containerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor).isActive = true
         containerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor).isActive = true
         containerView.topAnchor.constraint(equalTo: contentView.topAnchor).isActive = true
@@ -197,7 +192,7 @@ where
         greenCircleView.throttleUIViewTapGesturePublisher()
             .sink { [weak self] _ in
                 guard let self else { return }
-                // 컨텐츠 뷰가 깜빡거리는게 싫어서 컨텐츠 뷰위에 임시로 덧대는 뷰.
+                // 컨텐츠 뷰가 깜빡거리는게 싫어서 최대화 애니메이션이 진행되는 동안 컨텐츠 뷰위에 임시로 덧대는 뷰.
                 if !component.isMinimumHeight {
                     if let componentTextViewSnapshot = componentContentView.snapshotView(afterScreenUpdates: true) {
                         self.componentContentViewSnapshot = componentTextViewSnapshot

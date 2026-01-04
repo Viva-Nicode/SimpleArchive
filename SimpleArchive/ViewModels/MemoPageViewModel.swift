@@ -19,7 +19,7 @@ import UIKit
     private var audioTrackController: AudioTrackControllerType
     private var audioFileManager: AudioFileManagerType
     private(set) var nowPlayingAudioComponentID: UUID?
-    private(set) var audioCompoenntDataSources: [UUID: AudioComponentDataSource] = [:]
+    private(set) var audioComponentDataSources: [UUID: AudioComponentDataSource] = [:]
 
     private let captureDispatchSemaphore = DispatchSemaphore(value: 1)
 
@@ -471,7 +471,7 @@ extension MemoPageViewModel {
 extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
 
     private func downloadAudio(componentID: UUID, with code: String) {
-        guard let audioComponentDataSource = audioCompoenntDataSources[componentID] else { return }
+        guard let audioComponentDataSource = audioComponentDataSources[componentID] else { return }
 
         performWithComponentAt(componentID) { (componentIndex, component: AudioComponent) in
             let currentPlayingAudioTrackID = audioComponentDataSource.nowPlayingAudioIndex
@@ -552,7 +552,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
 
     private func importAudioFromLocalFileSystem(componentID: UUID, didPickDocumentsAt urls: [URL]) {
 
-        guard let audioComponentDataSource = audioCompoenntDataSources[componentID] else { return }
+        guard let audioComponentDataSource = audioComponentDataSources[componentID] else { return }
         var audioTracks: [AudioTrack] = []
 
         for audioFileUrl in urls {
@@ -623,7 +623,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
             audioTrackController.player?.delegate = self
             audioTrackController.play()
 
-            let audioComponentDataSource = audioCompoenntDataSources[componentID]
+            let audioComponentDataSource = audioComponentDataSources[componentID]
 
             audioComponentDataSource?.isPlaying = true
             audioComponentDataSource?.nowPlayingAudioIndex = trackIndex
@@ -657,7 +657,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
     private func playNextAudioTrack() {
         guard let nowPlayingAudioComponentID else { return }
         performWithComponentAt(nowPlayingAudioComponentID) { (_, audioComponent: AudioComponent) in
-            let audioComponentDataSource = audioCompoenntDataSources[nowPlayingAudioComponentID]
+            let audioComponentDataSource = audioComponentDataSources[nowPlayingAudioComponentID]
 
             if var unwrappedCurrentPlayingTrackIndex = audioComponentDataSource?.nowPlayingAudioIndex {
                 unwrappedCurrentPlayingTrackIndex += 1
@@ -672,7 +672,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
     private func playPreviousAudioTrack() {
         guard let nowPlayingAudioComponentID else { return }
         performWithComponentAt(nowPlayingAudioComponentID) { (_, audioComponent: AudioComponent) in
-            let audioComponentDataSource = audioCompoenntDataSources[nowPlayingAudioComponentID]
+            let audioComponentDataSource = audioComponentDataSources[nowPlayingAudioComponentID]
 
             if var unwrappedCurrentPlayingTrackIndex = audioComponentDataSource?.nowPlayingAudioIndex {
                 unwrappedCurrentPlayingTrackIndex -= 1
@@ -690,7 +690,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
 
         performWithComponentAt(nowPlayingAudioComponentID) { (_, audioComponent: AudioComponent) in
             if let componentIndex = memoPage[nowPlayingAudioComponentID]?.index,
-                let audioComponentDataSource = audioCompoenntDataSources[nowPlayingAudioComponentID],
+                let audioComponentDataSource = audioComponentDataSources[nowPlayingAudioComponentID],
                 let trackIndex = audioComponentDataSource.nowPlayingAudioIndex
             {
                 let isPlaying = audioTrackController.isPlaying
@@ -707,7 +707,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
     }
 
     private func applyAudioMetadataChanges(componentID: UUID, newMetadata: AudioTrackMetadata, trackIndex: Int) {
-        guard let audioComponentDataSource = audioCompoenntDataSources[componentID] else { return }
+        guard let audioComponentDataSource = audioComponentDataSources[componentID] else { return }
 
         performWithComponentAt(componentID) { (componentIndex, component: AudioComponent) in
             let trackID = component.componentContents.tracks[trackIndex].id
@@ -766,7 +766,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
             audioTrackController.seek(interval: seek)
             if let nowPlayingAudioComponentID,
                 let componentIndex = memoPage[nowPlayingAudioComponentID]?.index,
-                let audioComponentDataSource = audioCompoenntDataSources[nowPlayingAudioComponentID],
+                let audioComponentDataSource = audioComponentDataSources[nowPlayingAudioComponentID],
                 let trackIndex = audioComponentDataSource.nowPlayingAudioIndex
             {
                 output.send(
@@ -783,7 +783,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
 
     private func moveAudioTrackOrder(componentID: UUID, src: Int, des: Int) {
         performWithComponentAt(componentID) { (_, audioComponent: AudioComponent) in
-            guard let datasource = audioCompoenntDataSources[componentID] else { return }
+            guard let datasource = audioComponentDataSources[componentID] else { return }
             let currentPlayingAudioTrackID = datasource.nowPlayingAudioIndex
                 .flatMap { audioComponent.componentContents.tracks[$0].id }
 
@@ -803,7 +803,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
     }
 
     private func sortAudioTracks(componentID: UUID, sortBy: AudioTrackSortBy) {
-        guard let audioComponentDataSource = audioCompoenntDataSources[componentID] else { return }
+        guard let audioComponentDataSource = audioComponentDataSources[componentID] else { return }
 
         performWithComponentAt(componentID) { (componentIndex, audioComponent: AudioComponent) in
             audioComponent.componentContents.sortBy = sortBy
@@ -840,7 +840,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
     }
 
     private func removeAudioTrack(componentID: UUID, trackIndex: Int) {
-        guard let audioComponentDataSource = audioCompoenntDataSources[componentID] else { return }
+        guard let audioComponentDataSource = audioComponentDataSources[componentID] else { return }
 
         performWithComponentAt(componentID) { (componentIndex, component: AudioComponent) in
 
@@ -951,7 +951,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
     }
 
     private func cleanDataSource(_ componentID: UUID) {
-        let datasource = audioCompoenntDataSources[componentID]
+        let datasource = audioComponentDataSources[componentID]
         datasource?.nowPlayingAudioIndex = nil
         datasource?.isPlaying = nil
         datasource?.nowPlayingURL = nil
@@ -970,7 +970,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
                 if audioTrackController.isPlaying == true,
                     let nowPlayingAudioComponentID,
                     let pageComponent = memoPage[nowPlayingAudioComponentID],
-                    let datasource = audioCompoenntDataSources[nowPlayingAudioComponentID],
+                    let datasource = audioComponentDataSources[nowPlayingAudioComponentID],
                     let trackIndex = datasource.nowPlayingAudioIndex
                 {
                     let componentIndex = pageComponent.index
@@ -1024,14 +1024,14 @@ extension MemoPageViewModel: UICollectionViewDataSource {
         if let audioComponentView = cell as? AudioComponentView,
             let audioComponent = componentModel as? AudioComponent
         {
-            if let datasource = self.audioCompoenntDataSources[audioComponent.id] {
+            if let datasource = self.audioComponentDataSources[audioComponent.id] {
                 audioComponentView.componentContentView.audioTrackTableView.dataSource = datasource
             } else {
                 let datasource = AudioComponentDataSource(
                     tracks: audioComponent.componentContents.tracks,
                     sortBy: audioComponent.componentContents.sortBy
                 )
-                self.audioCompoenntDataSources[audioComponent.id] = datasource
+                self.audioComponentDataSources[audioComponent.id] = datasource
                 audioComponentView.componentContentView.audioTrackTableView.dataSource = datasource
             }
         }
@@ -1047,7 +1047,7 @@ extension MemoPageViewModel: UICollectionViewDataSource {
         }
 
         func setAudioTrackDataSource(id: UUID, datasource: AudioComponentDataSource) {
-            self.audioCompoenntDataSources[id] = datasource
+            self.audioComponentDataSources[id] = datasource
         }
     }
 #endif
