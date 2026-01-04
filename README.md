@@ -8,6 +8,18 @@
 
 ---
 
+## 🛠 프레임워크
+
+- Swift
+- UIKit
+- Combine / Swift Concurrency
+- URLSession
+- SFBAduioEngine
+- ZIPFoundation
+- Local Data (UserDefaults / CoreData / 기타)
+- XCTest
+
+
 ## ✨ 주요 기능
 
 <table>
