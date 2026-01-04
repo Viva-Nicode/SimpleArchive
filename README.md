@@ -1,7 +1,7 @@
 <table>
   <tr>
     <td width="40%" align="center">
-      <img src="record.gif" width="240" />
+      <img src="create.gif" width="240" />
     </td>
     <td width="60%">
       <b>오디오 메모 녹음 기능</b><br/><br/>
