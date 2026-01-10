@@ -32,6 +32,7 @@ final class AudioTableRowView: UITableViewCell {
         let thumbnailImageView = UIImageView()
         thumbnailImageView.layer.cornerRadius = 8
         thumbnailImageView.clipsToBounds = true
+        thumbnailImageView.contentMode = .scaleAspectFill
         thumbnailImageView.translatesAutoresizingMaskIntoConstraints = false
         return thumbnailImageView
     }()

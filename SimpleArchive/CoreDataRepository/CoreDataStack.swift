@@ -7,11 +7,14 @@ class CoreDataStack: PersistentStore {
     private let container: NSPersistentContainer
     private let coredataTaskQueue = DispatchQueue(label: "coredata")
     private let queueKey = DispatchSpecificKey<String>()
-    private var resetChildContext: (() -> Void)?
+    private var updateContext: NSManagedObjectContext
     public static let manager: CoreDataStack = .init()
 
     private init() {
         container = NSPersistentContainer(name: "SimpleArchive")
+
+        updateContext = container.newBackgroundContext()
+        updateContext.configureAsUpdateContext()
 
         if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil {
             let description = NSPersistentStoreDescription()
@@ -62,24 +65,18 @@ class CoreDataStack: PersistentStore {
 
     func update<Result>(_ operation: @escaping (NSManagedObjectContext) throws -> Result) -> AnyPublisher<Result, Error>
     {
-        let update = Future<Result, Error> { [weak coredataTaskQueue, weak container] promise in
+        let update = Future<Result, Error> { [weak coredataTaskQueue, updateContext] promise in
             coredataTaskQueue?
                 .async {
-                    guard let context = container?.newBackgroundContext() else { return }
-                    self.resetChildContext = nil
-                    self.resetChildContext = { [context] () -> Void in context.reset() }
-
-                    context.configureAsUpdateContext()
-
-                    context.performAndWait {
+                    updateContext.performAndWait {
                         do {
-                            let result: Result = try operation(context)
-                            if context.hasChanges {
-                                try context.save()
+                            let result: Result = try operation(updateContext)
+                            if updateContext.hasChanges {
+                                try updateContext.save()
                             }
                             promise(.success(result))
                         } catch let error as NSError {
-                            context.reset()
+                            updateContext.reset()
                             print("coredataStack : \(error.localizedDescription)")
                             print(error.code)
                             promise(.failure(error))
