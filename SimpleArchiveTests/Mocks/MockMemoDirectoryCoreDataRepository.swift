@@ -40,7 +40,7 @@ final class MockMemoDirectoryCoreDataRepository: Mock, MemoDirectoryCoreDataRepo
         register(.saveFileNameChange)
     }
 
-    func saveFileSortCriteria(fileID: UUID, newSortCriteria: SortCriterias) {
+    func saveFileSortCriteria(fileID: UUID, newSortCriteria: DirectoryContentsSortCriterias) {
         register(.saveFileSortCriteria)
     }
 }

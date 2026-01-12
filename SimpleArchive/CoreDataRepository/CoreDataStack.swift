@@ -200,7 +200,10 @@ extension NSManagedObjectContext {
             let mainDirectoryEntity = try ctx
                 .fetch(MemoDirectoryEntity.findDirectoryEntityById(id: systemDirectoryID)).first!
 
-            storageItem.store(in: ctx, parentDirectory: mainDirectoryEntity)
+            let pp = CoreDataStorageItemPersistenceCreator(context: ctx)
+            pp.parentDirectoryEntity = mainDirectoryEntity
+            storageItem.persistToPersistentStorage(using: pp)
+
             try ctx.save()
         }
 

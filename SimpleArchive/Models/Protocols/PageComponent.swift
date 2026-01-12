@@ -3,6 +3,12 @@ import CoreData
 import Foundation
 import UIKit
 
+protocol PageComponentPersistenceCreatorType {
+    func persistTextEditorComponent(textComponent: TextEditorComponent)
+    func persistTableComponent(tableComponent: TableComponent)
+    func persistAudioComponent(audioComponent: AudioComponent)
+}
+
 protocol PageComponent: AnyObject, Identifiable, Codable {
 
     associatedtype ContentType: Codable
@@ -15,7 +21,8 @@ protocol PageComponent: AnyObject, Identifiable, Codable {
     var renderingOrder: Int { get set }
     var isMinimumHeight: Bool { get set }
 
-    func storePageComponentEntity(in ctx: NSManagedObjectContext, parentPage: MemoPageEntity)
+    func persistToPersistentStorage(using persistence: PageComponentPersistenceCreatorType)
+
     func getCollectionViewComponentCell(
         _ collectionView: UICollectionView,
         _ indexPath: IndexPath,

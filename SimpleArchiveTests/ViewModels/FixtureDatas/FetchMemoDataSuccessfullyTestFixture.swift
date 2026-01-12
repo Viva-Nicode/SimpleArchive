@@ -5,13 +5,13 @@ import Foundation
 final class FetchMemoDataSuccessfullyTestFixture: TestFixtureType {
     typealias GivenFixtureDataType = [SystemDirectories: MemoDirectoryModel]
     typealias TestTargetInputType = NoUsed
-    typealias ExpectedOutputType = (UUID, SortCriterias, Int)
+    typealias ExpectedOutputType = (UUID, DirectoryContentsSortCriterias, Int)
 
     let testTargetName = "test_fetchMemoData_successfully()"
 
     private var provideState: TestDataProvideState = .givenFixtureData
     private var mainDirectoryID = UUID(uuidString: "502a9fea-d6ea-4103-a25e-4e622a6c2759")!
-    private var mainDirectorySortCriteria: SortCriterias = .name
+    private var mainDirectorySortCriteria: DirectoryContentsSortCriterias = .name
 
     func getFixtureData() -> Any {
         switch provideState {

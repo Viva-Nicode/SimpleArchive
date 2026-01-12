@@ -10,7 +10,7 @@ public class TableComponentEntity: MemoComponentEntity {
             isMinimumHeight: self.isMinimumHeight,
             creationDate: self.creationDate,
             title: self.title,
-            contents: TableComponentContents(entity: self),
+            contents: self.convertToContentsModel(),
             captureState: .captured,
             componentSnapshots: self.snapshots
                 .map { $0.convertToModel() }
@@ -109,5 +109,44 @@ public class TableComponentEntity: MemoComponentEntity {
                     }
             }
         }
+    }
+
+    private func convertToContentsModel() -> TableComponentContents {
+        var contents = TableComponentContents()
+        contents.sortBy = TableComponentContents.TableRowSortCriteria(rawValue: self.sortBy)!
+
+        let columnEntities = columns.array as! [TableComponentColumnEntity]
+
+        contents.columns = columnEntities.compactMap { colEntity -> TableComponentColumn in
+            let id = colEntity.id
+            let title = colEntity.title
+            return TableComponentColumn(id: id, title: title)
+        }
+
+        let rowEntities = self.rows.array as! [TableComponentRowEntity]
+
+        contents.rows = rowEntities.compactMap { rowEntity -> TableComponentRow in
+            let id = rowEntity.id
+            var row = TableComponentRow(id: id)
+            row.createdAt = rowEntity.createdAt
+            row.modifiedAt = rowEntity.modifiedAt
+            return row
+        }
+
+        var restoredCells: [UUID: [UUID: String]] = [:]
+
+        for rowEntity in rowEntities {
+            let rowID = rowEntity.id
+            let cellEntities = rowEntity.cells
+
+            for cellEntity in cellEntities {
+                if cellEntity.value.isEmpty { continue }
+
+                restoredCells[rowID, default: [:]][cellEntity.column.id] = cellEntity.value
+            }
+        }
+
+        contents.cells = restoredCells
+        return contents
     }
 }

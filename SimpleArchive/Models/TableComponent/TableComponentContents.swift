@@ -25,9 +25,9 @@ struct TableComponentRow: Codable, Identifiable, Hashable {
 
 struct TableComponentContents: Codable {
 
-    private(set) var columns: [TableComponentColumn]
-    private(set) var rows: [TableComponentRow]
-    private var cells: [UUID: [UUID: String]]
+    var columns: [TableComponentColumn]
+    var rows: [TableComponentRow]
+    var cells: [UUID: [UUID: String]]
     var sortBy: TableRowSortCriteria
 
     enum TableRowSortCriteria: String, Codable {
@@ -87,110 +87,5 @@ struct TableComponentContents: Codable {
         cells[rowID, default: [:]][colID] = newValue
         rows[rowIndex].modifiedAt = Date()
         return (rowIndex, columnIndex)
-    }
-}
-
-extension TableComponentContents {
-    init(entity: TableComponentEntity) {
-
-        self.sortBy = TableRowSortCriteria(rawValue: entity.sortBy)!
-
-        let columnEntities = entity.columns.array as! [TableComponentColumnEntity]
-
-        self.columns = columnEntities.compactMap { colEntity -> TableComponentColumn in
-            let id = colEntity.id
-            let title = colEntity.title
-            return TableComponentColumn(id: id, title: title)
-        }
-
-        let rowEntities = entity.rows.array as! [TableComponentRowEntity]
-
-        self.rows = rowEntities.compactMap { rowEntity -> TableComponentRow in
-            let id = rowEntity.id
-            var row = TableComponentRow(id: id)
-            row.createdAt = rowEntity.createdAt
-            row.modifiedAt = rowEntity.modifiedAt
-            return row
-        }
-
-        var restoredCells: [UUID: [UUID: String]] = [:]
-
-        for rowEntity in rowEntities {
-            let rowID = rowEntity.id
-            let cellEntities = rowEntity.cells
-
-            for cellEntity in cellEntities {
-                if cellEntity.value.isEmpty { continue }
-
-                restoredCells[rowID, default: [:]][cellEntity.column.id] = cellEntity.value
-            }
-        }
-
-        self.cells = restoredCells
-    }
-
-    func storeTableComponentContent(for tableComponentEntity: TableComponentEntity, in ctx: NSManagedObjectContext) {
-
-        tableComponentEntity.sortBy = self.sortBy.rawValue
-
-        let orderedColumns = tableComponentEntity.mutableOrderedSetValue(forKey: "columns")
-
-        for col in self.columns {
-            let colEntity = TableComponentColumnEntity(context: ctx)
-            colEntity.id = col.id
-            colEntity.title = col.title
-            colEntity.tableComponent = tableComponentEntity
-
-            orderedColumns.add(colEntity)
-        }
-
-        let orderedRows = tableComponentEntity.mutableOrderedSetValue(forKey: "rows")
-
-        for row in self.rows {
-            let rowEntity = TableComponentRowEntity(context: ctx)
-            rowEntity.id = row.id
-            rowEntity.createdAt = row.createdAt
-            rowEntity.modifiedAt = row.modifiedAt
-            rowEntity.tableComponent = tableComponentEntity
-
-            orderedRows.add(rowEntity)
-        }
-
-        for case let columnEntity as TableComponentColumnEntity in tableComponentEntity.columns {
-            for case let rowEntity as TableComponentRowEntity in tableComponentEntity.rows {
-                let cellEntity = TableComponentCellEntity(context: ctx)
-                cellEntity.value = cells[rowEntity.id]?[columnEntity.id] ?? ""
-
-                cellEntity.row = rowEntity
-                cellEntity.column = columnEntity
-
-                rowEntity.addToCells(cellEntity)
-                columnEntity.addToCells(cellEntity)
-            }
-        }
-    }
-}
-
-extension TableComponentContents {
-    init?(jsonString: String) {
-        guard let data = jsonString.data(using: .utf8),
-            let decoded = try? JSONDecoder().decode(TableComponentContents.self, from: data)
-        else { return nil }
-
-        self.columns = decoded.columns
-        self.rows = decoded.rows
-        self.cells = decoded.cells
-        self.sortBy = decoded.sortBy
-    }
-
-    var jsonString: String {
-        guard let encoded = try? JSONEncoder().encode(self),
-            let jsonObject = try? JSONSerialization.jsonObject(with: encoded),
-            let sortedData = try? JSONSerialization.data(withJSONObject: jsonObject, options: [.sortedKeys])
-        else {
-            return ""
-        }
-
-        return String(data: sortedData, encoding: .utf8) ?? ""
     }
 }

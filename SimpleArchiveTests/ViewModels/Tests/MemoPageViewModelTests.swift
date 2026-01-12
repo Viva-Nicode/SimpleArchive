@@ -431,7 +431,7 @@ final class MemoPageViewModelTests: XCTestCase, @preconcurrency FixtureProviding
             .allSatisfy { $0 }
         XCTAssertTrue(isScaled!)
 
-        let nowPlayingAudioComponentDataSource = try XCTUnwrap(sut.audioCompoenntDataSources[audioComponentID])
+        let nowPlayingAudioComponentDataSource = try XCTUnwrap(sut.audioComponentDataSources[audioComponentID])
 
         XCTAssertEqual(true, nowPlayingAudioComponentDataSource.isPlaying)
         XCTAssertEqual(expectedTrackIndex, nowPlayingAudioComponentDataSource.nowPlayingAudioIndex)
@@ -531,13 +531,13 @@ final class MemoPageViewModelTests: XCTestCase, @preconcurrency FixtureProviding
 
         XCTAssertEqual(expectedNowPlayingAudioComponentID, sut.nowPlayingAudioComponentID)
 
-        let nowPlayingAudioComponentDataSource = try XCTUnwrap(sut.audioCompoenntDataSources[audioComponentID])
+        let nowPlayingAudioComponentDataSource = try XCTUnwrap(sut.audioComponentDataSources[audioComponentID])
 
         XCTAssertEqual(true, nowPlayingAudioComponentDataSource.isPlaying)
         XCTAssertEqual(expectedTrackIndex, nowPlayingAudioComponentDataSource.nowPlayingAudioIndex)
         XCTAssertEqual(expectedNowPlayingURL, nowPlayingAudioComponentDataSource.nowPlayingURL)
 
-        let previousAudioComponentDataSource = try XCTUnwrap(sut.audioCompoenntDataSources[previousPlayingComponentID])
+        let previousAudioComponentDataSource = try XCTUnwrap(sut.audioComponentDataSources[previousPlayingComponentID])
 
         XCTAssertNil(previousAudioComponentDataSource.isPlaying)
         XCTAssertNil(previousAudioComponentDataSource.nowPlayingURL)
@@ -631,7 +631,7 @@ final class MemoPageViewModelTests: XCTestCase, @preconcurrency FixtureProviding
         let factualWaveformDataCount = factualWaveformData?.waveformData.reduce(0) { $0 + $1.count }
         XCTAssertEqual(expectedWaveformDataCount, factualWaveformDataCount)
 
-        let nowPlayingAudioComponentDataSource = try XCTUnwrap(sut.audioCompoenntDataSources[nowPlayingComponentID])
+        let nowPlayingAudioComponentDataSource = try XCTUnwrap(sut.audioComponentDataSources[nowPlayingComponentID])
 
         XCTAssertEqual(expectedNowPlayingURL, nowPlayingAudioComponentDataSource.nowPlayingURL)
         XCTAssertEqual(expectedNextPlayingAudioTrackIndex, nowPlayingAudioComponentDataSource.nowPlayingAudioIndex)
@@ -700,7 +700,7 @@ final class MemoPageViewModelTests: XCTestCase, @preconcurrency FixtureProviding
         XCTAssertEqual(expectedComponentIndex, factualComponentIndex)
         XCTAssertEqual(expectedTrackIndex, factualTrackIndex)
 
-        let nowPlayingAudioComponentDataSource = try XCTUnwrap(sut.audioCompoenntDataSources[nowPlayComponentID])
+        let nowPlayingAudioComponentDataSource = try XCTUnwrap(sut.audioComponentDataSources[nowPlayComponentID])
 
         XCTAssertNil(sut.nowPlayingAudioComponentID)
         XCTAssertNil(nowPlayingAudioComponentDataSource.nowPlayingAudioIndex)
@@ -770,7 +770,7 @@ final class MemoPageViewModelTests: XCTestCase, @preconcurrency FixtureProviding
         XCTAssertEqual(expectedComponentIndex, factualComponentIndex)
         XCTAssertEqual(expectedTrackIndex, factualTrackIndex)
 
-        let nowPlayingAudioComponentDataSource = try XCTUnwrap(sut.audioCompoenntDataSources[nowPlayingComponentID])
+        let nowPlayingAudioComponentDataSource = try XCTUnwrap(sut.audioComponentDataSources[nowPlayingComponentID])
 
         XCTAssertNil(sut.nowPlayingAudioComponentID)
         XCTAssertNil(nowPlayingAudioComponentDataSource.nowPlayingAudioIndex)

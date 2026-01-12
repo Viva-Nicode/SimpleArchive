@@ -3,6 +3,7 @@ import Foundation
 
 @objc(AudioComponentEntity)
 public class AudioComponentEntity: MemoComponentEntity {
+    
     override func convertToModel() -> any PageComponent {
         let audioComponent = AudioComponent(
             id: self.id,
@@ -10,17 +11,18 @@ public class AudioComponentEntity: MemoComponentEntity {
             isMinimumHeight: self.isMinimumHeight,
             creationDate: self.creationDate,
             title: self.title,
-            contents: AudioComponentContents(entity: self))
+            contents: self.convertToContents()
+        )
 
         return audioComponent
     }
-    
+
     override func updatePageComponentEntityContents(
         in ctx: NSManagedObjectContext,
         componentModel: any PageComponent
     ) {
         if let audioComponent = componentModel as? AudioComponent,
-           let mostRecentAction = audioComponent.actions.last
+            let mostRecentAction = audioComponent.actions.last
         {
             switch mostRecentAction {
                 case .appendAudio(let appendedIndices, let tracks):
@@ -104,5 +106,26 @@ public class AudioComponentEntity: MemoComponentEntity {
                     self.sortBy = AudioTrackSortBy.manual.rawValue
             }
         }
+    }
+    
+    private func convertToContents() -> AudioComponentContents {
+        var contents = AudioComponentContents()
+        contents.sortBy = .init(rawValue: self.sortBy)!
+
+        let audioEntities = self.mutableOrderedSetValue(forKey: "audios")
+        let audioList = audioEntities.array as! [AudioComponentTrackEntity]
+
+        contents.tracks = audioList.map {
+            AudioTrack(
+                id: $0.id,
+                title: $0.title,
+                artist: $0.artist,
+                thumbnail: $0.thumbnail,
+                lyrics: $0.lyrics,
+                fileExtension: .init(rawValue: $0.fileExtension)!,
+                createData: $0.createData)
+        }
+
+        return contents
     }
 }

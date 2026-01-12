@@ -1,5 +1,10 @@
-import Foundation
 import CoreData
+import Foundation
+
+protocol StorageItemPersistenceCreatorType {
+    func persistDirectory(directory: MemoDirectoryModel)
+    func persistPage(page: MemoPageModel)
+}
 
 protocol StorageItem: AnyObject, Hashable, Identifiable {
     var id: UUID { get }
@@ -10,7 +15,7 @@ protocol StorageItem: AnyObject, Hashable, Identifiable {
     func getFileInformation() -> StorageItemInformationType
     func getFilePath() -> String
 
-    func store(in ctx: NSManagedObjectContext, parentDirectory: MemoDirectoryEntity?)
+    func persistToPersistentStorage(using persistence: StorageItemPersistenceCreatorType)
     func removeStorageItem()
 }
 
