@@ -7,14 +7,11 @@ class CoreDataStack: PersistentStore {
     private let container: NSPersistentContainer
     private let coredataTaskQueue = DispatchQueue(label: "coredata")
     private let queueKey = DispatchSpecificKey<String>()
-    private var updateContext: NSManagedObjectContext
+    private var updateContext: NSManagedObjectContext?
     public static let manager: CoreDataStack = .init()
 
     private init() {
         container = NSPersistentContainer(name: "SimpleArchive")
-
-        updateContext = container.newBackgroundContext()
-        updateContext.configureAsUpdateContext()
 
         if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil {
             let description = NSPersistentStoreDescription()
@@ -31,6 +28,10 @@ class CoreDataStack: PersistentStore {
                             isStoreLoaded?.send(completion: .failure(error))
                         } else {
                             container?.viewContext.configureAsReadOnlyContext()
+
+                            self.updateContext = container?.newBackgroundContext()
+                            self.updateContext?.configureAsUpdateContext()
+
                             isStoreLoaded?.send(true)
                         }
                     }
@@ -68,6 +69,7 @@ class CoreDataStack: PersistentStore {
         let update = Future<Result, Error> { [weak coredataTaskQueue, updateContext] promise in
             coredataTaskQueue?
                 .async {
+                    guard let updateContext else { return }
                     updateContext.performAndWait {
                         do {
                             let result: Result = try operation(updateContext)

@@ -44,6 +44,7 @@ final class AudioComponentView: PageComponentView<AudioComponentContentView, Aud
             dispatcher: MemoPageAudioComponentActionDispatcher(subject: subject),
             componentID: componentID
         )
+        componentContentView.audioTrackTableView.reloadData()
     }
 
     override func setMinimizeState(_ isMinimize: Bool) {

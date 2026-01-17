@@ -15,7 +15,9 @@ import UIKit
     private var audioTrackController: AudioTrackControllerType
     private var audioDownloader: AudioDownloaderType
     private var audioFileManager: AudioFileManagerType
-    private var audioContentTableDataSource: AudioComponentDataSource
+
+//    private var audioContentTableDataSource: AudioComponentDataSource
+    var audioContentsData: AudioContentsData
 
     init(
         coredataReposotory: MemoSingleComponentRepositoryType,
@@ -31,10 +33,7 @@ import UIKit
         self.audioDownloader = audioDownloader
         self.audioFileManager = audioFileManager
         self.audioTrackController = audioTrackController
-        self.audioContentTableDataSource = AudioComponentDataSource(
-            tracks: audioComponent.componentContents.tracks,
-            sortBy: audioComponent.componentContents.sortBy
-        )
+        self.audioContentsData = AudioContentsData(audioComponent: audioComponent)
 
         super.init()
 
@@ -237,14 +236,16 @@ import UIKit
 
         audioContentTableDataSource.isPlaying = true
         audioContentTableDataSource.nowPlayingAudioIndex = trackIndex
-        audioContentTableDataSource.nowPlayingURL = audioTrackController.audioTrackURL
         audioContentTableDataSource.audioVisualizerData = waveformData
-        audioContentTableDataSource.getProgress = { [weak self] in
-            guard let self else { return .zero }
-            return audioTrackController.currentTime! / audioTrackController.totalTime!
-        }
+
+        //        audioContentTableDataSource.getProgress = { [weak self] in
+        //            guard let self else { return .zero }
+        //            return audioTrackController.currentTime! / audioTrackController.totalTime!
+        //        }
 
         let audioTotalDuration = audioTrackController.totalTime
+        audioContentTableDataSource.totalTime = audioTotalDuration
+
         let audioMetadata = AudioTrackMetadata(
             title: audioTrack.title,
             artist: audioTrack.artist,
@@ -432,14 +433,15 @@ import UIKit
                     audioTrackController.play()
 
                     audioContentTableDataSource.nowPlayingAudioIndex = nextPlayingAudioTrackIndex
-                    audioContentTableDataSource.nowPlayingURL = audioTrackController.audioTrackURL
                     audioContentTableDataSource.audioVisualizerData = waveformData
-                    audioContentTableDataSource.getProgress = { [weak self] in
-                        guard let self else { return .zero }
-                        return audioTrackController.currentTime! / audioTrackController.totalTime!
-                    }
+                    //                    audioContentTableDataSource.getProgress = { [weak self] in
+                    //                        guard let self else { return .zero }
+                    //                        return audioTrackController.currentTime! / audioTrackController.totalTime!
+                    //                    }
 
                     let audioTotalDuration = audioTrackController.totalTime
+                    audioContentTableDataSource.totalTime = audioTotalDuration
+
                     let audioMetadata = AudioTrackMetadata(
                         title: nextPlayingAudioTrack.title,
                         artist: nextPlayingAudioTrack.artist,
@@ -504,10 +506,10 @@ import UIKit
 
     private func cleanDatasource() {
         audioContentTableDataSource.nowPlayingAudioIndex = nil
-        audioContentTableDataSource.nowPlayingURL = nil
         audioContentTableDataSource.isPlaying = nil
         audioContentTableDataSource.audioVisualizerData = nil
-        audioContentTableDataSource.getProgress = nil
+        //        audioContentTableDataSource.getProgress = nil
+        audioContentTableDataSource.totalTime = nil
     }
 
     @objc private func pauseAudioOnInterruption(_ notification: Notification) {

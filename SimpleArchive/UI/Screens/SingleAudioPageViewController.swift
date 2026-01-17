@@ -206,11 +206,7 @@ final class SingleAudioPageViewController: UIViewController, ViewControllerType 
 
         performWithAudioTrackRowAt(trackIndex) { row in
             if let audioWaveformData {
-                row.audioVisualizer.activateAudioVisualizer(
-                    samplesCount: audioWaveformData.sampleDataCount,
-                    scaledSamples: audioWaveformData.waveformData,
-                    sampleRate: audioWaveformData.sampleRate
-                )
+                row.audioVisualizer.activateAudioVisualizer(waveFormData: audioWaveformData)
             }
         }
         audioControlBar.state = .play(
@@ -285,11 +281,7 @@ final class SingleAudioPageViewController: UIViewController, ViewControllerType 
 
         performWithAudioTrackRowAt(nextPlayTrackIndex) { row in
             if let audioWaveformData {
-                row.audioVisualizer.activateAudioVisualizer(
-                    samplesCount: audioWaveformData.sampleDataCount,
-                    scaledSamples: audioWaveformData.waveformData,
-                    sampleRate: audioWaveformData.sampleRate
-                )
+                row.audioVisualizer.activateAudioVisualizer(waveFormData: audioWaveformData)
             }
         }
         audioControlBar.state = .play(

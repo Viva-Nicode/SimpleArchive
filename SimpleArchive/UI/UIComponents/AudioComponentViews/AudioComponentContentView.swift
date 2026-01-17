@@ -6,7 +6,7 @@ final class AudioComponentContentView: UIView, UIDocumentPickerDelegate {
 
     private var componentID: UUID!
     private var dispatcher: AudioComponentActionDispatcher?
-    private var cancels: AnyCancellable?
+    private var downloadAudioActionSubscription: AnyCancellable?
     private var thumbnameSubscription: AnyCancellable?
     private var editAudioTrackMetadataConfrimButtonSubscription: AnyCancellable?
     private(set) var audioDownloadStatePopupView: AudioDownloadStatePopupView?
@@ -119,13 +119,13 @@ final class AudioComponentContentView: UIView, UIDocumentPickerDelegate {
             UIAction { [weak self] _ in
                 guard let self else { return }
                 let popupView = AudioDownloadPopupView()
-                cancels = popupView
+                downloadAudioActionSubscription = popupView
                     .downloadButtonActionPublisher
                     .sink {
                         self.audioDownloadStatePopupView = AudioDownloadStatePopupView()
                         self.audioDownloadStatePopupView?.show()
                         self.dispatcher?.downloadMusics(componentID: self.componentID, with: $0)
-                        self.cancels = nil
+                        self.downloadAudioActionSubscription = nil
                     }
                 popupView.show()
             }, for: .touchUpInside)

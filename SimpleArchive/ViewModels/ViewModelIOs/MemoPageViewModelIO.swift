@@ -43,7 +43,7 @@ enum MemoPageViewInput {
 }
 
 enum MemoPageViewOutput {
-    case viewDidLoad(String)
+    case viewDidLoad(MemoPageModel, AudioContentsDataContainer)
 
     // MARK: - Common
     case didAppendComponentAt(Int)
@@ -66,10 +66,10 @@ enum MemoPageViewOutput {
 
     // MARK: - Audio
     case didAppendAudioTrackRows(Int, [Int])
-    case didPlayAudioTrack(Int?, Int, Int, TimeInterval?, AudioTrackMetadata, AudioWaveformData?)
+    case didPlayAudioTrack(UUID, Int, UUID, Int, TimeInterval?, AudioTrackMetadata, AudioWaveformData?)
     case didToggleAudioPlayingState(Int, Int, Bool)
     case didUpdateAudioDownloadProgress(Int, Float)
-    case didSeekAudioTrack(Int, Int, TimeInterval, TimeInterval?)
+    case didSeekAudioTrack(Int, Int, TimeInterval, TimeInterval)
     case didRemoveAudioTrack(Int, Int)
     case didRemoveAudioTrackAndPlayNextAudio(Int, Int, Int, TimeInterval?, AudioTrackMetadata, AudioWaveformData?)
     case didRemoveAudioTrackAndStopPlaying(Int, Int)

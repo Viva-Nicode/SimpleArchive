@@ -10,6 +10,7 @@ final class AudioVisualizerView: UIView {
     private var audioVisualizeTimer: Timer?
     private var viewHeight: CGFloat = 0
     private var barHeights: [[Float]] = []
+    
     private var totalFrames: Int = 0
     private var visualizerProgress = 0
     private var duration: TimeInterval = .zero
@@ -36,7 +37,7 @@ final class AudioVisualizerView: UIView {
 
     deinit { removeVisuzlization() }
 
-    func activateAudioVisualizer(samplesCount: Int, scaledSamples: [[Float]], sampleRate: Double) {
+    func activateAudioVisualizer(waveFormData: AudioWaveformData) {
         let visualizerSize = self.frame.size
         bars.forEach { self.addSubview($0) }
 
@@ -53,9 +54,9 @@ final class AudioVisualizerView: UIView {
             }
 
         startAnimatingBars(
-            barHeights: scaledSamples,
+            barHeights: waveFormData.waveformData,
             viewHeight: visualizerSize.height,
-            duration: Double(samplesCount) / sampleRate)
+            duration: Double(waveFormData.sampleDataCount) / waveFormData.sampleRate)
     }
 
     private func startAnimatingBars(barHeights: [[Float]], viewHeight: CGFloat, duration: TimeInterval) {
