@@ -27,19 +27,24 @@ final class AudioComponentDataSource: NSObject, UITableViewDataSource {
 
         audioTableRowView.configure(audioTrack: track)
 
-        if let activeTrackData = audioContentsData.activeAudioTrackData,
-            let totalTime = activeTrackData.totalTime,
-            let audioVisualizerData = activeTrackData.audioVisualizerData
-        {
-            let currentTime = CACurrentMediaTime()
-            let passedTime = currentTime - activeTrackData.startTime - activeTrackData.passedTime
-            let progressRatio = passedTime / totalTime
+        if audioContentsData.activeAudioTrackData?.nowPlayingAudioTrackID == track.id {
+            if let activeTrackData = audioContentsData.activeAudioTrackData,
+                let isPlaying = activeTrackData.isPlaying,
+                let totalTime = activeTrackData.totalTime,
+                let audioVisualizerData = activeTrackData.audioVisualizerData
+            {
+                print("track : \(track.title)")
 
-            DispatchQueue.main.async {
-                audioTableRowView.audioVisualizer.activateAudioVisualizer(waveFormData: audioVisualizerData)
-                audioTableRowView.audioVisualizer.seekVisuzlization(rate: progressRatio)
-                if activeTrackData.isPlaying == false {
-                    audioTableRowView.audioVisualizer.pauseVisuzlization()
+                let currentTime = CACurrentMediaTime()
+                let passedTime = currentTime - activeTrackData.startTime - activeTrackData.passedTime
+                let progressRatio = passedTime / totalTime
+
+                DispatchQueue.main.async {
+                    audioTableRowView.audioVisualizer.activateAudioVisualizer(waveFormData: audioVisualizerData)
+                    audioTableRowView.audioVisualizer.seekVisuzlization(rate: progressRatio)
+                    if !isPlaying {
+                        audioTableRowView.audioVisualizer.pauseVisuzlization()
+                    }
                 }
             }
         }

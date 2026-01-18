@@ -15,7 +15,7 @@ class MemoPageViewController: UIViewController, ViewControllerType {
     var pageComponentContentViewRect: CGRect?
     var selectedComponentIndexForMoveSnapshotView: Int?
 
-    var componentCollectionViewDataSource: MemoPageComponentCollectionViewDataSource?
+    private var componentCollectionViewDataSource: MemoPageComponentCollectionViewDataSource?
 
     private let backgroundView: UIStackView = {
         let backgroundView = UIStackView()
@@ -227,12 +227,9 @@ class MemoPageViewController: UIViewController, ViewControllerType {
                 case .didPresentInvalidDownloadCode(let componentIndex):
                     presentInvalidDownloadCodePopupView(componentIndex: componentIndex)
 
-                case let .didPlayAudioTrack(
-                    componentID, componentIndex, trackID, trackIndex, duration, metadata, waveformData):
+                case let .didPlayAudioTrack(componentIndex, trackIndex, duration, metadata, waveformData):
                     playAudioTrack(
-                        componentID: componentID,
                         componentIndex: componentIndex,
-                        trackID: trackID,
                         trackIndex: trackIndex,
                         duration: duration,
                         audioMetadata: metadata,
@@ -524,9 +521,7 @@ extension MemoPageViewController {
     }
 
     private func playAudioTrack(
-        componentID: UUID,
         componentIndex: Int,
-        trackID: UUID,
         trackIndex: Int,
         duration: TimeInterval?,
         audioMetadata: AudioTrackMetadata,

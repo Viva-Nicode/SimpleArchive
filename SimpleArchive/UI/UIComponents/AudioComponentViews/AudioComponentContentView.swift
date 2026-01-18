@@ -206,14 +206,12 @@ final class AudioComponentContentView: UIView, UIDocumentPickerDelegate {
 
     // Single 전용
     func configure(
-        trackCount: Int,
-        sortBy: AudioTrackSortBy,
         datasource: AudioComponentDataSource,
         dispatcher: AudioComponentActionDispatcher,
-        componentID: UUID
     ) {
+        let audioComponent = datasource.audioContentsData.audioComponent
         self.dispatcher = dispatcher
-        self.componentID = componentID
+        self.componentID = audioComponent.id
 
         self.audioTrackTableView.dataSource = datasource
         self.audioTrackTableView.delegate = self
@@ -221,10 +219,10 @@ final class AudioComponentContentView: UIView, UIDocumentPickerDelegate {
         self.audioTrackTableView.dropDelegate = self
         self.audioTrackTableView.isPrefetchingEnabled = false
 
-        self.audioTrackTotal = trackCount
+        self.audioTrackTotal = audioComponent.componentContents.tracks.count
         totalAudioCountLabel.text = "\(audioTrackTotal) audios in total"
 
-        switch sortBy {
+        switch audioComponent.componentContents.sortBy {
             case .name:
                 sortByNameButton.setTitleColor(.label, for: .normal)
 

@@ -26,13 +26,13 @@ final class AudioProgressBar: UIControl {
     let touchPadding: CGFloat = 13.0
     var minimumValue: TimeInterval = 0.0
     var maximumValue: TimeInterval = 1.0 {
-        didSet { updateProgressLayout() }
+        didSet { updateProgressBarWidth() }
     }
 
     private(set) var currentProgress: TimeInterval = 0.0 {
         didSet {
             currentProgress = min(max(currentProgress, minimumValue), maximumValue)
-            updateProgressLayout()
+            updateProgressBarWidth()
             updateCurrentTimeLabel?(currentProgress)
         }
     }
@@ -81,7 +81,7 @@ final class AudioProgressBar: UIControl {
         super.layoutSubviews()
 
         trackView.frame = bounds
-        updateProgressLayout()
+        updateProgressBarWidth()
     }
 
     override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
@@ -91,14 +91,13 @@ final class AudioProgressBar: UIControl {
 
     private func updateCurrentProgressWithTracking(from touch: UITouch) {
         let touchPoint = touch.location(in: self)
-        let ratio = touchPoint.x / bounds.width
+        let ratio = Double(touchPoint.x / bounds.width)
         let range = maximumValue - minimumValue
 
-        let newValue = minimumValue + (range * TimeInterval(ratio))
-        self.currentProgress = newValue
+        self.currentProgress = minimumValue + (range * ratio)
     }
 
-    private func updateProgressLayout() {
+    private func updateProgressBarWidth() {
         let totalWidth = bounds.width
         let range = maximumValue - minimumValue
         let progress = CGFloat((currentProgress - minimumValue) / range)

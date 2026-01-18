@@ -21,7 +21,7 @@ import UIKit
 
     private let captureDispatchSemaphore = DispatchSemaphore(value: 1)
 
-    var audioContentsDataContainer = AudioContentsDataContainer()
+    private var audioContentsDataContainer = AudioContentsDataContainer()
 
     init(
         componentFactory: any ComponentFactoryType,
@@ -621,9 +621,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
 
             output.send(
                 .didPlayAudioTrack(
-                    componentID,
                     componentIndex,
-                    audioTrack.id,
                     trackIndex,
                     audioTotalDuration,
                     audioMetadata,
@@ -745,6 +743,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
         if let audioContentsData = audioContentsDataContainer.activeAudioContentsData {
             audioTrackController.seek(interval: seek)
             audioContentsData.seek(seek: seek)
+            
             if let componentIndex = memoPage[audioContentsData.audioComponent.id]?.index {
                 let nowPlayingAudioTrackID = audioContentsData.activeAudioTrackData?.nowPlayingAudioTrackID
                 if let nowPlayingAudioTrackIndex =

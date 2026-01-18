@@ -35,7 +35,10 @@ final class AudioVisualizerView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    deinit { removeVisuzlization() }
+    deinit {
+        print("deinit AudioVisualizerView")
+        removeVisuzlization()
+    }
 
     func activateAudioVisualizer(waveFormData: AudioWaveformData) {
         let visualizerSize = self.frame.size

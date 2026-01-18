@@ -44,6 +44,7 @@ final class SingleAudioPageViewController: UIViewController, ViewControllerType 
     var subscriptions = Set<AnyCancellable>()
 
     private var audioControlBar = AudioControlBarView()
+    private var audioComponentDataSource: AudioComponentDataSource!
 
     override func viewDidLoad() {
         bind()
@@ -71,15 +72,14 @@ final class SingleAudioPageViewController: UIViewController, ViewControllerType 
             guard let self else { return }
 
             switch result {
-                case .viewDidLoad(let pageTitle, let audioComponent, let dataSource):
+                case .viewDidLoad(let pageTitle, let audioContentsData):
+                    audioComponentDataSource = AudioComponentDataSource(audioContentsData: audioContentsData)
                     setupUI(pageTitle: pageTitle)
                     setupConstraints()
                     audioComponentContentView.configure(
-                        trackCount: audioComponent.componentContents.tracks.count,
-                        sortBy: audioComponent.componentContents.sortBy,
-                        datasource: dataSource,
-                        dispatcher: SinglePageAudioComponentActionDispatcher(subject: input),
-                        componentID: audioComponent.id)
+                        datasource: audioComponentDataSource,
+                        dispatcher: SinglePageAudioComponentActionDispatcher(subject: input)
+                    )
 
                 case .didPresentInvalidDownloadCode:
                     audioComponentContentView

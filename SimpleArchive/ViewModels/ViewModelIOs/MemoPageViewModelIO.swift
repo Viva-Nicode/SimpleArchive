@@ -66,7 +66,7 @@ enum MemoPageViewOutput {
 
     // MARK: - Audio
     case didAppendAudioTrackRows(Int, [Int])
-    case didPlayAudioTrack(UUID, Int, UUID, Int, TimeInterval?, AudioTrackMetadata, AudioWaveformData?)
+    case didPlayAudioTrack(Int, Int, TimeInterval?, AudioTrackMetadata, AudioWaveformData?)
     case didToggleAudioPlayingState(Int, Int, Bool)
     case didUpdateAudioDownloadProgress(Int, Float)
     case didSeekAudioTrack(Int, Int, TimeInterval, TimeInterval)
