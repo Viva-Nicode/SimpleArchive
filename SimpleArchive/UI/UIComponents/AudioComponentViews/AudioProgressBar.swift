@@ -10,7 +10,7 @@ final class AudioProgressBar: UIControl {
         view.clipsToBounds = true
         return view
     }()
-    private let progressView: UIView = {
+    private let progressBar: UIView = {
         let view = UIView()
         view.backgroundColor = .systemOrange
         view.isUserInteractionEnabled = false
@@ -56,7 +56,7 @@ final class AudioProgressBar: UIControl {
         self.backgroundColor = .clear
 
         addSubview(trackView)
-        addSubview(progressView)
+        addSubview(progressBar)
     }
 
     func startProgress() {
@@ -73,9 +73,7 @@ final class AudioProgressBar: UIControl {
         displayLink = nil
     }
 
-    func setCurrentProgress(_ progress: TimeInterval) {
-        self.currentProgress = progress
-    }
+    func setCurrentProgress(_ progress: TimeInterval) { currentProgress = progress }
 
     override func layoutSubviews() {
         super.layoutSubviews()
@@ -92,18 +90,16 @@ final class AudioProgressBar: UIControl {
     private func updateCurrentProgressWithTracking(from touch: UITouch) {
         let touchPoint = touch.location(in: self)
         let ratio = Double(touchPoint.x / bounds.width)
-        let range = maximumValue - minimumValue
 
-        self.currentProgress = minimumValue + (range * ratio)
+        currentProgress = minimumValue + (maximumValue * ratio)
     }
 
     private func updateProgressBarWidth() {
         let totalWidth = bounds.width
-        let range = maximumValue - minimumValue
-        let progress = CGFloat((currentProgress - minimumValue) / range)
+        let progress = CGFloat(currentProgress / maximumValue)
         let currentWidth = totalWidth * progress
 
-        progressView.frame = CGRect(x: 0, y: 0, width: currentWidth, height: bounds.height)
+        progressBar.frame = CGRect(x: 0, y: 0, width: currentWidth, height: bounds.height)
     }
 
     override func beginTracking(_ touch: UITouch, with event: UIEvent?) -> Bool {
@@ -122,7 +118,6 @@ final class AudioProgressBar: UIControl {
     }
 
     @objc private func updatePlaybackProgress() {
-
         guard !isTracking else { return }
 
         let currentTime = CACurrentMediaTime()

@@ -140,10 +140,8 @@ import UIKit
                         let appendedIndices = audioComponent.addAudios(audiotracks: audioTracks)
 
                         audioComponent.actions.append(
-                            .appendAudio(appendedIndices: appendedIndices, tracks: audioTracks)
-                        )
+                            .appendAudio(appendedIndices: appendedIndices, tracks: audioTracks))
                         coredataReposotory.updateComponentContentChanges(modifiedComponent: audioComponent)
-
                         output.send(.didAppendAudioTrackRows(appendedIndices))
 
                     case .failure(let failure):
@@ -151,8 +149,10 @@ import UIKit
                             switch error {
                                 case .invalidCode:
                                     break
+
                                 case .unowned(let error):
                                     print(error.localizedDescription)
+
                                 case .fileManagingError(let error):
                                     print(error.localizedDescription)
 
@@ -199,15 +199,12 @@ import UIKit
 
         let appendedIndices = audioComponent.addAudios(audiotracks: audioTracks)
 
-        audioComponent.actions.append(
-            .appendAudio(appendedIndices: appendedIndices, tracks: audioTracks))
+        audioComponent.actions.append(.appendAudio(appendedIndices: appendedIndices, tracks: audioTracks))
         coredataReposotory.updateComponentContentChanges(modifiedComponent: audioComponent)
-
         output.send(.didAppendAudioTrackRows(appendedIndices))
     }
 
     private func playAudioTrack(trackIndex: Int) {
-
         let audioTrack = audioComponent.componentContents.tracks[trackIndex]
         let audioTrackURL = audioFileManager.createAudioFileURL(fileName: audioComponent.trackNames[trackIndex])
         let audioPCMData = audioFileManager.readAudioPCMData(audioURL: audioTrackURL)
@@ -282,9 +279,7 @@ import UIKit
         if let activeTrackIndex = audioComponent.componentContents.tracks.firstIndex(where: {
             $0.id == activeTrackID
         }) {
-            output.send(
-                .didToggleAudioPlayingState(isPlaying, activeTrackIndex)
-            )
+            output.send(.didToggleAudioPlayingState(isPlaying, activeTrackIndex))
         }
     }
 
@@ -298,11 +293,7 @@ import UIKit
             $0.id == activeTrackID
         }) {
             output.send(
-                .didSeekAudioTrack(
-                    seek,
-                    audioTrackController.totalTime,
-                    activeTrackIndex
-                )
+                .didSeekAudioTrack(seek, audioTrackController.totalTime, activeTrackIndex)
             )
         }
     }
@@ -486,7 +477,7 @@ import UIKit
                 if audioTrackController.isPlaying { toggleAudioPlayingState() }
 
             case .ended:
-                print("다시 재생해줘!!")
+                if !audioTrackController.isPlaying { toggleAudioPlayingState() }
 
             @unknown default:
                 print("unknown interrupt")

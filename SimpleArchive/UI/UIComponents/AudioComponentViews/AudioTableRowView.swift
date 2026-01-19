@@ -52,6 +52,7 @@ final class AudioTableRowView: UITableViewCell {
         titleLabel.text = nil
         artistLabel.text = nil
         thumbnailImageView.image = nil
+
         audioVisualizer.removeVisuzlization()
     }
 

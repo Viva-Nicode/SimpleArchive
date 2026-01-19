@@ -743,7 +743,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
         if let audioContentsData = audioContentsDataContainer.activeAudioContentsData {
             audioTrackController.seek(interval: seek)
             audioContentsData.seek(seek: seek)
-            
+
             if let componentIndex = memoPage[audioContentsData.audioComponent.id]?.index {
                 let nowPlayingAudioTrackID = audioContentsData.activeAudioTrackData?.nowPlayingAudioTrackID
                 if let nowPlayingAudioTrackIndex =
@@ -917,7 +917,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
                 if audioTrackController.isPlaying { toggleAudioPlayingState() }
 
             case .ended:
-                print("다시 재생해줘!!")
+                if !audioTrackController.isPlaying { toggleAudioPlayingState() }
 
             @unknown default:
                 print("unknown interrupt")

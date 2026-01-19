@@ -33,10 +33,8 @@ final class AudioComponentDataSource: NSObject, UITableViewDataSource {
                 let totalTime = activeTrackData.totalTime,
                 let audioVisualizerData = activeTrackData.audioVisualizerData
             {
-                print("track : \(track.title)")
-
-                let currentTime = CACurrentMediaTime()
-                let passedTime = currentTime - activeTrackData.startTime - activeTrackData.passedTime
+                let baseTime = activeTrackData.pauseTime ?? CACurrentMediaTime()
+                let passedTime = baseTime - activeTrackData.startTime - activeTrackData.passedTime
                 let progressRatio = passedTime / totalTime
 
                 DispatchQueue.main.async {

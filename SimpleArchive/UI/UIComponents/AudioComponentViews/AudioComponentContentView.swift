@@ -217,7 +217,6 @@ final class AudioComponentContentView: UIView, UIDocumentPickerDelegate {
         self.audioTrackTableView.delegate = self
         self.audioTrackTableView.dragDelegate = self
         self.audioTrackTableView.dropDelegate = self
-        self.audioTrackTableView.isPrefetchingEnabled = false
 
         self.audioTrackTotal = audioComponent.componentContents.tracks.count
         totalAudioCountLabel.text = "\(audioTrackTotal) audios in total"
@@ -299,7 +298,6 @@ extension AudioComponentContentView: UITableViewDelegate {
     )
         -> UISwipeActionsConfiguration?
     {
-
         let editAction = UIContextualAction(style: .normal, title: nil) { [weak self] _, _, completionHandler in
             guard let self = self else { return }
 
@@ -343,12 +341,6 @@ extension AudioComponentContentView: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         dispatcher?.playAudioTrack(componentID: componentID, with: indexPath.row)
-    }
-
-    func tableView(_ tableView: UITableView, didEndDisplaying cell: UITableViewCell, forRowAt indexPath: IndexPath) {
-        if let audioTableRow = cell as? AudioTableRowView {
-            audioTableRow.audioVisualizer.removeVisuzlization()
-        }
     }
 }
 

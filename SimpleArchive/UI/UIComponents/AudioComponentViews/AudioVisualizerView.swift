@@ -10,7 +10,7 @@ final class AudioVisualizerView: UIView {
     private var audioVisualizeTimer: Timer?
     private var viewHeight: CGFloat = 0
     private var barHeights: [[Float]] = []
-    
+
     private var totalFrames: Int = 0
     private var visualizerProgress = 0
     private var duration: TimeInterval = .zero
@@ -33,11 +33,6 @@ final class AudioVisualizerView: UIView {
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
-    }
-
-    deinit {
-        print("deinit AudioVisualizerView")
-        removeVisuzlization()
     }
 
     func activateAudioVisualizer(waveFormData: AudioWaveformData) {
