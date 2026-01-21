@@ -1,8 +1,21 @@
 import Foundation
 import QuartzCore
 
-final class AudioContentsDataContainer {
+protocol AudioContentsDataContainerType {
+    func getAudioContentsData(_ id: UUID) -> AudioContentsData?
+}
+
+final class AudioContentsDataContainer: AudioContentsDataContainerType {
+
     private var audioContentsDataTable: [UUID: AudioContentsData] = [:]
+
+    init(audioContentsDataTable: [UUID: AudioContentsData]) {
+        self.audioContentsDataTable = audioContentsDataTable
+    }
+
+    func getAudioContentsData(_ id: UUID) -> AudioContentsData? {
+        audioContentsDataTable[id]
+    }
 
     subscript(id: UUID) -> AudioContentsData? {
         get { audioContentsDataTable[id] }
@@ -18,7 +31,6 @@ final class AudioContentsDataContainer {
 }
 
 final class AudioContentsData {
-
     var audioComponent: AudioComponent
     var activeAudioTrackData: ActiveAudioTrackData?
 

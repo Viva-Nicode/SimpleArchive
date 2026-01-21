@@ -124,9 +124,9 @@ class MemoPageViewController: UIViewController, ViewControllerType {
                 case .viewDidLoad(let memoPageData, let audioContentsData):
                     let factory = PageComponentCollectionViewCellFactory(
                         collectionView: pageComponentCollectionView,
-                        input: input)
+                        input: input,
+                        audioContentsDataContainer: audioContentsData)
 
-                    factory.audioContentsDataContainer = audioContentsData
                     componentCollectionViewDataSource = MemoPageComponentCollectionViewDataSource(
                         pageComponentViewFactory: factory,
                         memoPage: memoPageData)

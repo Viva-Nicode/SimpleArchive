@@ -10,7 +10,7 @@ import UIKit
 
     private var output = PassthroughSubject<Output, Never>()
     private var subscriptions = Set<AnyCancellable>()
-    private(set) var memoPage: MemoPageModel!
+    private(set) var memoPage: MemoPageModel
 
     private var memoComponentCoredataReposotory: MemoComponentCoreDataRepositoryType
     private var componentFactory: any ComponentFactoryType
@@ -20,8 +20,7 @@ import UIKit
     private var audioFileManager: AudioFileManagerType
 
     private let captureDispatchSemaphore = DispatchSemaphore(value: 1)
-
-    private var audioContentsDataContainer = AudioContentsDataContainer()
+    private var audioContentsDataContainer: AudioContentsDataContainer
 
     init(
         componentFactory: any ComponentFactoryType,
@@ -37,6 +36,15 @@ import UIKit
         self.audioTrackController = audioTrackController
         self.audioDownloader = audioDownloader
         self.audioFileManager = audioFileManager
+
+        let audioContentsDatas = memoPage
+            .getComponents
+            .compactMap { $0 as? AudioComponent }
+            .map { AudioContentsData(audioComponent: $0) }
+            .map { ($0.audioComponent.id, $0) }
+
+        self.audioContentsDataContainer = AudioContentsDataContainer(
+            audioContentsDataTable: Dictionary(uniqueKeysWithValues: audioContentsDatas))
 
         super.init()
 
@@ -173,6 +181,10 @@ import UIKit
     private func createNewComponent(with: ComponentType) {
         componentFactory.setCreator(creator: with.getComponentCreator())
         let newComponent = componentFactory.createComponent()
+
+        if let audioComponent = newComponent as? AudioComponent {
+            audioContentsDataContainer[audioComponent.id] = AudioContentsData(audioComponent: audioComponent)
+        }
 
         memoPage.appendChildComponent(component: newComponent)
         memoComponentCoredataReposotory.createComponentEntity(parentPageID: memoPage.id, component: newComponent)
@@ -600,7 +612,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
             audioTrackController.play()
 
             let audioTotalDuration = audioTrackController.totalTime
-
+            
             if let nextAudioContentsData = audioContentsDataContainer[componentID] {
                 let activeAudioTrackData = ActiveAudioTrackData()
 

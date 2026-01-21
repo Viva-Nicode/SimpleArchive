@@ -43,7 +43,7 @@ enum MemoPageViewInput {
 }
 
 enum MemoPageViewOutput {
-    case viewDidLoad(MemoPageModel, AudioContentsDataContainer)
+    case viewDidLoad(MemoPageModel, AudioContentsDataContainerType)
 
     // MARK: - Common
     case didAppendComponentAt(Int)
