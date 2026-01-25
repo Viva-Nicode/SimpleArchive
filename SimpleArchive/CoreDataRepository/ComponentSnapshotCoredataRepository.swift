@@ -16,12 +16,12 @@ struct ComponentSnapshotCoreDataRepository: ComponentSnapshotCoreDataRepositoryT
         }
     }
 
-    func updateComponentContentChanges(modifiedComponent: any PageComponent) -> AnyPublisher<Void, any Error> {
+    func revertComponentContents(modifiedComponent: any PageComponent) -> AnyPublisher<Void, any Error> {
         coredataStack.update { ctx in
             let fetchRequest = MemoComponentEntity.findById(id: modifiedComponent.id)
             let componentEntity = try ctx.fetch(fetchRequest).first!
-
-            componentEntity.updatePageComponentEntityContents(in: ctx, componentModel: modifiedComponent)
+            
+            componentEntity.revertComponentEntityContents(componentModel: modifiedComponent)
         }
     }
 }

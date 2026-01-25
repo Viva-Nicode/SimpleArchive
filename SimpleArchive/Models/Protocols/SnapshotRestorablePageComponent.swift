@@ -13,19 +13,17 @@ protocol SnapshotRestorablePageComponent: PageComponent {
 
     @discardableResult
     func makeSnapshot(desc: String, saveMode: SnapshotSaveMode) -> SnapshotType
-    func revertToSnapshot(snapshotID: UUID) throws(ComponentSnapshotViewModelError)
-    func removeSnapshot(snapshotID: UUID) throws(ComponentSnapshotViewModelError)
-        -> (nextViewedSnapshotIndex: Int?, removedSnapshotIndex: Int)
+    func revertToSnapshot(snapshotID: UUID)
+    func removeSnapshot(at: UUID) -> RemoveSnapshotResult
+}
 
-    func getCollectionViewSnapShotCell(
-        _ collectionView: UICollectionView,
-        _ indexPath: IndexPath,
-        subject: PassthroughSubject<ComponentSnapshotViewModelInput, Never>
-    ) -> UICollectionViewCell
+struct RemoveSnapshotResult {
+    var removeSnapshotIndex: Int
+    var nextSnapshotID: UUID?
+    var nextSnapshotMetaData: SnapshotMetaData?
 }
 
 extension SnapshotRestorablePageComponent {
-
     func setCaptureState(to state: CaptureState) {
         self.captureState = state
     }

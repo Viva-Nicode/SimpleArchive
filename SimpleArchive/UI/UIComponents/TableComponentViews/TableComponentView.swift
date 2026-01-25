@@ -115,8 +115,6 @@ final class TableComponentView: PageComponentView<TableComponentContentView, Tab
     func configure(
         snapshotID: UUID,
         snapshotDetail: TableComponentContents,
-        title: String,
-        createDate: Date,
         input subject: PassthroughSubject<ComponentSnapshotViewModelInput, Never>
     ) {
         snapshotInputActionSubject = subject
@@ -126,14 +124,19 @@ final class TableComponentView: PageComponentView<TableComponentContentView, Tab
             columns: snapshotDetail.columns,
             rows: snapshotDetail.cellValues)
 
-        creationDateLabel.text = "created at \(createDate.formattedDate)"
-        titleLabel.text = title
+        componentInformationView.removeFromSuperview()
+
+        componentContentView.constraints
+            .filter { $0.firstAnchor == componentContentView.topAnchor }
+            .forEach { $0.isActive = false }
+        
+        componentContentView.topAnchor.constraint(equalTo: toolBarView.bottomAnchor).isActive = true
 
         subscriptions.removeAll()
 
         redCircleView.throttleUIViewTapGesturePublisher()
             .sink { _ in
-                self.snapshotInputActionSubject?.send(.removeSnapshot(snapshotID))
+                self.snapshotInputActionSubject?.send(.willRemoveSnapshot(snapshotID))
             }
             .store(in: &subscriptions)
 

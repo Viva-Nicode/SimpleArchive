@@ -40,6 +40,10 @@ enum MemoHomeViewOutput {
     case didSortDirectoryItems([(Int, Int)])
 }
 
+protocol MessageErrorType: Error {
+    var errorMessage: String { get }
+}
+
 enum MemoHomeViewModelError: MessageErrorType {
     case canNotLoadMemoData
 

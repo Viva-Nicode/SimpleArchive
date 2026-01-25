@@ -5,6 +5,11 @@ protocol ComponentSnapshotPersistenceCreatorType {
     func persistTableComponentSnapshot(snapshot: TableComponentSnapshot)
 }
 
+protocol PageComponentSnapshotViewFactoryType {
+    associatedtype ViewType
+    func makeComponentSnapshotView(from snapshot: any ComponentSnapshotType) -> ViewType
+}
+
 protocol ComponentSnapshotType: Codable {
     associatedtype ComponentType: PageComponent
 
@@ -15,7 +20,6 @@ protocol ComponentSnapshotType: Codable {
 
     func revert(component: ComponentType)
     func getSnapshotMetaData() -> SnapshotMetaData
-
     func persistToPersistentStorage(using persistence: ComponentSnapshotPersistenceCreatorType)
 }
 

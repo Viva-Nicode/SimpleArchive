@@ -111,6 +111,15 @@ public class TableComponentEntity: MemoComponentEntity {
         }
     }
 
+    override func revertComponentEntityContents(componentModel: any PageComponent) {
+        guard let tableComponent = componentModel as? TableComponent,
+            let context = self.managedObjectContext
+        else { return }
+        
+        
+
+    }
+
     private func convertToContentsModel() -> TableComponentContents {
         var contents = TableComponentContents()
         contents.sortBy = TableComponentContents.TableRowSortCriteria(rawValue: self.sortBy)!

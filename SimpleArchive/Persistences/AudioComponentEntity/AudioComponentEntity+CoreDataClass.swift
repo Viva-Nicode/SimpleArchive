@@ -3,7 +3,7 @@ import Foundation
 
 @objc(AudioComponentEntity)
 public class AudioComponentEntity: MemoComponentEntity {
-    
+
     override func convertToModel() -> any PageComponent {
         let audioComponent = AudioComponent(
             id: self.id,
@@ -107,7 +107,7 @@ public class AudioComponentEntity: MemoComponentEntity {
             }
         }
     }
-    
+
     private func convertToContents() -> AudioComponentContents {
         var contents = AudioComponentContents()
         contents.sortBy = .init(rawValue: self.sortBy)!
@@ -128,4 +128,8 @@ public class AudioComponentEntity: MemoComponentEntity {
 
         return contents
     }
+
+    override func removeSnapshot(ctx: NSManagedObjectContext, snapshotID: UUID) {}
+
+    override func revertComponentEntityContents(componentModel: any PageComponent) {}
 }

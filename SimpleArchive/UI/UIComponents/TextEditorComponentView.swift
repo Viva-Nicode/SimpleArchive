@@ -56,7 +56,7 @@ final class TextEditorComponentView: PageComponentView<UITextView, TextEditorCom
 
     override func setupUI() {
         componentContentView = UITextView(usingTextLayoutManager: false)
-        componentContentView.textContainerInset = .init(top: 0, left: 0, bottom: 0, right: 0)
+        componentContentView.textContainerInset = .init(top: 10, left: 0, bottom: 0, right: 0)
         componentContentView.autocorrectionType = .no
         componentContentView.spellCheckingType = .no
         componentContentView.autocapitalizationType = .none
@@ -133,15 +133,18 @@ final class TextEditorComponentView: PageComponentView<UITextView, TextEditorCom
     func configure(
         snapshotID: UUID,
         snapshotDetail: String,
-        title: String,
-        createDate: Date,
         input subject: PassthroughSubject<ComponentSnapshotViewModelInput, Never>
     ) {
         snapshotInputActionSubject = subject
+        
+        componentInformationView.removeFromSuperview()
 
-        creationDateLabel.text = "created at \(createDate.formattedDate)"
+        componentContentView.constraints
+            .filter { $0.firstAnchor == componentContentView.topAnchor }
+            .forEach { $0.isActive = false }
+        
+        componentContentView.topAnchor.constraint(equalTo: toolBarView.bottomAnchor).isActive = true
 
-        titleLabel.text = title
         componentContentView.text = snapshotDetail
 
         let minimizeRatio = (UIView.screenWidth - 80) / (UIView.screenWidth - 40)
@@ -150,7 +153,7 @@ final class TextEditorComponentView: PageComponentView<UITextView, TextEditorCom
         subscriptions.removeAll()
 
         redCircleView.throttleUIViewTapGesturePublisher()
-            .sink { _ in self.snapshotInputActionSubject?.send(.removeSnapshot(snapshotID)) }
+            .sink { _ in self.snapshotInputActionSubject?.send(.willRemoveSnapshot(snapshotID)) }
             .store(in: &subscriptions)
 
         yellowCircleView.backgroundColor = .systemGray5

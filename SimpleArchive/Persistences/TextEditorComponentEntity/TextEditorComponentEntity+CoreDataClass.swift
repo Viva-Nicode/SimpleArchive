@@ -35,4 +35,9 @@ public class TextEditorComponentEntity: MemoComponentEntity {
             self.contents = textEditorComponent.componentContents
         }
     }
+
+    override func revertComponentEntityContents(componentModel: any PageComponent) {
+        guard let textEditorComponent = componentModel as? TextEditorComponent else { return }
+        self.contents = textEditorComponent.componentContents
+    }
 }

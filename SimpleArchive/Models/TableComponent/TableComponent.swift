@@ -50,28 +50,23 @@ final class TableComponent: NSObject, Codable, SnapshotRestorablePageComponent {
         return snapshot
     }
 
-    func revertToSnapshot(snapshotID: UUID) throws(ComponentSnapshotViewModelError) {
+    func revertToSnapshot(snapshotID: UUID) {
         if let idx = snapshots.firstIndex(where: { $0.snapshotID == snapshotID }) {
             snapshots[idx].revert(component: self)
             setCaptureState(to: .captured)
-        } else {
-            throw .canNotFoundSnapshot(snapshotID)
         }
     }
 
-    func removeSnapshot(snapshotID: UUID) throws(ComponentSnapshotViewModelError)
-        -> (nextViewedSnapshotIndex: Int?, removedSnapshotIndex: Int)
-    {
-        guard let removedIndex = snapshots.firstIndex(where: { $0.snapshotID == snapshotID }) else {
-            throw ComponentSnapshotViewModelError.canNotFoundSnapshot(snapshotID)
-        }
-
-        snapshots.remove(at: removedIndex)
-        let nextSnapshotIndex = snapshots.indices.contains(removedIndex) ? removedIndex : snapshots.count - 1
-
-        return (
-            nextViewedSnapshotIndex: snapshots.isEmpty ? nil : nextSnapshotIndex,
-            removedSnapshotIndex: removedIndex
+    func removeSnapshot(at: UUID) -> RemoveSnapshotResult {
+        let index = snapshots.firstIndex(where: { $0.snapshotID == at })!
+        let nextSnapshotIndex = index + 1 <= snapshots.count - 1 ? index + 1 : index - 1
+        let nextSnapshot = nextSnapshotIndex < 0 ? nil : snapshots[nextSnapshotIndex]
+        let result = RemoveSnapshotResult(
+            removeSnapshotIndex: index,
+            nextSnapshotID: nextSnapshot?.snapshotID,
+            nextSnapshotMetaData: nextSnapshot?.getSnapshotMetaData()
         )
+        snapshots.remove(at: index)
+        return result
     }
 }
