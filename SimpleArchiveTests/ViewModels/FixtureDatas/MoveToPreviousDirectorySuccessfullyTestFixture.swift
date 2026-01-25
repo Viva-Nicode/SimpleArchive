@@ -5,7 +5,7 @@ import Foundation
 final class MoveToPreviousDirectorySuccessfullyTestFixture: TestFixtureType {
     typealias GivenFixtureDataType = [MemoDirectoryModel]
     typealias TestTargetInputType = UUID
-    typealias ExpectedOutputType = ([Int], SortCriterias, Int)
+    typealias ExpectedOutputType = ([Int], DirectoryContentsSortCriterias, Int)
 
     let testTargetName = "test_moveToPreviousDirectory_successfully()"
 
@@ -25,7 +25,7 @@ final class MoveToPreviousDirectorySuccessfullyTestFixture: TestFixtureType {
 
             case .testVerifyOutput:
                 provideState = .allDataConsumed
-                return ([2, 3], SortCriterias.creationDate, 1)
+                return ([2, 3], DirectoryContentsSortCriterias.creationDate, 1)
 
             default:
                 return ()

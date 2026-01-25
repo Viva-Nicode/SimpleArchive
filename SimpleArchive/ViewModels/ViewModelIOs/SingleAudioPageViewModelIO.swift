@@ -18,7 +18,7 @@ enum SingleAudioPageInput {
 }
 
 enum SingleAudioPageOutput {
-    case viewDidLoad(String, AudioComponent, AudioComponentDataSource)
+    case viewDidLoad(String, AudioContentsData)
     
     case didAppendAudioTrackRows([Int])
     case didPlayAudioTrack(Int, TimeInterval?, AudioTrackMetadata, AudioWaveformData?)

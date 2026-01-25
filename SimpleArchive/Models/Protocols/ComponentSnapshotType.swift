@@ -1,5 +1,15 @@
 import CoreData
 
+protocol ComponentSnapshotPersistenceCreatorType {
+    func persistTextEditorComponentSnapshot(snapshot: TextEditorComponentSnapshot)
+    func persistTableComponentSnapshot(snapshot: TableComponentSnapshot)
+}
+
+protocol PageComponentSnapshotViewFactoryType {
+    associatedtype ViewType
+    func makeComponentSnapshotView(from snapshot: any ComponentSnapshotType) -> ViewType
+}
+
 protocol ComponentSnapshotType: Codable {
     associatedtype ComponentType: PageComponent
 
@@ -10,7 +20,7 @@ protocol ComponentSnapshotType: Codable {
 
     func revert(component: ComponentType)
     func getSnapshotMetaData() -> SnapshotMetaData
-    func store(in ctx: NSManagedObjectContext, entity: MemoComponentEntity)
+    func persistToPersistentStorage(using persistence: ComponentSnapshotPersistenceCreatorType)
 }
 
 extension ComponentSnapshotType {

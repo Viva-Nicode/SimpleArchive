@@ -69,7 +69,8 @@ final class CaptureSnapshotWithAutoMaticSuccessfullyTestFixture: TestFixtureType
             ]
         )
 
-        output[tableComponent.id] = (4, tableComponentContents.jsonString)
+        output[tableComponent.id] = (4, "")
+
         testPage.appendChildComponent(component: tableComponent)
 
         let secondTextComponent = TextEditorComponent(

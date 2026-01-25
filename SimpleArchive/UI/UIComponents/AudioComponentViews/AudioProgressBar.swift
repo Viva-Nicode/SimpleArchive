@@ -10,7 +10,7 @@ final class AudioProgressBar: UIControl {
         view.clipsToBounds = true
         return view
     }()
-    private let progressView: UIView = {
+    private let progressBar: UIView = {
         let view = UIView()
         view.backgroundColor = .systemOrange
         view.isUserInteractionEnabled = false
@@ -26,13 +26,13 @@ final class AudioProgressBar: UIControl {
     let touchPadding: CGFloat = 13.0
     var minimumValue: TimeInterval = 0.0
     var maximumValue: TimeInterval = 1.0 {
-        didSet { updateProgressLayout() }
+        didSet { updateProgressBarWidth() }
     }
 
     private(set) var currentProgress: TimeInterval = 0.0 {
         didSet {
             currentProgress = min(max(currentProgress, minimumValue), maximumValue)
-            updateProgressLayout()
+            updateProgressBarWidth()
             updateCurrentTimeLabel?(currentProgress)
         }
     }
@@ -56,7 +56,7 @@ final class AudioProgressBar: UIControl {
         self.backgroundColor = .clear
 
         addSubview(trackView)
-        addSubview(progressView)
+        addSubview(progressBar)
     }
 
     func startProgress() {
@@ -73,15 +73,13 @@ final class AudioProgressBar: UIControl {
         displayLink = nil
     }
 
-    func setCurrentProgress(_ progress: TimeInterval) {
-        self.currentProgress = progress
-    }
+    func setCurrentProgress(_ progress: TimeInterval) { currentProgress = progress }
 
     override func layoutSubviews() {
         super.layoutSubviews()
 
         trackView.frame = bounds
-        updateProgressLayout()
+        updateProgressBarWidth()
     }
 
     override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
@@ -91,20 +89,17 @@ final class AudioProgressBar: UIControl {
 
     private func updateCurrentProgressWithTracking(from touch: UITouch) {
         let touchPoint = touch.location(in: self)
-        let ratio = touchPoint.x / bounds.width
-        let range = maximumValue - minimumValue
+        let ratio = Double(touchPoint.x / bounds.width)
 
-        let newValue = minimumValue + (range * TimeInterval(ratio))
-        self.currentProgress = newValue
+        currentProgress = minimumValue + (maximumValue * ratio)
     }
 
-    private func updateProgressLayout() {
+    private func updateProgressBarWidth() {
         let totalWidth = bounds.width
-        let range = maximumValue - minimumValue
-        let progress = CGFloat((currentProgress - minimumValue) / range)
+        let progress = CGFloat(currentProgress / maximumValue)
         let currentWidth = totalWidth * progress
 
-        progressView.frame = CGRect(x: 0, y: 0, width: currentWidth, height: bounds.height)
+        progressBar.frame = CGRect(x: 0, y: 0, width: currentWidth, height: bounds.height)
     }
 
     override func beginTracking(_ touch: UITouch, with event: UIEvent?) -> Bool {
@@ -123,7 +118,6 @@ final class AudioProgressBar: UIControl {
     }
 
     @objc private func updatePlaybackProgress() {
-
         guard !isTracking else { return }
 
         let currentTime = CACurrentMediaTime()

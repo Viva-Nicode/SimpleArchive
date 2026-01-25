@@ -6,8 +6,11 @@ class ComponentSnapshotViewController: UIViewController, ViewControllerType {
     var input = PassthroughSubject<ComponentSnapshotViewModelInput, Never>()
     var viewModel: ComponentSnapshotViewModel
     var subscriptions = Set<AnyCancellable>()
+
     private var hasRestore: Bool = false
     private var restoreSubject = PassthroughSubject<Bool, Never>()
+    private var datasource: ComponentSnapshotCollectionViewDataSource?
+    private var snapshotCollectionView: UICollectionView!
 
     private let backgroundView: UIStackView = {
         let backgroundView = UIStackView()
@@ -39,27 +42,7 @@ class ComponentSnapshotViewController: UIViewController, ViewControllerType {
         headerTitleLabel.translatesAutoresizingMaskIntoConstraints = false
         return headerTitleLabel
     }()
-    let collectionView: UICollectionView = {
-        let layout = UICollectionViewFlowLayout()
-        layout.scrollDirection = .horizontal
-        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
-        collectionView.isPagingEnabled = false
-        collectionView.decelerationRate = .fast
 
-        collectionView.register(
-            TextEditorComponentView.self,
-            forCellWithReuseIdentifier: TextEditorComponentView.identifierForUseCollectionView
-        )
-
-        collectionView.register(
-            TableComponentView.self,
-            forCellWithReuseIdentifier: TableComponentView.reuseTableComponentIdentifier
-        )
-
-        collectionView.isPrefetchingEnabled = false
-        collectionView.showsHorizontalScrollIndicator = false
-        return collectionView
-    }()
     private let snapshotMetadataStackView: UIStackView = {
         let snapshotMetadataStackView = UIStackView()
         snapshotMetadataStackView.axis = .vertical
@@ -194,7 +177,6 @@ class ComponentSnapshotViewController: UIViewController, ViewControllerType {
     override func viewDidLoad() {
         super.viewDidLoad()
         bind()
-        handleError()
         input.send(.viewDidLoad)
     }
 
@@ -217,61 +199,33 @@ class ComponentSnapshotViewController: UIViewController, ViewControllerType {
             guard let self else { return }
 
             switch result {
-                case .viewDidLoad(let mostRecentSnapshotMetadata):
-                    setupUI(mostRecentSnapshotMetadata)
+                case .viewDidLoad(let com):
+                    setupUI(component: com)
                     setupConstraints()
 
-                case .hasScrolled(let snapshotMetadata):
+                case .didUpdateSnapshotMetaData(let snapshotMetadata):
                     savingDateLabel.text = snapshotMetadata.makingDate
                     saveModeLabel.text = snapshotMetadata.savemode
                     snapshotDescriptionLabel.text = snapshotMetadata.snapshotDescription
 
-                case .didCompleteRestoreSnapshot:
+                case .didRestoreSnapshot:
                     hasRestore = true
                     navigationController?.popViewController(animated: true)
 
-                case .didCompleteRemoveSnapshot(
-                    let nextViewedSnapshotMetadata,
-                    let removedSnapshotIndex
-                ):
-                    collectionView.deleteItems(at: [
+                case let .didRemoveSnapshot(nextViewedSnapshotMetadata, removedSnapshotIndex):
+                    snapshotCollectionView.deleteItems(at: [
                         IndexPath(item: removedSnapshotIndex, section: 0)
                     ])
-                    if let nextViewedSnapshotMetadata {
-                        savingDateLabel.text = nextViewedSnapshotMetadata.makingDate
-                        saveModeLabel.text = nextViewedSnapshotMetadata.savemode
-                        snapshotDescriptionLabel.text = nextViewedSnapshotMetadata.snapshotDescription
-                    } else {
-                        savingDateLabel.text = ""
-                        saveModeLabel.text = ""
-                        snapshotDescriptionLabel.text = ""
-                        restoreButton.isEnabled = false
-                    }
+                    savingDateLabel.text = nextViewedSnapshotMetadata?.makingDate ?? ""
+                    saveModeLabel.text = nextViewedSnapshotMetadata?.savemode ?? ""
+                    snapshotDescriptionLabel.text = nextViewedSnapshotMetadata?.snapshotDescription ?? ""
+                    restoreButton.isEnabled = nextViewedSnapshotMetadata != nil
             }
         }
         .store(in: &subscriptions)
     }
 
-    func handleError() {
-        viewModel.errorSubscribe()
-            .sink { [weak self] errorCase in
-                guard let self else { return }
-                switch errorCase {
-                    case .unownedError:
-                        let errorPopupView = ErrorMessagePopupView(error: errorCase)
-                        errorPopupView.show()
-
-                    case .canNotFoundSnapshot(_):
-                        collectionView.reloadData()
-
-                    case .componentIDMismatchError:
-                        break
-                }
-            }
-            .store(in: &subscriptions)
-    }
-
-    func setupUI(_ mostRecentSnapshotMetadata: SnapshotMetaData?) {
+    private func setupUI(component: any SnapshotRestorablePageComponent) {
         view.backgroundColor = .systemBackground
         view.addSubview(backgroundView)
 
@@ -285,9 +239,38 @@ class ComponentSnapshotViewController: UIViewController, ViewControllerType {
 
         backButton.addAction(buttonAction, for: .touchUpInside)
 
-        backgroundView.addArrangedSubview(collectionView)
-        collectionView.delegate = viewModel
-        collectionView.dataSource = viewModel
+        let layout = UICollectionViewFlowLayout()
+        layout.scrollDirection = .horizontal
+        layout.itemSize = .init(width: view.bounds.width - 80, height: view.bounds.width - 80)
+        layout.sectionInset = .init(top: 20, left: 40, bottom: 0, right: 40)
+        layout.minimumLineSpacing = 20
+
+        snapshotCollectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        snapshotCollectionView.translatesAutoresizingMaskIntoConstraints = false
+        snapshotCollectionView.decelerationRate = .fast
+        snapshotCollectionView.showsHorizontalScrollIndicator = false
+
+        snapshotCollectionView.register(
+            TextEditorComponentView.self,
+            forCellWithReuseIdentifier: TextEditorComponentView.identifierForUseCollectionView
+        )
+
+        snapshotCollectionView.register(
+            TableComponentView.self,
+            forCellWithReuseIdentifier: TableComponentView.reuseTableComponentIdentifier
+        )
+
+        let factory = PageComponentSnapshotViewFactory(input: input)
+        factory.collectionView = snapshotCollectionView
+        datasource = ComponentSnapshotCollectionViewDataSource(
+            snapshotRestorableComponent: component, factory: factory)
+
+        snapshotCollectionView.dataSource = datasource
+        snapshotCollectionView.delegate = self
+
+        backgroundView.addArrangedSubview(snapshotCollectionView)
+
+        let mostRecentSnapshotMetadata = component.snapshots.first?.getSnapshotMetaData()
 
         savingDateLabel.text = mostRecentSnapshotMetadata?.makingDate ?? ""
         saveModeLabel.text = mostRecentSnapshotMetadata?.savemode ?? ""
@@ -312,39 +295,75 @@ class ComponentSnapshotViewController: UIViewController, ViewControllerType {
 
         let restoreAction = UIAction { [weak self] _ in
             guard let self else { return }
-            input.send(.restoreSnapshot)
+            input.send(.willRestoreSnapshot)
         }
         restoreButton.addAction(restoreAction, for: .touchUpInside)
 
         backgroundView.addArrangedSubview(restoreButtonStackView)
     }
 
-    func setupConstraints() {
-        backgroundView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor).isActive = true
-        backgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
-        backgroundView.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
-        backgroundView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20).isActive =
-            true
+    private func setupConstraints() {
+        NSLayoutConstraint.activate([
+            backgroundView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            backgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            backgroundView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            backgroundView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20),
 
-        headerView.heightAnchor.constraint(equalToConstant: 40).isActive = true
+            headerView.heightAnchor.constraint(equalToConstant: 40),
 
-        headerTitleLabel.centerXAnchor.constraint(equalTo: headerView.centerXAnchor).isActive = true
-        headerTitleLabel.centerYAnchor.constraint(equalTo: headerView.centerYAnchor).isActive = true
+            headerTitleLabel.centerXAnchor.constraint(equalTo: headerView.centerXAnchor),
+            headerTitleLabel.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
 
-        backButton.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 20).isActive = true
-        backButton.centerYAnchor.constraint(equalTo: headerView.centerYAnchor).isActive = true
+            backButton.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 20),
+            backButton.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
 
-        collectionView.leadingAnchor.constraint(equalTo: backgroundView.leadingAnchor).isActive = true
-        collectionView.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor).isActive = true
-        collectionView.heightAnchor.constraint(equalToConstant: UIView.screenWidth).isActive = true
+            snapshotCollectionView.leadingAnchor.constraint(equalTo: backgroundView.leadingAnchor),
+            snapshotCollectionView.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor),
+            snapshotCollectionView.heightAnchor.constraint(equalToConstant: UIView.screenWidth),
 
-        savingDateIconView.widthAnchor.constraint(equalToConstant: 30).isActive = true
-        savingDateIconView.heightAnchor.constraint(equalToConstant: 20).isActive = true
+            savingDateIconView.widthAnchor.constraint(equalToConstant: 30),
+            savingDateIconView.heightAnchor.constraint(equalToConstant: 20),
 
-        savingModeIconView.widthAnchor.constraint(equalToConstant: 30).isActive = true
-        savingModeIconView.heightAnchor.constraint(equalToConstant: 20).isActive = true
+            savingModeIconView.widthAnchor.constraint(equalToConstant: 30),
+            savingModeIconView.heightAnchor.constraint(equalToConstant: 20),
 
-        descriptionIconView.widthAnchor.constraint(equalToConstant: 30).isActive = true
-        descriptionIconView.heightAnchor.constraint(equalToConstant: 20).isActive = true
+            descriptionIconView.widthAnchor.constraint(equalToConstant: 30),
+            descriptionIconView.heightAnchor.constraint(equalToConstant: 20),
+        ])
+    }
+}
+
+extension ComponentSnapshotViewController: UICollectionViewDelegate {
+    func scrollViewWillEndDragging(
+        _ scrollView: UIScrollView,
+        withVelocity velocity: CGPoint,
+        targetContentOffset: UnsafeMutablePointer<CGPoint>
+    ) {
+        let cellWidthIncludingSpacing = UIView.screenWidth - 60
+
+        // targetContentOff을 이용하여 x좌표가 얼마나 이동했는지 확인
+        // 이동한 x좌표 값과 item의 크기를 비교하여 몇 페이징이 될 것인지 값 설정
+        var offset = targetContentOffset.pointee
+        let index = (offset.x + scrollView.contentInset.left) / cellWidthIncludingSpacing
+        var roundedIndex = round(index)
+
+        // scrollView, targetContentOffset의 좌표 값으로 스크롤 방향을 알 수 있다.
+        // index를 반올림하여 사용하면 item의 절반 사이즈만큼 스크롤을 해야 페이징이 된다.
+        // 스크로로 방향을 체크하여 올림,내림을 사용하면 좀 더 자연스러운 페이징 효과를 낼 수 있다.
+        if scrollView.contentOffset.x > targetContentOffset.pointee.x {
+            roundedIndex = floor(index)
+        } else if scrollView.contentOffset.x < targetContentOffset.pointee.x {
+            roundedIndex = ceil(index)
+        } else {
+            roundedIndex = round(index)
+        }
+
+        // 위 코드를 통해 페이징 될 좌표값을 targetContentOffset에 대입하면 된다.
+        offset = CGPoint(
+            x: roundedIndex * cellWidthIncludingSpacing - scrollView.contentInset.left,
+            y: -scrollView.contentInset.top)
+        targetContentOffset.pointee = offset
+
+        input.send(.willUpdateSnapshotMetaData(Int(roundedIndex)))
     }
 }

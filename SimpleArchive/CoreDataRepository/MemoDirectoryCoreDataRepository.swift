@@ -1,6 +1,5 @@
 import Combine
 import CoreData
-import Foundation
 
 struct MemoDirectoryCoreDataRepository: MemoDirectoryCoreDataRepositoryType {
 
@@ -33,7 +32,10 @@ struct MemoDirectoryCoreDataRepository: MemoDirectoryCoreDataRepositoryType {
                             parentDirectory: nil)
 
                         systemDirectoryCase.setId(systemDirectory.id)
-                        coredataStack.update { systemDirectory.store(in: $0, parentDirectory: nil) }
+                        coredataStack.update { ctx in
+                            let persistence = CoreDataStorageItemPersistenceCreator(context: ctx)
+                            systemDirectory.persistToPersistentStorage(using: persistence)
+                        }
 
                         return [systemDirectoryCase: systemDirectory as! MemoDirectoryModel]
                     }
@@ -50,7 +52,10 @@ struct MemoDirectoryCoreDataRepository: MemoDirectoryCoreDataRepositoryType {
         coredataStack.update { ctx in
             let fetchRequest = MemoDirectoryEntity.findDirectoryEntityById(id: storageItem.parentDirectory!.id)
             let parentDirectoryEntity = try ctx.fetch(fetchRequest).first
-            storageItem.store(in: ctx, parentDirectory: parentDirectoryEntity)
+            let persistence = CoreDataStorageItemPersistenceCreator(context: ctx)
+            
+            persistence.parentDirectoryEntity = parentDirectoryEntity
+            storageItem.persistToPersistentStorage(using: persistence)
         }
     }
 

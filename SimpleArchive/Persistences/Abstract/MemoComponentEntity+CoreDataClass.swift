@@ -15,4 +15,8 @@ public class MemoComponentEntity: NSManagedObject {
     func updatePageComponentEntityContents(in ctx: NSManagedObjectContext, componentModel: any PageComponent) {
         fatalError("Method is not overridden.")
     }
+
+    func revertComponentEntityContents(componentModel: any PageComponent) {
+        fatalError("Method is not overridden.")
+    }
 }

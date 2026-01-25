@@ -6,7 +6,7 @@ final class AudioComponentContentView: UIView, UIDocumentPickerDelegate {
 
     private var componentID: UUID!
     private var dispatcher: AudioComponentActionDispatcher?
-    private var cancels: AnyCancellable?
+    private var downloadAudioActionSubscription: AnyCancellable?
     private var thumbnameSubscription: AnyCancellable?
     private var editAudioTrackMetadataConfrimButtonSubscription: AnyCancellable?
     private(set) var audioDownloadStatePopupView: AudioDownloadStatePopupView?
@@ -119,13 +119,13 @@ final class AudioComponentContentView: UIView, UIDocumentPickerDelegate {
             UIAction { [weak self] _ in
                 guard let self else { return }
                 let popupView = AudioDownloadPopupView()
-                cancels = popupView
+                downloadAudioActionSubscription = popupView
                     .downloadButtonActionPublisher
                     .sink {
                         self.audioDownloadStatePopupView = AudioDownloadStatePopupView()
                         self.audioDownloadStatePopupView?.show()
                         self.dispatcher?.downloadMusics(componentID: self.componentID, with: $0)
-                        self.cancels = nil
+                        self.downloadAudioActionSubscription = nil
                     }
                 popupView.show()
             }, for: .touchUpInside)
@@ -206,25 +206,22 @@ final class AudioComponentContentView: UIView, UIDocumentPickerDelegate {
 
     // Single 전용
     func configure(
-        trackCount: Int,
-        sortBy: AudioTrackSortBy,
         datasource: AudioComponentDataSource,
         dispatcher: AudioComponentActionDispatcher,
-        componentID: UUID
     ) {
+        let audioComponent = datasource.audioContentsData.audioComponent
         self.dispatcher = dispatcher
-        self.componentID = componentID
+        self.componentID = audioComponent.id
 
         self.audioTrackTableView.dataSource = datasource
         self.audioTrackTableView.delegate = self
         self.audioTrackTableView.dragDelegate = self
         self.audioTrackTableView.dropDelegate = self
-        self.audioTrackTableView.isPrefetchingEnabled = false
 
-        self.audioTrackTotal = trackCount
+        self.audioTrackTotal = audioComponent.componentContents.tracks.count
         totalAudioCountLabel.text = "\(audioTrackTotal) audios in total"
 
-        switch sortBy {
+        switch audioComponent.componentContents.sortBy {
             case .name:
                 sortByNameButton.setTitleColor(.label, for: .normal)
 
@@ -301,7 +298,6 @@ extension AudioComponentContentView: UITableViewDelegate {
     )
         -> UISwipeActionsConfiguration?
     {
-
         let editAction = UIContextualAction(style: .normal, title: nil) { [weak self] _, _, completionHandler in
             guard let self = self else { return }
 
@@ -345,12 +341,6 @@ extension AudioComponentContentView: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         dispatcher?.playAudioTrack(componentID: componentID, with: indexPath.row)
-    }
-
-    func tableView(_ tableView: UITableView, didEndDisplaying cell: UITableViewCell, forRowAt indexPath: IndexPath) {
-        if let audioTableRow = cell as? AudioTableRowView {
-            audioTableRow.audioVisualizer.removeVisuzlization()
-        }
     }
 }
 

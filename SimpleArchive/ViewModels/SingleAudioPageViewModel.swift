@@ -9,13 +9,13 @@ import UIKit
     private var output = PassthroughSubject<SingleAudioPageOutput, Never>()
     private var subscriptions = Set<AnyCancellable>()
 
+    private let audioComponent: AudioComponent
     private var coredataReposotory: MemoSingleComponentRepositoryType
-    private var audioComponent: AudioComponent
     private var pageTitle: String
     private var audioTrackController: AudioTrackControllerType
     private var audioDownloader: AudioDownloaderType
     private var audioFileManager: AudioFileManagerType
-    private var audioContentTableDataSource: AudioComponentDataSource
+    private var audioContentsData: AudioContentsData
 
     init(
         coredataReposotory: MemoSingleComponentRepositoryType,
@@ -26,15 +26,12 @@ import UIKit
         pageTitle: String
     ) {
         self.coredataReposotory = coredataReposotory
-        self.audioComponent = audioComponent
         self.pageTitle = pageTitle
+        self.audioComponent = audioComponent
         self.audioDownloader = audioDownloader
         self.audioFileManager = audioFileManager
         self.audioTrackController = audioTrackController
-        self.audioContentTableDataSource = AudioComponentDataSource(
-            tracks: audioComponent.componentContents.tracks,
-            sortBy: audioComponent.componentContents.sortBy
-        )
+        self.audioContentsData = AudioContentsData(audioComponent: audioComponent)
 
         super.init()
 
@@ -51,10 +48,10 @@ import UIKit
     func subscribe(input: AnyPublisher<Input, Never>) -> AnyPublisher<Output, Never> {
         input.sink { [weak self] event in
             guard let self else { return }
-            switch event {
 
+            switch event {
                 case .viewDidLoad:
-                    output.send(.viewDidLoad(pageTitle, audioComponent, audioContentTableDataSource))
+                    output.send(.viewDidLoad(pageTitle, audioContentsData))
 
                 case .willDownloadMusicWithCode(let code):
                     downloadAudio(with: code)
@@ -96,9 +93,6 @@ import UIKit
     }
 
     private func downloadAudio(with code: String) {
-        let currentPlayingAudioTrackID = audioContentTableDataSource.nowPlayingAudioIndex
-            .flatMap { audioComponent.componentContents.tracks[$0].id }
-
         audioDownloader.handleDownloadedProgressPercent = { [weak self] progress in
             self?.output.send(.didUpdateAudioDownloadProgress(progress))
         }
@@ -145,16 +139,9 @@ import UIKit
                     case .success(let audioTracks):
                         let appendedIndices = audioComponent.addAudios(audiotracks: audioTracks)
 
-                        audioContentTableDataSource.tracks = audioComponent.componentContents.tracks
-                        audioContentTableDataSource.nowPlayingAudioIndex = audioComponent.componentContents.tracks
-                            .firstIndex {
-                                $0.id == currentPlayingAudioTrackID
-                            }
-
                         audioComponent.actions.append(
                             .appendAudio(appendedIndices: appendedIndices, tracks: audioTracks))
                         coredataReposotory.updateComponentContentChanges(modifiedComponent: audioComponent)
-
                         output.send(.didAppendAudioTrackRows(appendedIndices))
 
                     case .failure(let failure):
@@ -162,8 +149,10 @@ import UIKit
                             switch error {
                                 case .invalidCode:
                                     break
+
                                 case .unowned(let error):
                                     print(error.localizedDescription)
+
                                 case .fileManagingError(let error):
                                     print(error.localizedDescription)
 
@@ -208,24 +197,14 @@ import UIKit
             audioTracks.append(track)
         }
 
-        let currentPlayingAudioTrackID = audioContentTableDataSource.nowPlayingAudioIndex
-            .flatMap { audioComponent.componentContents.tracks[$0].id }
         let appendedIndices = audioComponent.addAudios(audiotracks: audioTracks)
 
-        audioContentTableDataSource.tracks = audioComponent.componentContents.tracks
-        audioContentTableDataSource.nowPlayingAudioIndex = audioComponent.componentContents.tracks.firstIndex {
-            $0.id == currentPlayingAudioTrackID
-        }
-
-        audioComponent.actions.append(
-            .appendAudio(appendedIndices: appendedIndices, tracks: audioTracks))
+        audioComponent.actions.append(.appendAudio(appendedIndices: appendedIndices, tracks: audioTracks))
         coredataReposotory.updateComponentContentChanges(modifiedComponent: audioComponent)
-
         output.send(.didAppendAudioTrackRows(appendedIndices))
     }
 
     private func playAudioTrack(trackIndex: Int) {
-
         let audioTrack = audioComponent.componentContents.tracks[trackIndex]
         let audioTrackURL = audioFileManager.createAudioFileURL(fileName: audioComponent.trackNames[trackIndex])
         let audioPCMData = audioFileManager.readAudioPCMData(audioURL: audioTrackURL)
@@ -235,16 +214,18 @@ import UIKit
         audioTrackController.player?.delegate = self
         audioTrackController.play()
 
-        audioContentTableDataSource.isPlaying = true
-        audioContentTableDataSource.nowPlayingAudioIndex = trackIndex
-        audioContentTableDataSource.nowPlayingURL = audioTrackController.audioTrackURL
-        audioContentTableDataSource.audioVisualizerData = waveformData
-        audioContentTableDataSource.getProgress = { [weak self] in
-            guard let self else { return .zero }
-            return audioTrackController.currentTime! / audioTrackController.totalTime!
-        }
+        audioContentsData.clean()
+
+        let activeTrackData = ActiveAudioTrackData()
+        activeTrackData.isPlaying = true
+        activeTrackData.nowPlayingAudioTrackID = audioTrack.id
+        activeTrackData.audioVisualizerData = waveformData
+        activeTrackData.startTime = CACurrentMediaTime()
 
         let audioTotalDuration = audioTrackController.totalTime
+        activeTrackData.totalTime = audioTotalDuration
+        audioContentsData.activeAudioTrackData = activeTrackData
+
         let audioMetadata = AudioTrackMetadata(
             title: audioTrack.title,
             artist: audioTrack.artist,
@@ -262,51 +243,66 @@ import UIKit
     }
 
     private func playNextAudioTrack() {
-        if var unwrappedCurrentPlayingTrackIndex = audioContentTableDataSource.nowPlayingAudioIndex {
-            unwrappedCurrentPlayingTrackIndex += 1
-            if audioComponent.componentContents.tracks.count <= unwrappedCurrentPlayingTrackIndex {
-                unwrappedCurrentPlayingTrackIndex = 0
+        if let activeTrackID = audioContentsData.activeAudioTrackData?.nowPlayingAudioTrackID {
+            if var nextTrackIndex = audioComponent.componentContents.tracks.firstIndex(where: { $0.id == activeTrackID }
+            ) {
+                nextTrackIndex += 1
+                if audioContentsData.audioComponent.componentContents.tracks.count <= nextTrackIndex {
+                    nextTrackIndex = 0
+                }
+                playAudioTrack(trackIndex: nextTrackIndex)
             }
-            playAudioTrack(trackIndex: unwrappedCurrentPlayingTrackIndex)
         }
     }
 
     private func playPreviousAudioTrack() {
-        if var unwrappedCurrentPlayingTrackIndex = audioContentTableDataSource.nowPlayingAudioIndex {
-            unwrappedCurrentPlayingTrackIndex -= 1
-            if 0 > unwrappedCurrentPlayingTrackIndex {
-                unwrappedCurrentPlayingTrackIndex = audioComponent.componentContents.tracks.count - 1
+        if let activeTrackID = audioContentsData.activeAudioTrackData?.nowPlayingAudioTrackID {
+            if var nextTrackIndex = audioComponent.componentContents.tracks.firstIndex(where: { $0.id == activeTrackID }
+            ) {
+                nextTrackIndex -= 1
+                if 0 > nextTrackIndex {
+                    nextTrackIndex = audioContentsData.audioComponent.componentContents.tracks.count - 1
+                }
+                playAudioTrack(trackIndex: nextTrackIndex)
             }
-            playAudioTrack(trackIndex: unwrappedCurrentPlayingTrackIndex)
         }
     }
 
     private func toggleAudioPlayingState() {
         audioTrackController.togglePlaying()
-
         let isPlaying = audioTrackController.isPlaying
-        audioContentTableDataSource.isPlaying = isPlaying
-        output.send(
-            .didToggleAudioPlayingState(isPlaying, audioContentTableDataSource.nowPlayingAudioIndex)
-        )
+        let activeTrackID = audioContentsData.activeAudioTrackData?.nowPlayingAudioTrackID
+
+        audioContentsData.activeAudioTrackData?.isPlaying = isPlaying
+        audioContentsData.activeAudioTrackData?.hasChangePlayingState()
+
+        if let activeTrackIndex = audioComponent.componentContents.tracks.firstIndex(where: {
+            $0.id == activeTrackID
+        }) {
+            output.send(.didToggleAudioPlayingState(isPlaying, activeTrackIndex))
+        }
     }
 
     private func seekAudioTrack(seek: TimeInterval) {
         audioTrackController.seek(interval: seek)
-        output.send(
-            .didSeekAudioTrack(
-                seek,
-                audioTrackController.totalTime,
-                audioContentTableDataSource.nowPlayingAudioIndex
+        audioContentsData.seek(seek: seek)
+
+        let activeTrackID = audioContentsData.activeAudioTrackData?.nowPlayingAudioTrackID
+
+        if let activeTrackIndex = audioComponent.componentContents.tracks.firstIndex(where: {
+            $0.id == activeTrackID
+        }) {
+            output.send(
+                .didSeekAudioTrack(seek, audioTrackController.totalTime, activeTrackIndex)
             )
-        )
+        }
     }
 
     private func applyAudioMetadataChanges(newMetadata: AudioTrackMetadata, trackIndex: Int) {
         let targetAudioTrackID = audioComponent.componentContents.tracks[trackIndex].id
-        let isEditCurrentlyPlayingAudio = audioContentTableDataSource.nowPlayingAudioIndex == trackIndex
-        let currentPlayingAudioTrackID = audioContentTableDataSource.nowPlayingAudioIndex
-            .flatMap { audioComponent.componentContents.tracks[$0].id }
+        let activeTrackID = audioContentsData.activeAudioTrackData?.nowPlayingAudioTrackID
+        let isEditCurrentlyPlayingAudio = targetAudioTrackID == activeTrackID
+
         var trackIndexAfterEdit: Int?
 
         if let newTitle = newMetadata.title {
@@ -328,17 +324,11 @@ import UIKit
 
         if audioComponent.componentContents.sortBy == .name {
             audioComponent.componentContents.tracks.sort(by: { $0.title < $1.title })
+
             trackIndexAfterEdit = audioComponent.componentContents.tracks.firstIndex(where: {
                 $0.id == targetAudioTrackID
             })
-            if let currentPlayingAudioTrackID {
-                audioContentTableDataSource.nowPlayingAudioIndex = audioComponent.componentContents.tracks.firstIndex {
-                    $0.id == currentPlayingAudioTrackID
-                }
-            }
         }
-
-        audioContentTableDataSource.tracks = audioComponent.componentContents.tracks
 
         output.send(
             .didApplyAudioMetadataChanges(
@@ -350,28 +340,16 @@ import UIKit
     }
 
     private func moveAudioTrackOrder(src: Int, des: Int) {
-        let currentPlayingAudioTrackID = audioContentTableDataSource.nowPlayingAudioIndex
-            .flatMap { audioComponent.componentContents.tracks[$0].id }
-
         audioComponent.componentContents.tracks.moveElement(src: src, des: des)
         audioComponent.componentContents.sortBy = .manual
 
-        audioContentTableDataSource.tracks = audioComponent.componentContents.tracks
-        audioContentTableDataSource.sortBy = .manual
-
         audioComponent.actions.append(.moveAudioOrder(src: src, des: des))
         coredataReposotory.updateComponentContentChanges(modifiedComponent: audioComponent)
-
-        audioContentTableDataSource.nowPlayingAudioIndex = audioComponent.componentContents.tracks.firstIndex {
-            $0.id == currentPlayingAudioTrackID
-        }
     }
 
     private func sortAudioTracks(sortBy: AudioTrackSortBy) {
         audioComponent.componentContents.sortBy = sortBy
 
-        let currentPlayingAudioTrackID = audioContentTableDataSource.nowPlayingAudioIndex
-            .flatMap { audioComponent.componentContents.tracks[$0].id }
         let before = audioComponent.trackNames
 
         switch sortBy {
@@ -388,37 +366,27 @@ import UIKit
         audioComponent.actions.append(.sortAudioTracks(sortBy: sortBy))
         coredataReposotory.updateComponentContentChanges(modifiedComponent: audioComponent)
 
-        audioContentTableDataSource.nowPlayingAudioIndex = audioComponent.componentContents.tracks.firstIndex {
-            $0.id == currentPlayingAudioTrackID
-        }
-
         let after = audioComponent.trackNames
-
-        audioContentTableDataSource.tracks = audioComponent.componentContents.tracks
-        audioContentTableDataSource.sortBy = sortBy
 
         output.send(.didSortAudioTracks(before, after))
     }
 
     private func removeAudioTrack(trackIndex: Int) {
-        let currentPlayingAudioTrackID = audioContentTableDataSource.nowPlayingAudioIndex
-            .flatMap { audioComponent.componentContents.tracks[$0].id }
         let removedAudioTrack = audioComponent.componentContents.tracks.remove(at: trackIndex)
 
         audioFileManager.removeAudio(with: removedAudioTrack)
-        audioContentTableDataSource.tracks = audioComponent.componentContents.tracks
         audioComponent.actions.append(.removeAudio(removedAudioID: removedAudioTrack.id))
         coredataReposotory.updateComponentContentChanges(modifiedComponent: audioComponent)
 
-        if audioContentTableDataSource.nowPlayingAudioIndex != nil {
+        if let activeAudioTrackData = audioContentsData.activeAudioTrackData {
             if audioComponent.componentContents.tracks.isEmpty {
                 audioTrackController.reset()
-                cleanDatasource()
+                audioContentsData.clean()
                 output.send(.didRemoveAudioTrackAndStopPlaying(trackIndex))
                 return
             }
 
-            if audioContentTableDataSource.nowPlayingAudioIndex == trackIndex {
+            if removedAudioTrack.id == activeAudioTrackData.nowPlayingAudioTrackID {
                 if audioTrackController.isPlaying == true {
                     let nextPlayingAudioTrackIndex = min(trackIndex, audioComponent.componentContents.tracks.count - 1)
                     let nextPlayingAudioTrack = audioComponent.componentContents.tracks[nextPlayingAudioTrackIndex]
@@ -431,15 +399,14 @@ import UIKit
                     audioTrackController.player?.delegate = self
                     audioTrackController.play()
 
-                    audioContentTableDataSource.nowPlayingAudioIndex = nextPlayingAudioTrackIndex
-                    audioContentTableDataSource.nowPlayingURL = audioTrackController.audioTrackURL
-                    audioContentTableDataSource.audioVisualizerData = waveformData
-                    audioContentTableDataSource.getProgress = { [weak self] in
-                        guard let self else { return .zero }
-                        return audioTrackController.currentTime! / audioTrackController.totalTime!
-                    }
-
                     let audioTotalDuration = audioTrackController.totalTime
+
+                    audioContentsData.activeAudioTrackData?.isPlaying = true
+                    audioContentsData.activeAudioTrackData?.nowPlayingAudioTrackID = nextPlayingAudioTrack.id
+                    audioContentsData.activeAudioTrackData?.audioVisualizerData = waveformData
+                    audioContentsData.activeAudioTrackData?.startTime = CACurrentMediaTime()
+                    audioContentsData.activeAudioTrackData?.totalTime = audioTotalDuration
+
                     let audioMetadata = AudioTrackMetadata(
                         title: nextPlayingAudioTrack.title,
                         artist: nextPlayingAudioTrack.artist,
@@ -458,13 +425,10 @@ import UIKit
                     )
                 } else {
                     audioTrackController.reset()
-                    cleanDatasource()
+                    audioContentsData.clean()
                     output.send(.didRemoveAudioTrackAndStopPlaying(trackIndex))
                 }
             } else {
-                audioContentTableDataSource.nowPlayingAudioIndex = audioComponent.componentContents.tracks.firstIndex {
-                    $0.id == currentPlayingAudioTrackID
-                }
                 output.send(.didRemoveAudioTrack(trackIndex))
             }
         } else {
@@ -502,14 +466,6 @@ import UIKit
             waveformData: scaledPCMData)
     }
 
-    private func cleanDatasource() {
-        audioContentTableDataSource.nowPlayingAudioIndex = nil
-        audioContentTableDataSource.nowPlayingURL = nil
-        audioContentTableDataSource.isPlaying = nil
-        audioContentTableDataSource.audioVisualizerData = nil
-        audioContentTableDataSource.getProgress = nil
-    }
-
     @objc private func pauseAudioOnInterruption(_ notification: Notification) {
         guard let userInfo = notification.userInfo,
             let typeValue = userInfo[AVAudioSessionInterruptionTypeKey] as? UInt,
@@ -518,16 +474,13 @@ import UIKit
 
         switch type {
             case .began:
-                if audioTrackController.isPlaying {
-                    audioTrackController.togglePlaying()
-                    audioContentTableDataSource.isPlaying = false
-                    output.send(
-                        .didToggleAudioPlayingState(false, audioContentTableDataSource.nowPlayingAudioIndex)
-                    )
-                }
+                if audioTrackController.isPlaying { toggleAudioPlayingState() }
 
-            default:
-                break
+            case .ended:
+                if !audioTrackController.isPlaying { toggleAudioPlayingState() }
+
+            @unknown default:
+                print("unknown interrupt")
         }
     }
 }

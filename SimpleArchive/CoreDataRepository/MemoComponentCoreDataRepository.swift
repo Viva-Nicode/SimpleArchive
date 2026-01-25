@@ -1,5 +1,6 @@
 import CSFBAudioEngine
 import Combine
+import CoreData
 import Foundation
 
 struct MemoComponentCoreDataRepository: MemoComponentCoreDataRepositoryType {
@@ -14,8 +15,9 @@ struct MemoComponentCoreDataRepository: MemoComponentCoreDataRepositoryType {
         coredataStack.update { ctx in
             let fetchRequest = MemoPageEntity.findPageById(id: parentPageID)
             let parentPageEntity = try ctx.fetch(fetchRequest).first!
+            let persistence = CoreDataPageComponentPersistenceCreator(context: ctx, parentPage: parentPageEntity)
 
-            component.storePageComponentEntity(in: ctx, parentPage: parentPageEntity)
+            component.persistToPersistentStorage(using: persistence)
         }
     }
 
@@ -69,10 +71,11 @@ struct MemoComponentCoreDataRepository: MemoComponentCoreDataRepositoryType {
                 let fetchRequest = MemoComponentEntity.findById(id: snapshotRestorableComponent.id)
                 let componentEntity = try ctx.fetch(fetchRequest).first!
                 let snapshot = snapshotRestorableComponent.makeSnapshot(desc: "", saveMode: .automatic)
+                let persistence = CoreDataComponentSnapshotPersistenceCreator(
+                    context: ctx, parentComponent: componentEntity)
 
-                snapshot.store(in: ctx, entity: componentEntity)
+                snapshot.persistToPersistentStorage(using: persistence)
                 snapshotRestorableComponent.setCaptureState(to: .captured)
-                print("\(componentEntity.title)가 켑쳐됨")
             }
         }
     }
@@ -86,10 +89,11 @@ struct MemoComponentCoreDataRepository: MemoComponentCoreDataRepositoryType {
             let fetchRequest = MemoComponentEntity.findById(id: snapshotRestorableComponent.id)
             let componentEntity = try ctx.fetch(fetchRequest).first!
             let snapshot = snapshotRestorableComponent.makeSnapshot(desc: snapShotDescription, saveMode: .manual)
+            let persistence = CoreDataComponentSnapshotPersistenceCreator(
+                context: ctx, parentComponent: componentEntity)
 
-            snapshot.store(in: ctx, entity: componentEntity)
+            snapshot.persistToPersistentStorage(using: persistence)
             snapshotRestorableComponent.setCaptureState(to: .captured)
-            print("\(componentEntity.title)가 켑쳐됨")
         }
     }
 }
