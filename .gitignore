@@ -1,7 +1,3 @@
-SimpleArchive.xcodeproj
-
-# Unit test plan 제외
-UnitTestPlan.xctestplan
 
 # Result bundle 제외
 resultBundle
