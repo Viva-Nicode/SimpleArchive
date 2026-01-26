@@ -1,7 +1,8 @@
-# Result bundle 제외
+ # Result bundle 제외
 resultBundle
 resultBundle.xcresult
 
+*.xcuserstate
 
 SimpleArchiveIcons/
 build/
