@@ -135,9 +135,7 @@ class MemoPageViewController: UIViewController, ViewControllerType {
                     setupConstraints()
 
                 case .didAppendComponentAt(let index):
-                    pageComponentCollectionView.insertItems(at: [IndexPath(item: index, section: 0)])
-                    pageComponentCollectionView.scrollToItem(
-                        at: IndexPath(item: index, section: 0), at: .top, animated: true)
+                    appendNewComponentView(index: index)
 
                 case .didRemoveComponentAt(let index):
                     pageComponentCollectionView.deleteItems(at: [IndexPath(item: index, section: 0)])
@@ -148,21 +146,8 @@ class MemoPageViewController: UIViewController, ViewControllerType {
                 case .didMaximizeComponent(let component, let index):
                     presentComponentFullScreen(with: component, index: index)
 
-                case .didNavigateSnapshotView(let vm, let itemIndex):
-                    let snapshotView = ComponentSnapshotViewController(viewModel: vm)
-
-                    snapshotView.hasRestorePublisher
-                        .sink { [weak self] _ in
-                            guard let self else { return }
-                            if let selectedComponentIndexForMoveSnapshotView {
-                                let indexPath = IndexPath(item: selectedComponentIndexForMoveSnapshotView, section: 0)
-                                pageComponentCollectionView.reloadItems(at: [indexPath])
-                            }
-                        }
-                        .store(in: &subscriptions)
-
-                    selectedComponentIndexForMoveSnapshotView = itemIndex
-                    navigationController?.pushViewController(snapshotView, animated: true)
+                case .didNavigateSnapshotView(let viewModel, let componentIndex):
+                    navigateComponentSnapshotView(viewModel: viewModel, componentIndex: componentIndex)
 
                 case .didCompleteComponentCapture(let componentIndex):
                     let indexPath = IndexPath(item: componentIndex, section: 0)
@@ -173,7 +158,6 @@ class MemoPageViewController: UIViewController, ViewControllerType {
                     }
 
                 // MARK: - Text
-
                 case .didUndoTextComponentContents(let componentIndex, let contents):
                     performWithComponentViewAt(componentIndex) {
                         (componentView: TextEditorComponentView, contentView) in
@@ -181,7 +165,6 @@ class MemoPageViewController: UIViewController, ViewControllerType {
                     }
 
                 // MARK: - Table
-
                 case .didAppendRowToTableView(let componentIndex, let row):
                     performWithComponentViewAt(componentIndex) { (_: TableComponentView, contentView) in
                         contentView.appendEmptyRowToStackView(rowID: row.id)
@@ -192,7 +175,7 @@ class MemoPageViewController: UIViewController, ViewControllerType {
                         contentView.appendEmptyColumnToStackView(column: column)
                     }
 
-                case let .didApplyTableCellValueChanges(componentIndex, rowIndex, colIndex, newCellValue):
+                case .didApplyTableCellValueChanges(let componentIndex, let rowIndex, let colIndex, let newCellValue):
                     performWithComponentViewAt(componentIndex) { (_: TableComponentView, contentView) in
                         contentView.updateUILabelText(rowIndex: rowIndex, cellIndex: colIndex, with: newCellValue)
                     }
@@ -220,14 +203,14 @@ class MemoPageViewController: UIViewController, ViewControllerType {
                     tableComponentColumnEditPopupView.show()
 
                 // MARK: - Audio
-
-                case let .didAppendAudioTrackRows(componentIndex, appendedTrackIndices):
+                case .didAppendAudioTrackRows(let componentIndex, let appendedTrackIndices):
                     appendNewAudioTracks(componentIndex: componentIndex, appendedTrackIndices: appendedTrackIndices)
 
                 case .didPresentInvalidDownloadCode(let componentIndex):
                     presentInvalidDownloadCodePopupView(componentIndex: componentIndex)
 
-                case let .didPlayAudioTrack(componentIndex, trackIndex, duration, metadata, waveformData):
+                case .didPlayAudioTrack(
+                    let componentIndex, let trackIndex, let duration, let metadata, let waveformData):
                     playAudioTrack(
                         componentIndex: componentIndex,
                         trackIndex: trackIndex,
@@ -235,8 +218,10 @@ class MemoPageViewController: UIViewController, ViewControllerType {
                         audioMetadata: metadata,
                         audioWaveformData: waveformData)
 
-                case let .didApplyAudioMetadataChanges(
-                    componentIndex, trackIndex, editedMetadata, isNowPlayingTrack, trackIndexAfterEdit):
+                case .didApplyAudioMetadataChanges(
+                    let
+                        componentIndex, let trackIndex, let editedMetadata, let isNowPlayingTrack,
+                    let trackIndexAfterEdit):
                     applyAudioTrackMetadataChanges(
                         componentIndex: componentIndex,
                         targetTrackIndex: trackIndex,
@@ -247,13 +232,13 @@ class MemoPageViewController: UIViewController, ViewControllerType {
                 case .didUpdateAudioDownloadProgress(let componentIndex, let progress):
                     updateAudioDownloadProgress(componentIndex: componentIndex, progress: progress)
 
-                case let .didToggleAudioPlayingState(componentIndex, trackIndex, isPlaying):
+                case .didToggleAudioPlayingState(let componentIndex, let trackIndex, let isPlaying):
                     setAudioPlayingState(
                         componentIndex: componentIndex,
                         trackIndex: trackIndex,
                         isPlaying: isPlaying)
 
-                case let .didSeekAudioTrack(componentIndex, trackIndex, seek, total):
+                case .didSeekAudioTrack(let componentIndex, let trackIndex, let seek, let total):
                     performWithComponentViewAt(componentIndex) { (_: AudioComponentView, contentView) in
                         let indexPath = IndexPath(row: trackIndex, section: 0)
                         if let row = contentView.audioTrackTableView.cellForRow(at: indexPath),
@@ -270,8 +255,10 @@ class MemoPageViewController: UIViewController, ViewControllerType {
                 case .didRemoveAudioTrack(let componentIndex, let trackIndex):
                     removeAudioTrack(componentIndex: componentIndex, trackIndex: trackIndex)
 
-                case let .didRemoveAudioTrackAndPlayNextAudio(
-                    componentIndex, trackIndex, nextIndex, duration, audioMetadata, waveformData):
+                case .didRemoveAudioTrackAndPlayNextAudio(
+                    let
+                        componentIndex, let trackIndex, let nextIndex, let duration, let audioMetadata, let waveformData
+                ):
                     removeAudioTrackAndPlayNextAudio(
                         componentIndex: componentIndex,
                         removeAudioRowIndex: trackIndex,
@@ -355,46 +342,10 @@ class MemoPageViewController: UIViewController, ViewControllerType {
         ])
     }
 
-    @objc private func keyboardWillChangeFrame(_ notification: Notification) {
-
-        guard
-            let textView = UIResponder.current as? UITextView,
-            textView.accessibilityIdentifier == "TextEditorComponentTextView"
-        else { return }
-
-        guard
-            let userInfo = notification.userInfo,
-            let endFrame = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect,
-            let duration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? TimeInterval,
-            let curveValue = userInfo[UIResponder.keyboardAnimationCurveUserInfoKey] as? UInt
-        else { return }
-
-        var targetIndexPath: IndexPath?
-
-        for item in 0..<pageComponentCollectionView.numberOfItems(inSection: .zero) {
-            let indexPath = IndexPath(item: item, section: .zero)
-            if let cell = pageComponentCollectionView.cellForItem(at: indexPath) as? TextEditorComponentView {
-                if cell.componentContentView == textView {
-                    targetIndexPath = indexPath
-                    break
-                }
-            }
-        }
-
-        let keyboardHeight = UIScreen.main.bounds.height - endFrame.origin.y
-        let options = UIView.AnimationOptions(rawValue: curveValue << 16)
-
-        UIView.animate(
-            withDuration: duration,
-            delay: 0,
-            options: options,
-            animations: {
-                self.pageComponentCollectionView.contentInset.bottom = keyboardHeight
-                if let targetIndexPath, keyboardHeight != .zero {
-                    self.pageComponentCollectionView.scrollToItem(at: targetIndexPath, at: .bottom, animated: true)
-                }
-            }
-        )
+    private func appendNewComponentView(index: Int) {
+        let indexPath = IndexPath(item: index, section: 0)
+        pageComponentCollectionView.insertItems(at: [indexPath])
+        pageComponentCollectionView.scrollToItem(at: indexPath, at: .top, animated: true)
     }
 
     private func updateComponentHeight(componentIndexMinimized: Int, isMinimize: Bool) {
@@ -420,6 +371,23 @@ class MemoPageViewController: UIViewController, ViewControllerType {
                 }
             }
         }
+    }
+
+    private func navigateComponentSnapshotView(viewModel: ComponentSnapshotViewModel, componentIndex: Int) {
+        let snapshotView = ComponentSnapshotViewController(viewModel: viewModel)
+
+        snapshotView.hasRestorePublisher
+            .sink { [weak self] _ in
+                guard let self else { return }
+                if let selectedComponentIndexForMoveSnapshotView {
+                    let indexPath = IndexPath(item: selectedComponentIndexForMoveSnapshotView, section: 0)
+                    pageComponentCollectionView.reloadItems(at: [indexPath])
+                }
+            }
+            .store(in: &subscriptions)
+
+        selectedComponentIndexForMoveSnapshotView = componentIndex
+        navigationController?.pushViewController(snapshotView, animated: true)
     }
 
     private func presentComponentFullScreen(with targetComponent: any PageComponent, index: Int) {
@@ -499,6 +467,47 @@ class MemoPageViewController: UIViewController, ViewControllerType {
         if let cell = pageComponentCollectionView.cellForItem(at: indexPath) as? ViewType {
             task(cell, cell.getContentView())
         }
+    }
+
+    @objc private func keyboardWillChangeFrame(_ notification: Notification) {
+        guard
+            let textView = UIResponder.current as? UITextView,
+            textView.accessibilityIdentifier == "TextEditorComponentTextView"
+        else { return }
+
+        guard
+            let userInfo = notification.userInfo,
+            let endFrame = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect,
+            let duration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? TimeInterval,
+            let curveValue = userInfo[UIResponder.keyboardAnimationCurveUserInfoKey] as? UInt
+        else { return }
+
+        var targetIndexPath: IndexPath?
+
+        for item in 0..<pageComponentCollectionView.numberOfItems(inSection: .zero) {
+            let indexPath = IndexPath(item: item, section: .zero)
+            if let cell = pageComponentCollectionView.cellForItem(at: indexPath) as? TextEditorComponentView {
+                if cell.componentContentView == textView {
+                    targetIndexPath = indexPath
+                    break
+                }
+            }
+        }
+
+        let keyboardHeight = UIScreen.main.bounds.height - endFrame.origin.y
+        let options = UIView.AnimationOptions(rawValue: curveValue << 16)
+
+        UIView.animate(
+            withDuration: duration,
+            delay: 0,
+            options: options,
+            animations: {
+                self.pageComponentCollectionView.contentInset.bottom = keyboardHeight
+                if let targetIndexPath, keyboardHeight != .zero {
+                    self.pageComponentCollectionView.scrollToItem(at: targetIndexPath, at: .bottom, animated: true)
+                }
+            }
+        )
     }
 }
 

@@ -14,7 +14,7 @@ protocol SnapshotRestorablePageComponent: PageComponent {
     @discardableResult
     func makeSnapshot(desc: String, saveMode: SnapshotSaveMode) -> SnapshotType
     func revertToSnapshot(snapshotID: UUID)
-    func removeSnapshot(at: UUID) -> RemoveSnapshotResult
+    func removeSnapshot(snapshotID: UUID) -> RemoveSnapshotResult
 }
 
 struct RemoveSnapshotResult {

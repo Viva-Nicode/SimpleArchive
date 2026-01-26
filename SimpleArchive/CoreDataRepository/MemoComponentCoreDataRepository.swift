@@ -59,7 +59,7 @@ struct MemoComponentCoreDataRepository: MemoComponentCoreDataRepositoryType {
             let fetchRequest = MemoComponentEntity.findById(id: modifiedComponent.id)
             let componentEntity = try ctx.fetch(fetchRequest).first!
 
-            componentEntity.updatePageComponentEntityContents(in: ctx, componentModel: modifiedComponent)
+            componentEntity.updatePageComponentEntityContents(componentModel: modifiedComponent)
         }
     }
 

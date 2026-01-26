@@ -20,29 +20,31 @@ public class TableComponentEntity: MemoComponentEntity {
         return tableComponent
     }
 
-    override func removeSnapshot(ctx: NSManagedObjectContext, snapshotID: UUID) {
-        if let removedSnapshotIndex = snapshots.firstIndex(where: { $0.snapshotID == snapshotID }) {
-            let removedSnapshot = snapshots.remove(at: removedSnapshotIndex)
-            ctx.delete(removedSnapshot)
-        }
+    override func removeSnapshot(snapshotID: UUID) {
+        guard
+            let context = managedObjectContext,
+            let removedSnapshotIndex = snapshots.firstIndex(where: { $0.snapshotID == snapshotID })
+        else { return }
+
+        let removedSnapshot = snapshots.remove(at: removedSnapshotIndex)
+        context.delete(removedSnapshot)
     }
 
-    override func updatePageComponentEntityContents(in ctx: NSManagedObjectContext, componentModel: any PageComponent) {
+    override func updatePageComponentEntityContents(componentModel: any PageComponent) {
         if let tableComponent = componentModel as? TableComponent,
-            let mostRecentAction = tableComponent.actions.last
+            let mostRecentAction = tableComponent.actions.last,
+            let context = managedObjectContext
         {
             switch mostRecentAction {
                 case .appendRow(let row):
-                    let rowEntity = TableComponentRowEntity(context: ctx)
+                    let rowEntity = TableComponentRowEntity(context: context)
                     rowEntity.id = row.id
                     rowEntity.createdAt = row.createdAt
                     rowEntity.modifiedAt = row.modifiedAt
                     rowEntity.tableComponent = self
 
-                    for case let columnEntity as TableComponentColumnEntity in self
-                        .columns
-                    {
-                        let cellEntity = TableComponentCellEntity(context: ctx)
+                    for case let columnEntity as TableComponentColumnEntity in self.columns {
+                        let cellEntity = TableComponentCellEntity(context: context)
                         cellEntity.value = ""
 
                         cellEntity.column = columnEntity
@@ -56,13 +58,13 @@ public class TableComponentEntity: MemoComponentEntity {
                     orderedRows.add(rowEntity)
 
                 case .appendColumn(let column):
-                    let columnEntity = TableComponentColumnEntity(context: ctx)
+                    let columnEntity = TableComponentColumnEntity(context: context)
                     columnEntity.id = column.id
                     columnEntity.title = column.title
                     columnEntity.tableComponent = self
 
                     for case let rowEntity as TableComponentRowEntity in self.rows {
-                        let cellEntity = TableComponentCellEntity(context: ctx)
+                        let cellEntity = TableComponentCellEntity(context: context)
                         cellEntity.value = ""
 
                         cellEntity.row = rowEntity
@@ -72,28 +74,19 @@ public class TableComponentEntity: MemoComponentEntity {
                         rowEntity.addToCells(cellEntity)
                     }
 
-                    let orderedColumns = self.mutableOrderedSetValue(
-                        forKey: "columns"
-                    )
+                    let orderedColumns = self.mutableOrderedSetValue(forKey: "columns")
                     orderedColumns.add(columnEntity)
 
                 case .removeRow(let rowID):
                     let fetchRequest = TableComponentRowEntity.findRowByID(rowID)
-                    if let rowEntity = try? ctx.fetch(fetchRequest).first {
-                        ctx.delete(rowEntity)
-                    }
+                    if let rowEntity = try? context.fetch(fetchRequest).first { context.delete(rowEntity) }
 
                 case .editColumn(let columns):
-                    let columnEntities = self.mutableOrderedSetValue(
-                        forKey: "columns"
-                    )
-                    var columnList =
-                        columnEntities.array as! [TableComponentColumnEntity]
+                    let columnEntities = self.mutableOrderedSetValue(forKey: "columns")
+                    var columnList = columnEntities.array as! [TableComponentColumnEntity]
 
                     for (index, column) in columns.enumerated() {
-                        if let fromIndex = columnList.firstIndex(where: {
-                            $0.id == column.id
-                        }) {
+                        if let fromIndex = columnList.firstIndex(where: { $0.id == column.id }) {
                             let fromIndexSet = IndexSet(integer: fromIndex)
 
                             columnEntities.moveObjects(at: fromIndexSet, to: index)
@@ -104,28 +97,68 @@ public class TableComponentEntity: MemoComponentEntity {
 
                     if columns.count < columnList.count {
                         for i in columns.count..<columnList.count {
-                            ctx.delete(columnList[i])
+                            context.delete(columnList[i])
                         }
                     }
 
                 case .editCellValue(let rowID, let columnID, let value):
-                    let fetchRequest = TableComponentCellEntity.findCellByID(
-                        rowID: rowID,
-                        colID: columnID
-                    )
-
-                    if let cellEntity = try? ctx.fetch(fetchRequest).first {
-                        cellEntity.value = value
-                    }
+                    let fetchRequest = TableComponentCellEntity.findCellByID(rowID: rowID, colID: columnID)
+                    if let cellEntity = try? context.fetch(fetchRequest).first { cellEntity.value = value }
             }
         }
     }
 
     override func revertComponentEntityContents(componentModel: any PageComponent) {
-        guard let tableComponent = componentModel as? TableComponent,
-            let context = self.managedObjectContext
+        guard
+            let tableComponent = componentModel as? TableComponent,
+            let context = managedObjectContext
         else { return }
 
+        for case let columnEntity as NSManagedObject in columns {
+            context.delete(columnEntity)
+        }
+        columns.removeAllObjects()
+
+        for case let rowEntity as NSManagedObject in rows {
+            context.delete(rowEntity)
+        }
+        rows.removeAllObjects()
+
+        let orderedColumns = mutableOrderedSetValue(forKey: "columns")
+
+        for col in tableComponent.componentContents.columns {
+            let colEntity = TableComponentColumnEntity(context: context)
+            colEntity.id = col.id
+            colEntity.title = col.title
+            colEntity.tableComponent = self
+
+            orderedColumns.add(colEntity)
+        }
+
+        let orderedRows = mutableOrderedSetValue(forKey: "rows")
+
+        for row in tableComponent.componentContents.rows {
+            let rowEntity = TableComponentRowEntity(context: context)
+            rowEntity.id = row.id
+            rowEntity.createdAt = row.createdAt
+            rowEntity.modifiedAt = row.modifiedAt
+            rowEntity.tableComponent = self
+
+            orderedRows.add(rowEntity)
+        }
+
+        for case let columnEntity as TableComponentColumnEntity in columns {
+            for case let rowEntity as TableComponentRowEntity in rows {
+                let cellEntity = TableComponentCellEntity(context: context)
+                cellEntity.value = tableComponent.componentContents.cells[rowEntity.id]?[columnEntity.id] ?? ""
+
+                cellEntity.row = rowEntity
+                cellEntity.column = columnEntity
+
+                rowEntity.addToCells(cellEntity)
+                columnEntity.addToCells(cellEntity)
+            }
+        }
     }
 
     private func convertToContentsModel() -> TableComponentContents {
@@ -134,8 +167,7 @@ public class TableComponentEntity: MemoComponentEntity {
 
         let columnEntities = columns.array as! [TableComponentColumnEntity]
 
-        contents.columns = columnEntities.compactMap {
-            colEntity -> TableComponentColumn in
+        contents.columns = columnEntities.compactMap { colEntity -> TableComponentColumn in
             let id = colEntity.id
             let title = colEntity.title
             return TableComponentColumn(id: id, title: title)
@@ -143,8 +175,7 @@ public class TableComponentEntity: MemoComponentEntity {
 
         let rowEntities = self.rows.array as! [TableComponentRowEntity]
 
-        contents.rows = rowEntities.compactMap {
-            rowEntity -> TableComponentRow in
+        contents.rows = rowEntities.compactMap { rowEntity -> TableComponentRow in
             let id = rowEntity.id
             var row = TableComponentRow(id: id)
             row.createdAt = rowEntity.createdAt
@@ -161,8 +192,7 @@ public class TableComponentEntity: MemoComponentEntity {
             for cellEntity in cellEntities {
                 if cellEntity.value.isEmpty { continue }
 
-                restoredCells[rowID, default: [:]][cellEntity.column.id] =
-                    cellEntity.value
+                restoredCells[rowID, default: [:]][cellEntity.column.id] = cellEntity.value
             }
         }
 

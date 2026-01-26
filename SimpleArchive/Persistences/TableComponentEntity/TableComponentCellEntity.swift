@@ -1,10 +1,8 @@
-import Foundation
 import CoreData
+import Foundation
 
 @objc(TableComponentCellEntity)
-public class TableComponentCellEntity: NSManagedObject {
-
-}
+public class TableComponentCellEntity: NSManagedObject {}
 
 extension TableComponentCellEntity {
 

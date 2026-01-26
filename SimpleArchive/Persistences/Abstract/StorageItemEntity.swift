@@ -8,7 +8,7 @@ public class StorageItemEntity: NSManagedObject {
         fatalError("Method is not overridden.")
     }
 
-    func moveToDormantBox(in ctx: NSManagedObjectContext, dormantBox: MemoDirectoryEntity) {
+    func moveToDormantBox(dormantBox: MemoDirectoryEntity) {
         fatalError("Method is not overridden.")
     }
 }

@@ -19,7 +19,7 @@ public class MemoPageEntity: StorageItemEntity {
         return page
     }
 
-    override func moveToDormantBox(in ctx: NSManagedObjectContext, dormantBox: MemoDirectoryEntity) {
+    override func moveToDormantBox(dormantBox: MemoDirectoryEntity) {
         components.forEach { $0.isMinimumHeight = false }
         self.containingDirectory.removeFromPages(self)
         dormantBox.addToPages(self)

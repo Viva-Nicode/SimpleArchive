@@ -1,16 +1,7 @@
 import Combine
 import UIKit
 
-class ComponentSnapshotViewController: UIViewController, ViewControllerType {
-
-    var input = PassthroughSubject<ComponentSnapshotViewModelInput, Never>()
-    var viewModel: ComponentSnapshotViewModel
-    var subscriptions = Set<AnyCancellable>()
-
-    private var hasRestore: Bool = false
-    private var restoreSubject = PassthroughSubject<Bool, Never>()
-    private var datasource: ComponentSnapshotCollectionViewDataSource?
-    private var snapshotCollectionView: UICollectionView!
+final class ComponentSnapshotViewController: UIViewController, ViewControllerType {
 
     private let backgroundView: UIStackView = {
         let backgroundView = UIStackView()
@@ -163,6 +154,15 @@ class ComponentSnapshotViewController: UIViewController, ViewControllerType {
         return UIButton(configuration: buttonConfiguration)
     }()
 
+    var input = PassthroughSubject<ComponentSnapshotViewModelInput, Never>()
+    var viewModel: ComponentSnapshotViewModel
+    var subscriptions = Set<AnyCancellable>()
+
+    private var hasRestore: Bool = false
+    private var restoreSubject = PassthroughSubject<Bool, Never>()
+    private var snapshotCollectionViewDataSource: ComponentSnapshotCollectionViewDataSource?
+    private var snapshotCollectionView: UICollectionView!
+
     init(viewModel: ComponentSnapshotViewModel) {
         self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
@@ -187,9 +187,7 @@ class ComponentSnapshotViewController: UIViewController, ViewControllerType {
     }
 
     var hasRestorePublisher: AnyPublisher<Bool, Never> {
-        restoreSubject
-            .filter { $0 }
-            .eraseToAnyPublisher()
+        restoreSubject.filter { $0 }.eraseToAnyPublisher()
     }
 
     func bind() {
@@ -199,8 +197,8 @@ class ComponentSnapshotViewController: UIViewController, ViewControllerType {
             guard let self else { return }
 
             switch result {
-                case .viewDidLoad(let com):
-                    setupUI(component: com)
+                case .viewDidLoad(let snapshotRestorableComponent):
+                    setupUI(component: snapshotRestorableComponent)
                     setupConstraints()
 
                 case .didUpdateSnapshotMetaData(let snapshotMetadata):
@@ -212,10 +210,9 @@ class ComponentSnapshotViewController: UIViewController, ViewControllerType {
                     hasRestore = true
                     navigationController?.popViewController(animated: true)
 
-                case let .didRemoveSnapshot(nextViewedSnapshotMetadata, removedSnapshotIndex):
-                    snapshotCollectionView.deleteItems(at: [
-                        IndexPath(item: removedSnapshotIndex, section: 0)
-                    ])
+                case .didRemoveSnapshot(let nextViewedSnapshotMetadata, let removedSnapshotIndex):
+                    let indexPath = IndexPath(item: removedSnapshotIndex, section: 0)
+                    snapshotCollectionView.deleteItems(at: [indexPath])
                     savingDateLabel.text = nextViewedSnapshotMetadata?.makingDate ?? ""
                     saveModeLabel.text = nextViewedSnapshotMetadata?.savemode ?? ""
                     snapshotDescriptionLabel.text = nextViewedSnapshotMetadata?.snapshotDescription ?? ""
@@ -254,7 +251,6 @@ class ComponentSnapshotViewController: UIViewController, ViewControllerType {
             TextEditorComponentView.self,
             forCellWithReuseIdentifier: TextEditorComponentView.identifierForUseCollectionView
         )
-
         snapshotCollectionView.register(
             TableComponentView.self,
             forCellWithReuseIdentifier: TableComponentView.reuseTableComponentIdentifier
@@ -262,10 +258,10 @@ class ComponentSnapshotViewController: UIViewController, ViewControllerType {
 
         let factory = PageComponentSnapshotViewFactory(input: input)
         factory.collectionView = snapshotCollectionView
-        datasource = ComponentSnapshotCollectionViewDataSource(
+        snapshotCollectionViewDataSource = ComponentSnapshotCollectionViewDataSource(
             snapshotRestorableComponent: component, factory: factory)
 
-        snapshotCollectionView.dataSource = datasource
+        snapshotCollectionView.dataSource = snapshotCollectionViewDataSource
         snapshotCollectionView.delegate = self
 
         backgroundView.addArrangedSubview(snapshotCollectionView)
@@ -297,8 +293,8 @@ class ComponentSnapshotViewController: UIViewController, ViewControllerType {
             guard let self else { return }
             input.send(.willRestoreSnapshot)
         }
-        restoreButton.addAction(restoreAction, for: .touchUpInside)
 
+        restoreButton.addAction(restoreAction, for: .touchUpInside)
         backgroundView.addArrangedSubview(restoreButtonStackView)
     }
 
@@ -340,16 +336,10 @@ extension ComponentSnapshotViewController: UICollectionViewDelegate {
         targetContentOffset: UnsafeMutablePointer<CGPoint>
     ) {
         let cellWidthIncludingSpacing = UIView.screenWidth - 60
-
-        // targetContentOff을 이용하여 x좌표가 얼마나 이동했는지 확인
-        // 이동한 x좌표 값과 item의 크기를 비교하여 몇 페이징이 될 것인지 값 설정
         var offset = targetContentOffset.pointee
         let index = (offset.x + scrollView.contentInset.left) / cellWidthIncludingSpacing
         var roundedIndex = round(index)
 
-        // scrollView, targetContentOffset의 좌표 값으로 스크롤 방향을 알 수 있다.
-        // index를 반올림하여 사용하면 item의 절반 사이즈만큼 스크롤을 해야 페이징이 된다.
-        // 스크로로 방향을 체크하여 올림,내림을 사용하면 좀 더 자연스러운 페이징 효과를 낼 수 있다.
         if scrollView.contentOffset.x > targetContentOffset.pointee.x {
             roundedIndex = floor(index)
         } else if scrollView.contentOffset.x < targetContentOffset.pointee.x {
@@ -358,7 +348,6 @@ extension ComponentSnapshotViewController: UICollectionViewDelegate {
             roundedIndex = round(index)
         }
 
-        // 위 코드를 통해 페이징 될 좌표값을 targetContentOffset에 대입하면 된다.
         offset = CGPoint(
             x: roundedIndex * cellWidthIncludingSpacing - scrollView.contentInset.left,
             y: -scrollView.contentInset.top)

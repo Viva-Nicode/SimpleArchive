@@ -1,7 +1,8 @@
 import Combine
 import UIKit
 
-@MainActor class ComponentSnapshotViewModel: NSObject, ViewModelType {
+@MainActor
+final class ComponentSnapshotViewModel: NSObject, ViewModelType {
 
     typealias Input = ComponentSnapshotViewModelInput
     typealias Output = ComponentSnapshotViewModelOutput
@@ -22,7 +23,7 @@ import UIKit
         self.currentViewedSnapshotID = snapshotRestorableComponent.snapshots.first?.snapshotID
     }
 
-    deinit { print("ComponentSnapshotViewModel deinit") }
+    deinit { print("deinit ComponentSnapshotViewModel") }
 
     @discardableResult
     func subscribe(input: AnyPublisher<Input, Never>) -> AnyPublisher<Output, Never> {
@@ -40,10 +41,7 @@ import UIKit
                     removeSnapshot(tappedSnapshotID)
 
                 case .willUpdateSnapshotMetaData(let index):
-                    let currentViewedSnapshot = snapshotRestorableComponent.snapshots[index]
-                    currentViewedSnapshotID = currentViewedSnapshot.snapshotID
-                    output.send(.didUpdateSnapshotMetaData(currentViewedSnapshot.getSnapshotMetaData()))
-
+                    updateSnapshotMetaDataWhenScrolled(snapshotViewIndex: index)
             }
         }
         .store(in: &subscriptions)
@@ -52,24 +50,29 @@ import UIKit
     }
 
     private func restoreSnapshot() {
-        if let currentViewedSnapshotID {
-            snapshotRestorableComponent.revertToSnapshot(snapshotID: currentViewedSnapshotID)
-            componentSnapshotCoreDataRepository.revertComponentContents(modifiedComponent: snapshotRestorableComponent)
-            output.send(.didRestoreSnapshot)
-        }
+        guard let currentViewedSnapshotID else { return }
+
+        snapshotRestorableComponent.revertToSnapshot(snapshotID: currentViewedSnapshotID)
+        componentSnapshotCoreDataRepository.revertComponentContents(modifiedComponent: snapshotRestorableComponent)
+        output.send(.didRestoreSnapshot)
     }
 
     private func removeSnapshot(_ tappedSnapshotID: UUID) {
         guard currentViewedSnapshotID == tappedSnapshotID else { return }
-        let removeResult = snapshotRestorableComponent.removeSnapshot(at: tappedSnapshotID)
+        let removeResult = snapshotRestorableComponent.removeSnapshot(snapshotID: tappedSnapshotID)
 
         componentSnapshotCoreDataRepository.removeSnapshot(
             componentID: snapshotRestorableComponent.id,
             snapshotID: tappedSnapshotID)
 
         currentViewedSnapshotID = removeResult.nextSnapshotID
-
         output.send(.didRemoveSnapshot(removeResult.nextSnapshotMetaData, removeResult.removeSnapshotIndex))
+    }
+
+    private func updateSnapshotMetaDataWhenScrolled(snapshotViewIndex: Int) {
+        let currentViewedSnapshot = snapshotRestorableComponent.snapshots[snapshotViewIndex]
+        currentViewedSnapshotID = currentViewedSnapshot.snapshotID
+        output.send(.didUpdateSnapshotMetaData(currentViewedSnapshot.getSnapshotMetaData()))
     }
 }
 

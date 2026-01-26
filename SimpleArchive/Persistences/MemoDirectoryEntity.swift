@@ -19,18 +19,19 @@ public class MemoDirectoryEntity: StorageItemEntity {
         return directory
     }
 
-    override func moveToDormantBox(in ctx: NSManagedObjectContext, dormantBox: MemoDirectoryEntity) {
+    override func moveToDormantBox(dormantBox: MemoDirectoryEntity) {
+        guard let context = managedObjectContext else { return }
 
-        for childDirectory in self.childDirectories {
-            childDirectory.moveToDormantBox(in: ctx, dormantBox: dormantBox)
+        for childDirectory in childDirectories {
+            childDirectory.moveToDormantBox(dormantBox: dormantBox)
         }
 
-        for childPage in self.pages {
-            childPage.moveToDormantBox(in: ctx, dormantBox: dormantBox)
+        for childPage in pages {
+            childPage.moveToDormantBox(dormantBox: dormantBox)
         }
 
-        self.parentDirectory?.removeFromChildDirectories(self)
-        ctx.delete(self)
+        parentDirectory?.removeFromChildDirectories(self)
+        context.delete(self)
     }
 }
 

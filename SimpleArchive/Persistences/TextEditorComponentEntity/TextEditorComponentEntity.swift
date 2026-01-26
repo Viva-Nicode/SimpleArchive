@@ -20,24 +20,27 @@ public class TextEditorComponentEntity: MemoComponentEntity {
         return textEditorComponent
     }
 
-    override func removeSnapshot(ctx: NSManagedObjectContext, snapshotID: UUID) {
-        if let removedSnapshotIndex = snapshots.firstIndex(where: { $0.snapshotID == snapshotID }) {
-            let removedSnapshot = snapshots.remove(at: removedSnapshotIndex)
-            ctx.delete(removedSnapshot)
-        }
+    override func removeSnapshot(snapshotID: UUID) {
+        guard
+            let context = managedObjectContext,
+            let removedSnapshotIndex = snapshots.firstIndex(where: { $0.snapshotID == snapshotID })
+        else { return }
+
+        let removedSnapshot = snapshots.remove(at: removedSnapshotIndex)
+        context.delete(removedSnapshot)
     }
 
-    override func updatePageComponentEntityContents(
-        in ctx: NSManagedObjectContext,
-        componentModel: any PageComponent
-    ) {
-        if let textEditorComponent = componentModel as? TextEditorComponent {
-            self.contents = textEditorComponent.componentContents
-        }
+    override func updatePageComponentEntityContents(componentModel: any PageComponent) {
+        guard
+            let textEditorComponent = componentModel as? TextEditorComponent
+        else { return }
+        self.contents = textEditorComponent.componentContents
     }
 
     override func revertComponentEntityContents(componentModel: any PageComponent) {
-        guard let textEditorComponent = componentModel as? TextEditorComponent else { return }
+        guard
+            let textEditorComponent = componentModel as? TextEditorComponent
+        else { return }
         self.contents = textEditorComponent.componentContents
     }
 }
