@@ -4,6 +4,7 @@ resultBundle
 resultBundle.xcresult
 
 *.xcuserstate
+.DS_Store
 
 SimpleArchiveIcons/
 build/
