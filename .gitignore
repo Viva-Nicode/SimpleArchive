@@ -2,6 +2,7 @@
 resultBundle
 resultBundle.xcresult
 
+*.xcuserstate
 
 SimpleArchiveIcons/
 build/
