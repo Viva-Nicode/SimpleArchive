@@ -1,5 +1,38 @@
-import Foundation
 import CoreData
+import Foundation
+
+@objc(MemoDirectoryEntity)
+public class MemoDirectoryEntity: StorageItemEntity {
+
+    @discardableResult
+    override func convertToModel(parentDirectory: MemoDirectoryModel? = nil) -> any StorageItem {
+        let directory = MemoDirectoryModel(
+            id: self.id,
+            creationDate: self.creationDate,
+            name: self.name,
+            sortBy: .init(rawValue: self.sortBy) ?? .name,
+            parentDirectory: parentDirectory)
+
+        self.childDirectories.forEach { $0.convertToModel(parentDirectory: directory) }
+        self.pages.forEach { $0.convertToModel(parentDirectory: directory) }
+
+        return directory
+    }
+
+    override func moveToDormantBox(in ctx: NSManagedObjectContext, dormantBox: MemoDirectoryEntity) {
+
+        for childDirectory in self.childDirectories {
+            childDirectory.moveToDormantBox(in: ctx, dormantBox: dormantBox)
+        }
+
+        for childPage in self.pages {
+            childPage.moveToDormantBox(in: ctx, dormantBox: dormantBox)
+        }
+
+        self.parentDirectory?.removeFromChildDirectories(self)
+        ctx.delete(self)
+    }
+}
 
 extension MemoDirectoryEntity {
 
@@ -11,7 +44,8 @@ extension MemoDirectoryEntity {
 
     @nonobjc public class func findDirectoryEntityById(id: UUID) -> NSFetchRequest<MemoDirectoryEntity> {
         let fetchRequest = NSFetchRequest<MemoDirectoryEntity>(entityName: "MemoDirectoryEntity")
-        let fetchPredicate = NSPredicate(format: "%K == %@", (\MemoDirectoryEntity.id)._kvcKeyPathString!, id as CVarArg)
+        let fetchPredicate = NSPredicate(
+            format: "%K == %@", (\MemoDirectoryEntity.id)._kvcKeyPathString!, id as CVarArg)
         fetchRequest.predicate = fetchPredicate
         fetchRequest.fetchLimit = 1
         return fetchRequest
@@ -21,10 +55,9 @@ extension MemoDirectoryEntity {
     @NSManaged public var childDirectories: Set<MemoDirectoryEntity>
     @NSManaged public var pages: Set<MemoPageEntity>
     @NSManaged public var parentDirectory: MemoDirectoryEntity?
-    
+
 }
 
-// MARK: Generated accessors for childDirectories
 extension MemoDirectoryEntity {
 
     @objc(addChildDirectoriesObject:)
@@ -41,7 +74,6 @@ extension MemoDirectoryEntity {
 
 }
 
-// MARK: Generated accessors for pages
 extension MemoDirectoryEntity {
 
     @objc(addPagesObject:)

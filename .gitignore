@@ -1,5 +1,3 @@
-
-
 # Result bundle 제외
 resultBundle
 resultBundle.xcresult
@@ -7,4 +5,3 @@ resultBundle.xcresult
 
 SimpleArchiveIcons/
 build/
-

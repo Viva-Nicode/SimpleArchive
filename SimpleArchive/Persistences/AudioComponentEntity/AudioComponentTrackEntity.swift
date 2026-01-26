@@ -1,13 +1,10 @@
-//
-//  AudioComponentTrackEntity+CoreDataProperties.swift
-//  SimpleArchive
-//
-//  Created by Nicode . on 12/11/25.
-//
-//
-
 import CoreData
 import Foundation
+
+@objc(AudioComponentTrackEntity)
+public class AudioComponentTrackEntity: NSManagedObject {
+
+}
 
 extension AudioComponentTrackEntity {
 

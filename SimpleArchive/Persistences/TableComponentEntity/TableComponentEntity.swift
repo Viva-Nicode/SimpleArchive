@@ -14,7 +14,8 @@ public class TableComponentEntity: MemoComponentEntity {
             captureState: .captured,
             componentSnapshots: self.snapshots
                 .map { $0.convertToModel() }
-                .sorted(by: { $0.makingDate > $1.makingDate }))
+                .sorted(by: { $0.makingDate > $1.makingDate })
+        )
 
         return tableComponent
     }
@@ -26,10 +27,7 @@ public class TableComponentEntity: MemoComponentEntity {
         }
     }
 
-    override func updatePageComponentEntityContents(
-        in ctx: NSManagedObjectContext,
-        componentModel: any PageComponent
-    ) {
+    override func updatePageComponentEntityContents(in ctx: NSManagedObjectContext, componentModel: any PageComponent) {
         if let tableComponent = componentModel as? TableComponent,
             let mostRecentAction = tableComponent.actions.last
         {
@@ -41,7 +39,9 @@ public class TableComponentEntity: MemoComponentEntity {
                     rowEntity.modifiedAt = row.modifiedAt
                     rowEntity.tableComponent = self
 
-                    for case let columnEntity as TableComponentColumnEntity in self.columns {
+                    for case let columnEntity as TableComponentColumnEntity in self
+                        .columns
+                    {
                         let cellEntity = TableComponentCellEntity(context: ctx)
                         cellEntity.value = ""
 
@@ -72,7 +72,9 @@ public class TableComponentEntity: MemoComponentEntity {
                         rowEntity.addToCells(cellEntity)
                     }
 
-                    let orderedColumns = self.mutableOrderedSetValue(forKey: "columns")
+                    let orderedColumns = self.mutableOrderedSetValue(
+                        forKey: "columns"
+                    )
                     orderedColumns.add(columnEntity)
 
                 case .removeRow(let rowID):
@@ -82,11 +84,16 @@ public class TableComponentEntity: MemoComponentEntity {
                     }
 
                 case .editColumn(let columns):
-                    let columnEntities = self.mutableOrderedSetValue(forKey: "columns")
-                    var columnList = columnEntities.array as! [TableComponentColumnEntity]
+                    let columnEntities = self.mutableOrderedSetValue(
+                        forKey: "columns"
+                    )
+                    var columnList =
+                        columnEntities.array as! [TableComponentColumnEntity]
 
                     for (index, column) in columns.enumerated() {
-                        if let fromIndex = columnList.firstIndex(where: { $0.id == column.id }) {
+                        if let fromIndex = columnList.firstIndex(where: {
+                            $0.id == column.id
+                        }) {
                             let fromIndexSet = IndexSet(integer: fromIndex)
 
                             columnEntities.moveObjects(at: fromIndexSet, to: index)
@@ -102,7 +109,10 @@ public class TableComponentEntity: MemoComponentEntity {
                     }
 
                 case .editCellValue(let rowID, let columnID, let value):
-                    let fetchRequest = TableComponentCellEntity.findCellByID(rowID: rowID, colID: columnID)
+                    let fetchRequest = TableComponentCellEntity.findCellByID(
+                        rowID: rowID,
+                        colID: columnID
+                    )
 
                     if let cellEntity = try? ctx.fetch(fetchRequest).first {
                         cellEntity.value = value
@@ -115,8 +125,6 @@ public class TableComponentEntity: MemoComponentEntity {
         guard let tableComponent = componentModel as? TableComponent,
             let context = self.managedObjectContext
         else { return }
-        
-        
 
     }
 
@@ -126,7 +134,8 @@ public class TableComponentEntity: MemoComponentEntity {
 
         let columnEntities = columns.array as! [TableComponentColumnEntity]
 
-        contents.columns = columnEntities.compactMap { colEntity -> TableComponentColumn in
+        contents.columns = columnEntities.compactMap {
+            colEntity -> TableComponentColumn in
             let id = colEntity.id
             let title = colEntity.title
             return TableComponentColumn(id: id, title: title)
@@ -134,7 +143,8 @@ public class TableComponentEntity: MemoComponentEntity {
 
         let rowEntities = self.rows.array as! [TableComponentRowEntity]
 
-        contents.rows = rowEntities.compactMap { rowEntity -> TableComponentRow in
+        contents.rows = rowEntities.compactMap {
+            rowEntity -> TableComponentRow in
             let id = rowEntity.id
             var row = TableComponentRow(id: id)
             row.createdAt = rowEntity.createdAt
@@ -151,11 +161,49 @@ public class TableComponentEntity: MemoComponentEntity {
             for cellEntity in cellEntities {
                 if cellEntity.value.isEmpty { continue }
 
-                restoredCells[rowID, default: [:]][cellEntity.column.id] = cellEntity.value
+                restoredCells[rowID, default: [:]][cellEntity.column.id] =
+                    cellEntity.value
             }
         }
 
         contents.cells = restoredCells
         return contents
     }
+}
+
+extension TableComponentEntity {
+
+    @nonobjc public class func fetchRequest() -> NSFetchRequest<TableComponentEntity> {
+        NSFetchRequest<TableComponentEntity>(entityName: "TableComponentEntity")
+    }
+
+    @nonobjc public class func findTableComponentEntityById(id: UUID) -> NSFetchRequest<TableComponentEntity> {
+        let fetchRequest = NSFetchRequest<TableComponentEntity>(entityName: "TableComponentEntity")
+        let fetchPredicate = NSPredicate(
+            format: "%K == %@", (\TableComponentEntity.id)._kvcKeyPathString!, id as CVarArg)
+        fetchRequest.predicate = fetchPredicate
+        fetchRequest.fetchLimit = 1
+        return fetchRequest
+    }
+
+    @NSManaged public var sortBy: String
+    @NSManaged public var columns: NSMutableOrderedSet
+    @NSManaged public var rows: NSMutableOrderedSet
+
+    @NSManaged public var snapshots: Set<TableComponentSnapshotEntity>
+}
+
+extension TableComponentEntity {
+
+    @objc(addSnapshotsObject:)
+    @NSManaged public func addToSnapshots(_ value: TableComponentSnapshotEntity)
+
+    @objc(removeSnapshotsObject:)
+    @NSManaged public func removeFromSnapshots(_ value: TableComponentSnapshotEntity)
+
+    @objc(addSnapshots:)
+    @NSManaged public func addToSnapshots(_ values: NSSet)
+
+    @objc(removeSnapshots:)
+    @NSManaged public func removeFromSnapshots(_ values: NSSet)
 }
