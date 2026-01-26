@@ -106,15 +106,15 @@ class CoreDataStack: PersistentStore {
         if let deletedObjects = userInfo[NSDeletedObjectsKey] as? Set<NSManagedObject> {
             for deletedObject in deletedObjects {
                 if let columnEntity = deletedObject as? TableComponentColumnEntity {
-                    print("columnEntity deleted : \(columnEntity.title)")
+                    print("deleted TableComponentColumnEntity : \(columnEntity.title)")
                 } else if deletedObject as? TableComponentRowEntity != nil {
-                    print("rowEntity deleted")
+                    print("deleted TableComponentRowEntity :")
                 } else if let cellEntity = deletedObject as? TableComponentCellEntity {
-                    print("cellEntity deleted :\(cellEntity.value)")
+                    print("deleted TableComponentCellEntity :\(cellEntity.value)")
                 } else if let audioEntity = deletedObject as? AudioComponentTrackEntity {
-                    print("TrackEntity deleted : \(audioEntity.title)")
+                    print("deleted AudioComponentTrackEntity : \(audioEntity.title)")
                 } else {
-                    AppDelegate.prettyPrint("deleted : \(type(of: deletedObject))")
+                    print("deleted : \(type(of: dump(deletedObject)))")
                 }
             }
         }
@@ -122,9 +122,17 @@ class CoreDataStack: PersistentStore {
         if let insertedObjects = userInfo[NSInsertedObjectsKey] as? Set<NSManagedObject> {
             for insertedObject in insertedObjects {
                 if let directoryEntity = insertedObject as? MemoDirectoryEntity {
-                    AppDelegate.prettyPrint("created Directory Entity : \(directoryEntity.name)")
+                    print("created MemoDirectoryEntity : \(directoryEntity.name)")
                 } else if let pageEntity = insertedObject as? MemoPageEntity {
-                    AppDelegate.prettyPrint("created Page Entity : \(pageEntity.name)")
+                    print("created MemoPageEntity : \(pageEntity.name)")
+                } else if let columnEntity = insertedObject as? TableComponentColumnEntity {
+                    print("created TableComponentColumnEntity : \(columnEntity.title)")
+                } else if insertedObject as? TableComponentRowEntity != nil {
+                    print("created TableComponentRowEntity :")
+                } else if let cellEntity = insertedObject as? TableComponentCellEntity {
+                    print("created TableComponentCellEntity :\(cellEntity.value)")
+                } else {
+                    print("created : \(type(of: dump(insertedObject)))")
                 }
             }
         }
@@ -132,7 +140,6 @@ class CoreDataStack: PersistentStore {
 }
 
 extension NSManagedObjectContext {
-
     func configureAsReadOnlyContext() {
         automaticallyMergesChangesFromParent = true
         mergePolicy = NSRollbackMergePolicy

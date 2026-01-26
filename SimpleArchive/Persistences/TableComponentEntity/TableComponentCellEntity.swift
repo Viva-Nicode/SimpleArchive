@@ -1,13 +1,8 @@
-//
-//  TableComponentCellEntity+CoreDataProperties.swift
-//  SimpleArchive
-//
-//  Created by Nicode . on 12/9/25.
-//
-//
-
 import CoreData
 import Foundation
+
+@objc(TableComponentCellEntity)
+public class TableComponentCellEntity: NSManagedObject {}
 
 extension TableComponentCellEntity {
 

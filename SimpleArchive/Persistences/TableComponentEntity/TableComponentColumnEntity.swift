@@ -1,21 +1,17 @@
-//
-//  TableComponentColumnEntity+CoreDataProperties.swift
-//  SimpleArchive
-//
-//  Created by Nicode . on 12/9/25.
-//
-//
-
-import Foundation
 import CoreData
+import Foundation
 
+@objc(TableComponentColumnEntity)
+public class TableComponentColumnEntity: NSManagedObject {
+
+}
 
 extension TableComponentColumnEntity {
 
     @nonobjc public class func fetchRequest() -> NSFetchRequest<TableComponentColumnEntity> {
         return NSFetchRequest<TableComponentColumnEntity>(entityName: "TableComponentColumnEntity")
     }
-    
+
     @nonobjc public class func findColumnByID(_ id: UUID) -> NSFetchRequest<TableComponentColumnEntity> {
         let request = NSFetchRequest<TableComponentColumnEntity>(entityName: "TableComponentColumnEntity")
         request.predicate = NSPredicate(
@@ -27,7 +23,6 @@ extension TableComponentColumnEntity {
         return request
     }
 
-
     @NSManaged public var id: UUID
     @NSManaged public var title: String
     @NSManaged public var tableComponent: TableComponentEntity
@@ -35,7 +30,6 @@ extension TableComponentColumnEntity {
 
 }
 
-// MARK: Generated accessors for cells
 extension TableComponentColumnEntity {
 
     @objc(addCellsObject:)
@@ -52,6 +46,6 @@ extension TableComponentColumnEntity {
 
 }
 
-extension TableComponentColumnEntity : Identifiable {
+extension TableComponentColumnEntity: Identifiable {
 
 }

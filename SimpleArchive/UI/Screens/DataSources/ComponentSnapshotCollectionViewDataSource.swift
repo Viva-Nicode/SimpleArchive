@@ -21,6 +21,7 @@ final class ComponentSnapshotCollectionViewDataSource: NSObject, UICollectionVie
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell
     {
         factory.indexPath = indexPath
-        return factory.makeComponentSnapshotView(from: snapshotRestorableComponent.snapshots[indexPath.item])
+        let snapshot = snapshotRestorableComponent.snapshots[indexPath.item]
+        return factory.makeComponentSnapshotView(from: snapshot)
     }
 }

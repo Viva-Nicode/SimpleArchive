@@ -53,7 +53,7 @@ struct MemoDirectoryCoreDataRepository: MemoDirectoryCoreDataRepositoryType {
             let fetchRequest = MemoDirectoryEntity.findDirectoryEntityById(id: storageItem.parentDirectory!.id)
             let parentDirectoryEntity = try ctx.fetch(fetchRequest).first
             let persistence = CoreDataStorageItemPersistenceCreator(context: ctx)
-            
+
             persistence.parentDirectoryEntity = parentDirectoryEntity
             storageItem.persistToPersistentStorage(using: persistence)
         }
@@ -61,7 +61,6 @@ struct MemoDirectoryCoreDataRepository: MemoDirectoryCoreDataRepositoryType {
 
     func moveFileToDormantBox(fileID: UUID) -> AnyPublisher<Void, Error> {
         coredataStack.update { ctx in
-
             let dormantBoxID = SystemDirectories.dormantBoxDirectory.getId()!
 
             let fetchDormantBoxRequest = MemoDirectoryEntity.findDirectoryEntityById(id: dormantBoxID)
@@ -70,7 +69,7 @@ struct MemoDirectoryCoreDataRepository: MemoDirectoryCoreDataRepositoryType {
             let fetchRequest = StorageItemEntity.findById(id: fileID)
             let fetchResult = try ctx.fetch(fetchRequest).first!
 
-            fetchResult.moveToDormantBox(in: ctx, dormantBox: dormantBoxEntity)
+            fetchResult.moveToDormantBox(dormantBox: dormantBoxEntity)
         }
     }
 

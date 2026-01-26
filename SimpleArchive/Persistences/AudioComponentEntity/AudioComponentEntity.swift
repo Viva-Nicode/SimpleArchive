@@ -17,19 +17,17 @@ public class AudioComponentEntity: MemoComponentEntity {
         return audioComponent
     }
 
-    override func updatePageComponentEntityContents(
-        in ctx: NSManagedObjectContext,
-        componentModel: any PageComponent
-    ) {
+    override func updatePageComponentEntityContents(componentModel: any PageComponent) {
         if let audioComponent = componentModel as? AudioComponent,
-            let mostRecentAction = audioComponent.actions.last
+            let mostRecentAction = audioComponent.actions.last,
+            let context = managedObjectContext
         {
             switch mostRecentAction {
                 case .appendAudio(let appendedIndices, let tracks):
                     let audioEntities = self.mutableOrderedSetValue(forKey: "audios")
 
                     for (index, audioTrack) in zip(appendedIndices, tracks).sorted(by: { $0.0 < $1.0 }) {
-                        let audioEntity = AudioComponentTrackEntity(context: ctx)
+                        let audioEntity = AudioComponentTrackEntity(context: context)
 
                         audioEntity.id = audioTrack.id
                         audioEntity.title = audioTrack.title
@@ -44,13 +42,13 @@ public class AudioComponentEntity: MemoComponentEntity {
 
                 case .removeAudio(let removedAudioID):
                     let fetch = AudioComponentTrackEntity.findTrackByID(removedAudioID)
-                    if let trackEntity = try? ctx.fetch(fetch).first {
-                        ctx.delete(trackEntity)
+                    if let trackEntity = try? context.fetch(fetch).first {
+                        context.delete(trackEntity)
                     }
 
                 case .applyAudioMetadata(let audioID, let metadata):
                     let fetch = AudioComponentTrackEntity.findTrackByID(audioID)
-                    if let trackEntity = try? ctx.fetch(fetch).first {
+                    if let trackEntity = try? context.fetch(fetch).first {
                         if let title = metadata.title {
                             trackEntity.title = title
                         }
@@ -129,7 +127,27 @@ public class AudioComponentEntity: MemoComponentEntity {
         return contents
     }
 
-    override func removeSnapshot(ctx: NSManagedObjectContext, snapshotID: UUID) {}
+    override func removeSnapshot(snapshotID: UUID) {}
 
     override func revertComponentEntityContents(componentModel: any PageComponent) {}
+}
+
+extension AudioComponentEntity {
+
+    @nonobjc public class func fetchRequest() -> NSFetchRequest<AudioComponentEntity> {
+        return NSFetchRequest<AudioComponentEntity>(entityName: "AudioComponentEntity")
+    }
+
+    @nonobjc public class func findAudioComponentEntityById(id: UUID) -> NSFetchRequest<AudioComponentEntity> {
+        let fetchRequest = NSFetchRequest<AudioComponentEntity>(entityName: "AudioComponentEntity")
+        let fetchPredicate = NSPredicate(
+            format: "%K == %@", (\AudioComponentEntity.id)._kvcKeyPathString!, id as CVarArg)
+        fetchRequest.predicate = fetchPredicate
+        fetchRequest.fetchLimit = 1
+        return fetchRequest
+    }
+
+    @NSManaged public var audios: NSMutableOrderedSet
+    @NSManaged public var sortBy: String
+
 }

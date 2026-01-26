@@ -51,22 +51,26 @@ final class TableComponent: NSObject, Codable, SnapshotRestorablePageComponent {
     }
 
     func revertToSnapshot(snapshotID: UUID) {
-        if let idx = snapshots.firstIndex(where: { $0.snapshotID == snapshotID }) {
-            snapshots[idx].revert(component: self)
+        if let targetSnapshotIndex = snapshots.firstIndex(where: { $0.snapshotID == snapshotID }) {
+            snapshots[targetSnapshotIndex].revert(component: self)
             setCaptureState(to: .captured)
         }
     }
 
-    func removeSnapshot(at: UUID) -> RemoveSnapshotResult {
-        let index = snapshots.firstIndex(where: { $0.snapshotID == at })!
-        let nextSnapshotIndex = index + 1 <= snapshots.count - 1 ? index + 1 : index - 1
-        let nextSnapshot = nextSnapshotIndex < 0 ? nil : snapshots[nextSnapshotIndex]
+    func removeSnapshot(snapshotID: UUID) -> RemoveSnapshotResult {
+        let targetSnapshotIndex = snapshots.firstIndex(where: { $0.snapshotID == snapshotID })!
+        let nextSnapshotIndex =
+            targetSnapshotIndex + 1 <= snapshots.count - 1
+            ? targetSnapshotIndex + 1 : targetSnapshotIndex - 1
+        let nextSnapshot =
+            nextSnapshotIndex < 0
+            ? nil : snapshots[nextSnapshotIndex]
         let result = RemoveSnapshotResult(
-            removeSnapshotIndex: index,
+            removeSnapshotIndex: targetSnapshotIndex,
             nextSnapshotID: nextSnapshot?.snapshotID,
             nextSnapshotMetaData: nextSnapshot?.getSnapshotMetaData()
         )
-        snapshots.remove(at: index)
+        snapshots.remove(at: targetSnapshotIndex)
         return result
     }
 }

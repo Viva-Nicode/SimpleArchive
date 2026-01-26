@@ -14,35 +14,37 @@ public class TableComponentEntity: MemoComponentEntity {
             captureState: .captured,
             componentSnapshots: self.snapshots
                 .map { $0.convertToModel() }
-                .sorted(by: { $0.makingDate > $1.makingDate }))
+                .sorted(by: { $0.makingDate > $1.makingDate })
+        )
 
         return tableComponent
     }
 
-    override func removeSnapshot(ctx: NSManagedObjectContext, snapshotID: UUID) {
-        if let removedSnapshotIndex = snapshots.firstIndex(where: { $0.snapshotID == snapshotID }) {
-            let removedSnapshot = snapshots.remove(at: removedSnapshotIndex)
-            ctx.delete(removedSnapshot)
-        }
+    override func removeSnapshot(snapshotID: UUID) {
+        guard
+            let context = managedObjectContext,
+            let removedSnapshotIndex = snapshots.firstIndex(where: { $0.snapshotID == snapshotID })
+        else { return }
+
+        let removedSnapshot = snapshots.remove(at: removedSnapshotIndex)
+        context.delete(removedSnapshot)
     }
 
-    override func updatePageComponentEntityContents(
-        in ctx: NSManagedObjectContext,
-        componentModel: any PageComponent
-    ) {
+    override func updatePageComponentEntityContents(componentModel: any PageComponent) {
         if let tableComponent = componentModel as? TableComponent,
-            let mostRecentAction = tableComponent.actions.last
+            let mostRecentAction = tableComponent.actions.last,
+            let context = managedObjectContext
         {
             switch mostRecentAction {
                 case .appendRow(let row):
-                    let rowEntity = TableComponentRowEntity(context: ctx)
+                    let rowEntity = TableComponentRowEntity(context: context)
                     rowEntity.id = row.id
                     rowEntity.createdAt = row.createdAt
                     rowEntity.modifiedAt = row.modifiedAt
                     rowEntity.tableComponent = self
 
                     for case let columnEntity as TableComponentColumnEntity in self.columns {
-                        let cellEntity = TableComponentCellEntity(context: ctx)
+                        let cellEntity = TableComponentCellEntity(context: context)
                         cellEntity.value = ""
 
                         cellEntity.column = columnEntity
@@ -56,13 +58,13 @@ public class TableComponentEntity: MemoComponentEntity {
                     orderedRows.add(rowEntity)
 
                 case .appendColumn(let column):
-                    let columnEntity = TableComponentColumnEntity(context: ctx)
+                    let columnEntity = TableComponentColumnEntity(context: context)
                     columnEntity.id = column.id
                     columnEntity.title = column.title
                     columnEntity.tableComponent = self
 
                     for case let rowEntity as TableComponentRowEntity in self.rows {
-                        let cellEntity = TableComponentCellEntity(context: ctx)
+                        let cellEntity = TableComponentCellEntity(context: context)
                         cellEntity.value = ""
 
                         cellEntity.row = rowEntity
@@ -77,9 +79,7 @@ public class TableComponentEntity: MemoComponentEntity {
 
                 case .removeRow(let rowID):
                     let fetchRequest = TableComponentRowEntity.findRowByID(rowID)
-                    if let rowEntity = try? ctx.fetch(fetchRequest).first {
-                        ctx.delete(rowEntity)
-                    }
+                    if let rowEntity = try? context.fetch(fetchRequest).first { context.delete(rowEntity) }
 
                 case .editColumn(let columns):
                     let columnEntities = self.mutableOrderedSetValue(forKey: "columns")
@@ -97,27 +97,68 @@ public class TableComponentEntity: MemoComponentEntity {
 
                     if columns.count < columnList.count {
                         for i in columns.count..<columnList.count {
-                            ctx.delete(columnList[i])
+                            context.delete(columnList[i])
                         }
                     }
 
                 case .editCellValue(let rowID, let columnID, let value):
                     let fetchRequest = TableComponentCellEntity.findCellByID(rowID: rowID, colID: columnID)
-
-                    if let cellEntity = try? ctx.fetch(fetchRequest).first {
-                        cellEntity.value = value
-                    }
+                    if let cellEntity = try? context.fetch(fetchRequest).first { cellEntity.value = value }
             }
         }
     }
 
     override func revertComponentEntityContents(componentModel: any PageComponent) {
-        guard let tableComponent = componentModel as? TableComponent,
-            let context = self.managedObjectContext
+        guard
+            let tableComponent = componentModel as? TableComponent,
+            let context = managedObjectContext
         else { return }
-        
-        
 
+        for case let columnEntity as NSManagedObject in columns {
+            context.delete(columnEntity)
+        }
+        columns.removeAllObjects()
+
+        for case let rowEntity as NSManagedObject in rows {
+            context.delete(rowEntity)
+        }
+        rows.removeAllObjects()
+
+        let orderedColumns = mutableOrderedSetValue(forKey: "columns")
+
+        for col in tableComponent.componentContents.columns {
+            let colEntity = TableComponentColumnEntity(context: context)
+            colEntity.id = col.id
+            colEntity.title = col.title
+            colEntity.tableComponent = self
+
+            orderedColumns.add(colEntity)
+        }
+
+        let orderedRows = mutableOrderedSetValue(forKey: "rows")
+
+        for row in tableComponent.componentContents.rows {
+            let rowEntity = TableComponentRowEntity(context: context)
+            rowEntity.id = row.id
+            rowEntity.createdAt = row.createdAt
+            rowEntity.modifiedAt = row.modifiedAt
+            rowEntity.tableComponent = self
+
+            orderedRows.add(rowEntity)
+        }
+
+        for case let columnEntity as TableComponentColumnEntity in columns {
+            for case let rowEntity as TableComponentRowEntity in rows {
+                let cellEntity = TableComponentCellEntity(context: context)
+                cellEntity.value = tableComponent.componentContents.cells[rowEntity.id]?[columnEntity.id] ?? ""
+
+                cellEntity.row = rowEntity
+                cellEntity.column = columnEntity
+
+                rowEntity.addToCells(cellEntity)
+                columnEntity.addToCells(cellEntity)
+            }
+        }
     }
 
     private func convertToContentsModel() -> TableComponentContents {
@@ -158,4 +199,41 @@ public class TableComponentEntity: MemoComponentEntity {
         contents.cells = restoredCells
         return contents
     }
+}
+
+extension TableComponentEntity {
+
+    @nonobjc public class func fetchRequest() -> NSFetchRequest<TableComponentEntity> {
+        NSFetchRequest<TableComponentEntity>(entityName: "TableComponentEntity")
+    }
+
+    @nonobjc public class func findTableComponentEntityById(id: UUID) -> NSFetchRequest<TableComponentEntity> {
+        let fetchRequest = NSFetchRequest<TableComponentEntity>(entityName: "TableComponentEntity")
+        let fetchPredicate = NSPredicate(
+            format: "%K == %@", (\TableComponentEntity.id)._kvcKeyPathString!, id as CVarArg)
+        fetchRequest.predicate = fetchPredicate
+        fetchRequest.fetchLimit = 1
+        return fetchRequest
+    }
+
+    @NSManaged public var sortBy: String
+    @NSManaged public var columns: NSMutableOrderedSet
+    @NSManaged public var rows: NSMutableOrderedSet
+
+    @NSManaged public var snapshots: Set<TableComponentSnapshotEntity>
+}
+
+extension TableComponentEntity {
+
+    @objc(addSnapshotsObject:)
+    @NSManaged public func addToSnapshots(_ value: TableComponentSnapshotEntity)
+
+    @objc(removeSnapshotsObject:)
+    @NSManaged public func removeFromSnapshots(_ value: TableComponentSnapshotEntity)
+
+    @objc(addSnapshots:)
+    @NSManaged public func addToSnapshots(_ values: NSSet)
+
+    @objc(removeSnapshots:)
+    @NSManaged public func removeFromSnapshots(_ values: NSSet)
 }

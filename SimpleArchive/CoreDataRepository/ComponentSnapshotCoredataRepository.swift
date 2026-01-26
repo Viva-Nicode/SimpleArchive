@@ -12,16 +12,16 @@ struct ComponentSnapshotCoreDataRepository: ComponentSnapshotCoreDataRepositoryT
     func removeSnapshot(componentID: UUID, snapshotID: UUID) {
         coredataStack.update { ctx in
             let componentEntity = try ctx.fetch(MemoComponentEntity.findById(id: componentID)).first
-            componentEntity?.removeSnapshot(ctx: ctx, snapshotID: snapshotID)
+            componentEntity?.removeSnapshot(snapshotID: snapshotID)
         }
     }
 
     func revertComponentContents(modifiedComponent: any PageComponent) -> AnyPublisher<Void, any Error> {
         coredataStack.update { ctx in
             let fetchRequest = MemoComponentEntity.findById(id: modifiedComponent.id)
-            let componentEntity = try ctx.fetch(fetchRequest).first!
-            
-            componentEntity.revertComponentEntityContents(componentModel: modifiedComponent)
+            let componentEntity = try ctx.fetch(fetchRequest).first
+
+            componentEntity?.revertComponentEntityContents(componentModel: modifiedComponent)
         }
     }
 }
