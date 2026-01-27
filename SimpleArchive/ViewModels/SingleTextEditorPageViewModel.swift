@@ -78,27 +78,35 @@ import UIKit
                     output.send(.didCompleteComponentCapture)
 
                 case .willEditTextComponent(let contents):
-                    let action = makeTextEditActionFromContentsDiff(
-                        originContents: textEditorComponent.componentContents,
-                        editedContents: contents)
-                    textEditorComponent.componentContents = contents
-                    textEditorComponent.setCaptureState(to: .needsCapture)
-                    textEditorComponent.actions.append(action)
-                    coredataReposotory.updateComponentContentChanges(modifiedComponent: textEditorComponent)
+                    saveTextEditorComponentChanged(contents: contents)
 
                 case .willUndoTextComponentContents:
-                    guard let action = textEditorComponent.actions.popLast() else { return }
-                    let currentContents = textEditorComponent.componentContents
-                    let undidText = undoingText(action: action, contents: currentContents)
-
-                    textEditorComponent.componentContents = undidText
-                    coredataReposotory.updateComponentContentChanges(modifiedComponent: textEditorComponent)
-                    output.send(.didUndoTextComponentContents(undidText))
+                    undoTextEditorComponentContents()
             }
         }
         .store(in: &subscriptions)
 
         return output.eraseToAnyPublisher()
+    }
+
+    private func saveTextEditorComponentChanged(contents: String) {
+        let action = makeTextEditActionFromContentsDiff(
+            originContents: textEditorComponent.componentContents,
+            editedContents: contents)
+        textEditorComponent.componentContents = contents
+        textEditorComponent.setCaptureState(to: .needsCapture)
+        textEditorComponent.actions.append(action)
+        coredataReposotory.updateComponentContentChanges(modifiedComponent: textEditorComponent)
+    }
+
+    private func undoTextEditorComponentContents() {
+        guard let action = textEditorComponent.actions.popLast() else { return }
+        let currentContents = textEditorComponent.componentContents
+        let undidText = undoingText(action: action, contents: currentContents)
+
+        textEditorComponent.componentContents = undidText
+        coredataReposotory.updateComponentContentChanges(modifiedComponent: textEditorComponent)
+        output.send(.didUndoTextComponentContents(undidText))
     }
 
     private func makeTextEditActionFromContentsDiff(originContents: String, editedContents: String)
@@ -136,13 +144,13 @@ import UIKit
 
     private func undoingText(action: TextEditorComponentAction, contents: String) -> String {
         switch action {
-            case let .insert(range, insertedText):
+            case .insert(let range, let insertedText):
                 let start = contents.index(contents.startIndex, offsetBy: range.lowerBound)
                 let end = contents.index(start, offsetBy: insertedText.count)
 
                 return contents.replacingCharacters(in: start..<end, with: "")
 
-            case let .replace(range, fromText, toText):
+            case .replace(let range, let fromText, let toText):
                 let start = contents.index(contents.startIndex, offsetBy: range.lowerBound)
                 let end = contents.index(start, offsetBy: toText.count)
 

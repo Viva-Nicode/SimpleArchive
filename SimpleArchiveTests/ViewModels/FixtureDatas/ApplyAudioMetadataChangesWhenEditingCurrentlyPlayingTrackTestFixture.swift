@@ -47,6 +47,7 @@ final class ApplyAudioMetadataChangesWhenEditingCurrentlyPlayingTrackTestFixture
         testPage.appendChildComponent(component: TextEditorComponent())
         testPage.appendChildComponent(component: TextEditorComponent())
         testPage.appendChildComponent(component: TextEditorComponent())
+        
         let audioComponent = AudioComponent()
 
         audioComponent.componentContents.sortBy = .name
@@ -61,10 +62,15 @@ final class ApplyAudioMetadataChangesWhenEditingCurrentlyPlayingTrackTestFixture
             AudioTrack(title: "m audio", artist: "artist", thumbnail: Data(), lyrics: "", fileExtension: .mp3),
         ])
 
-        let audioComponentDataSource = AudioComponentDataSource(
-            tracks: audioComponent.componentContents.tracks,
-            sortBy: audioComponent.componentContents.sortBy
-        )
+        let audioContentsData = AudioContentsData(audioComponent: audioComponent)
+        let activeAudioTrackData = ActiveAudioTrackData()
+        activeAudioTrackData.nowPlayingAudioTrackID = URL(fileURLWithPath: "Documents/SimpleArchiveMusics/e audio.mp3")
+        
+        let audioComponentDataSource = AudioComponentDataSource(audioContentsData: audioContentsData)
+//        let audioComponentDataSource = AudioComponentDataSource(
+//            tracks: audioComponent.componentContents.tracks,
+//            sortBy: audioComponent.componentContents.sortBy
+//        )
 
         audioComponentDataSource.nowPlayingAudioIndex = 3
         audioComponentDataSource.isPlaying = true

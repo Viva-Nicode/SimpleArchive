@@ -287,7 +287,6 @@ import UIKit
     }
 
     @objc private func captureComponentsChanges() {
-
         var taskID: UIBackgroundTaskIdentifier = .invalid
 
         taskID = UIApplication.shared.beginBackgroundTask {
@@ -399,13 +398,13 @@ extension MemoPageViewModel {
 
     private func undoingText(action: TextEditorComponentAction, contents: String) -> String {
         switch action {
-            case let .insert(range, insertedText):
+            case .insert(let range, let insertedText):
                 let start = contents.index(contents.startIndex, offsetBy: range.lowerBound)
                 let end = contents.index(start, offsetBy: insertedText.count)
 
                 return contents.replacingCharacters(in: start..<end, with: "")
 
-            case let .replace(range, fromText, toText):
+            case .replace(let range, let fromText, let toText):
                 let start = contents.index(contents.startIndex, offsetBy: range.lowerBound)
                 let end = contents.index(start, offsetBy: toText.count)
 
@@ -612,7 +611,7 @@ extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
             audioTrackController.play()
 
             let audioTotalDuration = audioTrackController.totalTime
-            
+
             if let nextAudioContentsData = audioContentsDataContainer[componentID] {
                 let activeAudioTrackData = ActiveAudioTrackData()
 
