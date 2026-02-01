@@ -1,13 +1,16 @@
 import Combine
 import UIKit
 
-final class TextEditorComponentView: PageComponentView<UITextView, TextEditorComponent>, UITextViewDelegate,
-    CaptureableComponentView
+final class TextEditorComponentView:
+    PageComponentView<UITextView, TextEditorComponent>, UITextViewDelegate, CaptureableComponentView
 {
-
     static let identifierForUseCollectionView: String = "TextEditorComponentView"
-    private var snapshotInputActionSubject: PassthroughSubject<ComponentSnapshotViewModelInput, Never>?
+
+    private let actionDispatcher = TextEditorComponentActionDispatcher()
+    private var textEditorComponentViewModel: TextEditorComponentViewModel?
     var snapshotCapturePopupView: SnapshotCapturePopupView?
+
+    private var snapshotInputActionSubject: PassthroughSubject<ComponentSnapshotViewModelInput, Never>?
 
     private let snapShotView: UIStackView = {
         let snapShotView = UIStackView()
@@ -85,29 +88,46 @@ final class TextEditorComponentView: PageComponentView<UITextView, TextEditorCom
         snapShotView.trailingAnchor.constraint(equalTo: toolBarView.trailingAnchor, constant: -10).isActive = true
     }
 
-    // memoPage 뷰 전용 configure
-    override func configure(
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        textEditorComponentViewModel?.clearSubscriptions()
+        actionDispatcher.clearSubscriptions()
+    }
+
+    func configureTextComponentForMemoPageView(
         component: TextEditorComponent,
+        viewModel: TextEditorComponentViewModel,
         input subject: PassthroughSubject<MemoPageViewInput, Never>
     ) {
         super.configure(component: component, input: subject)
 
+        textEditorComponentViewModel = viewModel
+
+        actionDispatcher.bindToViewModel(viewModel: viewModel) { [weak self] event in
+            guard let self else { return }
+            switch event {
+                case .didUndoTextComponentContents(let undidText):
+                    componentContentView.text = undidText
+            }
+        }
+
         componentContentView.text = component.componentContents
 
-        undoButton.addAction(
-            UIAction { _ in
-                subject.send(.willUndoTextComponentContents(component.id))
-            }, for: .touchUpInside)
+        undoButton.throttleTapPublisher(interval: 0.25)
+            .sink { [weak self] _ in
+                self?.actionDispatcher.undoTextEditorComponentContents()
+            }
+            .store(in: &subscriptions)
 
         captureButton.throttleTapPublisher()
             .flatMap { [weak self] _ -> AnyPublisher<String, Never> in
                 guard let self else { return Empty().eraseToAnyPublisher() }
 
-                let popup = SnapshotCapturePopupView()
-                self.snapshotCapturePopupView = popup
-                popup.show()
+                let snapshotCapturePopupView = SnapshotCapturePopupView()
+                self.snapshotCapturePopupView = snapshotCapturePopupView
+                snapshotCapturePopupView.show()
 
-                return popup.captureButtonPublisher
+                return snapshotCapturePopupView.captureButtonPublisher
             }
             .sink { [weak self] snapshotDescription in
                 guard let self else { return }
@@ -124,25 +144,22 @@ final class TextEditorComponentView: PageComponentView<UITextView, TextEditorCom
             }
             .store(in: &subscriptions)
 
-        if component.isMinimumHeight {
-            componentContentView.alpha = 0
-        }
+        if component.isMinimumHeight { componentContentView.alpha = 0 }
     }
 
-    // 스냅샷 뷰 전용 configure
-    func configure(
+    func configureTextComponentForSnapshotView(
         snapshotID: UUID,
         snapshotDetail: String,
         input subject: PassthroughSubject<ComponentSnapshotViewModelInput, Never>
     ) {
         snapshotInputActionSubject = subject
-        
+
         componentInformationView.removeFromSuperview()
 
         componentContentView.constraints
             .filter { $0.firstAnchor == componentContentView.topAnchor }
             .forEach { $0.isActive = false }
-        
+
         componentContentView.topAnchor.constraint(equalTo: toolBarView.bottomAnchor).isActive = true
 
         componentContentView.text = snapshotDetail
@@ -150,10 +167,10 @@ final class TextEditorComponentView: PageComponentView<UITextView, TextEditorCom
         let minimizeRatio = (UIView.screenWidth - 80) / (UIView.screenWidth - 40)
         componentContentView.font = .systemFont(ofSize: 16 * minimizeRatio)
 
-        subscriptions.removeAll()
-
         redCircleView.throttleUIViewTapGesturePublisher()
-            .sink { _ in self.snapshotInputActionSubject?.send(.willRemoveSnapshot(snapshotID)) }
+            .sink { [weak self] _ in
+                self?.snapshotInputActionSubject?.send(.willRemoveSnapshot(snapshotID))
+            }
             .store(in: &subscriptions)
 
         yellowCircleView.backgroundColor = .systemGray5
@@ -166,7 +183,7 @@ final class TextEditorComponentView: PageComponentView<UITextView, TextEditorCom
     }
 
     func textViewDidChange(_ textView: UITextView) {
-        pageInputActionSubject?.send(.willEditTextComponent(componentID, textView.text))
+        actionDispatcher.saveTextEditorComponentChanged(contents: textView.text)
         captureButton.isEnabled = !textView.text.isEmpty
     }
 
@@ -177,11 +194,5 @@ final class TextEditorComponentView: PageComponentView<UITextView, TextEditorCom
                 self?.componentContentView.alpha = isMinimize ? 0 : 1
             }
         )
-    }
-
-    func redoContents(contents: String) {
-        componentContentView.delegate = nil
-        componentContentView.text = contents
-        componentContentView.delegate = self
     }
 }

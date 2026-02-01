@@ -60,13 +60,8 @@ import UIKit
                     captureComponentsChangesOnDisappear()
 
                 case .willNavigateSnapshotView:
-                    guard let repository = DIContainer.shared.resolve(ComponentSnapshotCoreDataRepository.self)
-                    else { return }
-
-                    let componentSnapshotViewModel = ComponentSnapshotViewModel(
-                        componentSnapshotCoreDataRepository: repository,
-                        snapshotRestorableComponent: tableComponent)
-
+                    DIContainer.shared.setArgument(ComponentSnapshotViewModel.self, tableComponent)
+                    let componentSnapshotViewModel = DIContainer.shared.resolve(ComponentSnapshotViewModel.self)
                     output.send(.didNavigateSnapshotView(componentSnapshotViewModel))
 
                 case .willRestoreComponent:

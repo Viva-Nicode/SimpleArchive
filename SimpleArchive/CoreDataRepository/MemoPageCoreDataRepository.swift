@@ -1,7 +1,7 @@
 import Combine
 import Foundation
 
-struct MemoPageCoreDataRepository: MemoPageCoreDataRepositoryType {
+final class MemoPageCoreDataRepository: MemoPageCoreDataRepositoryType {
 
     private let coredataStack: PersistentStore
 

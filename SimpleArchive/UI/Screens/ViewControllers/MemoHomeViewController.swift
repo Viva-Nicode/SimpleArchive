@@ -253,7 +253,7 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
             guard let self else { return }
 
             switch result {
-                case let .didFetchMemoData(rootDirectoryID, sortCriteria, datasource, fileCount):
+                case .didFetchMemoData(let rootDirectoryID, let sortCriteria, let datasource, let fileCount):
                     setupUI(fixedFileCollectionViewDataSource: datasource)
                     setupConstraints()
                     updateDirectoryInfo(fileCount: fileCount, sortCriteria: sortCriteria)
@@ -265,23 +265,23 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
                 case .didMoveFileToDormantBox(let removedFileIndex):
                     removeRowToTable(removedFileIndex: removedFileIndex)
 
-                case let .didAppendPageToHomeTable(indexOfCell, insertRowIndexPaths, deleteRowIndexPaths):
+                case .didAppendPageToHomeTable(let indexOfCell, let insertRowIndexPaths, let deleteRowIndexPaths):
                     didPerformDropOperationInHomeTable(
                         indexOfCell: indexOfCell,
                         insertRowIndexPaths: insertRowIndexPaths,
                         deleteRowIndexPaths: deleteRowIndexPaths)
 
-                case let .didAppendPageToFixedTable(indexOfCell, insertRowIndexPaths, deleteRowIndexPaths):
+                case .didAppendPageToFixedTable(let indexOfCell, let insertRowIndexPaths, let deleteRowIndexPaths):
                     didPerformDropOperationInFixedTable(
                         indexOfCell: indexOfCell,
                         insertRowIndexPaths: insertRowIndexPaths,
                         deleteRowIndexPaths: deleteRowIndexPaths)
 
-                case let .didMovePreviousDirectoryPath(removedIndexList, sortCriteria, fileCount):
+                case .didMovePreviousDirectoryPath(let removedIndexList, let sortCriteria, let fileCount):
                     updateDirectoryInfo(fileCount: fileCount, sortCriteria: sortCriteria)
                     movePreviousDirectoryTappedLabel(removedIndexList: removedIndexList)
 
-                case let .didMoveToFollowingDirectory(directoryName, directoryID, sortCriteria, fileCount):
+                case .didMoveToFollowingDirectory(let directoryName, let directoryID, let sortCriteria, let fileCount):
                     updateDirectoryInfo(fileCount: fileCount, sortCriteria: sortCriteria)
                     moveToNextDirectory(directoryName: directoryName, directoryID: directoryID)
 
@@ -487,7 +487,6 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
     }
 
     private func moveToNextDirectory(directoryName: String, directoryID: UUID) {
-
         let lastItemIndex = directoryCollectionView.numberOfItems(inSection: .zero)
         let newIndexPath = IndexPath(item: lastItemIndex, section: .zero)
         let directoryPathLable = MemoHomeDirectoryNameLabel(name: directoryName)

@@ -1,7 +1,7 @@
 import Combine
 import Foundation
 
-protocol MemoPageCoreDataRepositoryType {
+protocol MemoPageCoreDataRepositoryType: AnyObject {
 
     @discardableResult
     func fixPages(pageIds: [UUID]) -> AnyPublisher<Void, Error>

@@ -3,7 +3,8 @@ import Combine
 import SFBAudioEngine
 import UIKit
 
-@MainActor final class MemoPageViewModel: NSObject, ViewModelType {
+@MainActor
+final class MemoPageViewModel: NSObject, ViewModelType {
 
     typealias Input = MemoPageViewInput
     typealias Output = MemoPageViewOutput
@@ -22,20 +23,22 @@ import UIKit
     private let captureDispatchSemaphore = DispatchSemaphore(value: 1)
     private var audioContentsDataContainer: AudioContentsDataContainer
 
+    private let tableComponentService = TableComponentService()
+
     init(
         componentFactory: any ComponentFactoryType,
         memoComponentCoredataReposotory: MemoComponentCoreDataRepositoryType,
         audioDownloader: AudioDownloaderType,
         audioFileManager: AudioFileManagerType,
         audioTrackController: AudioTrackControllerType,
-        page: MemoPageModel,
+        memoPage: MemoPageModel
     ) {
         self.componentFactory = componentFactory
         self.memoComponentCoredataReposotory = memoComponentCoredataReposotory
-        self.memoPage = page
         self.audioTrackController = audioTrackController
         self.audioDownloader = audioDownloader
         self.audioFileManager = audioFileManager
+        self.memoPage = memoPage
 
         let audioContentsDatas = memoPage
             .getComponents
@@ -105,14 +108,6 @@ import UIKit
 
                 case .viewWillDisappear:
                     captureComponentsChangesOnDisappear()
-
-                // MARK: - Text
-
-                case .willEditTextComponent(let componentID, let detail):
-                    saveTextEditorComponentChanged(componentID: componentID, contents: detail)
-
-                case .willUndoTextComponentContents(let componentID):
-                    undoTextEditorComponentContents(componentID: componentID)
 
                 // MARK: - Table
 
@@ -262,14 +257,12 @@ import UIKit
 
     private func moveToComponentSnapshotView(componentID: UUID) {
         guard
-            let repository = DIContainer.shared.resolve(ComponentSnapshotCoreDataRepository.self),
             let component = memoPage[componentID],
             let snapshotRestorableComponent = component.item as? any SnapshotRestorablePageComponent
         else { return }
 
-        let componentSnapshotViewModel = ComponentSnapshotViewModel(
-            componentSnapshotCoreDataRepository: repository,
-            snapshotRestorableComponent: snapshotRestorableComponent)
+        DIContainer.shared.setArgument(ComponentSnapshotViewModel.self, snapshotRestorableComponent)
+        let componentSnapshotViewModel = DIContainer.shared.resolve(ComponentSnapshotViewModel.self)
 
         output.send(.didNavigateSnapshotView(componentSnapshotViewModel, component.index))
     }
@@ -339,86 +332,9 @@ import UIKit
 }
 
 extension MemoPageViewModel {
-    private func saveTextEditorComponentChanged(componentID: UUID, contents: String) {
-        performWithComponentAt(componentID) { (componentIndex, textEditorComponent: TextEditorComponent) in
-            let action = makeTextEditActionFromContentsDiff(
-                originContents: textEditorComponent.componentContents,
-                editedContents: contents)
-            textEditorComponent.componentContents = contents
-            textEditorComponent.setCaptureState(to: .needsCapture)
-            textEditorComponent.actions.append(action)
-            memoComponentCoredataReposotory.updateComponentContentChanges(modifiedComponent: textEditorComponent)
-        }
-    }
-
-    private func undoTextEditorComponentContents(componentID: UUID) {
-        performWithComponentAt(componentID) { (componentIndex, textEditorComponent: TextEditorComponent) in
-            guard let action = textEditorComponent.actions.popLast() else { return }
-            let currentContents = textEditorComponent.componentContents
-            let undidText = undoingText(action: action, contents: currentContents)
-
-            textEditorComponent.componentContents = undidText
-            memoComponentCoredataReposotory.updateComponentContentChanges(modifiedComponent: textEditorComponent)
-            output.send(.didUndoTextComponentContents(componentIndex, undidText))
-        }
-    }
-
-    private func makeTextEditActionFromContentsDiff(originContents: String, editedContents: String)
-        -> TextEditorComponentAction
-    {
-        let originChars = Array(originContents)
-        let editedChars = Array(editedContents)
-
-        var prefix = 0
-        while prefix < min(originChars.count, editedChars.count),
-            originChars[prefix] == editedChars[prefix]
-        {
-            prefix += 1
-        }
-
-        var suffix = 0
-        while suffix < min(originChars.count - prefix, editedChars.count - prefix),
-            originChars[originChars.count - 1 - suffix] == editedChars[editedChars.count - 1 - suffix]
-        {
-            suffix += 1
-        }
-
-        let oldRange = prefix..<(originChars.count - suffix)
-        let newRange = prefix..<(editedChars.count - suffix)
-
-        let removedText = String(originChars[oldRange])
-        let insertedText = String(editedChars[newRange])
-
-        if removedText.isEmpty, !insertedText.isEmpty {
-            return .insert(range: prefix..<prefix, text: insertedText)
-        } else {
-            return .replace(range: oldRange, from: removedText, to: insertedText)
-        }
-    }
-
-    private func undoingText(action: TextEditorComponentAction, contents: String) -> String {
-        switch action {
-            case .insert(let range, let insertedText):
-                let start = contents.index(contents.startIndex, offsetBy: range.lowerBound)
-                let end = contents.index(start, offsetBy: insertedText.count)
-
-                return contents.replacingCharacters(in: start..<end, with: "")
-
-            case .replace(let range, let fromText, let toText):
-                let start = contents.index(contents.startIndex, offsetBy: range.lowerBound)
-                let end = contents.index(start, offsetBy: toText.count)
-
-                return contents.replacingCharacters(in: start..<end, with: fromText)
-        }
-    }
-}
-
-extension MemoPageViewModel {
     private func appendTableComponentRow(_ componentID: UUID) {
         performWithComponentAt(componentID) { (componentIndex, tableComponent: TableComponent) in
-            let newRow = tableComponent.componentContents.appendNewRow()
-            tableComponent.setCaptureState(to: .needsCapture)
-            tableComponent.actions.append(.appendRow(row: newRow))
+            let newRow = tableComponentService.appendTableComponentRow(tableComponent: tableComponent)
             memoComponentCoredataReposotory.updateComponentContentChanges(modifiedComponent: tableComponent)
             output.send(.didAppendRowToTableView(componentIndex, newRow))
         }
@@ -426,9 +342,8 @@ extension MemoPageViewModel {
 
     private func removeTableComponentRow(_ componentID: UUID, _ rowID: UUID) {
         performWithComponentAt(componentID) { (componentIndex, tableComponent: TableComponent) in
-            let removedRowIndex = tableComponent.componentContents.removeRow(rowID)
-            tableComponent.setCaptureState(to: .needsCapture)
-            tableComponent.actions.append(.removeRow(rowID: rowID))
+            let removedRowIndex = tableComponentService.removeTableComponentRow(
+                tableComponent: tableComponent, rowID: rowID)
             memoComponentCoredataReposotory.updateComponentContentChanges(modifiedComponent: tableComponent)
             output.send(.didRemoveRowToTableView(componentIndex, removedRowIndex))
         }
@@ -436,9 +351,7 @@ extension MemoPageViewModel {
 
     private func appendTableComponentColumn(_ componentID: UUID) {
         performWithComponentAt(componentID) { (componentIndex, tableComponent: TableComponent) in
-            let newColumn = tableComponent.componentContents.appendNewColumn(title: "column")
-            tableComponent.setCaptureState(to: .needsCapture)
-            tableComponent.actions.append(.appendColumn(column: newColumn))
+            let newColumn = tableComponentService.appendTableComponentColumn(tableComponent: tableComponent)
             memoComponentCoredataReposotory.updateComponentContentChanges(modifiedComponent: tableComponent)
             output.send(.didAppendColumnToTableView(componentIndex, newColumn))
         }
@@ -446,11 +359,8 @@ extension MemoPageViewModel {
 
     private func applyTableCellValue(componentID: UUID, colID: UUID, rowID: UUID, newCellValue: String) {
         performWithComponentAt(componentID) { (componentIndex, tableComponent: TableComponent) in
-            let indices = tableComponent
-                .componentContents
-                .editCellValeu(rowID: rowID, colID: colID, newValue: newCellValue)
-            tableComponent.setCaptureState(to: .needsCapture)
-            tableComponent.actions.append(.editCellValue(rowID: rowID, columnID: colID, value: newCellValue))
+            let indices = tableComponentService.applyTableCellValue(
+                tableComponent: tableComponent, colID: colID, rowID: rowID, newCellValue: newCellValue)
             memoComponentCoredataReposotory.updateComponentContentChanges(modifiedComponent: tableComponent)
             output.send(
                 .didApplyTableCellValueChanges(componentIndex, indices.rowIndex, indices.columnIndex, newCellValue)
@@ -460,7 +370,9 @@ extension MemoPageViewModel {
 
     private func presentTableComponentColumnEditPopupView(componentID: UUID, columnID: UUID) {
         performWithComponentAt(componentID) { (_, tableComponent: TableComponent) in
-            let columnIndex = tableComponent.componentContents.columns.firstIndex(where: { $0.id == columnID })!
+            let columnIndex =
+                tableComponentService
+                .presentTableComponentColumnEditPopupView(tableComponent: tableComponent, columnID: columnID)
             output.send(
                 .didPresentTableColumnEditPopupView(
                     tableComponent.componentContents.columns, columnIndex, componentID)
@@ -470,9 +382,7 @@ extension MemoPageViewModel {
 
     private func applyTableColumnChanges(componentID: UUID, columns: [TableComponentColumn]) {
         performWithComponentAt(componentID) { (componentIndex, tableComponent: TableComponent) in
-            tableComponent.componentContents.setColumn(columns: columns)
-            tableComponent.setCaptureState(to: .needsCapture)
-            tableComponent.actions.append(.editColumn(columns: columns))
+            tableComponentService.applyTableColumnChanges(tableComponent: tableComponent, columns: columns)
             memoComponentCoredataReposotory.updateComponentContentChanges(modifiedComponent: tableComponent)
             output.send(.didApplyTableColumnChanges(componentIndex, columns))
         }

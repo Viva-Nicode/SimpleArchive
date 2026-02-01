@@ -16,10 +16,6 @@ enum MemoPageViewInput {
     case willNavigateSnapshotView(UUID)
     case willCaptureComponent(UUID, String)
 
-    // MARK: - Text
-    case willEditTextComponent(UUID, String)
-    case willUndoTextComponentContents(UUID)
-
     // MARK: - Table
     case willAppendRowToTable(UUID)
     case willRemoveRowToTable(UUID, UUID)
@@ -54,7 +50,7 @@ enum MemoPageViewOutput {
     case didCompleteComponentCapture(Int)
 
     // MARK: - Text
-    case didUndoTextComponentContents(Int, String)
+//    case didUndoTextComponentContents(Int, String)
 
     // MARK: - Table
     case didAppendRowToTableView(Int, TableComponentRow)

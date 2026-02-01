@@ -1,7 +1,7 @@
 import Combine
 import Foundation
 
-protocol DormantBoxCoreDataRepositoryType {
+protocol DormantBoxCoreDataRepositoryType: AnyObject {
     func fetchDormantBoxDirectory() -> AnyPublisher<MemoDirectoryModel, Error>
 
     @discardableResult
@@ -10,4 +10,3 @@ protocol DormantBoxCoreDataRepositoryType {
     @discardableResult
     func permanentRemoveFile(pageID: UUID) -> AnyPublisher<Void, Error>
 }
-

@@ -3,12 +3,10 @@ import Combine
 import MediaPlayer
 import UIKit
 
-class MemoPageViewController: UIViewController, ViewControllerType {
-    typealias Input = MemoPageViewInput
-    typealias ViewModelType = MemoPageViewModel
+final class MemoPageViewController: UIViewController, ViewControllerType {
 
     var input = PassthroughSubject<MemoPageViewInput, Never>()
-    var viewModel: ViewModelType
+    var viewModel: MemoPageViewModel
     var subscriptions = Set<AnyCancellable>()
 
     var selectedPageComponentCell: (any PageComponentViewType)?
@@ -63,7 +61,7 @@ class MemoPageViewController: UIViewController, ViewControllerType {
     private(set) var pageComponentCollectionView: UICollectionView!
     private var audioControlBar = AudioControlBarView()
 
-    init(viewModel: ViewModelType) {
+    init(viewModel: MemoPageViewModel) {
         self.viewModel = viewModel
 
         super.init(nibName: nil, bundle: nil)
@@ -94,7 +92,6 @@ class MemoPageViewController: UIViewController, ViewControllerType {
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: dynamicHeightFlowLayout)
 
         collectionView.backgroundColor = .clear
-        collectionView.isPrefetchingEnabled = false
         collectionView.keyboardDismissMode = .onDrag
 
         collectionView.register(
@@ -155,13 +152,6 @@ class MemoPageViewController: UIViewController, ViewControllerType {
                         let captureableComponentView = cell as? CaptureableComponentView
                     {
                         captureableComponentView.completeSnapshotCapturePopupView()
-                    }
-
-                // MARK: - Text
-                case .didUndoTextComponentContents(let componentIndex, let contents):
-                    performWithComponentViewAt(componentIndex) {
-                        (componentView: TextEditorComponentView, contentView) in
-                        componentView.redoContents(contents: contents)
                     }
 
                 // MARK: - Table
@@ -519,7 +509,6 @@ extension MemoPageViewController: NavigationViewControllerDismissible {
 }
 
 extension MemoPageViewController {
-
     private func appendNewAudioTracks(componentIndex: Int, appendedTrackIndices: [Int]) {
         performWithComponentViewAt(componentIndex) { (_: AudioComponentView, contentView) in
             contentView

@@ -1,12 +1,41 @@
-protocol ComponentService {}
+import Combine
+import Foundation
 
-final class TextEditorComponentService: ComponentService {
+final class TextEditorComponentInteractor {
+    private var textEditorComponent: TextEditorComponent
+    private let memoComponentCoredataReposotory: MemoComponentCoreDataRepositoryType
 
-    private func makeTextEditActionFromContentsDiff(
-        originContents: String,
-        editedContents: String
-    ) -> TextEditorComponentAction {
+    init(
+        memoComponentCoredataReposotory: MemoComponentCoreDataRepositoryType,
+        textEditorComponent: TextEditorComponent
+    ) {
+        self.memoComponentCoredataReposotory = memoComponentCoredataReposotory
+        self.textEditorComponent = textEditorComponent
+    }
 
+    func saveTextEditorComponentContentsChange(contents: String) {
+        let action = makeTextEditActionFromContentsDiff(
+            originContents: textEditorComponent.componentContents,
+            editedContents: contents)
+        textEditorComponent.componentContents = contents
+        textEditorComponent.setCaptureState(to: .needsCapture)
+        textEditorComponent.actions.append(action)
+        memoComponentCoredataReposotory.updateComponentContentChanges(modifiedComponent: textEditorComponent)
+    }
+
+    func undoTextEditorComponentContents() -> String? {
+        guard let action = textEditorComponent.actions.popLast() else { return nil }
+        let currentContents = textEditorComponent.componentContents
+        let undidText = undoingText(action: action, contents: currentContents)
+
+        textEditorComponent.componentContents = undidText
+        memoComponentCoredataReposotory.updateComponentContentChanges(modifiedComponent: textEditorComponent)
+        return undidText
+    }
+
+    private func makeTextEditActionFromContentsDiff(originContents: String, editedContents: String)
+        -> TextEditorComponentAction
+    {
         let originChars = Array(originContents)
         let editedChars = Array(editedContents)
 

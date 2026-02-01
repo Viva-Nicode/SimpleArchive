@@ -161,6 +161,11 @@ where ComponentContentType: UIView, PageComponentType: PageComponent {
         componentContentView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor).isActive = true
         componentContentView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor).isActive = true
     }
+    
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        subscriptions.removeAll()
+    }
 
     func configure(
         component: PageComponentType,
@@ -170,8 +175,6 @@ where ComponentContentType: UIView, PageComponentType: PageComponent {
         componentID = component.id
         titleLabel.text = component.title
         creationDateLabel.text = "created at \(component.creationDate.formattedDate)"
-
-        subscriptions.removeAll()
 
         redCircleView.throttleUIViewTapGesturePublisher()
             .sink { [weak self] _ in
@@ -215,9 +218,7 @@ where ComponentContentType: UIView, PageComponentType: PageComponent {
         titleLabel.throttleUIViewTapGesturePublisher()
             .sink { [weak self] _ in
                 guard let self else { return }
-                let popupView = ChangeComponentNamePopupView(
-                    componentTitle: component.title
-                ) { newTitle in
+                let popupView = ChangeComponentNamePopupView(componentTitle: component.title) { newTitle in
                     self.pageInputActionSubject?.send(.willChangeComponentName(self.componentID, newTitle))
                     self.titleLabel.text = newTitle
                 }

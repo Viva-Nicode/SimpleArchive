@@ -16,9 +16,9 @@ enum SingleTextEditorPageInput {
 enum SingleTextEditorPageOutput {
     case viewDidLoad(String, Date, String)
 
-    case didUndoTextComponentContents(String)
-
     case didNavigateSnapshotView(ComponentSnapshotViewModel)
     case didRestoreComponent(String)
     case didCompleteComponentCapture
+    
+    case didUndoTextComponentContents(String)
 }

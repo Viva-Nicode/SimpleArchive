@@ -23,7 +23,7 @@ final class PageComponentSnapshotViewFactory: PageComponentSnapshotViewFactoryTy
                         withReuseIdentifier: TextEditorComponentView.identifierForUseCollectionView,
                         for: indexPath) as! TextEditorComponentView
 
-                cell.configure(
+                cell.configureTextComponentForSnapshotView(
                     snapshotID: textComponentSnapshot.snapshotID,
                     snapshotDetail: textComponentSnapshot.contents,
                     input: input)

@@ -1,7 +1,7 @@
 import Combine
 import Foundation
 
-struct DormantBoxCoreDataRepository: DormantBoxCoreDataRepositoryType {
+final class DormantBoxCoreDataRepository: DormantBoxCoreDataRepositoryType {
 
     private let coredataStack: PersistentStore
 

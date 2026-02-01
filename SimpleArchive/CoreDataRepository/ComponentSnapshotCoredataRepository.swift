@@ -1,7 +1,7 @@
 import Combine
 import CoreData
 
-struct ComponentSnapshotCoreDataRepository: ComponentSnapshotCoreDataRepositoryType {
+final class ComponentSnapshotCoreDataRepository: ComponentSnapshotCoreDataRepositoryType {
 
     private let coredataStack: PersistentStore
 

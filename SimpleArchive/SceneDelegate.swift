@@ -1,10 +1,3 @@
-//
-//  SceneDelegate.swift
-//  UIKitExample
-//
-//  Created by Nicode . on 3/15/25.
-//
-
 import UIKit
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
@@ -19,23 +12,10 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         let window = UIWindow(windowScene: windowScene)
 
-        DependencyConfigurator.configure()
-
-        guard
-            let memoDirectoryCoreDataRepository = DIContainer.shared.resolve(MemoDirectoryCoreDataRepository.self),
-            let memoPageCoreDataRepository = DIContainer.shared.resolve(MemoPageCoreDataRepository.self),
-            let directoryCreator = DIContainer.shared.resolve(DirectoryCreator.self),
-            let pageCreator = DIContainer.shared.resolve(PageCreator.self)
-        else { fatalError("can not found Dependency") }
-
-        let memoHomeViewModel = MemoHomeViewModel(
-            memoDirectoryCoredataReposotory: memoDirectoryCoreDataRepository,
-            memoPageCoredataReposotory: memoPageCoreDataRepository,
-            directoryCreator: directoryCreator,
-            pageCreator: pageCreator)
-
+        DependencyConfigurator.configureDependencies()
+        
+        let memoHomeViewModel = DIContainer.shared.resolve(MemoHomeViewModel.self)
         let memoHomeViewController = MemoHomeViewController(memoHomeViewModel: memoHomeViewModel)
-
         let indexViewController = UINavigationController(rootViewController: memoHomeViewController)
 
         indexViewController.delegate = NavigationDelegateObject.shared

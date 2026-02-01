@@ -105,35 +105,13 @@ class CoreDataStack: PersistentStore {
 
         if let deletedObjects = userInfo[NSDeletedObjectsKey] as? Set<NSManagedObject> {
             for deletedObject in deletedObjects {
-                if let columnEntity = deletedObject as? TableComponentColumnEntity {
-                    print("deleted TableComponentColumnEntity : \(columnEntity.title)")
-                } else if deletedObject as? TableComponentRowEntity != nil {
-                    print("deleted TableComponentRowEntity :")
-                } else if let cellEntity = deletedObject as? TableComponentCellEntity {
-                    print("deleted TableComponentCellEntity :\(cellEntity.value)")
-                } else if let audioEntity = deletedObject as? AudioComponentTrackEntity {
-                    print("deleted AudioComponentTrackEntity : \(audioEntity.title)")
-                } else {
-                    print("deleted : \(type(of: dump(deletedObject)))")
-                }
+                DebugHelper.myLog("deleted", deletedObject)
             }
         }
 
         if let insertedObjects = userInfo[NSInsertedObjectsKey] as? Set<NSManagedObject> {
             for insertedObject in insertedObjects {
-                if let directoryEntity = insertedObject as? MemoDirectoryEntity {
-                    print("created MemoDirectoryEntity : \(directoryEntity.name)")
-                } else if let pageEntity = insertedObject as? MemoPageEntity {
-                    print("created MemoPageEntity : \(pageEntity.name)")
-                } else if let columnEntity = insertedObject as? TableComponentColumnEntity {
-                    print("created TableComponentColumnEntity : \(columnEntity.title)")
-                } else if insertedObject as? TableComponentRowEntity != nil {
-                    print("created TableComponentRowEntity :")
-                } else if let cellEntity = insertedObject as? TableComponentCellEntity {
-                    print("created TableComponentCellEntity :\(cellEntity.value)")
-                } else {
-                    print("created : \(type(of: dump(insertedObject)))")
-                }
+                DebugHelper.myLog("inserted", insertedObject)
             }
         }
     }

@@ -1,7 +1,7 @@
 import Combine
 import Foundation
 
-protocol MemoDirectoryCoreDataRepositoryType {
+protocol MemoDirectoryCoreDataRepositoryType: AnyObject {
 
     func fetchSystemDirectoryEntities(fileCreator: any FileCreatorType)
         -> AnyPublisher<[SystemDirectories: MemoDirectoryModel], Error>

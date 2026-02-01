@@ -3,7 +3,7 @@ import Combine
 import CoreData
 import Foundation
 
-struct MemoComponentCoreDataRepository: MemoComponentCoreDataRepositoryType {
+final class MemoComponentCoreDataRepository: MemoComponentCoreDataRepositoryType {
 
     private let coredataStack: PersistentStore
 

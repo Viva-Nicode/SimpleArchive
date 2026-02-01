@@ -230,7 +230,6 @@ final class SingleTextEditorPageViewController: UIViewController, ViewController
     }
 
     @objc private func keyboardWillChangeFrame(_ notification: Notification) {
-
         guard
             let userInfo = notification.userInfo,
             let endFrame = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect

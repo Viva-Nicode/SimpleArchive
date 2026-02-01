@@ -3,6 +3,7 @@ import UIKit
 
 final class PageComponentCollectionViewCellFactory: PageComponentViewFactoryType {
     var audioDataSources: [UUID: AudioComponentDataSource] = [:]
+    var pageComponentVMCache: [UUID: any PageComponentViewModelType] = [:]
     var subject: PassthroughSubject<MemoPageViewInput, Never>
     var indexPath: IndexPath?
     let audioContentsDataContainer: AudioContentsDataContainerType
@@ -23,17 +24,29 @@ final class PageComponentCollectionViewCellFactory: PageComponentViewFactoryType
         guard let collectionView, let indexPath else { return UICollectionViewCell() }
 
         switch component {
-            case let textComponent as TextEditorComponent:
-                let textCell =
+            case let textEditorComponent as TextEditorComponent:
+                let textEditorComponentView =
                     collectionView
                     .dequeueReusableCell(
                         withReuseIdentifier: TextEditorComponentView.identifierForUseCollectionView,
                         for: indexPath
                     ) as! TextEditorComponentView
 
-                textCell.configure(component: textComponent, input: subject)
+                let textEditorComponentViewModel =
+                    pageComponentVMCache[textEditorComponent.id] as? TextEditorComponentViewModel
+                    ?? {
+                        DIContainer.shared.setArgument(TextEditorComponentViewModel.self, textEditorComponent)
+                        let viewModel = DIContainer.shared.resolve(TextEditorComponentViewModel.self)
+                        pageComponentVMCache[textEditorComponent.id] = viewModel
+                        return viewModel
+                    }()
 
-                return textCell
+                textEditorComponentView.configureTextComponentForMemoPageView(
+                    component: textEditorComponent,
+                    viewModel: textEditorComponentViewModel,
+                    input: subject)
+
+                return textEditorComponentView
 
             case let tableComponent as TableComponent:
                 let tableCell =

@@ -24,28 +24,3 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didDiscardSceneSessions sceneSessions: Set<UISceneSession>) {}
 }
-
-extension AppDelegate {
-    static func prettyPrint(
-        _ message: Any = "called",
-        file: String = #fileID,
-        function: String = #function,
-        line: Int = #line
-    ) {
-
-        let info = " \(file):\(line) \(function) "
-        let startLine = "🍩🍪🍰🍩🍪🍰🍩🍪🍰🍩🍪🍰\(info)🍩🍪🍰🍩🍪🍰🍩🍪🍰🍩🍪🍰"
-        let endLine =
-            String(repeating: "🧁🍨🍮", count: 8) + String(repeating: "🧁🍨🍮", count: info.count / 6)
-
-        print(
-            """
-
-            \(startLine)
-            \(message)
-            \(endLine)
-
-            """
-        )
-    }
-}
