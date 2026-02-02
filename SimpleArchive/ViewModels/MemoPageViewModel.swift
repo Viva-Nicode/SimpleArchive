@@ -100,6 +100,8 @@ final class MemoPageViewModel: NSObject, ViewModelType {
                 case .willChangeComponentOrder(let sourceIndex, let destinationIndex):
                     changeComponentOrder(sourceIndex: sourceIndex, destinationIndex: destinationIndex)
 
+                // MARK: - Snapshot
+                
                 case .willCaptureComponent(let componentID, let description):
                     captureComponent(componentID: componentID, description: description)
 
@@ -165,7 +167,6 @@ final class MemoPageViewModel: NSObject, ViewModelType {
 
                 case .willImportAudioFileFromFileSystem(let componentID, let tempURLs):
                     importAudioFromLocalFileSystem(componentID: componentID, didPickDocumentsAt: tempURLs)
-
             }
         }
         .store(in: &subscriptions)

@@ -8,9 +8,6 @@ enum SingleTextEditorPageInput {
     case willNavigateSnapshotView
     case willRestoreComponent
     case willCaptureComponent(String)
-
-    case willEditTextComponent(String)
-    case willUndoTextComponentContents
 }
 
 enum SingleTextEditorPageOutput {

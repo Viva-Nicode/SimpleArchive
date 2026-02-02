@@ -159,10 +159,7 @@ final class SingleTextEditorPageViewController: UIViewController, ViewController
 
         headerView.addSubview(undoButton)
 
-        undoButton.addAction(
-            UIAction { _ in
-                self.input.send(.willUndoTextComponentContents)
-            }, for: .touchUpInside)
+        undoButton.addAction(UIAction { _ in }, for: .touchUpInside)
 
         headerView.addSubview(captureButton)
 
@@ -226,7 +223,7 @@ final class SingleTextEditorPageViewController: UIViewController, ViewController
     }
 
     func textViewDidChange(_ textView: UITextView) {
-        input.send(.willEditTextComponent(textView.text))
+
     }
 
     @objc private func keyboardWillChangeFrame(_ notification: Notification) {

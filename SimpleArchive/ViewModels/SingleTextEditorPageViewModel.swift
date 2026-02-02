@@ -1,7 +1,8 @@
 import Combine
 import UIKit
 
-@MainActor class SingleTextEditorPageViewModel: NSObject, ViewModelType {
+@MainActor
+final class SingleTextEditorPageViewModel: NSObject, ViewModelType {
 
     typealias Input = SingleTextEditorPageInput
     typealias Output = SingleTextEditorPageOutput
@@ -72,31 +73,11 @@ import UIKit
                         snapShotDescription: desc)
 
                     output.send(.didCompleteComponentCapture)
-
-                case .willEditTextComponent(let contents):
-                    saveTextEditorComponentChanged(contents: contents)
-
-                case .willUndoTextComponentContents:
-                    undoTextEditorComponentContents()
             }
         }
         .store(in: &subscriptions)
 
         return output.eraseToAnyPublisher()
-    }
-
-    private func saveTextEditorComponentChanged(contents: String) {
-        //        textEditorComponentService.saveTextEditorComponentChanged(
-        //            textEditorComponent: textEditorComponent, contents: contents)
-        //        coredataReposotory.updateComponentContentChanges(modifiedComponent: textEditorComponent)
-    }
-
-    private func undoTextEditorComponentContents() {
-        //        let undidContents =
-        //            textEditorComponentService
-        //            .undoTextEditorComponentContents(textEditorComponent: textEditorComponent)
-        //        coredataReposotory.updateComponentContentChanges(modifiedComponent: textEditorComponent)
-        //        output.send(.didUndoTextComponentContents(undidContents))
     }
 
     private func captureComponentsChangesOnDisappear() {

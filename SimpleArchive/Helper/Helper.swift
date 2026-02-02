@@ -39,21 +39,6 @@ extension String {
 final class DebugHelper {
     static let logger = Logger()
 
-    static func myPrint(
-        _ message: Any,
-        file: String = #fileID,
-        function: String = #function,
-        line: Int = #line
-    ) {
-        print(
-            """
-            \("\(file):\(line) > \(function)")
-            \(message)
-            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-            """
-        )
-    }
-
     static func myLog(
         _ datas: Any...,
         file: String = #fileID,
