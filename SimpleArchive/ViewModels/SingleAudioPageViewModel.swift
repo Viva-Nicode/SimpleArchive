@@ -10,7 +10,7 @@ import UIKit
     private var subscriptions = Set<AnyCancellable>()
 
     private let audioComponent: AudioComponent
-    private var coredataReposotory: MemoSingleComponentRepositoryType
+    private var coredataReposotory: MemoComponentCoreDataRepositoryType
     private var pageTitle: String
     private var audioTrackController: AudioTrackControllerType
     private var audioDownloader: AudioDownloaderType
@@ -18,7 +18,7 @@ import UIKit
     private var audioContentsData: AudioContentsData
 
     init(
-        coredataReposotory: MemoSingleComponentRepositoryType,
+        coredataReposotory: MemoComponentCoreDataRepositoryType,
         audioComponent: AudioComponent,
         audioDownloader: AudioDownloaderType,
         audioFileManager: AudioFileManagerType,

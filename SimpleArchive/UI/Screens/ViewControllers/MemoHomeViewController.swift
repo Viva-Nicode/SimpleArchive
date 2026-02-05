@@ -301,7 +301,8 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
                     sortFileTableRows(sortingResult)
 
                 case .didNavigateSingleTextEditorComponentPageView(let vm):
-                    let singleTextEditorPageViewController = SingleTextEditorPageViewController(viewModel: vm)
+                    let singleTextEditorPageViewController = SingleTextEditorPageViewController(
+                        textEditorComponentViewModel: vm)
                     navigationController?.pushViewController(singleTextEditorPageViewController, animated: true)
 
                 case .didNavigateSingleTableComponentPageView(let vm):

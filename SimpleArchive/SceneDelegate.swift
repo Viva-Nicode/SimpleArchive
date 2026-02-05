@@ -18,7 +18,6 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         let memoHomeViewController = MemoHomeViewController(memoHomeViewModel: memoHomeViewModel)
         let indexViewController = UINavigationController(rootViewController: memoHomeViewController)
 
-        indexViewController.delegate = NavigationDelegateObject.shared
         indexViewController.navigationBar.isHidden = true
 
         window.rootViewController = indexViewController
@@ -35,27 +34,4 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     func sceneWillEnterForeground(_ scene: UIScene) {}
 
     func sceneDidEnterBackground(_ scene: UIScene) {}
-}
-
-protocol NavigationViewControllerDismissible {
-    func onDismiss()
-}
-
-class NavigationDelegateObject: NSObject, UINavigationControllerDelegate {
-
-    static var shared = NavigationDelegateObject()
-
-    func navigationController(
-        _ navigationController: UINavigationController,
-        didShow viewController: UIViewController, animated: Bool
-    ) {
-
-        if let fromViewController = navigationController.transitionCoordinator?.viewController(forKey: .from),
-            !navigationController.viewControllers.contains(fromViewController)
-        {
-            if let popedViewController = fromViewController as? NavigationViewControllerDismissible {
-                popedViewController.onDismiss()
-            }
-        }
-    }
 }

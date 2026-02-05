@@ -1,28 +1,18 @@
 import Combine
 import Foundation
 
-protocol MemoSingleComponentRepositoryType: AnyObject {
-    @discardableResult
-    func updateComponentChanges(componentChanges: PageComponentChangeObject) -> AnyPublisher<Void, Error>
-
-    @discardableResult
-    func updateComponentContentChanges(modifiedComponent: any PageComponent) -> AnyPublisher<Void, Error>
-
-    @discardableResult
-    func captureSnapshot(
-        snapshotRestorableComponent: any SnapshotRestorablePageComponent,
-        snapShotDescription: String,
-    ) -> AnyPublisher<Void, Error>
-
-    @discardableResult
-    func captureSnapshot(snapshotRestorableComponents: [any SnapshotRestorablePageComponent])
-        -> AnyPublisher<Void, Error>
-}
-
-protocol MemoComponentCoreDataRepositoryType: MemoSingleComponentRepositoryType {
-
+protocol MemoComponentCoreDataRepositoryType {
     @discardableResult
     func createComponentEntity(parentPageID: UUID, component: any PageComponent) -> AnyPublisher<Void, Error>
+    
+    @discardableResult
+    func updateComponentContentChanges(modifiedComponent: any PageComponent) -> AnyPublisher<Void, Error>
+    
+    func updateComponentFolding(componentID: UUID, isFolding: Bool)
 
-    func removeComponent(parentPageID: UUID, componentID: UUID)
+    func updateComponentName(componentID: UUID, newName: String)
+    
+    func updateComponentOrdered(componentID: UUID, renderingOrdered: [UUID])
+
+    func removeComponentEntity(componentID: UUID)
 }

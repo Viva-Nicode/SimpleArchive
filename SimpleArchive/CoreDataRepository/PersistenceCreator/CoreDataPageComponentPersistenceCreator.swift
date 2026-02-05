@@ -1,15 +1,14 @@
 import CoreData
 
 final class CoreDataPageComponentPersistenceCreator: PageComponentPersistenceCreatorType {
-    let context: NSManagedObjectContext
     let parentPage: MemoPageEntity
 
-    init(context: NSManagedObjectContext, parentPage: MemoPageEntity) {
-        self.context = context
+    init(parentPage: MemoPageEntity) {
         self.parentPage = parentPage
     }
 
     func persistTextEditorComponent(textComponent: TextEditorComponent) {
+        guard let context = parentPage.managedObjectContext else { return }
         let textEditorComponentEntity = TextEditorComponentEntity(context: context)
 
         textEditorComponentEntity.id = textComponent.id
@@ -22,8 +21,7 @@ final class CoreDataPageComponentPersistenceCreator: PageComponentPersistenceCre
         textEditorComponentEntity.snapshots = []
 
         textComponent.snapshots.forEach { snapshot in
-            let persistence = CoreDataComponentSnapshotPersistenceCreator(
-                context: context, parentComponent: textEditorComponentEntity)
+            let persistence = CoreDataComponentSnapshotPersistenceCreator(parentComponent: textEditorComponentEntity)
             snapshot.persistToPersistentStorage(using: persistence)
         }
 
@@ -31,6 +29,7 @@ final class CoreDataPageComponentPersistenceCreator: PageComponentPersistenceCre
     }
 
     func persistTableComponent(tableComponent: TableComponent) {
+        guard let context = parentPage.managedObjectContext else { return }
         let tableComponentEntity = TableComponentEntity(context: context)
 
         tableComponentEntity.id = tableComponent.id
@@ -79,8 +78,7 @@ final class CoreDataPageComponentPersistenceCreator: PageComponentPersistenceCre
 
         tableComponentEntity.snapshots = []
         tableComponent.snapshots.forEach { snapshot in
-            let persistence = CoreDataComponentSnapshotPersistenceCreator(
-                context: context, parentComponent: tableComponentEntity)
+            let persistence = CoreDataComponentSnapshotPersistenceCreator(parentComponent: tableComponentEntity)
             snapshot.persistToPersistentStorage(using: persistence)
         }
 
@@ -88,6 +86,7 @@ final class CoreDataPageComponentPersistenceCreator: PageComponentPersistenceCre
     }
 
     func persistAudioComponent(audioComponent: AudioComponent) {
+        guard let context = parentPage.managedObjectContext else { return }
         let audioComponentEntity = AudioComponentEntity(context: context)
         audioComponentEntity.id = audioComponent.id
         audioComponentEntity.creationDate = audioComponent.creationDate

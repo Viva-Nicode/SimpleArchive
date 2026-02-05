@@ -52,7 +52,7 @@ final class MemoDirectoryCoreDataRepository: MemoDirectoryCoreDataRepositoryType
         coredataStack.update { ctx in
             let fetchRequest = MemoDirectoryEntity.findDirectoryEntityById(id: storageItem.parentDirectory!.id)
             let parentDirectoryEntity = try ctx.fetch(fetchRequest).first
-            let persistence = CoreDataStorageItemPersistenceCreator(context: ctx)
+            let persistence = CoreDataStorageItemPersistenceCreator(parentDirectoryEntity: parentDirectoryEntity)
 
             persistence.parentDirectoryEntity = parentDirectoryEntity
             storageItem.persistToPersistentStorage(using: persistence)

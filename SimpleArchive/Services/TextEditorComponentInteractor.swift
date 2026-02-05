@@ -1,35 +1,39 @@
 import Combine
 import Foundation
 
-final class TextEditorComponentInteractor {
-    private var textEditorComponent: TextEditorComponent
-    private let memoComponentCoredataReposotory: MemoComponentCoreDataRepositoryType
+final class TextEditorComponentInteractor: CaptureableComponentInteractorType {
+
+    let pageComponent: TextEditorComponent
+    let memoComponentCoredataReposotory: MemoComponentCoreDataRepositoryType
+    let componentSnapshotCoreDataRepository: ComponentSnapshotCoreDataRepositoryType
 
     init(
+        textEditorComponent: TextEditorComponent,
         memoComponentCoredataReposotory: MemoComponentCoreDataRepositoryType,
-        textEditorComponent: TextEditorComponent
+        componentSnapshotCoreDataRepository: ComponentSnapshotCoreDataRepositoryType
     ) {
+        self.pageComponent = textEditorComponent
         self.memoComponentCoredataReposotory = memoComponentCoredataReposotory
-        self.textEditorComponent = textEditorComponent
+        self.componentSnapshotCoreDataRepository = componentSnapshotCoreDataRepository
     }
 
     func saveTextEditorComponentContentsChange(contents: String) {
         let action = makeTextEditActionFromContentsDiff(
-            originContents: textEditorComponent.componentContents,
+            originContents: pageComponent.componentContents,
             editedContents: contents)
-        textEditorComponent.componentContents = contents
-        textEditorComponent.setCaptureState(to: .needsCapture)
-        textEditorComponent.actions.append(action)
-        memoComponentCoredataReposotory.updateComponentContentChanges(modifiedComponent: textEditorComponent)
+        pageComponent.componentContents = contents
+        pageComponent.setCaptureState(to: .needsCapture)
+        pageComponent.actions.append(action)
+        memoComponentCoredataReposotory.updateComponentContentChanges(modifiedComponent: pageComponent)
     }
 
     func undoTextEditorComponentContents() -> String? {
-        guard let action = textEditorComponent.actions.popLast() else { return nil }
-        let currentContents = textEditorComponent.componentContents
+        guard let action = pageComponent.actions.popLast() else { return nil }
+        let currentContents = pageComponent.componentContents
         let undidText = undoingText(action: action, contents: currentContents)
 
-        textEditorComponent.componentContents = undidText
-        memoComponentCoredataReposotory.updateComponentContentChanges(modifiedComponent: textEditorComponent)
+        pageComponent.componentContents = undidText
+        memoComponentCoredataReposotory.updateComponentContentChanges(modifiedComponent: pageComponent)
         return undidText
     }
 

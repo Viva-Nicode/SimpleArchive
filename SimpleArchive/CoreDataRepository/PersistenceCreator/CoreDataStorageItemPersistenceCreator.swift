@@ -1,14 +1,19 @@
 import CoreData
 
 final class CoreDataStorageItemPersistenceCreator: StorageItemPersistenceCreatorType {
-    let context: NSManagedObjectContext
+    var context: NSManagedObjectContext?
     var parentDirectoryEntity: MemoDirectoryEntity?
+
+    init(parentDirectoryEntity: MemoDirectoryEntity? = nil) {
+        self.parentDirectoryEntity = parentDirectoryEntity
+    }
 
     init(context: NSManagedObjectContext) {
         self.context = context
     }
 
     func persistDirectory(directory: MemoDirectoryModel) {
+        guard let context = parentDirectoryEntity?.managedObjectContext ?? self.context else { return }
         let directoryEntity = MemoDirectoryEntity(context: context)
 
         directoryEntity.id = directory.id
@@ -27,6 +32,7 @@ final class CoreDataStorageItemPersistenceCreator: StorageItemPersistenceCreator
     }
 
     func persistPage(page: MemoPageModel) {
+        guard let context = parentDirectoryEntity?.managedObjectContext else { return }
         let memoPageEntity = MemoPageEntity(context: context)
         memoPageEntity.id = page.id
         memoPageEntity.name = page.name
@@ -34,7 +40,7 @@ final class CoreDataStorageItemPersistenceCreator: StorageItemPersistenceCreator
         memoPageEntity.isSingleComponentPage = page.isSingleComponentPage
         memoPageEntity.components = []
 
-        let persistence = CoreDataPageComponentPersistenceCreator(context: context, parentPage: memoPageEntity)
+        let persistence = CoreDataPageComponentPersistenceCreator(parentPage: memoPageEntity)
 
         page.getComponents.forEach {
             $0.persistToPersistentStorage(using: persistence)

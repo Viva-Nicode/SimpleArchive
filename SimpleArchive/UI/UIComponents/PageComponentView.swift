@@ -24,7 +24,13 @@ where ComponentContentType: UIView, PageComponentType: PageComponent {
     var subscriptions = Set<AnyCancellable>()
     var pageInputActionSubject: PassthroughSubject<MemoPageViewInput, Never>?
     var componentID: UUID!
-    var componentContentViewSnapshot: UIView?
+    var componentTitle: String = "" {
+        didSet {
+            titleLabel.text = componentTitle
+        }
+    }
+    var isFolded = false
+    var snapshotOverlayViewForMaximizationTransition: UIView?
     var componentContentView: ComponentContentType!
 
     deinit { subscriptions.removeAll() }
@@ -161,7 +167,7 @@ where ComponentContentType: UIView, PageComponentType: PageComponent {
         componentContentView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor).isActive = true
         componentContentView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor).isActive = true
     }
-    
+
     override func prepareForReuse() {
         super.prepareForReuse()
         subscriptions.removeAll()
@@ -175,6 +181,8 @@ where ComponentContentType: UIView, PageComponentType: PageComponent {
         componentID = component.id
         titleLabel.text = component.title
         creationDateLabel.text = "created at \(component.creationDate.formattedDate)"
+
+        subscriptions.removeAll()
 
         redCircleView.throttleUIViewTapGesturePublisher()
             .sink { [weak self] _ in
@@ -195,10 +203,9 @@ where ComponentContentType: UIView, PageComponentType: PageComponent {
         greenCircleView.throttleUIViewTapGesturePublisher()
             .sink { [weak self] _ in
                 guard let self else { return }
-                // 컨텐츠 뷰가 깜빡거리는게 싫어서 최대화 애니메이션이 진행되는 동안 컨텐츠 뷰위에 임시로 덧대는 뷰.
                 if !component.isMinimumHeight {
                     if let componentTextViewSnapshot = componentContentView.snapshotView(afterScreenUpdates: true) {
-                        self.componentContentViewSnapshot = componentTextViewSnapshot
+                        snapshotOverlayViewForMaximizationTransition = componentTextViewSnapshot
                         componentTextViewSnapshot.translatesAutoresizingMaskIntoConstraints = false
                         containerView.addSubview(componentTextViewSnapshot)
                         componentTextViewSnapshot.topAnchor.constraint(equalTo: componentInformationView.bottomAnchor)
@@ -218,7 +225,9 @@ where ComponentContentType: UIView, PageComponentType: PageComponent {
         titleLabel.throttleUIViewTapGesturePublisher()
             .sink { [weak self] _ in
                 guard let self else { return }
-                let popupView = ChangeComponentNamePopupView(componentTitle: component.title) { newTitle in
+                let popupView = ChangeComponentNamePopupView(
+                    componentTitle: component.title
+                ) { newTitle in
                     self.pageInputActionSubject?.send(.willChangeComponentName(self.componentID, newTitle))
                     self.titleLabel.text = newTitle
                 }
@@ -234,8 +243,8 @@ where ComponentContentType: UIView, PageComponentType: PageComponent {
         componentContentView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor).isActive = true
         componentContentView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor).isActive = true
 
-        componentContentViewSnapshot?.removeFromSuperview()
-        componentContentViewSnapshot = nil
+        snapshotOverlayViewForMaximizationTransition?.removeFromSuperview()
+        snapshotOverlayViewForMaximizationTransition = nil
     }
 
     func setMinimizeState(_ isMinimize: Bool) {}

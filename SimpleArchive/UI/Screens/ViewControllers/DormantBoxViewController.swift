@@ -1,7 +1,7 @@
 import Combine
 import UIKit
 
-class DormantBoxViewController: UIViewController, ViewControllerType, NavigationViewControllerDismissible {
+class DormantBoxViewController: UIViewController, ViewControllerType {
 
     typealias Input = DormantBoxViewInput
     typealias ViewModelType = DormantBoxViewModel
@@ -143,9 +143,12 @@ class DormantBoxViewController: UIViewController, ViewControllerType, Navigation
             .store(in: &subscriptions)
         fileInformationView.show()
     }
-
-    func onDismiss() {
-        subscriptions.removeAll()
+    
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        if isMovingFromParent || isBeingDismissed {
+            subscriptions.removeAll()
+        }
     }
 }
 

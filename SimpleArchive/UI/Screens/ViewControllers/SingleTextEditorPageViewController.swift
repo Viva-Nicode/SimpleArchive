@@ -1,17 +1,16 @@
 import Combine
 import UIKit
 
-final class SingleTextEditorPageViewController: UIViewController, ViewControllerType, UITextViewDelegate,
-    UIScrollViewDelegate, NavigationViewControllerDismissible, CaptureableComponentView
+final class SingleTextEditorPageViewController: UIViewController, UITextViewDelegate,
+    UIScrollViewDelegate, CaptureableComponentView
 {
-    typealias Input = SingleTextEditorPageInput
-    typealias ViewModelType = SingleTextEditorPageViewModel
+    private let actionDispatcher = TextEditorComponentActionDispatcher()
+    private var textEditorComponentViewModel: TextEditorComponentViewModel?
 
-    var input = PassthroughSubject<SingleTextEditorPageInput, Never>()
-    var viewModel: SingleTextEditorPageViewModel
     var subscriptions = Set<AnyCancellable>()
-
     var snapshotCapturePopupView: SnapshotCapturePopupView?
+
+    private let captureDispatchSemaphore = DispatchSemaphore(value: 1)
 
     private(set) var headerView: UIView = {
         let headerView = UIView()
@@ -72,20 +71,33 @@ final class SingleTextEditorPageViewController: UIViewController, ViewController
         return snapshotButton
     }()
 
-    override func viewDidLoad() {
-        bind()
-        input.send(.viewDidLoad)
-    }
+    init(textEditorComponentViewModel: TextEditorComponentViewModel) {
+        self.textEditorComponentViewModel = textEditorComponentViewModel
 
-    init(viewModel: SingleTextEditorPageViewModel) {
-        self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
+
+        actionDispatcher.bindToViewModel(
+            viewModel: textEditorComponentViewModel,
+            updateUIWithEvent: UIupdateEventHandler)
+
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(keyboardWillChangeFrame),
             name: UIResponder.keyboardWillChangeFrameNotification,
             object: nil
         )
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(autoCapture),
+            name: UIScene.didEnterBackgroundNotification,
+            object: nil)
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(autoCapture),
+            name: UIScene.didDisconnectNotification,
+            object: nil)
     }
 
     required init?(coder: NSCoder) {
@@ -94,72 +106,73 @@ final class SingleTextEditorPageViewController: UIViewController, ViewController
 
     deinit { print("SingleTextEditorPageViewController deinit") }
 
-    func bind() {
-        let output = viewModel.subscribe(input: input.eraseToAnyPublisher())
-
-        output.sink { [weak self] result in
-            guard let self else { return }
-
-            switch result {
-                case .viewDidLoad(let title, let date, let detail):
-                    setupUI(memoTitle: title, createDate: date, detail: detail)
-                    setupConstraint()
-
-                case .didNavigateSnapshotView(let vm):
-                    let snapshotView = ComponentSnapshotViewController(viewModel: vm)
-                    snapshotView.hasRestorePublisher
-                        .sink { [weak self] _ in
-                            guard let self else { return }
-                            input.send(.willRestoreComponent)
-                        }
-                        .store(in: &subscriptions)
-                    navigationController?.pushViewController(snapshotView, animated: true)
-
-                case .didRestoreComponent(let contents):
-                    UIView.animateKeyframes(withDuration: 0.5, delay: 0, options: []) {
-
-                        UIView.addKeyframe(withRelativeStartTime: 0.0, relativeDuration: 0.5) { [weak self] in
-                            guard let self else { return }
-                            textEditorView.alpha = 0
-                        }
-
-                        UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0.0) { [weak self] in
-                            guard let self else { return }
-                            textEditorView.delegate = nil
-                            textEditorView.text = contents
-                        }
-
-                        UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0.5) { [weak self] in
-                            guard let self else { return }
-                            textEditorView.alpha = 1
-                        }
-
-                    } completion: { [weak self] _ in
-                        guard let self else { return }
-                        self.textEditorView.delegate = self
-                    }
-
-                case .didCompleteComponentCapture:
-                    completeSnapshotCapturePopupView()
-
-                case .didUndoTextComponentContents(let contents):
-                    textEditorView.delegate = nil
-                    textEditorView.text = contents
-                    textEditorView.delegate = self
-            }
+    override func viewDidLoad() {
+        if let (title, createdDate, contents) = textEditorComponentViewModel?
+            .singleTextEditorComponentViewControllerInitialData
+        {
+            setupUI(title: title, createDate: createdDate, contents: contents)
+            setupConstraint()
         }
-        .store(in: &subscriptions)
     }
 
-    private func setupUI(memoTitle: String, createDate: Date, detail: String) {
+    private func UIupdateEventHandler(_ event: TextEditorComponentViewModel.Event) {
+        switch event {
+            case .didUndoTextComponentContents(let undidText):
+                textEditorView.text = undidText
+
+            case .didCaptureWithManual:
+                completeSnapshotCapturePopupView()
+
+            case .didRestoreComponentContents(let contents):
+                UIView.animateKeyframes(withDuration: 0.5, delay: 0, options: []) {
+                    UIView.addKeyframe(withRelativeStartTime: 0.0, relativeDuration: 0.5) {
+                        self.textEditorView.alpha = 0
+                    }
+                    UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0.0) {
+                        self.textEditorView.text = contents
+                    }
+                    UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0.5) {
+                        self.textEditorView.alpha = 1
+                    }
+                }
+
+            case .didNavigateSnapshotView(let viewModel):
+                let snapshotView = ComponentSnapshotViewController(viewModel: viewModel)
+                snapshotView.hasRestorePublisher
+                    .sink { [weak self] _ in
+                        guard let self else { return }
+                        actionDispatcher.resotreComponentContents()
+                    }
+                    .store(in: &subscriptions)
+                navigationController?.pushViewController(snapshotView, animated: true)
+
+            case .didRenameComponent:
+                break
+
+            case .didToggleFoldingComponent:
+                break
+
+            case .didRemovePageComponent:
+                break
+
+            case .didMaximizePageComponent:
+                break
+        }
+    }
+
+    private func setupUI(title: String, createDate: Date, contents: String) {
         view.backgroundColor = .systemBackground
         view.addSubview(headerView)
+
         headerView.addSubview(titleLable)
         headerView.addSubview(createDateLabel)
-
         headerView.addSubview(undoButton)
 
-        undoButton.addAction(UIAction { _ in }, for: .touchUpInside)
+        undoButton.addAction(
+            UIAction { [weak self] _ in
+                guard let self else { return }
+                actionDispatcher.undoTextEditorComponentContents()
+            }, for: .touchUpInside)
 
         headerView.addSubview(captureButton)
 
@@ -167,32 +180,33 @@ final class SingleTextEditorPageViewController: UIViewController, ViewController
             .flatMap { [weak self] _ -> AnyPublisher<String, Never> in
                 guard let self else { return Empty().eraseToAnyPublisher() }
 
-                let popup = SnapshotCapturePopupView()
-                self.snapshotCapturePopupView = popup
-                popup.show()
+                let snapshotCapturePopupView = SnapshotCapturePopupView()
+                self.snapshotCapturePopupView = snapshotCapturePopupView
+                snapshotCapturePopupView.show()
 
-                return popup.captureButtonPublisher
+                return snapshotCapturePopupView.captureButtonPublisher
             }
             .sink { [weak self] snapshotDescription in
                 guard let self else { return }
-                self.input.send(.willCaptureComponent(snapshotDescription))
+                actionDispatcher.captureTextEditorComponentManual(snapshotDescription: snapshotDescription)
             }
             .store(in: &subscriptions)
+
         headerView.addSubview(snapshotButton)
 
         snapshotButton.throttleTapPublisher()
             .sink { [weak self] _ in
                 guard let self else { return }
-                input.send(.willNavigateSnapshotView)
+                actionDispatcher.navigateToSnapshotView()
             }
             .store(in: &subscriptions)
 
-        titleLable.text = memoTitle
+        titleLable.text = title
         createDateLabel.text = createDate.formattedDate
 
         view.addSubview(textEditorView)
         textEditorView.delegate = self
-        textEditorView.text = detail
+        textEditorView.text = contents
     }
 
     private func setupConstraint() {
@@ -223,7 +237,8 @@ final class SingleTextEditorPageViewController: UIViewController, ViewController
     }
 
     func textViewDidChange(_ textView: UITextView) {
-
+        actionDispatcher.saveTextEditorComponentContentsChanged(contents: textView.text)
+        captureButton.isEnabled = !textView.text.isEmpty
     }
 
     @objc private func keyboardWillChangeFrame(_ notification: Notification) {
@@ -234,12 +249,27 @@ final class SingleTextEditorPageViewController: UIViewController, ViewController
 
         let keyboardHeight = view.convert(endFrame, from: nil).intersection(view.frame).height
 
-        self.textEditorView.contentInset.bottom = keyboardHeight
-        self.textEditorView.verticalScrollIndicatorInsets.bottom = keyboardHeight
+        textEditorView.contentInset.bottom = keyboardHeight
+        textEditorView.verticalScrollIndicatorInsets.bottom = keyboardHeight
     }
 
-    func onDismiss() {
-        input.send(.viewWillDisappear)
-        subscriptions.removeAll()
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        autoCapture()
+        if isMovingFromParent || isBeingDismissed { subscriptions.removeAll() }
+    }
+
+    @objc private func autoCapture() {
+        captureDispatchSemaphore.wait()
+        defer { captureDispatchSemaphore.signal() }
+
+        var taskID: UIBackgroundTaskIdentifier = .invalid
+
+        taskID = UIApplication.shared.beginBackgroundTask {
+            UIApplication.shared.endBackgroundTask(taskID)
+            taskID = .invalid
+        }
+        actionDispatcher.captureTextEditorComponentAutomatic()
+        UIApplication.shared.endBackgroundTask(taskID)
     }
 }

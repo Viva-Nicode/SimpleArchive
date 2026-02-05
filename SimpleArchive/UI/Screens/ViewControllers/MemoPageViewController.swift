@@ -80,6 +80,15 @@ final class MemoPageViewController: UIViewController, ViewControllerType {
 
     deinit { print("deinit MemoPageViewController") }
 
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        let isRemovedOnMemory = isMovingFromParent || isBeingDismissed
+        if isRemovedOnMemory {
+            input.send(.viewWillDisappear)
+            subscriptions.removeAll()
+        }
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -381,14 +390,13 @@ final class MemoPageViewController: UIViewController, ViewControllerType {
     }
 
     private func presentComponentFullScreen(with targetComponent: any PageComponent, index: Int) {
-
         selectedPageComponentCell =
             pageComponentCollectionView.cellForItem(at: IndexPath(item: index, section: 0))
             as? (any PageComponentViewType)
 
         switch targetComponent {
             case let textEditorComponent as TextEditorComponent:
-
+                // MARK: - 이거 이제 필요 없음
                 let contentView = selectedPageComponentCell!.getContentView() as! UITextView
                 pageComponentContentViewRect = contentView.convert(contentView.bounds, to: self.view.window!)
 
@@ -498,13 +506,6 @@ final class MemoPageViewController: UIViewController, ViewControllerType {
                 }
             }
         )
-    }
-}
-
-extension MemoPageViewController: NavigationViewControllerDismissible {
-    func onDismiss() {
-        input.send(.viewWillDisappear)
-        subscriptions.removeAll()
     }
 }
 
@@ -703,10 +704,7 @@ extension MemoPageViewController {
 }
 
 protocol ComponentsPageCollectionViewLayoutDelegate: AnyObject {
-    func collectionView(
-        heightForItemAt indexPath: IndexPath,
-        with width: CGFloat
-    ) -> CGFloat
+    func collectionView(heightForItemAt indexPath: IndexPath) -> CGFloat
 }
 
 final class ComponentsPageCollectionViewLayout: UICollectionViewFlowLayout {
@@ -742,7 +740,7 @@ final class ComponentsPageCollectionViewLayout: UICollectionViewFlowLayout {
         for item in 0..<numberOfItems {
             let indexPath = IndexPath(item: item, section: 0)
             let itemHeight =
-                delegate?.collectionView(heightForItemAt: indexPath, with: availableWidth)
+                delegate?.collectionView(heightForItemAt: indexPath)
                 ?? itemSize.height
 
             let frame = CGRect(

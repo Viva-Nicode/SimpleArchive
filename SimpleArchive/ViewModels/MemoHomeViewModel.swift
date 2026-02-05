@@ -199,11 +199,10 @@ final class MemoHomeViewModel: NSObject, ViewModelType {
 
     private func moveToPage(followingPage: MemoPageModel) {
         if followingPage.isSingleComponentPage {
-            if let singleTextEditorComponent = followingPage.getComponents.first as? TextEditorComponent {
-                DIContainer.shared.setArgument(SingleTextEditorPageViewModel.self, singleTextEditorComponent)
-                DIContainer.shared.setArgument(SingleTextEditorPageViewModel.self, followingPage.name)
-                let singleTextEditorPageViewModel = DIContainer.shared.resolve(SingleTextEditorPageViewModel.self)
-                output.send(.didNavigateSingleTextEditorComponentPageView(singleTextEditorPageViewModel))
+            if let textEditorComponent = followingPage.getComponents.first as? TextEditorComponent {
+                DIContainer.shared.setArgument(TextEditorComponentViewModel.self, textEditorComponent)
+                let viewModel = DIContainer.shared.resolve(TextEditorComponentViewModel.self)
+                output.send(.didNavigateSingleTextEditorComponentPageView(viewModel))
             } else if let singleTableComponent = followingPage.getComponents.first as? TableComponent {
                 DIContainer.shared.setArgument(SingleTablePageViewModel.self, singleTableComponent)
                 DIContainer.shared.setArgument(SingleTablePageViewModel.self, followingPage.name)

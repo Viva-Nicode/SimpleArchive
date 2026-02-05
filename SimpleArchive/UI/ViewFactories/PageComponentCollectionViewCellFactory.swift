@@ -43,8 +43,7 @@ final class PageComponentCollectionViewCellFactory: PageComponentViewFactoryType
 
                 textEditorComponentView.configureTextComponentForMemoPageView(
                     component: textEditorComponent,
-                    viewModel: textEditorComponentViewModel,
-                    input: subject)
+                    viewModel: textEditorComponentViewModel)
 
                 return textEditorComponentView
 

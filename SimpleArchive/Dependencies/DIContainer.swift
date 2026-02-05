@@ -44,7 +44,10 @@ final class DIContainer {
         let dependencyKey = String(describing: type)
         let argumentKey = String(describing: Arg.self)
 
-        guard argumentRequirements[dependencyKey] != nil else { return }
+        guard argumentRequirements[dependencyKey] != nil else {
+            DebugHelper.myLog("\(dependencyKey)가 존재하지 않으므로 setArgument불가")
+            return
+        }
 
         argumentRequirements[dependencyKey]?[argumentKey] = arg
     }
@@ -54,6 +57,7 @@ final class DIContainer {
         let argumentKey = String(describing: Arg.self)
 
         guard let arg = argumentRequirements[dependencyKey]?[argumentKey] as? Arg else {
+            DebugHelper.myLog(String(describing: argumentRequirements[dependencyKey]))
             fatalError("\(dependencyKey)를 위한 \(argumentKey) 추가 데이터가 주입되지 않흠")
         }
         return arg
@@ -95,7 +99,6 @@ final class DependencyConfigurator {
         configureTextEditorComponentViewModelDependencies()
         configureComponentSnapshotViewModelDependencies()
         configureDormantBoxViewModelDependencies()
-        configureSingleTextEditorComponentPageViewModelDependencies()
         configureSingleTableComponentViewModelDependencies()
         configureSingleAudioComponentViewModelDependencies()
     }
@@ -170,6 +173,7 @@ final class DependencyConfigurator {
             return MemoPageViewModel(
                 componentFactory: container.resolve(ComponentFactoryType.self),
                 memoComponentCoredataReposotory: container.resolve(MemoComponentCoreDataRepository.self),
+                componentSnapshotCoreDataRepository: container.resolve(ComponentSnapshotCoreDataRepository.self),
                 audioDownloader: container.resolve(AudioDownloaderType.self),
                 audioFileManager: container.resolve(AudioFileManagerType.self),
                 audioTrackController: container.resolve(AudioTrackControllerType.self),
@@ -222,25 +226,12 @@ final class DependencyConfigurator {
             let textEditorComponent =
                 container.getArgument(TextEditorComponentViewModel.self) as TextEditorComponent
             let memoComponentCoreDataRepository = container.resolve(MemoComponentCoreDataRepository.self)
+            let componentSnapshotCoreDataRepository = container.resolve(ComponentSnapshotCoreDataRepository.self)
             let textEditorComponentInteractor = TextEditorComponentInteractor(
-                memoComponentCoredataReposotory: memoComponentCoreDataRepository,
-                textEditorComponent: textEditorComponent)
-            return TextEditorComponentViewModel(textEditorComponentInteractor: textEditorComponentInteractor)
-        }
-    }
-
-    private static func configureSingleTextEditorComponentPageViewModelDependencies() {
-        let container = DIContainer.shared
-
-        container.register(SingleTextEditorPageViewModel.self, requiredArgs: [TextEditorComponent.self, String.self]) {
-            let textEditorComponent =
-                container.getArgument(SingleTextEditorPageViewModel.self) as TextEditorComponent
-            let pageName = container.getArgument(SingleTextEditorPageViewModel.self) as String
-            return SingleTextEditorPageViewModel(
-                coredataReposotory: container.resolve(MemoComponentCoreDataRepository.self),
                 textEditorComponent: textEditorComponent,
-                pageTitle: pageName
-            )
+                memoComponentCoredataReposotory: memoComponentCoreDataRepository,
+                componentSnapshotCoreDataRepository: componentSnapshotCoreDataRepository)
+            return TextEditorComponentViewModel(textEditorComponentInteractor: textEditorComponentInteractor)
         }
     }
 

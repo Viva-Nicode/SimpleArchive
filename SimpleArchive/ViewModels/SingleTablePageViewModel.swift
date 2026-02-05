@@ -9,14 +9,14 @@ import UIKit
     private var output = PassthroughSubject<SingleTablePageOutput, Never>()
     private var subscriptions = Set<AnyCancellable>()
 
-    private var coredataReposotory: MemoSingleComponentRepositoryType
+    private var coredataReposotory: MemoComponentCoreDataRepositoryType
     private var tableComponent: TableComponent
     private var pageTitle: String
 
     private let captureDispatchSemaphore = DispatchSemaphore(value: 1)
 
     init(
-        coredataReposotory: MemoSingleComponentRepositoryType,
+        coredataReposotory: MemoComponentCoreDataRepositoryType,
         tableComponent: TableComponent,
         pageTitle: String
     ) {
@@ -67,12 +67,13 @@ import UIKit
                 case .willRestoreComponent:
                     output.send(.didRestoreComponent(tableComponent.componentContents))
 
-                case .willCaptureComponent(let desc):
-                    coredataReposotory.captureSnapshot(
-                        snapshotRestorableComponent: tableComponent,
-                        snapShotDescription: desc)
+                case .willCaptureComponent(_):
+                    //                    coredataReposotory.captureSnapshot(
+                    //                        snapshotRestorableComponent: tableComponent,
+                    //                        snapShotDescription: desc)
 
-                    output.send(.didCompleteComponentCapture)
+                    //                    output.send(.didCompleteComponentCapture)
+                    break
 
                 case .willAppendRowToTable:
                     let newRow = tableComponent.componentContents.appendNewRow()
@@ -125,9 +126,9 @@ import UIKit
     }
 
     private func captureComponentsChangesOnDisappear() {
-        if let changedTableComponent = tableComponent.currentIfUnsaved() {
-            coredataReposotory.captureSnapshot(snapshotRestorableComponents: [changedTableComponent])
-        }
+        //        if let changedTableComponent = tableComponent.currentIfUnsaved() {
+        //            coredataReposotory.captureSnapshot(snapshotRestorableComponents: [changedTableComponent])
+        //        }
     }
 
     @objc private func captureComponentsChanges() {
@@ -141,23 +142,23 @@ import UIKit
 
         captureDispatchSemaphore.wait()
 
-        if let changedTableComponent = tableComponent.currentIfUnsaved() {
-            coredataReposotory.captureSnapshot(snapshotRestorableComponents: [changedTableComponent])
-                .sinkToResult { result in
-                    switch result {
-                        case .success:
-                            print("capture successfully")
-                        case .failure(let failure):
-                            print("capture fail reason : \(failure.localizedDescription)")
-                    }
-                    UIApplication.shared.endBackgroundTask(taskID)
-                    self.captureDispatchSemaphore.signal()
-                }
-                .store(in: &subscriptions)
-        } else {
-            print("no components to capture")
-            UIApplication.shared.endBackgroundTask(taskID)
-            captureDispatchSemaphore.signal()
-        }
+        //        if let changedTableComponent = tableComponent.currentIfUnsaved() {
+        //            coredataReposotory.captureSnapshot(snapshotRestorableComponents: [changedTableComponent])
+        //                .sinkToResult { result in
+        //                    switch result {
+        //                        case .success:
+        //                            print("capture successfully")
+        //                        case .failure(let failure):
+        //                            print("capture fail reason : \(failure.localizedDescription)")
+        //                    }
+        //                    UIApplication.shared.endBackgroundTask(taskID)
+        //                    self.captureDispatchSemaphore.signal()
+        //                }
+        //                .store(in: &subscriptions)
+        //        } else {
+        //            print("no components to capture")
+        //            UIApplication.shared.endBackgroundTask(taskID)
+        //            captureDispatchSemaphore.signal()
+        //        }
     }
 }

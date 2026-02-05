@@ -166,7 +166,6 @@ extension UIView {
     }
 
     enum BorderColor {
-
         case red
         case blue
         case green
@@ -237,5 +236,18 @@ enum UIConstants {
     enum TableComponentCellEditPopupViewConstants {
         static let rowElementWidth: CGFloat = ((UIView.screenWidth * 0.8) - 40) / 3
         static let editingSeparatorLineHeight: CGFloat = 25
+    }
+}
+
+extension UICollectionViewCell {
+    var collectionView: UICollectionView? {
+        var responder: UIResponder? = self
+        while let r = responder {
+            if let collectionView = r as? UICollectionView {
+                return collectionView
+            }
+            responder = r.next
+        }
+        return nil
     }
 }

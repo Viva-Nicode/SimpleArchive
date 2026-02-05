@@ -31,7 +31,7 @@ enum MemoHomeViewOutput {
     case didMoveFileToDormantBox(Int)
     case didNavigateDormantBoxView(DormantBoxViewModel)
     case didNavigatePageView(MemoPageViewModel)
-    case didNavigateSingleTextEditorComponentPageView(SingleTextEditorPageViewModel)
+    case didNavigateSingleTextEditorComponentPageView(TextEditorComponentViewModel)
     case didNavigateSingleTableComponentPageView(SingleTablePageViewModel)
     case didNavigateSingleAudioComponentPageView(SingleAudioPageViewModel)
     case didAppendPageToFixedTable(Int, [IndexPath], [IndexPath])

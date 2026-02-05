@@ -1,15 +1,14 @@
 import CoreData
 
 final class CoreDataComponentSnapshotPersistenceCreator: ComponentSnapshotPersistenceCreatorType {
-    let context: NSManagedObjectContext
-    let parentComponent: MemoComponentEntity
+    private let parentComponent: MemoComponentEntity
 
-    init(context: NSManagedObjectContext, parentComponent: MemoComponentEntity) {
-        self.context = context
+    init(parentComponent: MemoComponentEntity) {
         self.parentComponent = parentComponent
     }
 
     func persistTextEditorComponentSnapshot(snapshot: TextEditorComponentSnapshot) {
+        guard let context = parentComponent.managedObjectContext else { return }
         guard let textEditorComponentEntity = parentComponent as? TextEditorComponentEntity else { return }
 
         let textEditorComponentSnapshotEntity = TextEditorComponentSnapshotEntity(context: context)
@@ -24,6 +23,7 @@ final class CoreDataComponentSnapshotPersistenceCreator: ComponentSnapshotPersis
     }
 
     func persistTableComponentSnapshot(snapshot: TableComponentSnapshot) {
+        guard let context = parentComponent.managedObjectContext else { return }
         guard let tableComponentEntity = parentComponent as? TableComponentEntity else { return }
 
         let tableComponentSnapshotEntity = TableComponentSnapshotEntity(context: context)

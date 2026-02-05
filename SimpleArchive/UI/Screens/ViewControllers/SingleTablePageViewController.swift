@@ -2,7 +2,7 @@ import Combine
 import UIKit
 
 final class SingleTablePageViewController: UIViewController, ViewControllerType,
-    UIScrollViewDelegate, NavigationViewControllerDismissible, CaptureableComponentView
+    UIScrollViewDelegate, CaptureableComponentView
 {
     typealias Input = SingleTablePageInput
     typealias ViewModelType = SingleTablePageViewModel
@@ -226,8 +226,11 @@ final class SingleTablePageViewController: UIViewController, ViewControllerType,
         ])
     }
 
-    func onDismiss() {
-        input.send(.viewWillDisappear)
-        subscriptions.removeAll()
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        if isMovingFromParent || isBeingDismissed {
+            input.send(.viewWillDisappear)
+            subscriptions.removeAll()
+        }
     }
 }
