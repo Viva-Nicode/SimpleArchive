@@ -39,7 +39,7 @@ import UIKit
             object: nil)
     }
 
-    deinit { print("deinit SingleTablePageViewModel") }
+    deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
 
     func subscribe(input: AnyPublisher<Input, Never>) -> AnyPublisher<Output, Never> {
         input.sink { [weak self] event in

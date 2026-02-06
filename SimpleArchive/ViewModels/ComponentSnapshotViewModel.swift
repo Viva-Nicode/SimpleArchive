@@ -23,7 +23,7 @@ final class ComponentSnapshotViewModel: NSObject, ViewModelType {
         self.currentViewedSnapshotID = snapshotRestorableComponent.snapshots.first?.snapshotID
     }
 
-    deinit { print("deinit ComponentSnapshotViewModel") }
+    deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
 
     @discardableResult
     func subscribe(input: AnyPublisher<Input, Never>) -> AnyPublisher<Output, Never> {

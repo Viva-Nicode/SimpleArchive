@@ -14,7 +14,7 @@ final class MemoHomeDirectoryContentCellDataSource: NSObject, UITableViewDataSou
         self.input = input
     }
 
-    deinit { print("deinit MemoHomeDirectoryContentCellDataSource") }
+    deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
 
     func numberOfSections(in tableView: UITableView) -> Int {
         directoryContents.getChildItemSize()

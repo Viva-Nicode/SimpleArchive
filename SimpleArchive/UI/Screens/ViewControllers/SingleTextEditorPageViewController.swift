@@ -5,7 +5,6 @@ final class SingleTextEditorPageViewController: UIViewController, UITextViewDele
     UIScrollViewDelegate, CaptureableComponentView
 {
     private let actionDispatcher = TextEditorComponentActionDispatcher()
-    private var textEditorComponentViewModel: TextEditorComponentViewModel?
 
     var subscriptions = Set<AnyCancellable>()
     var snapshotCapturePopupView: SnapshotCapturePopupView?
@@ -72,9 +71,13 @@ final class SingleTextEditorPageViewController: UIViewController, UITextViewDele
     }()
 
     init(textEditorComponentViewModel: TextEditorComponentViewModel) {
-        self.textEditorComponentViewModel = textEditorComponentViewModel
-
         super.init(nibName: nil, bundle: nil)
+
+        let data = textEditorComponentViewModel.singleTextEditorComponentViewControllerInitialData
+
+        setupUI(title: data.title, createDate: data.createdDate, contents: data.contents)
+        setupConstraint()
+        setupAction()
 
         actionDispatcher.bindToViewModel(
             viewModel: textEditorComponentViewModel,
@@ -104,16 +107,7 @@ final class SingleTextEditorPageViewController: UIViewController, UITextViewDele
         fatalError("init(coder:) has not been implemented")
     }
 
-    deinit { print("SingleTextEditorPageViewController deinit") }
-
-    override func viewDidLoad() {
-        if let (title, createdDate, contents) = textEditorComponentViewModel?
-            .singleTextEditorComponentViewControllerInitialData
-        {
-            setupUI(title: title, createDate: createdDate, contents: contents)
-            setupConstraint()
-        }
-    }
+    deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
 
     private func UIupdateEventHandler(_ event: TextEditorComponentViewModel.Event) {
         switch event {
@@ -146,16 +140,10 @@ final class SingleTextEditorPageViewController: UIViewController, UITextViewDele
                     .store(in: &subscriptions)
                 navigationController?.pushViewController(snapshotView, animated: true)
 
-            case .didRenameComponent:
-                break
-
-            case .didToggleFoldingComponent:
-                break
-
-            case .didRemovePageComponent:
-                break
-
-            case .didMaximizePageComponent:
+            case .didRenameComponent,
+                .didToggleFoldingComponent,
+                .didRemovePageComponent,
+                .didMaximizePageComponent:
                 break
         }
     }
@@ -167,39 +155,8 @@ final class SingleTextEditorPageViewController: UIViewController, UITextViewDele
         headerView.addSubview(titleLable)
         headerView.addSubview(createDateLabel)
         headerView.addSubview(undoButton)
-
-        undoButton.addAction(
-            UIAction { [weak self] _ in
-                guard let self else { return }
-                actionDispatcher.undoTextEditorComponentContents()
-            }, for: .touchUpInside)
-
-        headerView.addSubview(captureButton)
-
-        captureButton.throttleTapPublisher()
-            .flatMap { [weak self] _ -> AnyPublisher<String, Never> in
-                guard let self else { return Empty().eraseToAnyPublisher() }
-
-                let snapshotCapturePopupView = SnapshotCapturePopupView()
-                self.snapshotCapturePopupView = snapshotCapturePopupView
-                snapshotCapturePopupView.show()
-
-                return snapshotCapturePopupView.captureButtonPublisher
-            }
-            .sink { [weak self] snapshotDescription in
-                guard let self else { return }
-                actionDispatcher.captureTextEditorComponentManual(snapshotDescription: snapshotDescription)
-            }
-            .store(in: &subscriptions)
-
         headerView.addSubview(snapshotButton)
-
-        snapshotButton.throttleTapPublisher()
-            .sink { [weak self] _ in
-                guard let self else { return }
-                actionDispatcher.navigateToSnapshotView()
-            }
-            .store(in: &subscriptions)
+        headerView.addSubview(captureButton)
 
         titleLable.text = title
         createDateLabel.text = createDate.formattedDate
@@ -210,30 +167,59 @@ final class SingleTextEditorPageViewController: UIViewController, UITextViewDele
     }
 
     private func setupConstraint() {
-        headerView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
-        headerView.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
-        headerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor).isActive = true
-        headerView.heightAnchor.constraint(equalToConstant: 60).isActive = true
+        NSLayoutConstraint.activate([
+            headerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            headerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            headerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            headerView.heightAnchor.constraint(equalToConstant: 60),
 
-        titleLable.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 10).isActive = true
-        titleLable.topAnchor.constraint(equalTo: headerView.topAnchor, constant: 10).isActive = true
+            titleLable.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 10),
+            titleLable.topAnchor.constraint(equalTo: headerView.topAnchor, constant: 10),
 
-        createDateLabel.topAnchor.constraint(equalTo: titleLable.bottomAnchor, constant: 3).isActive = true
-        createDateLabel.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 10).isActive = true
+            createDateLabel.topAnchor.constraint(equalTo: titleLable.bottomAnchor, constant: 3),
+            createDateLabel.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 10),
 
-        snapshotButton.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -10).isActive = true
-        snapshotButton.centerYAnchor.constraint(equalTo: headerView.centerYAnchor).isActive = true
+            snapshotButton.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -10),
+            snapshotButton.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
 
-        captureButton.trailingAnchor.constraint(equalTo: snapshotButton.leadingAnchor, constant: -10).isActive = true
-        captureButton.centerYAnchor.constraint(equalTo: headerView.centerYAnchor).isActive = true
+            captureButton.trailingAnchor.constraint(equalTo: snapshotButton.leadingAnchor, constant: -10),
+            captureButton.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
 
-        undoButton.trailingAnchor.constraint(equalTo: captureButton.leadingAnchor, constant: -10).isActive = true
-        undoButton.centerYAnchor.constraint(equalTo: headerView.centerYAnchor).isActive = true
+            undoButton.trailingAnchor.constraint(equalTo: captureButton.leadingAnchor, constant: -10),
+            undoButton.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
 
-        textEditorView.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 10).isActive = true
-        textEditorView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
-        textEditorView.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
-        textEditorView.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
+            textEditorView.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 10),
+            textEditorView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            textEditorView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            textEditorView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+        ])
+    }
+
+    private func setupAction() {
+        undoButton
+            .throttleTapPublisher(owner: self, interval: 0.25)
+            .sink { $0.actionDispatcher.undoTextEditorComponentContents() }
+            .store(in: &subscriptions)
+
+        snapshotButton
+            .throttleTapPublisher(owner: self)
+            .sink { $0.actionDispatcher.navigateToSnapshotView() }
+            .store(in: &subscriptions)
+
+        captureButton
+            .throttleTapPublisher(owner: self)
+            .flatMap { weakself -> AnyPublisher<String, Never> in
+                let snapshotCapturePopupView = SnapshotCapturePopupView()
+                weakself.snapshotCapturePopupView = snapshotCapturePopupView
+                snapshotCapturePopupView.show()
+
+                return snapshotCapturePopupView.captureButtonPublisher
+            }
+            .sink { [weak self] snapshotDescription in
+                guard let self else { return }
+                actionDispatcher.captureTextEditorComponentManual(snapshotDescription: snapshotDescription)
+            }
+            .store(in: &subscriptions)
     }
 
     func textViewDidChange(_ textView: UITextView) {
@@ -255,8 +241,11 @@ final class SingleTextEditorPageViewController: UIViewController, UITextViewDele
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
-        autoCapture()
-        if isMovingFromParent || isBeingDismissed { subscriptions.removeAll() }
+        if isMovingFromParent || isBeingDismissed {
+            actionDispatcher.captureTextEditorComponentAutomatic()
+            actionDispatcher.clearSubscriptions()
+            subscriptions.removeAll()
+        }
     }
 
     @objc private func autoCapture() {

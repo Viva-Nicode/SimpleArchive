@@ -28,7 +28,7 @@ final class MemoPageModel: NSObject, Codable, StorageItem {
         self.parentDirectory?.insertChildItem(item: self)
     }
 
-    deinit { print("deinit MemoPageModel : \(name)") }
+    deinit { myLog(String(describing: type(of: self)), "\(name)", c: .purple) }
 
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)

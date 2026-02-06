@@ -132,8 +132,6 @@ final class AudioTrackEditPopupView: PopupView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    deinit { print("AudioTrackEditPopupView deinit") }
-
     override func popupViewDetailConfigure() {
 
         cancelButton.addAction(UIAction { _ in self.dismiss() }, for: .touchUpInside)

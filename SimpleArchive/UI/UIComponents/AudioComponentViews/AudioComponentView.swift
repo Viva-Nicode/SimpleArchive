@@ -15,8 +15,6 @@ final class AudioComponentView: PageComponentView<AudioComponentContentView, Aud
         fatalError("init(coder:) has not been implemented")
     }
 
-    deinit { print("deinit AudioComponentView") }
-
     override func setupUI() {
         componentContentView = AudioComponentContentView()
         componentContentView.translatesAutoresizingMaskIntoConstraints = false

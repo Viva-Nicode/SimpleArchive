@@ -85,8 +85,6 @@ final class SnapshotCapturePopupView: PopupView {
             .eraseToAnyPublisher()
     }
 
-    deinit { print("deinit SnapshotCapturePopupView") }
-
     private func setStateToCaptureComplete() {
         let checkmark = UIImageView()
         let completeLabel = UILabel()

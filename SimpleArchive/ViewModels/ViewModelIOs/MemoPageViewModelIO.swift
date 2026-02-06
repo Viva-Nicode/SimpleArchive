@@ -4,17 +4,12 @@ import UIKit
 enum MemoPageViewInput {
     // MARK: - Life Cycle
     case viewDidLoad
-    case viewWillDisappear
 
     // MARK: - Common
     case willCreateNewComponent(ComponentType)
-    case willToggleComponentSize(UUID)
-    case willMaximizeComponent(UUID)
-    case willRemoveComponent(UUID)
-    case willChangeComponentName(UUID, String)
     case willChangeComponentOrder(Int, Int)
-    case willNavigateSnapshotView(UUID)
-    case willCaptureComponent(UUID, String)
+    case willAutoCaptureOnSceneBackgroundOrDisconnect
+    case willAutoCaptureWhenPopedFromNavigationStack
 
     // MARK: - Table
     case willAppendRowToTable(UUID)
@@ -39,18 +34,11 @@ enum MemoPageViewInput {
 }
 
 enum MemoPageViewOutput {
+    // MARK: - Life Cycle
     case viewDidLoad(MemoPageModel, AudioContentsDataContainerType)
 
     // MARK: - Common
     case didAppendComponentAt(Int)
-    case didRemoveComponentAt(Int)
-    case didMaximizeComponent(any PageComponent, Int)
-    case didToggleComponentSize(Int, Bool)
-    case didNavigateSnapshotView(ComponentSnapshotViewModel, Int)
-    case didCompleteComponentCapture(Int)
-
-    // MARK: - Text
-//    case didUndoTextComponentContents(Int, String)
 
     // MARK: - Table
     case didAppendRowToTableView(Int, TableComponentRow)

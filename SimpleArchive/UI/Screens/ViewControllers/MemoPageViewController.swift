@@ -68,6 +68,18 @@ final class MemoPageViewController: UIViewController, ViewControllerType {
 
         NotificationCenter.default.addObserver(
             self,
+            selector: #selector(autoCapture),
+            name: UIScene.didEnterBackgroundNotification,
+            object: nil)
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(autoCapture),
+            name: UIScene.didDisconnectNotification,
+            object: nil)
+
+        NotificationCenter.default.addObserver(
+            self,
             selector: #selector(keyboardWillChangeFrame),
             name: UIResponder.keyboardWillChangeFrameNotification,
             object: nil
@@ -78,15 +90,25 @@ final class MemoPageViewController: UIViewController, ViewControllerType {
         fatalError("init(coder:) has not been implemented")
     }
 
-    deinit { print("deinit MemoPageViewController") }
+    deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
-        let isRemovedOnMemory = isMovingFromParent || isBeingDismissed
-        if isRemovedOnMemory {
-            input.send(.viewWillDisappear)
+        // 네비게이션 스택에서 pop되어 vc가 다시 표시되려면 init을 통해야 할때
+        let isfreedFromMemory = isMovingFromParent || isBeingDismissed
+
+        if isfreedFromMemory {
+            input.send(.willAutoCaptureWhenPopedFromNavigationStack)
+            pageComponentCollectionView
+                .visibleCells
+                .compactMap { $0 as? (any PageComponentViewType) }
+                .forEach { $0.freedReferences() }
             subscriptions.removeAll()
         }
+    }
+
+    @objc private func autoCapture() {
+        input.send(.willAutoCaptureOnSceneBackgroundOrDisconnect)
     }
 
     override func viewDidLoad() {
@@ -102,6 +124,7 @@ final class MemoPageViewController: UIViewController, ViewControllerType {
 
         collectionView.backgroundColor = .clear
         collectionView.keyboardDismissMode = .onDrag
+        collectionView.isPrefetchingEnabled = false
 
         collectionView.register(
             TextEditorComponentView.self,
@@ -143,25 +166,25 @@ final class MemoPageViewController: UIViewController, ViewControllerType {
                 case .didAppendComponentAt(let index):
                     appendNewComponentView(index: index)
 
-                case .didRemoveComponentAt(let index):
-                    pageComponentCollectionView.deleteItems(at: [IndexPath(item: index, section: 0)])
+                //                case .didRemoveComponentAt(let index):
+                //                    pageComponentCollectionView.deleteItems(at: [IndexPath(item: index, section: 0)])
 
-                case .didToggleComponentSize(let componentIndexMinimized, let isMinimize):
-                    updateComponentHeight(componentIndexMinimized: componentIndexMinimized, isMinimize: isMinimize)
+                //                case .didToggleComponentSize(let componentIndexMinimized, let isMinimize):
+                //                    updateComponentHeight(componentIndexMinimized: componentIndexMinimized, isMinimize: isMinimize)
 
-                case .didMaximizeComponent(let component, let index):
-                    presentComponentFullScreen(with: component, index: index)
+                //                case .didMaximizeComponent(let component, let index):
+                //                    presentComponentFullScreen(with: component, index: index)
 
-                case .didNavigateSnapshotView(let viewModel, let componentIndex):
-                    navigateComponentSnapshotView(viewModel: viewModel, componentIndex: componentIndex)
+                //                case .didNavigateSnapshotView(let viewModel, let componentIndex):
+                //                    navigateComponentSnapshotView(viewModel: viewModel, componentIndex: componentIndex)
 
-                case .didCompleteComponentCapture(let componentIndex):
-                    let indexPath = IndexPath(item: componentIndex, section: 0)
-                    if let cell = pageComponentCollectionView.cellForItem(at: indexPath),
-                        let captureableComponentView = cell as? CaptureableComponentView
-                    {
-                        captureableComponentView.completeSnapshotCapturePopupView()
-                    }
+                //                case .didCompleteComponentCapture(let componentIndex):
+                //                    let indexPath = IndexPath(item: componentIndex, section: 0)
+                //                    if let cell = pageComponentCollectionView.cellForItem(at: indexPath),
+                //                        let captureableComponentView = cell as? CaptureableComponentView
+                //                    {
+                //                        captureableComponentView.completeSnapshotCapturePopupView()
+                //                    }
 
                 // MARK: - Table
                 case .didAppendRowToTableView(let componentIndex, let row):
@@ -347,100 +370,99 @@ final class MemoPageViewController: UIViewController, ViewControllerType {
         pageComponentCollectionView.scrollToItem(at: indexPath, at: .top, animated: true)
     }
 
-    private func updateComponentHeight(componentIndexMinimized: Int, isMinimize: Bool) {
-        let path = IndexPath(item: componentIndexMinimized, section: .zero)
-        if let cell = pageComponentCollectionView.cellForItem(at: path),
-            let pageComponentView = cell as? (any PageComponentViewType)
-        {
-            if isMinimize {
-                pageComponentView.setMinimizeState(isMinimize)
+    //    private func updateComponentHeight(componentIndexMinimized: Int, isMinimize: Bool) {
+    //        let path = IndexPath(item: componentIndexMinimized, section: .zero)
+    //        if let cell = pageComponentCollectionView.cellForItem(at: path),
+    //            let pageComponentView = cell as? (any PageComponentViewType)
+    //        {
+    //            if isMinimize {
+    //                pageComponentView.setMinimizeState(isMinimize)
+    //
+    //                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+    //                    UIView.animate(withDuration: 0.3) {
+    //                        self?.pageComponentCollectionView.collectionViewLayout.invalidateLayout()
+    //                    }
+    //                }
+    //            } else {
+    //                pageComponentCollectionView.performBatchUpdates {
+    //                    pageComponentCollectionView.collectionViewLayout.invalidateLayout()
+    //                } completion: { _ in
+    //                    UIView.animate(withDuration: 0.3) {
+    //                        pageComponentView.setMinimizeState(isMinimize)
+    //                    }
+    //                }
+    //            }
+    //        }
+    //    }
 
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-                    UIView.animate(withDuration: 0.3) {
-                        self?.pageComponentCollectionView.collectionViewLayout.invalidateLayout()
-                    }
-                }
-            } else {
-                pageComponentCollectionView.performBatchUpdates {
-                    pageComponentCollectionView.collectionViewLayout.invalidateLayout()
-                } completion: { _ in
-                    UIView.animate(withDuration: 0.3) {
-                        pageComponentView.setMinimizeState(isMinimize)
-                    }
-                }
-            }
-        }
-    }
+    //    private func navigateComponentSnapshotView(viewModel: ComponentSnapshotViewModel, componentIndex: Int) {
+    //        let snapshotView = ComponentSnapshotViewController(viewModel: viewModel)
+    //
+    //        snapshotView.hasRestorePublisher
+    //            .sink { [weak self] _ in
+    //                guard let self else { return }
+    //                if let selectedComponentIndexForMoveSnapshotView {
+    //                    let indexPath = IndexPath(item: selectedComponentIndexForMoveSnapshotView, section: 0)
+    //                    pageComponentCollectionView.reloadItems(at: [indexPath])
+    //                }
+    //            }
+    //            .store(in: &subscriptions)
+    //
+    //        selectedComponentIndexForMoveSnapshotView = componentIndex
+    //        navigationController?.pushViewController(snapshotView, animated: true)
+    //    }
 
-    private func navigateComponentSnapshotView(viewModel: ComponentSnapshotViewModel, componentIndex: Int) {
-        let snapshotView = ComponentSnapshotViewController(viewModel: viewModel)
-
-        snapshotView.hasRestorePublisher
-            .sink { [weak self] _ in
-                guard let self else { return }
-                if let selectedComponentIndexForMoveSnapshotView {
-                    let indexPath = IndexPath(item: selectedComponentIndexForMoveSnapshotView, section: 0)
-                    pageComponentCollectionView.reloadItems(at: [indexPath])
-                }
-            }
-            .store(in: &subscriptions)
-
-        selectedComponentIndexForMoveSnapshotView = componentIndex
-        navigationController?.pushViewController(snapshotView, animated: true)
-    }
-
-    private func presentComponentFullScreen(with targetComponent: any PageComponent, index: Int) {
-        selectedPageComponentCell =
-            pageComponentCollectionView.cellForItem(at: IndexPath(item: index, section: 0))
-            as? (any PageComponentViewType)
-
-        switch targetComponent {
-            case let textEditorComponent as TextEditorComponent:
-                // MARK: - 이거 이제 필요 없음
-                let contentView = selectedPageComponentCell!.getContentView() as! UITextView
-                pageComponentContentViewRect = contentView.convert(contentView.bounds, to: self.view.window!)
-
-                let fullscreenComponentViewController = FullScreenTextEditorComponentViewController(
-                    textEditorComponentModel: textEditorComponent,
-                    componentTextView: contentView
-                )
-                fullscreenComponentViewController.modalPresentationStyle = .fullScreen
-                fullscreenComponentViewController.transitioningDelegate = self
-
-                present(fullscreenComponentViewController, animated: true)
-
-            case let tableComponent as TableComponent:
-
-                let contentView = selectedPageComponentCell!.getContentView() as! TableComponentContentView
-                pageComponentContentViewRect = contentView.convert(contentView.bounds, to: self.view.window!)
-
-                let fullScreenTableComponentViewController = FullScreenTableComponentViewController(
-                    tableComponent: tableComponent,
-                    tableComponentContentView: contentView
-                )
-                fullScreenTableComponentViewController.modalPresentationStyle = .fullScreen
-                fullScreenTableComponentViewController.transitioningDelegate = self
-
-                present(fullScreenTableComponentViewController, animated: true)
-
-            case let audioComponent as AudioComponent:
-                let contentView = selectedPageComponentCell!.getContentView() as! AudioComponentContentView
-
-                pageComponentContentViewRect = contentView.convert(contentView.bounds, to: self.view.window!)
-
-                let fullScreenAudioComponentViewController = FullScreenAudioComponentViewController(
-                    audioComponent: audioComponent,
-                    audioComponentContentView: contentView
-                )
-                fullScreenAudioComponentViewController.modalPresentationStyle = .fullScreen
-                fullScreenAudioComponentViewController.transitioningDelegate = self
-
-                present(fullScreenAudioComponentViewController, animated: true)
-
-            default:
-                break
-        }
-    }
+    //    private func presentComponentFullScreen(with targetComponent: any PageComponent, index: Int) {
+    //        selectedPageComponentCell =
+    //            pageComponentCollectionView.cellForItem(at: IndexPath(item: index, section: 0))
+    //            as? (any PageComponentViewType)
+    //
+    //        switch targetComponent {
+    //            case let textEditorComponent as TextEditorComponent:
+    //                let contentView = selectedPageComponentCell!.getContentView() as! UITextView
+    //                pageComponentContentViewRect = contentView.convert(contentView.bounds, to: self.view.window!)
+    //
+    //                let fullscreenComponentViewController = FullScreenTextEditorComponentViewController(
+    //                    textEditorComponentModel: textEditorComponent,
+    //                    componentTextView: contentView
+    //                )
+    //                fullscreenComponentViewController.modalPresentationStyle = .fullScreen
+    //                fullscreenComponentViewController.transitioningDelegate = self
+    //
+    //                present(fullscreenComponentViewController, animated: true)
+    //
+    //            case let tableComponent as TableComponent:
+    //
+    //                let contentView = selectedPageComponentCell!.getContentView() as! TableComponentContentView
+    //                pageComponentContentViewRect = contentView.convert(contentView.bounds, to: self.view.window!)
+    //
+    //                let fullScreenTableComponentViewController = FullScreenTableComponentViewController(
+    //                    tableComponent: tableComponent,
+    //                    tableComponentContentView: contentView
+    //                )
+    //                fullScreenTableComponentViewController.modalPresentationStyle = .fullScreen
+    //                fullScreenTableComponentViewController.transitioningDelegate = self
+    //
+    //                present(fullScreenTableComponentViewController, animated: true)
+    //
+    //            case let audioComponent as AudioComponent:
+    //                let contentView = selectedPageComponentCell!.getContentView() as! AudioComponentContentView
+    //
+    //                pageComponentContentViewRect = contentView.convert(contentView.bounds, to: self.view.window!)
+    //
+    //                let fullScreenAudioComponentViewController = FullScreenAudioComponentViewController(
+    //                    audioComponent: audioComponent,
+    //                    audioComponentContentView: contentView
+    //                )
+    //                fullScreenAudioComponentViewController.modalPresentationStyle = .fullScreen
+    //                fullScreenAudioComponentViewController.transitioningDelegate = self
+    //
+    //                present(fullScreenAudioComponentViewController, animated: true)
+    //
+    //            default:
+    //                break
+    //        }
+    //    }
 
     private func presentCreatingNewComponentView() {
         let createNewComponentView = CreateNewComponentView()

@@ -25,7 +25,7 @@ final class MemoDirectoryModel: NSObject, StorageItem {
         parentDirectory?.insertChildItem(item: self)
     }
 
-    deinit { print("deinit MemoDirectoryModel : \(name)") }
+    deinit { myLog(String(describing: type(of: self)), "\(name)", c: .purple) }
 
     func removeStorageItem() {
         for storageItem in childItems.getItems() {
@@ -101,5 +101,3 @@ final class MemoDirectoryModel: NSObject, StorageItem {
         return result
     }
 }
-
-

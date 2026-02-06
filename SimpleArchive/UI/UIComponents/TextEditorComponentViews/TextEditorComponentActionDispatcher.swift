@@ -7,6 +7,8 @@ final class TextEditorComponentActionDispatcher {
 
     private let dispatcher = PassthroughSubject<Input, Never>()
     private var subscriptions = Set<AnyCancellable>()
+    // 뷰와 뷰모델간의 상호작용을 디스패쳐를 통해서만 가능하도록 강제하려고 뷰모델을 디스패쳐에 숨김.
+    private var viewModel: TextEditorComponentViewModel?
 
     func saveTextEditorComponentContentsChanged(contents: String) {
         dispatcher.send(.willEditTextComponentContents(editedText: contents))
@@ -15,12 +17,12 @@ final class TextEditorComponentActionDispatcher {
     func undoTextEditorComponentContents() {
         dispatcher.send(.willUndoTextComponentContents)
     }
-    
+
     func captureTextEditorComponentManual(snapshotDescription: String) {
         dispatcher.send(.willCaptureManualTextComponent(description: snapshotDescription))
     }
-    
-    func captureTextEditorComponentAutomatic(){
+
+    func captureTextEditorComponentAutomatic() {
         dispatcher.send(.willCaptureAutomaticTextComponent)
     }
 
@@ -43,13 +45,14 @@ final class TextEditorComponentActionDispatcher {
     func removePageComponent() {
         dispatcher.send(.willRemovePageComponent)
     }
-    
-    func maximizePageComponent(){
+
+    func maximizePageComponent() {
         dispatcher.send(.willMaximizePageComponent)
     }
 
-    func bindToViewModel(viewModel: TextEditorComponentViewModel, updateUIWithEvent: @escaping (Output) -> Void) {
-        viewModel
+    func bindToViewModel(viewModel: any PageComponentViewModelType, updateUIWithEvent: @escaping (Output) -> Void) {
+        self.viewModel = viewModel as? TextEditorComponentViewModel
+        self.viewModel?
             .bindToView(input: dispatcher.eraseToAnyPublisher())
             .sink { updateUIWithEvent($0) }
             .store(in: &subscriptions)
@@ -57,5 +60,7 @@ final class TextEditorComponentActionDispatcher {
 
     func clearSubscriptions() {
         subscriptions.removeAll()
+        viewModel?.clearSubscriptions()
+        viewModel = nil
     }
 }

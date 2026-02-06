@@ -41,7 +41,7 @@ final class TableComponent: NSObject, Codable, SnapshotRestorablePageComponent {
         self.snapshots = componentSnapshots
     }
 
-    deinit { print("deinit TableComponentModel : \(title)") }
+    deinit { myLog(String(describing: Swift.type(of: self)), "\(title)", c: .purple) }
 
     @discardableResult
     func makeSnapshot(desc: String, saveMode: SnapshotSaveMode) -> TableComponentSnapshot {

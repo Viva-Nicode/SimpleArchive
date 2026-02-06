@@ -14,6 +14,8 @@ protocol PageComponentViewType {
     var componentInformationView: UIStackView { get set }
     func resetupComponentContentViewToDismissFullScreenAnimation()
     func setMinimizeState(_ isMinimize: Bool)
+
+    func freedReferences()
 }
 
 class PageComponentView<ComponentContentType, PageComponentType>: UICollectionViewCell, PageComponentViewType
@@ -33,7 +35,7 @@ where ComponentContentType: UIView, PageComponentType: PageComponent {
     var snapshotOverlayViewForMaximizationTransition: UIView?
     var componentContentView: ComponentContentType!
 
-    deinit { subscriptions.removeAll() }
+    func freedReferences() { subscriptions.removeAll() }
 
     var containerView: UIView = {
         let containerView = UIView()
@@ -114,6 +116,8 @@ where ComponentContentType: UIView, PageComponentType: PageComponent {
         creationDate.font = .systemFont(ofSize: 14, weight: .thin)
         return creationDate
     }()
+    
+    deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
 
     func setupUI() {
         contentView.layer.masksToBounds = false
@@ -182,58 +186,56 @@ where ComponentContentType: UIView, PageComponentType: PageComponent {
         titleLabel.text = component.title
         creationDateLabel.text = "created at \(component.creationDate.formattedDate)"
 
-        subscriptions.removeAll()
+        //        redCircleView.throttleUIViewTapGesturePublisher()
+        //            .sink { [weak self] _ in
+        //                guard let self else { return }
+        //                contentView.endEditing(true)
+        //                pageInputActionSubject?.send(.willRemoveComponent(componentID))
+        //            }
+        //            .store(in: &subscriptions)
 
-        redCircleView.throttleUIViewTapGesturePublisher()
-            .sink { [weak self] _ in
-                guard let self else { return }
-                contentView.endEditing(true)
-                pageInputActionSubject?.send(.willRemoveComponent(componentID))
-            }
-            .store(in: &subscriptions)
+        //        yellowCircleView.throttleUIViewTapGesturePublisher()
+        //            .sink { [weak self] _ in
+        //                guard let self else { return }
+        //                contentView.endEditing(true)
+        //                pageInputActionSubject?.send(.willToggleComponentSize(componentID))
+        //            }
+        //            .store(in: &subscriptions)
 
-        yellowCircleView.throttleUIViewTapGesturePublisher()
-            .sink { [weak self] _ in
-                guard let self else { return }
-                contentView.endEditing(true)
-                pageInputActionSubject?.send(.willToggleComponentSize(componentID))
-            }
-            .store(in: &subscriptions)
+        //        greenCircleView.throttleUIViewTapGesturePublisher()
+        //            .sink { [weak self] _ in
+        //                guard let self else { return }
+        //                if !component.isMinimumHeight {
+        //                    if let componentTextViewSnapshot = componentContentView.snapshotView(afterScreenUpdates: true) {
+        //                        snapshotOverlayViewForMaximizationTransition = componentTextViewSnapshot
+        //                        componentTextViewSnapshot.translatesAutoresizingMaskIntoConstraints = false
+        //                        containerView.addSubview(componentTextViewSnapshot)
+        //                        componentTextViewSnapshot.topAnchor.constraint(equalTo: componentInformationView.bottomAnchor)
+        //                            .isActive = true
+        //                        componentTextViewSnapshot.leadingAnchor.constraint(equalTo: containerView.leadingAnchor)
+        //                            .isActive = true
+        //                        componentTextViewSnapshot.trailingAnchor.constraint(equalTo: containerView.trailingAnchor)
+        //                            .isActive = true
+        //                        componentTextViewSnapshot.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
+        //                            .isActive = true
+        //                    }
+        //                }
+        //                pageInputActionSubject?.send(.willMaximizeComponent(componentID))
+        //            }
+        //            .store(in: &subscriptions)
 
-        greenCircleView.throttleUIViewTapGesturePublisher()
-            .sink { [weak self] _ in
-                guard let self else { return }
-                if !component.isMinimumHeight {
-                    if let componentTextViewSnapshot = componentContentView.snapshotView(afterScreenUpdates: true) {
-                        snapshotOverlayViewForMaximizationTransition = componentTextViewSnapshot
-                        componentTextViewSnapshot.translatesAutoresizingMaskIntoConstraints = false
-                        containerView.addSubview(componentTextViewSnapshot)
-                        componentTextViewSnapshot.topAnchor.constraint(equalTo: componentInformationView.bottomAnchor)
-                            .isActive = true
-                        componentTextViewSnapshot.leadingAnchor.constraint(equalTo: containerView.leadingAnchor)
-                            .isActive = true
-                        componentTextViewSnapshot.trailingAnchor.constraint(equalTo: containerView.trailingAnchor)
-                            .isActive = true
-                        componentTextViewSnapshot.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
-                            .isActive = true
-                    }
-                }
-                pageInputActionSubject?.send(.willMaximizeComponent(componentID))
-            }
-            .store(in: &subscriptions)
-
-        titleLabel.throttleUIViewTapGesturePublisher()
-            .sink { [weak self] _ in
-                guard let self else { return }
-                let popupView = ChangeComponentNamePopupView(
-                    componentTitle: component.title
-                ) { newTitle in
-                    self.pageInputActionSubject?.send(.willChangeComponentName(self.componentID, newTitle))
-                    self.titleLabel.text = newTitle
-                }
-                popupView.show()
-            }
-            .store(in: &subscriptions)
+        //        titleLabel.throttleUIViewTapGesturePublisher()
+        //            .sink { [weak self] _ in
+        //                guard let self else { return }
+        //                let popupView = ChangeComponentNamePopupView(
+        //                    componentTitle: component.title
+        //                ) { newTitle in
+        //                    self.pageInputActionSubject?.send(.willChangeComponentName(self.componentID, newTitle))
+        //                    self.titleLabel.text = newTitle
+        //                }
+        //                popupView.show()
+        //            }
+        //            .store(in: &subscriptions)
     }
 
     func resetupComponentContentViewToDismissFullScreenAnimation() {

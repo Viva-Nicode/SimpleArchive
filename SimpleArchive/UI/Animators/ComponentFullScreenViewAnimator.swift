@@ -71,8 +71,6 @@ final class ComponentFullScreenViewAnimator: NSObject, UIViewControllerAnimatedT
             selectedCell.componentInformationView.bounds, to: window)
     }
 
-    deinit { print("Animator deinit") }
-
     func transitionDuration(using transitionContext: UIViewControllerContextTransitioning?) -> TimeInterval {
         Self.duration
     }

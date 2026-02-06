@@ -237,8 +237,6 @@ final class TableComponentCellEditPopupView: PopupView {
         super.init()
     }
 
-    deinit { print("deinit TableComponentCellEditPopupView") }
-
     @MainActor required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }

@@ -55,8 +55,6 @@ final class ColumnCarouselCollectionCell: UICollectionViewCell {
         fatalError("init(coder:) has not been implemented")
     }
 
-    deinit { print("deinit TableComponentView") }
-
     private func configureStyle() {
         self.backgroundColor = UIColor(red: 0.94, green: 0.96, blue: 0.98, alpha: 1)
         self.layer.cornerRadius = 10

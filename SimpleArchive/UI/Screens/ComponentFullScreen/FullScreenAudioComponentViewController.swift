@@ -16,8 +16,6 @@ final class FullScreenAudioComponentViewController: ComponentFullScreenView<Audi
         fatalError("init(coder:) has not been implemented")
     }
 
-    deinit { print("FullScreenAudioComponentViewController deinit") }
-
     override var toolbarColor: UIColor? {
         UIColor(named: "AudioComponentToolbarColor")
     }

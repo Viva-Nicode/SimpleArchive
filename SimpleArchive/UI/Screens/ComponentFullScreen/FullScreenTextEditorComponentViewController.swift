@@ -18,8 +18,6 @@ final class FullScreenTextEditorComponentViewController: ComponentFullScreenView
         fatalError("init(coder:) has not been implemented")
     }
 
-    deinit { print("FullScreenComponentViewController deinit") }
-
     override var toolbarColor: UIColor? {
         UIColor(named: "TextEditorComponentToolbarColor")
     }

@@ -104,7 +104,7 @@ final class AudioComponentContentView: UIView, UIDocumentPickerDelegate {
         setupConstraints()
     }
 
-    deinit { print("deinit AudioComponentContentView") }
+    deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
 
     private func setupUI() {
         audioTrackTableView.backgroundColor = .clear

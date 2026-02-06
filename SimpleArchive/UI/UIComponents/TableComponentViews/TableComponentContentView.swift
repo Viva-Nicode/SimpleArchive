@@ -119,7 +119,7 @@ final class TableComponentContentView: UIView, UIScrollViewDelegate {
         setupConstraints()
     }
 
-    deinit { print("deinit TableComponentContentView") }
+    deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
 
     private func setupUI() {
         addSubview(tableComponentToolBarStackView)

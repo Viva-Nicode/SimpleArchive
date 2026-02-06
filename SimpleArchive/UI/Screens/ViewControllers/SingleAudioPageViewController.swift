@@ -60,10 +60,7 @@ final class SingleAudioPageViewController: UIViewController, ViewControllerType 
         fatalError("init(coder:) has not been implemented")
     }
 
-    deinit {
-        subscriptions.removeAll()
-        print("deinit SingleAudioPageViewController")
-    }
+    deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
 
     func bind() {
         let output = viewModel.subscribe(input: input.eraseToAnyPublisher())

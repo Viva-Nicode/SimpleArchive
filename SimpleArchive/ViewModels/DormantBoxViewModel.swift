@@ -27,7 +27,7 @@ import UIKit
     }
 
     deinit {
-        print("DormantBoxViewModel deinit")
+        myLog(String(describing: Swift.type(of: self)), c: .purple)
         subscriptions.removeAll()
         restoredPageListSubject.send(restoredPageList)
     }

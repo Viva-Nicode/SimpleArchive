@@ -31,7 +31,7 @@ final class AudioFileManager: NSObject, AudioFileManagerType {
         }
     }
 
-    deinit { print("deinit AudioFileManager") }
+    deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
 
     func createAudioFileURL(fileName: String) -> URL {
         archiveURL.appendingPathComponent(fileName)

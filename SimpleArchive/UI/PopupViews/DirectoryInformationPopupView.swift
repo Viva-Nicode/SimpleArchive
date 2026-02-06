@@ -192,8 +192,6 @@ class DirectoryInformationPopupView: PopupView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    deinit { print("FileInformationPopupView deinit") }
-
     override func popupViewDetailConfigure() {
         directoryNameLabel.text = directoryInformation.name
         filePathLabel.text = directoryInformation.filePath

@@ -36,11 +36,20 @@ extension String {
     static var emptyAudioArtist: Self { "unknown" }
 }
 
-final class DebugHelper {
-    static let logger = Logger()
+func myLog(
+    _ datas: Any...,
+    c: DebugHelper.LogSquareColor = .green,
+    file: String = #fileID,
+    function: String = #function,
+    line: Int = #line
+) { DebugHelper.myLog(datas, c: c, file: file, function: function, line: line) }
 
-    static func myLog(
+final class DebugHelper {
+    private static let logger = Logger()
+
+    fileprivate static func myLog(
         _ datas: Any...,
+        c: LogSquareColor,
         file: String = #fileID,
         function: String = #function,
         line: Int = #line
@@ -57,11 +66,22 @@ final class DebugHelper {
             }
             .joined(separator: "")
 
-        logger.debug(
+        logger.info(
             """
-            \("🟧 [\(file):\(line)] \(function)")
+            \("\(c.rawValue) [\(file):\(line)] \(function)")
             \(logMsg)
             """
         )
+    }
+
+    enum LogSquareColor: String {
+        case green = "🟩"
+        case orange = "🟧"
+        case red = "🟥"
+        case yellow = "🟨"
+        case blue = "🟦"
+        case purple = "🟪"
+        case white = "⬜️"
+        case brown = "🟫"
     }
 }

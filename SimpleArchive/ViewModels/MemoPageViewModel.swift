@@ -56,26 +56,13 @@ final class MemoPageViewModel: NSObject, ViewModelType {
 
         NotificationCenter.default.addObserver(
             self,
-            selector: #selector(captureComponentsChanges),
-            name: UIScene.didEnterBackgroundNotification,
-            object: nil)
-
-        // MARK: - 이걸 뷰로 옮기고, 오토캡쳐를 뷰모델에 요청하는 식으로 간다.
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(captureComponentsChanges),
-            name: UIScene.didDisconnectNotification,
-            object: nil)
-
-        NotificationCenter.default.addObserver(
-            self,
             selector: #selector(pauseAudioOnInterruption),
             name: AVAudioSession.interruptionNotification,
             object: AVAudioSession.sharedInstance()
         )
     }
 
-    deinit { print("deinit MemoPageViewModel") }
+    deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
 
     @discardableResult
     func subscribe(input: AnyPublisher<Input, Never>) -> AnyPublisher<Output, Never> {
@@ -89,30 +76,15 @@ final class MemoPageViewModel: NSObject, ViewModelType {
                 case .willCreateNewComponent(let componentType):
                     createNewComponent(with: componentType)
 
-                case .willRemoveComponent(let componentID):  // 이전
-                    removeComponent(componentID: componentID)
-
-                case .willChangeComponentName(let id, let newName):  // 이전
-                    changeComponentName(componentID: id, newName: newName)
-
-                case .willToggleComponentSize(let componentID):  // 이전
-                    toggleComponentSize(componentID: componentID)
-
-                case .willMaximizeComponent(let componentID):  // 이전
-                    maximizeComponent(componentID: componentID)
-
                 case .willChangeComponentOrder(let sourceIndex, let destinationIndex):
                     changeComponentOrder(sourceIndex: sourceIndex, destinationIndex: destinationIndex)
 
                 // MARK: - Snapshot
-                case .willCaptureComponent(let componentID, let description):  // 이전
-                    captureComponent(componentID: componentID, description: description)
+                case .willAutoCaptureWhenPopedFromNavigationStack:
+                    captureComponentsWhenPopedFromNavigationStack()
 
-                case .willNavigateSnapshotView(let componentID):  // 이전
-                    moveToComponentSnapshotView(componentID: componentID)
-
-                case .viewWillDisappear:
-                    captureComponentsChangesOnDisappear()
+                case .willAutoCaptureOnSceneBackgroundOrDisconnect:
+                    captureComponentsWhenAppStateBecomeInactive()
 
                 // MARK: - Table
                 case .willAppendRowToTable(let componentID):
@@ -188,46 +160,40 @@ final class MemoPageViewModel: NSObject, ViewModelType {
         output.send(.didAppendComponentAt(memoPage.compnentSize - 1))
     }
 
-    private func removeComponent(componentID: UUID) {
-        if let removedComponent = memoPage.removeChildComponentById(componentID) {
-            if let audioComponent = removedComponent.item as? AudioComponent {
-                for audioTrack in audioComponent.componentContents.tracks {
-                    audioFileManager.removeAudio(with: audioTrack)
-                }
-            }
-            memoComponentCoredataReposotory.removeComponentEntity(componentID: removedComponent.item.id)
-            output.send(.didRemoveComponentAt(removedComponent.index))
-        }
-    }
+//    private func removeComponent(componentID: UUID) {
+//        if let removedComponent = memoPage.removeChildComponentById(componentID) {
+//            if let audioComponent = removedComponent.item as? AudioComponent {
+//                for audioTrack in audioComponent.componentContents.tracks {
+//                    audioFileManager.removeAudio(with: audioTrack)
+//                }
+//            }
+//            memoComponentCoredataReposotory.removeComponentEntity(componentID: removedComponent.item.id)
+//            output.send(.didRemoveComponentAt(removedComponent.index))
+//        }
+//    }
 
-    private func changeComponentName(componentID: UUID, newName: String) {
-        performWithComponentAt(componentID) { index, component in
-            component.title = newName
-            memoComponentCoredataReposotory.updateComponentName(componentID: componentID, newName: newName)
-        }
-    }
 
-    private func maximizeComponent(componentID: UUID) {
-        performWithComponentAt(componentID) { index, component in
-            if component.isMinimumHeight {
-                component.isMinimumHeight.toggle()
-                memoComponentCoredataReposotory.updateComponentFolding(
-                    componentID: componentID, isFolding: component.isMinimumHeight)
-                output.send(.didToggleComponentSize(index, component.isMinimumHeight))
-            } else {
-                output.send(.didMaximizeComponent(component, index))
-            }
-        }
-    }
+//    private func maximizeComponent(componentID: UUID) {
+//        performWithComponentAt(componentID) { index, component in
+//            if component.isMinimumHeight {
+//                component.isMinimumHeight.toggle()
+//                memoComponentCoredataReposotory.updateComponentFolding(
+//                    componentID: componentID, isFolding: component.isMinimumHeight)
+//                output.send(.didToggleComponentSize(index, component.isMinimumHeight))
+//            } else {
+//                output.send(.didMaximizeComponent(component, index))
+//            }
+//        }
+//    }
 
-    private func toggleComponentSize(componentID: UUID) {
-        performWithComponentAt(componentID) { index, component in
-            component.isMinimumHeight.toggle()
-            memoComponentCoredataReposotory.updateComponentFolding(
-                componentID: componentID, isFolding: component.isMinimumHeight)
-            output.send(.didToggleComponentSize(index, component.isMinimumHeight))
-        }
-    }
+//    private func toggleComponentSize(componentID: UUID) {
+//        performWithComponentAt(componentID) { index, component in
+//            component.isMinimumHeight.toggle()
+//            memoComponentCoredataReposotory.updateComponentFolding(
+//                componentID: componentID, isFolding: component.isMinimumHeight)
+//            output.send(.didToggleComponentSize(index, component.isMinimumHeight))
+//        }
+//    }
 
     private func changeComponentOrder(sourceIndex: Int, destinationIndex: Int) {
         let componentID = memoPage.changeComponentRenderingOrder(src: sourceIndex, des: destinationIndex)
@@ -236,49 +202,24 @@ final class MemoPageViewModel: NSObject, ViewModelType {
             renderingOrdered: memoPage.getComponents.map { $0.id })
     }
 
-    private func captureComponent(componentID: UUID, description: String) {  // 이제 수동 캡쳐 여기서 안함
-        //        performWithComponentAt(componentID) { index, component in
-        //            if let snapshotRestorableComponent = component as? any SnapshotRestorablePageComponent {
-        //
-        //                //                componentSnapshotCoreDataRepository.captureSnapshot(
-        //                //                    snapshotRestorableComponent: snapshotRestorableComponent,
-        //                //                    snapShotDescription: description)
-        //                componentSnapshotCoreDataRepository.createComponentSnapshot(
-        //                    componentID: <#T##UUID#>, snapshot: <#T##any ComponentSnapshotType#>)
-        //                output.send(.didCompleteComponentCapture(index))
-        //            }
-        //        }
-    }
-
-    private func moveToComponentSnapshotView(componentID: UUID) {  // 이거도 이제 여기서 안함
-        guard
-            let component = memoPage[componentID],
-            let snapshotRestorableComponent = component.item as? any SnapshotRestorablePageComponent
-        else { return }
-
-        DIContainer.shared.setArgument(ComponentSnapshotViewModel.self, snapshotRestorableComponent)
-        let componentSnapshotViewModel = DIContainer.shared.resolve(ComponentSnapshotViewModel.self)
-
-        output.send(.didNavigateSnapshotView(componentSnapshotViewModel, component.index))
-    }
-
-    private func captureComponentsChangesOnDisappear() {
-        let components = memoPage.getComponents
+    private func captureComponentsWhenPopedFromNavigationStack() {
+        let snapshotCreatingInfo = memoPage.getComponents
             .compactMap { $0 as? any SnapshotRestorablePageComponent }
             .compactMap { $0.currentIfUnsaved() }
-            .map { d -> (UUID, any ComponentSnapshotType) in
-                let snapshot = d.makeSnapshot(desc: "", saveMode: .automatic)
-                d.setCaptureState(to: .captured)
-                return (d.id, snapshot)
+            .map { componentNeedingCapture -> (UUID, any ComponentSnapshotType) in
+                let snapshot = componentNeedingCapture.makeSnapshot(desc: "", saveMode: .automatic)
+                componentNeedingCapture.setCaptureState(to: .captured)
+                return (componentNeedingCapture.id, snapshot)
             }
-        if components.isEmpty {
-            print("no components to capture")
+
+        if snapshotCreatingInfo.isEmpty {
+            myLog("No components need capturing")
         } else {
-            componentSnapshotCoreDataRepository.createComponentSnapshot(snapshots: components)
+            componentSnapshotCoreDataRepository.createComponentSnapshot(snapshots: snapshotCreatingInfo)
         }
     }
 
-    @objc private func captureComponentsChanges() {
+    private func captureComponentsWhenAppStateBecomeInactive() {
         var taskID: UIBackgroundTaskIdentifier = .invalid
 
         taskID = UIApplication.shared.beginBackgroundTask {
@@ -290,28 +231,29 @@ final class MemoPageViewModel: NSObject, ViewModelType {
 
         let start = CACurrentMediaTime()
 
-        let components = memoPage.getComponents
+        let snapshotCreatingInfo = memoPage.getComponents
             .compactMap { $0 as? any SnapshotRestorablePageComponent }
             .compactMap { $0.currentIfUnsaved() }
-            .map { d -> (UUID, any ComponentSnapshotType) in
-                let snapshot = d.makeSnapshot(desc: "", saveMode: .automatic)
-                d.setCaptureState(to: .captured)
-                return (d.id, snapshot)
+            .map { componentNeedingCapture -> (UUID, any ComponentSnapshotType) in
+                let snapshot = componentNeedingCapture.makeSnapshot(desc: "", saveMode: .automatic)
+                componentNeedingCapture.setCaptureState(to: .captured)
+                return (componentNeedingCapture.id, snapshot)
             }
 
-        if components.isEmpty {
-            print("no components to capture")
+        if snapshotCreatingInfo.isEmpty {
+            myLog("No components need capturing")
             UIApplication.shared.endBackgroundTask(taskID)
             captureDispatchSemaphore.signal()
         } else {
-            componentSnapshotCoreDataRepository.createComponentSnapshot(snapshots: components)
+            componentSnapshotCoreDataRepository.createComponentSnapshot(snapshots: snapshotCreatingInfo)
                 .sinkToResult { result in
-                    print(CACurrentMediaTime() - start)
                     switch result {
                         case .success:
-                            print("capture successfully")
+                            myLog("capture successfully : \(CACurrentMediaTime() - start)")
+
                         case .failure(let failure):
-                            print("capture fail reason : \(failure.localizedDescription)")
+                            myLog("capture fail reason : \(failure.localizedDescription)")
+
                     }
                     UIApplication.shared.endBackgroundTask(taskID)
                     self.captureDispatchSemaphore.signal()

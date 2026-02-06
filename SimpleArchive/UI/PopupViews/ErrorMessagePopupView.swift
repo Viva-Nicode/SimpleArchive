@@ -64,8 +64,6 @@ class ErrorMessagePopupView: PopupView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    deinit { print("ErrorMessagePopupView deinit") }
-
     override func popupViewDetailConfigure() {
         popupViewHeaderStackView.addArrangedSubview(titleIcon)
         popupViewHeaderStackView.addArrangedSubview(titleLabel)

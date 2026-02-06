@@ -41,7 +41,7 @@ final class AudioDownloader: NSObject, AudioDownloaderType {
         )
     }
 
-    deinit { print("deinit AudioDownloader") }
+    deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
 
     func downloadTask(with code: String) -> AnyPublisher<URL, AudioDownloadError> {
         let downloadUrl = URL(string: self.url + code)!

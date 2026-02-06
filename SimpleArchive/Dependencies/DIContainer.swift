@@ -45,7 +45,7 @@ final class DIContainer {
         let argumentKey = String(describing: Arg.self)
 
         guard argumentRequirements[dependencyKey] != nil else {
-            DebugHelper.myLog("\(dependencyKey)가 존재하지 않으므로 setArgument불가")
+            myLog("\(dependencyKey)가 존재하지 않으므로 setArgument불가")
             return
         }
 
@@ -57,7 +57,7 @@ final class DIContainer {
         let argumentKey = String(describing: Arg.self)
 
         guard let arg = argumentRequirements[dependencyKey]?[argumentKey] as? Arg else {
-            DebugHelper.myLog(String(describing: argumentRequirements[dependencyKey]))
+            myLog(String(describing: argumentRequirements[dependencyKey]))
             fatalError("\(dependencyKey)를 위한 \(argumentKey) 추가 데이터가 주입되지 않흠")
         }
         return arg

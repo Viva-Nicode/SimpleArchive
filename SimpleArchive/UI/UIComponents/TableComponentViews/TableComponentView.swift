@@ -44,8 +44,6 @@ final class TableComponentView: PageComponentView<TableComponentContentView, Tab
         fatalError("init(coder:) has not been implemented")
     }
 
-    deinit { print("deinit TableComponentView") }
-
     override func setupUI() {
         componentContentView = TableComponentContentView()
         componentContentView.translatesAutoresizingMaskIntoConstraints = false
@@ -87,28 +85,28 @@ final class TableComponentView: PageComponentView<TableComponentContentView, Tab
             componentID: componentID
         )
 
-        captureButton.throttleTapPublisher()
-            .flatMap { [weak self] _ -> AnyPublisher<String, Never> in
-                guard let self else { return Empty().eraseToAnyPublisher() }
+//        captureButton.throttleTapPublisher()
+//            .flatMap { [weak self] _ -> AnyPublisher<String, Never> in
+//                guard let self else { return Empty().eraseToAnyPublisher() }
+//
+//                let popup = SnapshotCapturePopupView()
+//                self.snapshotCapturePopupView = popup
+//                popup.show()
+//
+//                return popup.captureButtonPublisher
+//            }
+//            .sink { [weak self] snapshotDescription in
+//                guard let self else { return }
+//                
+//            }
+//            .store(in: &subscriptions)
 
-                let popup = SnapshotCapturePopupView()
-                self.snapshotCapturePopupView = popup
-                popup.show()
-
-                return popup.captureButtonPublisher
-            }
-            .sink { [weak self] snapshotDescription in
-                guard let self else { return }
-                self.pageInputActionSubject?.send(.willCaptureComponent(componentID, snapshotDescription))
-            }
-            .store(in: &subscriptions)
-
-        snapshotButton.throttleTapPublisher()
-            .sink { [weak self] _ in
-                guard let self else { return }
-                pageInputActionSubject?.send(.willNavigateSnapshotView(componentID))
-            }
-            .store(in: &subscriptions)
+//        snapshotButton.throttleTapPublisher()
+//            .sink { [weak self] _ in
+//                guard let self else { return }
+//                
+//            }
+//            .store(in: &subscriptions)
     }
 
     // 스냅샷 뷰 전용 configure

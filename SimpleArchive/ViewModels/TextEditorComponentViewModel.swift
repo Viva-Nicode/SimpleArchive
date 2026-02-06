@@ -15,7 +15,10 @@ final class TextEditorComponentViewModel: PageComponentViewModelType {
         self.title = textEditorComponentInteractor.pageComponent.title
         self.createdDate = textEditorComponentInteractor.pageComponent.creationDate
         self.contents = textEditorComponentInteractor.pageComponent.componentContents
+        myLog("\(title)")
     }
+
+    deinit { myLog(String(describing: Swift.type(of: self)),"\(title)", c: .purple) }
 
     func bindToView(input: AnyPublisher<Action, Never>) -> AnyPublisher<Event, Never> {
         input.sink { [weak self] event in
@@ -71,8 +74,8 @@ final class TextEditorComponentViewModel: PageComponentViewModelType {
         return eventOutput.eraseToAnyPublisher()
     }
 
-    var singleTextEditorComponentViewControllerInitialData: (String, Date, String) {
-        (title: title, createdDate: createdDate, contents: contents)
+    var singleTextEditorComponentViewControllerInitialData: (title: String, createdDate: Date, contents: String) {
+        (title, createdDate, contents)
     }
 
     func clearSubscriptions() {

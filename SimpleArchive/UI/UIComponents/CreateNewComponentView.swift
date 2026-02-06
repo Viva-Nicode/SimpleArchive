@@ -26,8 +26,6 @@ final class CreateNewComponentView: UIViewController {
     }()
     let componentTypePublisher = PassthroughSubject<ComponentType, Never>()
 
-    deinit { print("deinit CreateNewComponentView") }
-
     override func viewDidLoad() {
         view.backgroundColor = .systemBackground
         view.addSubview(backgroundView)

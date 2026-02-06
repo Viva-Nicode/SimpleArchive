@@ -127,11 +127,10 @@ final class AudioControlBarView: UIView {
 
     required init?(coder: NSCoder) { fatalError() }
 
-    deinit {
-        try? AVAudioSession.sharedInstance().setActive(false)
-        MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
-        print("deinit AudioControlBarView")
-    }
+    deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
+    // 해당 뷰 제거 될때 이거 써줘야 함
+//    try? AVAudioSession.sharedInstance().setActive(false)
+//    MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
 
     private func setupUI() {
         buttonStackView.addSubview(previousButton)

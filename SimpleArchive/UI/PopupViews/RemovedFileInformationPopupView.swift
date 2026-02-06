@@ -141,8 +141,6 @@ final class RemovedFileInformationPopupView: PopupView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    deinit { print("deinit RemovedFileInformationPopupView") }
-
     override func popupViewDetailConfigure() {
         pageNameLabel.text = pageInformation.name
         filePathLabel.text = pageInformation.filePath

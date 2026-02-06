@@ -72,7 +72,7 @@ final class SingleTablePageViewController: UIViewController, ViewControllerType,
         fatalError("init(coder:) has not been implemented")
     }
 
-    deinit { print("SingleTablePageViewController deinit") }
+    deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
 
     func bind() {
         let output = viewModel.subscribe(input: input.eraseToAnyPublisher())

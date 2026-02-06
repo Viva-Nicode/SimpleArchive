@@ -7,7 +7,6 @@ final class TextEditorComponentView:
     static let identifierForUseCollectionView: String = "TextEditorComponentView"
 
     private let actionDispatcher = TextEditorComponentActionDispatcher()
-    private var textEditorComponentViewModel: TextEditorComponentViewModel?
     weak var snapshotCapturePopupView: SnapshotCapturePopupView?
 
     private var snapshotInputActionSubject: PassthroughSubject<ComponentSnapshotViewModelInput, Never>?
@@ -57,12 +56,12 @@ final class TextEditorComponentView:
 
     override func prepareForReuse() {
         super.prepareForReuse()
-        textEditorComponentViewModel?.clearSubscriptions()
         actionDispatcher.clearSubscriptions()
     }
 
-    deinit {
-        print("deinit TextEditorComponentView")
+    override func freedReferences() {
+        super.freedReferences()
+        actionDispatcher.clearSubscriptions()
     }
 
     override func setupUI() {
@@ -179,7 +178,7 @@ final class TextEditorComponentView:
 
     func configureTextComponentForMemoPageView(
         component: TextEditorComponent,
-        viewModel: TextEditorComponentViewModel
+        viewModel: any PageComponentViewModelType
     ) {
         componentID = component.id
         componentTitle = component.title
@@ -189,14 +188,9 @@ final class TextEditorComponentView:
         componentContentView.text = component.componentContents
         captureButton.isEnabled = !component.componentContents.isEmpty
 
-        if component.isMinimumHeight { componentContentView.alpha = 0 }
+        componentContentView.alpha = isFolded ? 0 : 1
 
-        textEditorComponentViewModel = viewModel
-
-        actionDispatcher.bindToViewModel(
-            viewModel: viewModel,
-            updateUIWithEvent: UIupdateEventHandler)
-
+        actionDispatcher.bindToViewModel(viewModel: viewModel, updateUIWithEvent: UIupdateEventHandler)
         setupActions()
     }
 
@@ -283,9 +277,13 @@ final class TextEditorComponentView:
             case .didToggleFoldingComponent(let isMinimized):
                 isFolded = isMinimized
                 if let pageComponentCollectionView = collectionView {
-
                     if isMinimized {
-                        setMinimizeState(isMinimized)
+                        UIView.animate(
+                            withDuration: 0.3,
+                            animations: { [weak self] in
+                                self?.componentContentView.alpha = isMinimized ? 0 : 1
+                            }
+                        )
 
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                             UIView.animate(withDuration: 0.3) {
@@ -297,7 +295,12 @@ final class TextEditorComponentView:
                             pageComponentCollectionView.collectionViewLayout.invalidateLayout()
                         } completion: { _ in
                             UIView.animate(withDuration: 0.3) {
-                                self.setMinimizeState(isMinimized)
+                                UIView.animate(
+                                    withDuration: 0.3,
+                                    animations: { [weak self] in
+                                        self?.componentContentView.alpha = isMinimized ? 0 : 1
+                                    }
+                                )
                             }
                         }
                     }
@@ -336,14 +339,5 @@ final class TextEditorComponentView:
     func textViewDidChange(_ textView: UITextView) {
         actionDispatcher.saveTextEditorComponentContentsChanged(contents: textView.text)
         captureButton.isEnabled = !textView.text.isEmpty
-    }
-
-    override func setMinimizeState(_ isMinimize: Bool) {
-        UIView.animate(
-            withDuration: 0.3,
-            animations: { [weak self] in
-                self?.componentContentView.alpha = isMinimize ? 0 : 1
-            }
-        )
     }
 }

@@ -172,7 +172,7 @@ final class ComponentSnapshotViewController: UIViewController, ViewControllerTyp
         fatalError("init(coder:) has not been implemented")
     }
 
-    deinit { print("deinit ComponentSnapshotViewController") }
+    deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
 
     override func viewDidLoad() {
         super.viewDidLoad()

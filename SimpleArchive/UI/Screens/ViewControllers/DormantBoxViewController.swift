@@ -71,7 +71,7 @@ class DormantBoxViewController: UIViewController, ViewControllerType {
         fatalError("init(coder:) has not been implemented")
     }
 
-    deinit { print("deinit DormantBoxViewController") }
+    deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
 
     override func viewDidLoad() {
         super.viewDidLoad()

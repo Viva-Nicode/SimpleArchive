@@ -71,9 +71,9 @@ extension CaptureableComponentInteractorType {
                 componentSnapshotCoreDataRepository.createComponentSnapshot(
                     snapshots: [(captureablePageComponent.id, snapshot)])
                 captureablePageComponent.setCaptureState(to: .captured)
-                DebugHelper.myLog("\(captureablePageComponent.title) : capture complete")
+                myLog("\(captureablePageComponent.title) : capture complete")
             } else {
-                DebugHelper.myLog("\(captureablePageComponent.title) : do not needed capture")
+                myLog("\(captureablePageComponent.title) : do not needed capture")
             }
         }
     }

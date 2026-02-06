@@ -20,7 +20,7 @@ final class AudioTrackController: NSObject, AudioTrackControllerType {
     private(set) var player: AVAudioPlayer?
     private(set) var audioTrackURL: URL?
 
-    deinit { print("deinit AudioTrackController") }
+    deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
 
     var isPlaying: Bool {
         player?.isPlaying ?? false

@@ -105,13 +105,13 @@ class CoreDataStack: PersistentStore {
 
         if let deletedObjects = userInfo[NSDeletedObjectsKey] as? Set<NSManagedObject> {
             for deletedObject in deletedObjects {
-                DebugHelper.myLog("deleted", deletedObject)
+                myLog("deleted", deletedObject)
             }
         }
 
         if let insertedObjects = userInfo[NSInsertedObjectsKey] as? Set<NSManagedObject> {
             for insertedObject in insertedObjects {
-                DebugHelper.myLog("inserted", insertedObject)
+                myLog("inserted", insertedObject)
             }
         }
     }

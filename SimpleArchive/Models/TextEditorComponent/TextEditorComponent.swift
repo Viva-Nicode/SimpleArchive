@@ -39,7 +39,7 @@ final class TextEditorComponent: NSObject, Codable, SnapshotRestorablePageCompon
         self.snapshots = componentSnapshots
     }
 
-    deinit { print("deinit TextEditorComponentModel : \(title)") }
+    deinit { myLog(String(describing: Swift.type(of: self)), "\(title)", c: .purple) }
 
     @discardableResult
     func makeSnapshot(desc: String, saveMode: SnapshotSaveMode) -> TextEditorComponentSnapshot {

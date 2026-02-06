@@ -16,8 +16,6 @@ final class FullScreenTableComponentViewController: ComponentFullScreenView<Tabl
         fatalError("init(coder:) has not been implemented")
     }
 
-    deinit { print("FullScreenTableComponentViewController deinit") }
-
     override var toolbarColor: UIColor? {
         UIColor(named: "TableComponentToolbarColor")
     }
