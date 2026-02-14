@@ -13,12 +13,15 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         let window = UIWindow(windowScene: windowScene)
 
         DependencyConfigurator.configureDependencies()
-        
+
         let memoHomeViewModel = DIContainer.shared.resolve(MemoHomeViewModel.self)
         let memoHomeViewController = MemoHomeViewController(memoHomeViewModel: memoHomeViewModel)
         let indexViewController = UINavigationController(rootViewController: memoHomeViewController)
 
         indexViewController.navigationBar.isHidden = true
+        if #available(iOS 26.0, *) {
+            indexViewController.interactiveContentPopGestureRecognizer?.isEnabled = false
+        }
 
         window.rootViewController = indexViewController
         window.makeKeyAndVisible()

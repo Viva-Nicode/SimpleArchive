@@ -217,6 +217,7 @@ final class MemoHomeViewModel: NSObject, ViewModelType {
         } else {
             DIContainer.shared.setArgument(MemoPageViewModel.self, followingPage)
             let memoPageViewModel = DIContainer.shared.resolve(MemoPageViewModel.self)
+			
             output.send(.didNavigatePageView(memoPageViewModel))
         }
     }

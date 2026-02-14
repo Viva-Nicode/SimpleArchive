@@ -291,8 +291,9 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
                 case .didNavigateDormantBoxView(let vm):
                     navigationController?.pushViewController(DormantBoxViewController(viewModel: vm), animated: true)
 
-                case .didNavigatePageView(let vm):
-                    navigationController?.pushViewController(MemoPageViewController(viewModel: vm), animated: true)
+                case .didNavigatePageView(let pageViewModel):
+					let MemoPageViewController = MemoPageViewController(pageViewModel: pageViewModel)
+					navigationController?.pushViewController(MemoPageViewController, animated: true)
 
                 case .didChangedFileName(let newName, let before, let after):
                     changeRowFile(newName: newName, before: before, after: after)

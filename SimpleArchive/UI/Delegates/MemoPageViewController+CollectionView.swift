@@ -29,7 +29,7 @@ extension MemoPageViewController: UICollectionViewDragDelegate {
         itemsForBeginning session: any UIDragSession, at indexPath: IndexPath
     ) -> [UIDragItem] {
 
-        let dragedComponent = viewModel.memoPage[indexPath.item]
+        let dragedComponent = pageViewModel.memoPage[indexPath.item]
 
         switch dragedComponent.type {
             case .text:
@@ -69,7 +69,7 @@ extension MemoPageViewController: UICollectionViewDropDelegate {
         if let item = coordinator.items.first, let sourceIndexPath = item.sourceIndexPath {
             collectionView.performBatchUpdates(
                 {
-                    input.send(.willChangeComponentOrder(sourceIndexPath.item, destinationIndexPath.item))
+                    pageActionDispatcher.send(.willChangeComponentOrder(sourceIndexPath.item, destinationIndexPath.item))
                     collectionView.moveItem(at: sourceIndexPath, to: destinationIndexPath)
                 }, completion: nil)
 

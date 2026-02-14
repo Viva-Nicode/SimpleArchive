@@ -3,12 +3,12 @@ import UIKit
 
 final class PageComponentSnapshotViewFactory: PageComponentSnapshotViewFactoryType {
 
-    var input: PassthroughSubject<ComponentSnapshotViewModelInput, Never>
+    var input: PassthroughSubject<ComponentSnapshotViewModel.Action, Never>
     var indexPath: IndexPath?
 
     weak var collectionView: UICollectionView?
 
-    init(input: PassthroughSubject<ComponentSnapshotViewModelInput, Never>) {
+    init(input: PassthroughSubject<ComponentSnapshotViewModel.Action, Never>) {
         self.input = input
     }
 
@@ -20,13 +20,13 @@ final class PageComponentSnapshotViewFactory: PageComponentSnapshotViewFactoryTy
                 let cell =
                     collectionView
                     .dequeueReusableCell(
-                        withReuseIdentifier: TextEditorComponentView.identifierForUseCollectionView,
+                        withReuseIdentifier: TextEditorComponentView.reuseIdentifier,
                         for: indexPath) as! TextEditorComponentView
 
                 cell.configureTextComponentForSnapshotView(
                     snapshotID: textComponentSnapshot.snapshotID,
-                    snapshotDetail: textComponentSnapshot.contents,
-                    input: input)
+                    snapshotDetail: textComponentSnapshot.snapshotContents,
+                    snapshotDispatcher: input)
 
                 return cell
 
@@ -34,14 +34,14 @@ final class PageComponentSnapshotViewFactory: PageComponentSnapshotViewFactoryTy
                 let cell =
                     collectionView
                     .dequeueReusableCell(
-                        withReuseIdentifier: TableComponentView.reuseTableComponentIdentifier,
+                        withReuseIdentifier: TableComponentView.reuseIdentifier,
                         for: indexPath
                     ) as! TableComponentView
 
                 cell.configure(
                     snapshotID: tableComponentSnapshot.snapshotID,
-                    snapshotDetail: tableComponentSnapshot.contents,
-                    input: input)
+                    snapshotDetail: tableComponentSnapshot.snapshotContents,
+                    snapshotActionDispatcher: input)
 
                 return cell
 

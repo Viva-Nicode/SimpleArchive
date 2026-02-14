@@ -4,9 +4,9 @@ enum SingleTablePageInput {
     case viewDidLoad
     case viewWillDisappear
 
-    case willNavigateSnapshotView
-    case willRestoreComponent
-    case willCaptureComponent(String)
+//    case willNavigateSnapshotView
+//    case willRestoreComponent
+//    case willCaptureComponent(String)
 
     case willAppendRowToTable
     case willRemoveRowToTable(UUID)
@@ -19,9 +19,9 @@ enum SingleTablePageInput {
 enum SingleTablePageOutput {
     case viewDidLoad(String, Date, TableComponentContents, UUID)
 
-    case didNavigateSnapshotView(ComponentSnapshotViewModel)
-    case didRestoreComponent(TableComponentContents)
-    case didCompleteComponentCapture
+//    case didNavigateSnapshotView(ComponentSnapshotViewModel)
+//    case didRestoreComponent(TableComponentContents)
+//    case didCompleteComponentCapture
 
     case didAppendRowToTableView(TableComponentRow)
     case didAppendColumnToTableView(TableComponentColumn)

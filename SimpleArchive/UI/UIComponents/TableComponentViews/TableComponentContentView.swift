@@ -99,9 +99,8 @@ final class TableComponentContentView: UIView, UIScrollViewDelegate {
     private var editCellPopupViewconfirmButtonStore: AnyCancellable?
     private var editCellPopupViewRemoveRowButtonStore: AnyCancellable?
 
-    // MARK: - Dispath To ViewModel
-    private var componentID: UUID!
-    private var dispatcher: TableComponentActionDispatcher?
+    private var actionDispatcher: TableComponentActionDispatcher?
+    private var subscriptions = Set<AnyCancellable>()
 
     // MARK: - Minimization
     private var heightConstraints: [(NSLayoutConstraint, CGFloat)] = []
@@ -121,27 +120,27 @@ final class TableComponentContentView: UIView, UIScrollViewDelegate {
 
     deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
 
+    private func setupAction() {
+        columnAddButton.throttleTapPublisher(owner: self, interval: 0.25)
+            .sink { $0.actionDispatcher?.appendNewColumn() }
+            .store(in: &subscriptions)
+
+        rowAddButton.throttleTapPublisher(owner: self, interval: 0.25)
+            .sink {
+                if $0.columnsStackView.arrangedSubviews.isEmpty {
+                    $0.actionDispatcher?.appendNewColumn()
+                }
+                $0.actionDispatcher?.appendNewRow()
+            }
+            .store(in: &subscriptions)
+    }
+
     private func setupUI() {
         addSubview(tableComponentToolBarStackView)
 
         tableComponentToolBarStackView.addArrangedSubview(UIView.spacerView)
         tableComponentToolBarStackView.addArrangedSubview(columnAddButton)
         tableComponentToolBarStackView.addArrangedSubview(rowAddButton)
-
-        columnAddButton.addAction(
-            UIAction { [weak self] _ in
-                guard let self else { return }
-                dispatcher?.appendColumn(componentID: componentID!)
-            }, for: .touchUpInside)
-
-        rowAddButton.addAction(
-            UIAction { [weak self] _ in
-                guard let self else { return }
-                if columnsStackView.arrangedSubviews.isEmpty {
-                    dispatcher?.appendColumn(componentID: componentID!)
-                }
-                dispatcher?.appendRow(componentID: componentID!)
-            }, for: .touchUpInside)
 
         let presentCellEditPopupViewGestureRecognizer =
             UITapGestureRecognizer(target: self, action: #selector(presentCellEditPopupView(_:)))
@@ -169,7 +168,6 @@ final class TableComponentContentView: UIView, UIScrollViewDelegate {
     }
 
     private func setupConstraints() {
-
         NSLayoutConstraint.activate([
             tableComponentToolBarStackView.topAnchor.constraint(equalTo: topAnchor),
             tableComponentToolBarStackView.leadingAnchor.constraint(equalTo: leadingAnchor),
@@ -216,18 +214,18 @@ final class TableComponentContentView: UIView, UIScrollViewDelegate {
         NSLayoutConstraint.deactivate(heightConstraints.map { $0.0 } + stackViewConstraints)
         heightConstraints = []
         stackViewConstraints = []
+        subscriptions.removeAll()
     }
 
     // 싱글 & 멀티 페이지 전용
     func configure(
         columns: [TableComponentColumn],
         rows: [(rowID: UUID, cells: [String])],
-        dispatcher: TableComponentActionDispatcher,
-        isMinimum: Bool,
-        componentID: UUID
+        actionDispatcher: TableComponentActionDispatcher,
+        isMinimum: Bool
     ) {
-        self.dispatcher = dispatcher
-        self.componentID = componentID
+        self.actionDispatcher = actionDispatcher
+        setupAction()
 
         columnWidths = Array(repeating: 0, count: columns.count)
         cellWidthConstraints.append([])
@@ -292,7 +290,6 @@ final class TableComponentContentView: UIView, UIScrollViewDelegate {
         rowScrollView.alpha = isMinimum ? 0 : 1
     }
 
-    // 스냅샷 전용
     func configure(
         columns: [TableComponentColumn],
         rows: [(rowID: UUID, cells: [String])]
@@ -400,31 +397,32 @@ final class TableComponentContentView: UIView, UIScrollViewDelegate {
             }
         }
     }
+	
+	func minimizeContentView(_ isMinimum: Bool, isAnimated: Bool) {
+		if isMinimum {
+			UIView.animate(withDuration: isAnimated ? 0.3 : 0.0) { [weak self] in
+				guard let self else { return }
+				tableComponentToolBarStackView.alpha = 0
+				columnScrollView.alpha = 0
+				rowScrollView.alpha = 0
 
-    func minimizeContentView(_ isMinimum: Bool) {
-        if isMinimum {
-            UIView.animate(withDuration: 0.3) { [weak self] in
-                guard let self else { return }
-                tableComponentToolBarStackView.alpha = 0
-                columnScrollView.alpha = 0
-                rowScrollView.alpha = 0
+				heightConstraints.forEach { $0.0.constant = .zero }
+				NSLayoutConstraint.deactivate(stackViewConstraints)
+			}
+		} else {
+			UIView.animate(withDuration: isAnimated ? 0.3 : 0.0) { [weak self] in
+				guard let self else { return }
 
-                heightConstraints.forEach { $0.0.constant = .zero }
-                NSLayoutConstraint.deactivate(stackViewConstraints)
-            }
-        } else {
-            UIView.animate(withDuration: 0.3) { [weak self] in
-                guard let self else { return }
+				heightConstraints.forEach { $0.0.constant = $0.1 }
+				NSLayoutConstraint.activate(stackViewConstraints)
 
-                heightConstraints.forEach { $0.0.constant = $0.1 }
-                NSLayoutConstraint.activate(stackViewConstraints)
+				tableComponentToolBarStackView.alpha = 1
+				columnScrollView.alpha = 1
+				rowScrollView.alpha = 1
+			}
+		}
+	}
 
-                tableComponentToolBarStackView.alpha = 1
-                columnScrollView.alpha = 1
-                rowScrollView.alpha = 1
-            }
-        }
-    }
 
     func appendEmptyRowToStackView(rowID: UUID) {
         let tableComponentRowView = TableComponentRowView(rowID: rowID)
@@ -508,7 +506,7 @@ final class TableComponentContentView: UIView, UIScrollViewDelegate {
         )
 
         columnWidths.remove(atOffsets: removeIndexSet)
-        
+
         for (i, move) in moves.enumerated() {
             let tableComponentColumnLabel = columnsStackView.arrangedSubviews[i] as! TableComponentColumnLabel
             if let move {
@@ -600,19 +598,16 @@ final class TableComponentContentView: UIView, UIScrollViewDelegate {
                     .confirmButtonPublisher
                     .sink { [weak self] newCellValue in
                         guard let self else { return }
-                        dispatcher?
-                            .editCellValue(
-                                componentID: componentID!,
-                                columnID: columnID,
-                                rowID: tableComponentRowView.rowID,
-                                newValue: newCellValue)
+                        actionDispatcher?
+                            .applyCellValueChange(
+                                colID: columnID, rowID: tableComponentRowView.rowID, cellValue: newCellValue)
                     }
 
                 editCellPopupViewRemoveRowButtonStore = tableComponentCellEditPopupView
                     .removeRowButtonPublisher
                     .sink { [weak self] _ in
                         guard let self else { return }
-                        dispatcher?.removeRow(componentID: componentID!, rowID: tableComponentRowView.rowID)
+                        actionDispatcher?.removeRow(rowID: tableComponentRowView.rowID)
                     }
 
                 tableComponentCellEditPopupView.show()
@@ -642,8 +637,9 @@ final class TableComponentContentView: UIView, UIScrollViewDelegate {
     }
 
     @objc private func presentColumnEditPopupView(_ gesture: TableColumnTapGestureRecognizer) {
-        let tappedColumnID = gesture.columnID
-        dispatcher?.presentColumnEditPopup(componentID: componentID!, columnID: tappedColumnID!)
+        if let tappedColumnID = gesture.columnID {
+            actionDispatcher?.presentColumnEditPopup(columnID: tappedColumnID)
+        }
     }
 
     func scrollViewDidScroll(_ scrollView: UIScrollView) {

@@ -21,10 +21,7 @@ final class MemoPageViewModel: NSObject, ViewModelType {
     private var audioTrackController: AudioTrackControllerType
     private var audioFileManager: AudioFileManagerType
 
-    private let captureDispatchSemaphore = DispatchSemaphore(value: 1)
     private var audioContentsDataContainer: AudioContentsDataContainer
-
-    private let tableComponentService = TableComponentService()
 
     init(
         componentFactory: any ComponentFactoryType,
@@ -76,35 +73,20 @@ final class MemoPageViewModel: NSObject, ViewModelType {
                 case .willCreateNewComponent(let componentType):
                     createNewComponent(with: componentType)
 
+                case .willRemovePageComponent(let componentIndex):
+                    removeComponent(componentID: componentIndex)
+
                 case .willChangeComponentOrder(let sourceIndex, let destinationIndex):
                     changeComponentOrder(sourceIndex: sourceIndex, destinationIndex: destinationIndex)
 
-                // MARK: - Snapshot
-                case .willAutoCaptureWhenPopedFromNavigationStack:
-                    captureComponentsWhenPopedFromNavigationStack()
+                case .willRenameComponent(let componentID, let newName):
+                    renamePageComponent(componentID, newName)
 
-                case .willAutoCaptureOnSceneBackgroundOrDisconnect:
-                    captureComponentsWhenAppStateBecomeInactive()
+                case .willToggleFoldingComponent(let componentID):
+                    togglePageComponentFolding(componentID: componentID)
 
-                // MARK: - Table
-                case .willAppendRowToTable(let componentID):
-                    appendTableComponentRow(componentID)
-
-                case .willRemoveRowToTable(let componentID, let rowID):
-                    removeTableComponentRow(componentID, rowID)
-
-                case .willAppendColumnToTable(let componentID):
-                    appendTableComponentColumn(componentID)
-
-                case .willApplyTableCellChanges(let componentID, let colID, let rowID, let newCellValue):
-                    applyTableCellValue(
-                        componentID: componentID, colID: colID, rowID: rowID, newCellValue: newCellValue)
-
-                case .willPresentTableColumnEditingPopupView(let componentID, let tappedColumnID):
-                    presentTableComponentColumnEditPopupView(componentID: componentID, columnID: tappedColumnID)
-
-                case .willApplyTableColumnChanges(let componentID, let columns):
-                    applyTableColumnChanges(componentID: componentID, columns: columns)
+                case .willMaximizePageComponent(let componentID):
+                    maximizeComponent(componentID: componentID)
 
                 // MARK: - Audio
                 case .willDownloadMusicWithCode(let componentID, let downloadCode):
@@ -160,106 +142,67 @@ final class MemoPageViewModel: NSObject, ViewModelType {
         output.send(.didAppendComponentAt(memoPage.compnentSize - 1))
     }
 
-//    private func removeComponent(componentID: UUID) {
-//        if let removedComponent = memoPage.removeChildComponentById(componentID) {
-//            if let audioComponent = removedComponent.item as? AudioComponent {
-//                for audioTrack in audioComponent.componentContents.tracks {
-//                    audioFileManager.removeAudio(with: audioTrack)
-//                }
-//            }
-//            memoComponentCoredataReposotory.removeComponentEntity(componentID: removedComponent.item.id)
-//            output.send(.didRemoveComponentAt(removedComponent.index))
-//        }
-//    }
+    private func renamePageComponent(_ componentID: UUID, _ newName: String) {
+        performWithComponentAt(componentID) { index, component in
+            component.title = newName
+            memoComponentCoredataReposotory.updateComponentName(componentID: componentID, newName: newName)
+            output.send(.didRenameComponent(componentIndex: index, newName: newName))
+        }
+    }
 
+    private func togglePageComponentFolding(componentID: UUID) {
+        performWithComponentAt(componentID) { index, component in
+            component.isMinimumHeight.toggle()
+            memoComponentCoredataReposotory
+                .updateComponentFolding(
+                    componentID: componentID,
+                    isFolding: component.isMinimumHeight)
+            output.send(
+                .didToggleFoldingComponent(
+                    componentIndex: index,
+                    isMinimized: component.isMinimumHeight
+                )
+            )
+        }
+    }
 
-//    private func maximizeComponent(componentID: UUID) {
-//        performWithComponentAt(componentID) { index, component in
-//            if component.isMinimumHeight {
-//                component.isMinimumHeight.toggle()
-//                memoComponentCoredataReposotory.updateComponentFolding(
-//                    componentID: componentID, isFolding: component.isMinimumHeight)
-//                output.send(.didToggleComponentSize(index, component.isMinimumHeight))
-//            } else {
-//                output.send(.didMaximizeComponent(component, index))
-//            }
-//        }
-//    }
+    private func maximizeComponent(componentID: UUID) {
+        performWithComponentAt(componentID) { index, component in
+            if component.isMinimumHeight {
+                component.isMinimumHeight.toggle()
+                memoComponentCoredataReposotory
+                    .updateComponentFolding(
+                        componentID: componentID,
+                        isFolding: component.isMinimumHeight)
+                output.send(
+                    .didToggleFoldingComponent(
+                        componentIndex: index,
+                        isMinimized: component.isMinimumHeight
+                    )
+                )
+            } else {
+                output.send(.didMaximizePageComponent(componentIndex: index))
+            }
+        }
+    }
 
-//    private func toggleComponentSize(componentID: UUID) {
-//        performWithComponentAt(componentID) { index, component in
-//            component.isMinimumHeight.toggle()
-//            memoComponentCoredataReposotory.updateComponentFolding(
-//                componentID: componentID, isFolding: component.isMinimumHeight)
-//            output.send(.didToggleComponentSize(index, component.isMinimumHeight))
-//        }
-//    }
+    private func removeComponent(componentID: UUID) {
+        if let removedComponent = memoPage.removeChildComponentById(componentID) {
+            if let audioComponent = removedComponent.item as? AudioComponent {
+                for audioTrack in audioComponent.componentContents.tracks {
+                    audioFileManager.removeAudio(with: audioTrack)
+                }
+            }
+            memoComponentCoredataReposotory.removeComponentEntity(componentID: removedComponent.item.id)
+            output.send(.didRemovePageComponent(componentIndex: removedComponent.index))
+        }
+    }
 
     private func changeComponentOrder(sourceIndex: Int, destinationIndex: Int) {
         let componentID = memoPage.changeComponentRenderingOrder(src: sourceIndex, des: destinationIndex)
         memoComponentCoredataReposotory.updateComponentOrdered(
             componentID: componentID,
             renderingOrdered: memoPage.getComponents.map { $0.id })
-    }
-
-    private func captureComponentsWhenPopedFromNavigationStack() {
-        let snapshotCreatingInfo = memoPage.getComponents
-            .compactMap { $0 as? any SnapshotRestorablePageComponent }
-            .compactMap { $0.currentIfUnsaved() }
-            .map { componentNeedingCapture -> (UUID, any ComponentSnapshotType) in
-                let snapshot = componentNeedingCapture.makeSnapshot(desc: "", saveMode: .automatic)
-                componentNeedingCapture.setCaptureState(to: .captured)
-                return (componentNeedingCapture.id, snapshot)
-            }
-
-        if snapshotCreatingInfo.isEmpty {
-            myLog("No components need capturing")
-        } else {
-            componentSnapshotCoreDataRepository.createComponentSnapshot(snapshots: snapshotCreatingInfo)
-        }
-    }
-
-    private func captureComponentsWhenAppStateBecomeInactive() {
-        var taskID: UIBackgroundTaskIdentifier = .invalid
-
-        taskID = UIApplication.shared.beginBackgroundTask {
-            UIApplication.shared.endBackgroundTask(taskID)
-            taskID = .invalid
-        }
-
-        captureDispatchSemaphore.wait()
-
-        let start = CACurrentMediaTime()
-
-        let snapshotCreatingInfo = memoPage.getComponents
-            .compactMap { $0 as? any SnapshotRestorablePageComponent }
-            .compactMap { $0.currentIfUnsaved() }
-            .map { componentNeedingCapture -> (UUID, any ComponentSnapshotType) in
-                let snapshot = componentNeedingCapture.makeSnapshot(desc: "", saveMode: .automatic)
-                componentNeedingCapture.setCaptureState(to: .captured)
-                return (componentNeedingCapture.id, snapshot)
-            }
-
-        if snapshotCreatingInfo.isEmpty {
-            myLog("No components need capturing")
-            UIApplication.shared.endBackgroundTask(taskID)
-            captureDispatchSemaphore.signal()
-        } else {
-            componentSnapshotCoreDataRepository.createComponentSnapshot(snapshots: snapshotCreatingInfo)
-                .sinkToResult { result in
-                    switch result {
-                        case .success:
-                            myLog("capture successfully : \(CACurrentMediaTime() - start)")
-
-                        case .failure(let failure):
-                            myLog("capture fail reason : \(failure.localizedDescription)")
-
-                    }
-                    UIApplication.shared.endBackgroundTask(taskID)
-                    self.captureDispatchSemaphore.signal()
-                }
-                .store(in: &subscriptions)
-        }
     }
 
     private func performWithComponentAt<ComponentType: PageComponent>(_ id: UUID, task: (Int, ComponentType) -> Void) {
@@ -277,64 +220,7 @@ final class MemoPageViewModel: NSObject, ViewModelType {
     }
 }
 
-extension MemoPageViewModel {
-    private func appendTableComponentRow(_ componentID: UUID) {
-        performWithComponentAt(componentID) { (componentIndex, tableComponent: TableComponent) in
-            let newRow = tableComponentService.appendTableComponentRow(tableComponent: tableComponent)
-            memoComponentCoredataReposotory.updateComponentContentChanges(modifiedComponent: tableComponent)
-            output.send(.didAppendRowToTableView(componentIndex, newRow))
-        }
-    }
-
-    private func removeTableComponentRow(_ componentID: UUID, _ rowID: UUID) {
-        performWithComponentAt(componentID) { (componentIndex, tableComponent: TableComponent) in
-            let removedRowIndex = tableComponentService.removeTableComponentRow(
-                tableComponent: tableComponent, rowID: rowID)
-            memoComponentCoredataReposotory.updateComponentContentChanges(modifiedComponent: tableComponent)
-            output.send(.didRemoveRowToTableView(componentIndex, removedRowIndex))
-        }
-    }
-
-    private func appendTableComponentColumn(_ componentID: UUID) {
-        performWithComponentAt(componentID) { (componentIndex, tableComponent: TableComponent) in
-            let newColumn = tableComponentService.appendTableComponentColumn(tableComponent: tableComponent)
-            memoComponentCoredataReposotory.updateComponentContentChanges(modifiedComponent: tableComponent)
-            output.send(.didAppendColumnToTableView(componentIndex, newColumn))
-        }
-    }
-
-    private func applyTableCellValue(componentID: UUID, colID: UUID, rowID: UUID, newCellValue: String) {
-        performWithComponentAt(componentID) { (componentIndex, tableComponent: TableComponent) in
-            let indices = tableComponentService.applyTableCellValue(
-                tableComponent: tableComponent, colID: colID, rowID: rowID, newCellValue: newCellValue)
-            memoComponentCoredataReposotory.updateComponentContentChanges(modifiedComponent: tableComponent)
-            output.send(
-                .didApplyTableCellValueChanges(componentIndex, indices.rowIndex, indices.columnIndex, newCellValue)
-            )
-        }
-    }
-
-    private func presentTableComponentColumnEditPopupView(componentID: UUID, columnID: UUID) {
-        performWithComponentAt(componentID) { (_, tableComponent: TableComponent) in
-            let columnIndex =
-                tableComponentService
-                .presentTableComponentColumnEditPopupView(tableComponent: tableComponent, columnID: columnID)
-            output.send(
-                .didPresentTableColumnEditPopupView(
-                    tableComponent.componentContents.columns, columnIndex, componentID)
-            )
-        }
-    }
-
-    private func applyTableColumnChanges(componentID: UUID, columns: [TableComponentColumn]) {
-        performWithComponentAt(componentID) { (componentIndex, tableComponent: TableComponent) in
-            tableComponentService.applyTableColumnChanges(tableComponent: tableComponent, columns: columns)
-            memoComponentCoredataReposotory.updateComponentContentChanges(modifiedComponent: tableComponent)
-            output.send(.didApplyTableColumnChanges(componentIndex, columns))
-        }
-    }
-}
-
+// MARK: - Audio
 extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
 
     private func downloadAudio(componentID: UUID, with code: String) {

@@ -2,22 +2,13 @@ import Foundation
 import UIKit
 
 enum MemoPageViewInput {
-    // MARK: - Life Cycle
     case viewDidLoad
-
-    // MARK: - Common
     case willCreateNewComponent(ComponentType)
+    case willRemovePageComponent(componentID: UUID)
     case willChangeComponentOrder(Int, Int)
-    case willAutoCaptureOnSceneBackgroundOrDisconnect
-    case willAutoCaptureWhenPopedFromNavigationStack
-
-    // MARK: - Table
-    case willAppendRowToTable(UUID)
-    case willRemoveRowToTable(UUID, UUID)
-    case willAppendColumnToTable(UUID)
-    case willApplyTableColumnChanges(UUID, [TableComponentColumn])
-    case willApplyTableCellChanges(UUID, UUID, UUID, String)
-    case willPresentTableColumnEditingPopupView(UUID, UUID)
+    case willRenameComponent(componentID: UUID, newName: String)
+    case willToggleFoldingComponent(componentID: UUID)
+    case willMaximizePageComponent(componentID: UUID)
 
     // MARK: - Audio
     case willDownloadMusicWithCode(UUID, String)
@@ -34,19 +25,12 @@ enum MemoPageViewInput {
 }
 
 enum MemoPageViewOutput {
-    // MARK: - Life Cycle
     case viewDidLoad(MemoPageModel, AudioContentsDataContainerType)
-
-    // MARK: - Common
     case didAppendComponentAt(Int)
-
-    // MARK: - Table
-    case didAppendRowToTableView(Int, TableComponentRow)
-    case didRemoveRowToTableView(Int, Int)
-    case didAppendColumnToTableView(Int, TableComponentColumn)
-    case didApplyTableCellValueChanges(Int, Int, Int, String)
-    case didPresentTableColumnEditPopupView([TableComponentColumn], Int, UUID)
-    case didApplyTableColumnChanges(Int, [TableComponentColumn])
+    case didRemovePageComponent(componentIndex: Int)
+    case didRenameComponent(componentIndex: Int, newName: String)
+    case didToggleFoldingComponent(componentIndex: Int, isMinimized: Bool)
+    case didMaximizePageComponent(componentIndex: Int)
 
     // MARK: - Audio
     case didAppendAudioTrackRows(Int, [Int])

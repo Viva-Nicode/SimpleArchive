@@ -11,7 +11,7 @@ protocol PageComponentPersistenceCreatorType {
 
 protocol PageComponentViewFactoryType {
     associatedtype ViewType
-    func makeComponentView(from component: any PageComponent) -> ViewType
+	func makeComponentView(from component: any PageComponent) -> ViewType
 }
 
 protocol PageComponent: AnyObject, Identifiable, Codable {

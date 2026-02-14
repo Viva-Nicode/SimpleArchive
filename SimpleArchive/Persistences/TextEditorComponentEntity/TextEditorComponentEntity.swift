@@ -43,6 +43,10 @@ public class TextEditorComponentEntity: MemoComponentEntity {
         else { return }
         self.contents = textEditorComponent.componentContents
     }
+	
+	override func findSnapshotEntityByID(id: UUID) -> PageComponentSnapshotEntity? {
+		snapshots.first(where: { $0.snapshotID == id })
+	}
 }
 
 extension TextEditorComponentEntity {

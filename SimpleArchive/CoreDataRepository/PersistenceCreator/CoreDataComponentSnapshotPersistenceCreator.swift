@@ -14,9 +14,10 @@ final class CoreDataComponentSnapshotPersistenceCreator: ComponentSnapshotPersis
         let textEditorComponentSnapshotEntity = TextEditorComponentSnapshotEntity(context: context)
         textEditorComponentSnapshotEntity.snapshotID = snapshot.snapshotID
         textEditorComponentSnapshotEntity.makingDate = snapshot.makingDate
-        textEditorComponentSnapshotEntity.contents = snapshot.contents
+        textEditorComponentSnapshotEntity.contents = snapshot.snapshotContents
         textEditorComponentSnapshotEntity.snapShotDescription = snapshot.description
         textEditorComponentSnapshotEntity.saveMode = snapshot.saveMode.rawValue
+        textEditorComponentSnapshotEntity.modificationHistory = snapshot.modificationHistory.jsonString
 
         textEditorComponentEntity.addToSnapshots(textEditorComponentSnapshotEntity)
         textEditorComponentSnapshotEntity.component = textEditorComponentEntity
@@ -29,22 +30,13 @@ final class CoreDataComponentSnapshotPersistenceCreator: ComponentSnapshotPersis
         let tableComponentSnapshotEntity = TableComponentSnapshotEntity(context: context)
         tableComponentSnapshotEntity.snapshotID = snapshot.snapshotID
         tableComponentSnapshotEntity.makingDate = snapshot.makingDate
-        tableComponentSnapshotEntity.contents = persistTableComponentSnapshotContents(contents: snapshot.contents)
+		tableComponentSnapshotEntity.contents = TableComponentSnapshotEntity.persistTableComponentSnapshotContents(
+            contents: snapshot.snapshotContents)
         tableComponentSnapshotEntity.snapShotDescription = snapshot.description
         tableComponentSnapshotEntity.saveMode = snapshot.saveMode.rawValue
+        tableComponentSnapshotEntity.modificationHistory = snapshot.modificationHistory.jsonString
 
         tableComponentEntity.addToSnapshots(tableComponentSnapshotEntity)
         tableComponentSnapshotEntity.component = tableComponentEntity
-    }
-
-    private func persistTableComponentSnapshotContents(contents: TableComponentContents) -> String {
-        guard let encoded = try? JSONEncoder().encode(contents),
-            let jsonObject = try? JSONSerialization.jsonObject(with: encoded),
-            let sortedData = try? JSONSerialization.data(withJSONObject: jsonObject, options: [.sortedKeys])
-        else {
-            return ""
-        }
-
-        return String(data: sortedData, encoding: .utf8) ?? ""
     }
 }

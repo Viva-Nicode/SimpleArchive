@@ -1,6 +1,7 @@
 import Combine
 import UIKit
 
+
 final class PageComponentCollectionViewCellFactory: PageComponentViewFactoryType {
     var audioDataSources: [UUID: AudioComponentDataSource] = [:]
     var pageComponentVMCache: [UUID: any PageComponentViewModelType] = [:]
@@ -20,6 +21,8 @@ final class PageComponentCollectionViewCellFactory: PageComponentViewFactoryType
         self.audioContentsDataContainer = audioContentsDataContainer
     }
 
+    deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
+
     func makeComponentView(from component: any PageComponent) -> UICollectionViewCell {
         guard let collectionView, let indexPath else { return UICollectionViewCell() }
 
@@ -28,7 +31,7 @@ final class PageComponentCollectionViewCellFactory: PageComponentViewFactoryType
                 let textEditorComponentView =
                     collectionView
                     .dequeueReusableCell(
-                        withReuseIdentifier: TextEditorComponentView.identifierForUseCollectionView,
+                        withReuseIdentifier: TextEditorComponentView.reuseIdentifier,
                         for: indexPath
                     ) as! TextEditorComponentView
 
@@ -43,21 +46,34 @@ final class PageComponentCollectionViewCellFactory: PageComponentViewFactoryType
 
                 textEditorComponentView.configureTextComponentForMemoPageView(
                     component: textEditorComponent,
-                    viewModel: textEditorComponentViewModel)
+                    viewModel: textEditorComponentViewModel,
+                    pageActionDispatcher: subject)
 
                 return textEditorComponentView
 
             case let tableComponent as TableComponent:
-                let tableCell =
+                let tableComponentView =
                     collectionView
                     .dequeueReusableCell(
-                        withReuseIdentifier: TableComponentView.reuseTableComponentIdentifier,
+                        withReuseIdentifier: TableComponentView.reuseIdentifier,
                         for: indexPath
                     ) as! TableComponentView
 
-                tableCell.configure(component: tableComponent, input: subject)
+                let tableComponentViewModel =
+                    pageComponentVMCache[tableComponent.id] as? TableComponentViewModel
+                    ?? {
+                        DIContainer.shared.setArgument(TableComponentViewModel.self, tableComponent)
+                        let viewModel = DIContainer.shared.resolve(TableComponentViewModel.self)
+                        pageComponentVMCache[tableComponent.id] = viewModel
+                        return viewModel
+                    }()
 
-                return tableCell
+                tableComponentView.configureTableComponentForMemoPageView(
+                    component: tableComponent,
+                    viewModel: tableComponentViewModel,
+                    pageActionDispatcher: subject)
+
+                return tableComponentView
 
             case let audioComponent as AudioComponent:
                 let audioCell =
@@ -78,7 +94,7 @@ final class PageComponentCollectionViewCellFactory: PageComponentViewFactoryType
                     }
                 }
 
-                audioCell.configure(component: audioComponent, input: subject)
+                audioCell.configure(component: audioComponent, pageActionDispatcher: subject)
 
                 return audioCell
 

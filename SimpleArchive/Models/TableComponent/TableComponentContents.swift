@@ -23,7 +23,7 @@ struct TableComponentRow: Codable, Identifiable, Hashable {
     }
 }
 
-struct TableComponentContents: Codable {
+struct TableComponentContents: Codable, Equatable {
 
     var columns: [TableComponentColumn]
     var rows: [TableComponentRow]
@@ -81,7 +81,7 @@ struct TableComponentContents: Codable {
         }
     }
 
-    mutating func editCellValeu(rowID: UUID, colID: UUID, newValue: String) -> (rowIndex: Int, columnIndex: Int) {
+	mutating func editCellValeu(rowID: UUID, colID: UUID, newValue: String) -> TableComponent.Coordinate {
         let rowIndex = rows.firstIndex(where: { $0.id == rowID })!
         let columnIndex = columns.firstIndex(where: { $0.id == colID })!
         cells[rowID, default: [:]][colID] = newValue

@@ -66,6 +66,7 @@
     <entity name="TableComponentSnapshotEntity" representedClassName="TableComponentSnapshotEntity" syncable="YES">
         <attribute name="contents" attributeType="String"/>
         <attribute name="makingDate" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="modificationHistory" optional="YES" attributeType="String"/>
         <attribute name="saveMode" attributeType="String"/>
         <attribute name="snapShotDescription" attributeType="String"/>
         <attribute name="snapshotID" attributeType="UUID" usesScalarValueType="NO"/>
@@ -78,6 +79,7 @@
     <entity name="TextEditorComponentSnapshotEntity" representedClassName="TextEditorComponentSnapshotEntity" syncable="YES">
         <attribute name="contents" optional="YES" attributeType="String"/>
         <attribute name="makingDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="modificationHistory" optional="YES" attributeType="String"/>
         <attribute name="saveMode" optional="YES" attributeType="String"/>
         <attribute name="snapShotDescription" optional="YES" attributeType="String"/>
         <attribute name="snapshotID" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>

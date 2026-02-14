@@ -1,15 +1,12 @@
 import Combine
 import UIKit
 
-final class TextEditorComponentView:
-    PageComponentView<UITextView, TextEditorComponent>, UITextViewDelegate, CaptureableComponentView
-{
-    static let identifierForUseCollectionView: String = "TextEditorComponentView"
+final class TextEditorComponentView: PageComponentView<UITextView, TextEditorComponent> {
+    static let reuseIdentifier = "TextEditorComponentView"
 
-    private let actionDispatcher = TextEditorComponentActionDispatcher()
-    weak var snapshotCapturePopupView: SnapshotCapturePopupView?
-
-    private var snapshotInputActionSubject: PassthroughSubject<ComponentSnapshotViewModelInput, Never>?
+    // MARK: - ⚠️ Dispatcher를 바로 갖다주는게 좋을듯. 뷰모델 말고
+    private let textEditorActionDispatcher = TextEditorComponentActionDispatcher()
+    private var componentSnapshotActionDispatcher: PassthroughSubject<ComponentSnapshotViewModel.Action, Never>?
 
     private let snapShotView: UIStackView = {
         let snapShotView = UIStackView()
@@ -27,18 +24,18 @@ final class TextEditorComponentView:
         snapshotButton.tintColor = UIColor(named: "MyGray")
         return snapshotButton
     }()
-    private let undoButton: UIButton = {
-        let snapshotButton = UIButton()
-        let config = UIImage.SymbolConfiguration(pointSize: 20)
-        let snapshowUIImage = UIImage(systemName: "arrowshape.turn.up.backward.fill", withConfiguration: config)
-        snapshotButton.setImage(snapshowUIImage, for: .normal)
-        snapshotButton.tintColor = UIColor(named: "MyGray")
-        return snapshotButton
-    }()
     private let snapshotButton: UIButton = {
         let snapshotButton = UIButton()
         let config = UIImage.SymbolConfiguration(pointSize: 20)
         let snapshowUIImage = UIImage(systemName: "square.3.layers.3d.down.right", withConfiguration: config)
+        snapshotButton.setImage(snapshowUIImage, for: .normal)
+        snapshotButton.tintColor = UIColor(named: "MyGray")
+        return snapshotButton
+    }()
+    private let undoButton: UIButton = {
+        let snapshotButton = UIButton()
+        let config = UIImage.SymbolConfiguration(pointSize: 20)
+        let snapshowUIImage = UIImage(systemName: "arrowshape.turn.up.backward.fill", withConfiguration: config)
         snapshotButton.setImage(snapshowUIImage, for: .normal)
         snapshotButton.tintColor = UIColor(named: "MyGray")
         return snapshotButton
@@ -56,12 +53,12 @@ final class TextEditorComponentView:
 
     override func prepareForReuse() {
         super.prepareForReuse()
-        actionDispatcher.clearSubscriptions()
+        textEditorActionDispatcher.clearSubscriptions()
     }
 
     override func freedReferences() {
         super.freedReferences()
-        actionDispatcher.clearSubscriptions()
+        textEditorActionDispatcher.clearSubscriptions()
     }
 
     override func setupUI() {
@@ -95,112 +92,59 @@ final class TextEditorComponentView:
         snapShotView.trailingAnchor.constraint(equalTo: toolBarView.trailingAnchor, constant: -10).isActive = true
     }
 
-    private func setupActions() {
-        redCircleView.throttleUIViewTapGesturePublisher()
-            .sink { [weak self] _ in
-                guard let self else { return }
-                contentView.endEditing(true)
-                actionDispatcher.removePageComponent()
-            }
-            .store(in: &subscriptions)
+    func configureTextComponentForMemoPageView(
+        component: TextEditorComponent,
+        viewModel: any PageComponentViewModelType,
+        pageActionDispatcher: PassthroughSubject<MemoPageViewInput, Never>
+    ) {
+        super.configure(component: component, pageActionDispatcher: pageActionDispatcher)
 
-        yellowCircleView.throttleUIViewTapGesturePublisher()
-            .sink { [weak self] _ in
-                guard let self else { return }
-                contentView.endEditing(true)
-                actionDispatcher.foldPageComponent()
-            }
-            .store(in: &subscriptions)
+        componentContentView.text = component.componentContents
+        captureButton.isEnabled = !component.componentContents.isEmpty
 
-        greenCircleView.throttleUIViewTapGesturePublisher()
-            .sink { [weak self] _ in
-                guard let self else { return }
-                if !isFolded {
-                    if let componentTextViewSnapshot = componentContentView.snapshotView(afterScreenUpdates: true) {
-                        snapshotOverlayViewForMaximizationTransition = componentTextViewSnapshot
-                        componentTextViewSnapshot.translatesAutoresizingMaskIntoConstraints = false
-                        containerView.addSubview(componentTextViewSnapshot)
-                        NSLayoutConstraint.activate([
-                            componentTextViewSnapshot.topAnchor.constraint(
-                                equalTo: componentInformationView.bottomAnchor),
-                            componentTextViewSnapshot.leadingAnchor.constraint(
-                                equalTo: containerView.leadingAnchor),
-                            componentTextViewSnapshot.trailingAnchor.constraint(
-                                equalTo: containerView.trailingAnchor),
-                            componentTextViewSnapshot.bottomAnchor.constraint(
-                                equalTo: containerView.bottomAnchor),
-                        ])
-                    }
-                }
-                actionDispatcher.maximizePageComponent()
-            }
-            .store(in: &subscriptions)
+        componentContentView.alpha = component.isMinimumHeight ? 0 : 1
 
-        titleLabel.throttleUIViewTapGesturePublisher()
-            .sink { [weak self] _ in
-                guard let self else { return }
-                let popupView = ChangeComponentNamePopupView(componentTitle: componentTitle) { newName in
-                    self.actionDispatcher.renamePageComponent(newName: newName)
-                }
-                popupView.show()
-            }
-            .store(in: &subscriptions)
-
-        undoButton.throttleTapPublisher(interval: 0.25)
-            .sink { [weak self] _ in
-                self?.actionDispatcher.undoTextEditorComponentContents()
-            }
-            .store(in: &subscriptions)
+        textEditorActionDispatcher.bindToViewModel(viewModel: viewModel, updateUIWithEvent: UIupdateEventHandler)
 
         captureButton.throttleTapPublisher()
             .flatMap { [weak self] _ -> AnyPublisher<String, Never> in
-                guard let self else { return Empty().eraseToAnyPublisher() }
+                guard let self,
+                    let memoPageVC = parentViewController as? MemoPageViewController
+                else { return Empty().eraseToAnyPublisher() }
 
                 let snapshotCapturePopupView = SnapshotCapturePopupView()
-                self.snapshotCapturePopupView = snapshotCapturePopupView
+                memoPageVC.snapshotCapturePopupView = snapshotCapturePopupView
                 snapshotCapturePopupView.show()
 
                 return snapshotCapturePopupView.captureButtonPublisher
             }
             .sink { [weak self] snapshotDescription in
                 guard let self else { return }
-                actionDispatcher.captureTextEditorComponentManual(snapshotDescription: snapshotDescription)
+                textEditorActionDispatcher.captureComponentManual(description: snapshotDescription)
             }
             .store(in: &subscriptions)
 
         snapshotButton.throttleTapPublisher()
             .sink { [weak self] _ in
                 guard let self else { return }
-                actionDispatcher.navigateToSnapshotView()
+                textEditorActionDispatcher.navigateComponentSnapshotView()
             }
             .store(in: &subscriptions)
-    }
 
-    func configureTextComponentForMemoPageView(
-        component: TextEditorComponent,
-        viewModel: any PageComponentViewModelType
-    ) {
-        componentID = component.id
-        componentTitle = component.title
-        isFolded = component.isMinimumHeight
-        creationDateLabel.text = "created at \(component.creationDate.formattedDate)"
-
-        componentContentView.text = component.componentContents
-        captureButton.isEnabled = !component.componentContents.isEmpty
-
-        componentContentView.alpha = isFolded ? 0 : 1
-
-        actionDispatcher.bindToViewModel(viewModel: viewModel, updateUIWithEvent: UIupdateEventHandler)
-        setupActions()
+        undoButton.throttleTapPublisher(interval: 0.25)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                textEditorActionDispatcher.undoTextEditorComponentContents()
+            }
+            .store(in: &subscriptions)
     }
 
     func configureTextComponentForSnapshotView(
         snapshotID: UUID,
         snapshotDetail: String,
-        input subject: PassthroughSubject<ComponentSnapshotViewModelInput, Never>
+        snapshotDispatcher: PassthroughSubject<ComponentSnapshotViewModel.Action, Never>
     ) {
-        snapshotInputActionSubject = subject
-
+        self.componentSnapshotActionDispatcher = snapshotDispatcher
         componentInformationView.removeFromSuperview()
 
         componentContentView.constraints
@@ -216,7 +160,8 @@ final class TextEditorComponentView:
 
         redCircleView.throttleUIViewTapGesturePublisher()
             .sink { [weak self] _ in
-                self?.snapshotInputActionSubject?.send(.willRemoveSnapshot(snapshotID))
+                guard let self else { return }
+                componentSnapshotActionDispatcher?.send(.willRemoveSnapshot(snapshotID))
             }
             .store(in: &subscriptions)
 
@@ -230,114 +175,75 @@ final class TextEditorComponentView:
         snapshotButton.removeFromSuperview()
     }
 
-    private func UIupdateEventHandler(_ event: TextEditorComponentViewModel.Event) {
-        switch event {
-            // MARK: - Contents
-            case .didUndoTextComponentContents(let undidText):
-                componentContentView.text = undidText
+    override func setMinimizeState(_ isMinimize: Bool) {
+        UIView.animate(
+            withDuration: 0.3,
+            animations: { [weak self] in
+                self?.componentContentView.alpha = isMinimize ? 0 : 1
+            }
+        )
+    }
 
-            // MARK: - Capture & Snapshot
-            case .didCaptureWithManual:
-                completeSnapshotCapturePopupView()
-
-            case .didRestoreComponentContents(let contents):
-                UIView.animateKeyframes(withDuration: 0.5, delay: 0, options: []) {
-                    UIView.addKeyframe(withRelativeStartTime: 0.0, relativeDuration: 0.5) { [weak self] in
-                        guard let self else { return }
-                        componentContentView.alpha = 0
-                    }
-
-                    UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0.0) { [weak self] in
-                        guard let self else { return }
-                        componentContentView.text = contents
-                    }
-
-                    UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0.5) { [weak self] in
-                        guard let self else { return }
-                        componentContentView.alpha = 1
-                    }
+	override func reloadComponentContentsWhenRestoreUsingSnapshot(contents: Codable) {
+        if let textContents = contents as? String {
+            UIView.animateKeyframes(withDuration: 0.4, delay: 0, options: []) {
+                UIView.addKeyframe(withRelativeStartTime: 0.0, relativeDuration: 0.2) {
+                    self.collectionView?.collectionViewLayout.invalidateLayout()
                 }
-
-            case .didNavigateSnapshotView(let viewModel):
-                let snapshotView = ComponentSnapshotViewController(viewModel: viewModel)
-
-                snapshotView.hasRestorePublisher
-                    .sink { [weak self] _ in
-                        guard let self else { return }
-                        actionDispatcher.resotreComponentContents()
-                    }
-                    .store(in: &subscriptions)
-
-                parentViewController?.navigationController?.pushViewController(snapshotView, animated: true)
-
-            // MARK: - State
-            case .didRenameComponent(let newName):
-                componentTitle = newName
-
-            case .didToggleFoldingComponent(let isMinimized):
-                isFolded = isMinimized
-                if let pageComponentCollectionView = collectionView {
-                    if isMinimized {
-                        UIView.animate(
-                            withDuration: 0.3,
-                            animations: { [weak self] in
-                                self?.componentContentView.alpha = isMinimized ? 0 : 1
-                            }
-                        )
-
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            UIView.animate(withDuration: 0.3) {
-                                pageComponentCollectionView.collectionViewLayout.invalidateLayout()
-                            }
-                        }
-                    } else {
-                        pageComponentCollectionView.performBatchUpdates {
-                            pageComponentCollectionView.collectionViewLayout.invalidateLayout()
-                        } completion: { _ in
-                            UIView.animate(withDuration: 0.3) {
-                                UIView.animate(
-                                    withDuration: 0.3,
-                                    animations: { [weak self] in
-                                        self?.componentContentView.alpha = isMinimized ? 0 : 1
-                                    }
-                                )
-                            }
-                        }
-                    }
+                UIView.addKeyframe(withRelativeStartTime: 0.2, relativeDuration: 0.4) {
+                    self.componentContentView.alpha = 0
                 }
-
-            case .didRemovePageComponent:
-                if let pageComponentCollectionView = collectionView {
-                    if let targetComponentView = collectionView?.visibleCells
-                        .compactMap({ $0 as? Self })
-                        .first(where: { $0.componentID == self.componentID }),
-                        let targetIndexPath = pageComponentCollectionView.indexPath(for: targetComponentView)
-                    {
-                        pageComponentCollectionView.deleteItems(at: [targetIndexPath])
-                    }
+            } completion: { _ in
+                self.componentContentView.text = textContents
+                UIView.animate(withDuration: 0.2) {
+                    self.componentContentView.alpha = 1
                 }
-
-            case .didMaximizePageComponent:
-                if let memoPageViewController = parentViewController as? MemoPageViewController {
-                    memoPageViewController.selectedPageComponentCell = self
-                    memoPageViewController.pageComponentContentViewRect = componentContentView.convert(
-                        componentContentView.bounds,
-                        to: memoPageViewController.view.window!)
-
-                    let fullscreenComponentViewController = FullScreenTextEditorComponentViewController(
-                        textEditorComponentModel: TextEditorComponent(),
-                        componentTextView: componentContentView
-                    )
-                    fullscreenComponentViewController.modalPresentationStyle = .fullScreen
-                    fullscreenComponentViewController.transitioningDelegate = memoPageViewController
-
-                    memoPageViewController.present(fullscreenComponentViewController, animated: true)
-                }
+            }
         }
     }
 
+    override func presentFullScreenPageComponentView() {
+        if let memoPageViewController = parentViewController as? MemoPageViewController {
+            memoPageViewController.fullscreenTargetComponentContentsViewFrame = componentContentView.convert(
+                componentContentView.bounds,
+                to: memoPageViewController.view.window!)
+
+            let fullscreenComponentViewController = FullScreenTextEditorComponentViewController(
+                title: titleLabel.text!,
+                createDate: createdAt,
+                componentTextView: componentContentView
+            )
+            fullscreenComponentViewController.modalPresentationStyle = .fullScreen
+            fullscreenComponentViewController.transitioningDelegate = memoPageViewController
+
+            memoPageViewController.present(fullscreenComponentViewController, animated: true)
+        }
+    }
+}
+
+// MARK: - Event Handler
+extension TextEditorComponentView {
+    private func textEditorComponentEventHandler(_ event: TextEditorComponentViewModel.Event) {
+        switch event {
+            case .didUndoTextComponentContents(let undidText):
+                componentContentView.text = undidText
+        }
+    }
+
+    private func UIupdateEventHandler(_ event: TextEditorComponentViewModelEvent) {
+        switch event {
+            case .textEditorComponentEvent(let event):
+                textEditorComponentEventHandler(event)
+
+            case .snapshotEvent(let event):
+                commonPageEventHandler(event: event)
+        }
+    }
+}
+
+extension TextEditorComponentView: UITextViewDelegate {
     func textViewDidChange(_ textView: UITextView) {
-        actionDispatcher.saveTextEditorComponentContentsChanged(contents: textView.text)
+        textEditorActionDispatcher.saveTextEditorComponentContentsChanged(contents: textView.text)
         captureButton.isEnabled = !textView.text.isEmpty
     }
 }

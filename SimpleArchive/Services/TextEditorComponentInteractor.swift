@@ -1,39 +1,58 @@
 import Combine
 import Foundation
 
-final class TextEditorComponentInteractor: CaptureableComponentInteractorType {
-
+final class TextEditorComponentInteractor {
     let pageComponent: TextEditorComponent
-    let memoComponentCoredataReposotory: MemoComponentCoreDataRepositoryType
-    let componentSnapshotCoreDataRepository: ComponentSnapshotCoreDataRepositoryType
+
+    var trackingSnapshot: TextEditorComponentSnapshot
+    private let memoComponentCoredataReposotory: MemoComponentCoreDataRepositoryType
 
     init(
         textEditorComponent: TextEditorComponent,
         memoComponentCoredataReposotory: MemoComponentCoreDataRepositoryType,
-        componentSnapshotCoreDataRepository: ComponentSnapshotCoreDataRepositoryType
     ) {
         self.pageComponent = textEditorComponent
         self.memoComponentCoredataReposotory = memoComponentCoredataReposotory
-        self.componentSnapshotCoreDataRepository = componentSnapshotCoreDataRepository
+        self.trackingSnapshot = TextEditorComponentSnapshot(
+            contents: pageComponent.componentContents,
+            description: "",
+            saveMode: .automatic,
+            modificationHistory: [])
     }
 
     func saveTextEditorComponentContentsChange(contents: String) {
         let action = makeTextEditActionFromContentsDiff(
             originContents: pageComponent.componentContents,
             editedContents: contents)
+
         pageComponent.componentContents = contents
-        pageComponent.setCaptureState(to: .needsCapture)
         pageComponent.actions.append(action)
-        memoComponentCoredataReposotory.updateComponentContentChanges(modifiedComponent: pageComponent)
+
+        trackingSnapshot.snapshotContents = contents
+        trackingSnapshot.modificationHistory.append(action)
+
+        memoComponentCoredataReposotory.updateComponentContentChanges(
+            modifiedComponent: pageComponent,
+            snapshot: trackingSnapshot)
     }
 
     func undoTextEditorComponentContents() -> String? {
-        guard let action = pageComponent.actions.popLast() else { return nil }
+        guard
+            let action = pageComponent.actions.popLast(),
+            let snapshotAction = trackingSnapshot.modificationHistory.popLast(),
+            action == snapshotAction
+        else { return nil }
+
         let currentContents = pageComponent.componentContents
         let undidText = undoingText(action: action, contents: currentContents)
 
         pageComponent.componentContents = undidText
-        memoComponentCoredataReposotory.updateComponentContentChanges(modifiedComponent: pageComponent)
+        trackingSnapshot.snapshotContents = undidText
+
+        memoComponentCoredataReposotory.updateComponentContentChanges(
+            modifiedComponent: pageComponent,
+            snapshot: trackingSnapshot)
+
         return undidText
     }
 
@@ -84,5 +103,23 @@ final class TextEditorComponentInteractor: CaptureableComponentInteractorType {
 
                 return contents.replacingCharacters(in: start..<end, with: fromText)
         }
+    }
+
+    func saveTrackedSnapshotManual(description: String) {
+        trackingSnapshot.description = description
+        trackingSnapshot.saveMode = .manual
+        trackingSnapshot.makingDate = Date()
+
+        memoComponentCoredataReposotory.updateComponentSnapshotInfo(
+            componentID: pageComponent.id,
+            snapshot: trackingSnapshot)
+		
+        pageComponent.insertTrackingSnapshot(trackingSnapshot: trackingSnapshot)
+        
+		trackingSnapshot = TextEditorComponentSnapshot(
+			contents: pageComponent.componentContents,
+            description: "",
+			saveMode: .automatic,
+            modificationHistory: [])
     }
 }

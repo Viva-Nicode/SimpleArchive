@@ -1,8 +1,7 @@
 import Combine
 import UIKit
 
-final class SingleTablePageViewController: UIViewController, ViewControllerType,
-    UIScrollViewDelegate, CaptureableComponentView
+final class SingleTablePageViewController: UIViewController, ViewControllerType, UIScrollViewDelegate
 {
     typealias Input = SingleTablePageInput
     typealias ViewModelType = SingleTablePageViewModel
@@ -84,48 +83,45 @@ final class SingleTablePageViewController: UIViewController, ViewControllerType,
                 case .viewDidLoad(let title, let date, let detail, let id):
                     setupUI(memoTitle: title, createDate: date)
                     setupConstraint()
-
                     tableComponentContentView.configure(
                         columns: detail.columns,
                         rows: detail.cellValues,
-                        dispatcher: SinglePageTableComponentActionDispatcher(subject: input),
-                        isMinimum: false,
-                        componentID: id)
+						actionDispatcher: .init(),
+                        isMinimum: false)
 
-                case .didNavigateSnapshotView(let vm):
-                    let snapshotView = ComponentSnapshotViewController(viewModel: vm)
+//                case .didNavigateSnapshotView(let vm):
+//                    let snapshotView = ComponentSnapshotViewController(viewModel: vm)
+//
+//                    snapshotView.hasRestorePublisher
+//                        .sink { [weak self] _ in
+//                            guard let self else { return }
+//                            input.send(.willRestoreComponent)
+//                        }
+//                        .store(in: &subscriptions)
+//                    navigationController?.pushViewController(snapshotView, animated: true)
 
-                    snapshotView.hasRestorePublisher
-                        .sink { [weak self] _ in
-                            guard let self else { return }
-                            input.send(.willRestoreComponent)
-                        }
-                        .store(in: &subscriptions)
-                    navigationController?.pushViewController(snapshotView, animated: true)
-
-                case .didRestoreComponent(let detail):
-                    UIView.animateKeyframes(withDuration: 0.5, delay: 0, options: []) {
-
-                        UIView.addKeyframe(withRelativeStartTime: 0.0, relativeDuration: 0.5) { [weak self] in
-                            guard let self else { return }
-                            tableComponentContentView.alpha = 0
-                        }
-
-                        UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0.0) { [weak self] in
-                            guard let self else { return }
-                            tableComponentContentView.configure(
-                                columns: detail.columns,
-                                rows: detail.cellValues,
-                                dispatcher: SinglePageTableComponentActionDispatcher(subject: input),
-                                isMinimum: false,
-                                componentID: UUID())
-                        }
-
-                        UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0.5) { [weak self] in
-                            guard let self else { return }
-                            tableComponentContentView.alpha = 1
-                        }
-                    }
+//                case .didRestoreComponent(let detail):
+//                    UIView.animateKeyframes(withDuration: 0.5, delay: 0, options: []) {
+//
+//                        UIView.addKeyframe(withRelativeStartTime: 0.0, relativeDuration: 0.5) { [weak self] in
+//                            guard let self else { return }
+//                            tableComponentContentView.alpha = 0
+//                        }
+//
+//                        UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0.0) { [weak self] in
+//                            guard let self else { return }
+//                            tableComponentContentView.configure(
+//                                columns: detail.columns,
+//                                rows: detail.cellValues,
+//                                actionDispatcher: SinglePageTableComponentActionDispatcher(subject: input),
+//                                isMinimum: false)
+//                        }
+//
+//                        UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0.5) { [weak self] in
+//                            guard let self else { return }
+//                            tableComponentContentView.alpha = 1
+//                        }
+//                    }
 
                 case .didAppendRowToTableView(let row):
                     tableComponentContentView.appendEmptyRowToStackView(rowID: row.id)
@@ -156,8 +152,8 @@ final class SingleTablePageViewController: UIViewController, ViewControllerType,
                 case .didApplyTableColumnChanges(let columns):
                     tableComponentContentView.applyColumns(columns: columns)
 
-                case .didCompleteComponentCapture:
-                    completeSnapshotCapturePopupView()
+//                case .didCompleteComponentCapture:
+                    
             }
         }
         .store(in: &subscriptions)
@@ -182,7 +178,7 @@ final class SingleTablePageViewController: UIViewController, ViewControllerType,
             }
             .sink { [weak self] snapshotDescription in
                 guard let self else { return }
-                self.input.send(.willCaptureComponent(snapshotDescription))
+//                self.input.send(.willCaptureComponent(snapshotDescription))
             }
             .store(in: &subscriptions)
         headerView.addSubview(snapshotButton)
@@ -190,7 +186,7 @@ final class SingleTablePageViewController: UIViewController, ViewControllerType,
         snapshotButton.throttleTapPublisher()
             .sink { [weak self] _ in
                 guard let self else { return }
-                input.send(.willNavigateSnapshotView)
+//                input.send(.willNavigateSnapshotView)
             }
             .store(in: &subscriptions)
 

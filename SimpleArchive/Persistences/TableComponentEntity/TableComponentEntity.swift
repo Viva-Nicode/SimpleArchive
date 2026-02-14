@@ -161,6 +161,10 @@ public class TableComponentEntity: MemoComponentEntity {
         }
     }
 
+    override func findSnapshotEntityByID(id: UUID) -> PageComponentSnapshotEntity? {
+        snapshots.first(where: { $0.snapshotID == id })
+    }
+
     private func convertToContentsModel() -> TableComponentContents {
         var contents = TableComponentContents()
         contents.sortBy = TableComponentContents.TableRowSortCriteria(rawValue: self.sortBy)!

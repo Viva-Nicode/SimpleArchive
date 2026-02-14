@@ -33,13 +33,13 @@ final class AudioComponentView: PageComponentView<AudioComponentContentView, Aud
 
     override func configure(
         component: AudioComponent,
-        input subject: PassthroughSubject<MemoPageViewInput, Never>,
+		pageActionDispatcher: PassthroughSubject<MemoPageViewInput, Never>,
     ) {
-        super.configure(component: component, input: subject)
+        super.configure(component: component, pageActionDispatcher: pageActionDispatcher)
 
         componentContentView.configure(
             content: component,
-            dispatcher: MemoPageAudioComponentActionDispatcher(subject: subject),
+            dispatcher: MemoPageAudioComponentActionDispatcher(subject: pageActionDispatcher),
             componentID: componentID
         )
         componentContentView.audioTrackTableView.reloadData()

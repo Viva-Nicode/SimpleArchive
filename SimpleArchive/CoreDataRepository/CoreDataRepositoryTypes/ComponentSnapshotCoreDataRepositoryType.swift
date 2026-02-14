@@ -1,9 +1,9 @@
 import Combine
 import Foundation
 
-protocol ComponentSnapshotCoreDataRepositoryType: AnyObject {
+typealias InfoForCreateSnapshotEntity = (componentID: UUID, snapshot: any ComponentSnapshotType)
 
-    typealias InfoForCreateSnapshotEntity = (componentID: UUID, snapshot: any ComponentSnapshotType)
+protocol ComponentSnapshotCoreDataRepositoryType: AnyObject {
 
     @discardableResult
     func createComponentSnapshot(snapshots: [InfoForCreateSnapshotEntity]) -> AnyPublisher<Void, Error>
@@ -11,5 +11,8 @@ protocol ComponentSnapshotCoreDataRepositoryType: AnyObject {
     func removeSnapshot(componentID: UUID, snapshotID: UUID)
 
     @discardableResult
-    func revertComponentContents(modifiedComponent: any PageComponent) -> AnyPublisher<Void, Error>
+    func revertComponentContents(
+        modifiedComponent: any PageComponent,
+        trackingSnapshot: any ComponentSnapshotType
+    ) -> AnyPublisher<Void, Error>
 }

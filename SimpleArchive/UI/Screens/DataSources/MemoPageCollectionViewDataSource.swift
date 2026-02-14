@@ -22,4 +22,8 @@ final class MemoPageComponentCollectionViewDataSource: NSObject, UICollectionVie
         let pageComponentView = pageComponent.makeComponentView(using: pageComponentViewFactory)
         return pageComponentView
     }
+	
+	func freedDataSource(){
+		self.pageComponentViewFactory.pageComponentVMCache.values.forEach { $0.clearSubscriptions() }
+	}
 }

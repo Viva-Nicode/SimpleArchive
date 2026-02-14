@@ -59,39 +59,39 @@ import UIKit
                 case .viewWillDisappear:
                     captureComponentsChangesOnDisappear()
 
-                case .willNavigateSnapshotView:
-                    DIContainer.shared.setArgument(ComponentSnapshotViewModel.self, tableComponent)
-                    let componentSnapshotViewModel = DIContainer.shared.resolve(ComponentSnapshotViewModel.self)
-                    output.send(.didNavigateSnapshotView(componentSnapshotViewModel))
+//                case .willNavigateSnapshotView:
+//                    DIContainer.shared.setArgument(ComponentSnapshotViewModel.self, tableComponent)
+//                    let componentSnapshotViewModel = DIContainer.shared.resolve(ComponentSnapshotViewModel.self)
+//                    output.send(.didNavigateSnapshotView(componentSnapshotViewModel))
 
-                case .willRestoreComponent:
-                    output.send(.didRestoreComponent(tableComponent.componentContents))
+//                case .willRestoreComponent:
+//                    output.send(.didRestoreComponent(tableComponent.componentContents))
 
-                case .willCaptureComponent(_):
+//                case .willCaptureComponent(_):
                     //                    coredataReposotory.captureSnapshot(
                     //                        snapshotRestorableComponent: tableComponent,
                     //                        snapShotDescription: desc)
 
                     //                    output.send(.didCompleteComponentCapture)
-                    break
+//                    break
 
                 case .willAppendRowToTable:
                     let newRow = tableComponent.componentContents.appendNewRow()
-                    tableComponent.setCaptureState(to: .needsCapture)
+					tableComponent.captureState = .needsCapture
                     tableComponent.actions.append(.appendRow(row: newRow))
                     coredataReposotory.updateComponentContentChanges(modifiedComponent: tableComponent)
                     output.send(.didAppendRowToTableView(newRow))
 
                 case .willRemoveRowToTable(let rowID):
                     let removedRowIndex = tableComponent.componentContents.removeRow(rowID)
-                    tableComponent.setCaptureState(to: .needsCapture)
+					tableComponent.captureState = .needsCapture
                     tableComponent.actions.append(.removeRow(rowID: rowID))
                     coredataReposotory.updateComponentContentChanges(modifiedComponent: tableComponent)
                     output.send(.didRemoveRowToTableView(removedRowIndex))
 
                 case .willAppendColumnToTable:
                     let newColumn = tableComponent.componentContents.appendNewColumn(title: "column")
-                    tableComponent.setCaptureState(to: .needsCapture)
+					tableComponent.captureState = .needsCapture
                     tableComponent.actions.append(.appendColumn(column: newColumn))
                     coredataReposotory.updateComponentContentChanges(modifiedComponent: tableComponent)
                     output.send(.didAppendColumnToTableView(newColumn))
@@ -100,7 +100,7 @@ import UIKit
                     let indices = tableComponent
                         .componentContents
                         .editCellValeu(rowID: rowID, colID: colID, newValue: newCellValue)
-                    tableComponent.setCaptureState(to: .needsCapture)
+					tableComponent.captureState = .needsCapture
                     tableComponent.actions.append(
                         .editCellValue(rowID: rowID, columnID: colID, value: newCellValue))
                     coredataReposotory.updateComponentContentChanges(modifiedComponent: tableComponent)
@@ -114,7 +114,7 @@ import UIKit
 
                 case .willApplyTableColumnChanges(let editedColumns):
                     tableComponent.componentContents.setColumn(columns: editedColumns)
-                    tableComponent.setCaptureState(to: .needsCapture)
+					tableComponent.captureState = .needsCapture
                     tableComponent.actions.append(.editColumn(columns: editedColumns))
                     coredataReposotory.updateComponentContentChanges(modifiedComponent: tableComponent)
                     output.send(.didApplyTableColumnChanges(editedColumns))

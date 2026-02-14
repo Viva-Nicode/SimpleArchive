@@ -1,32 +1,32 @@
 import Combine
 import UIKit
 
-@MainActor
-final class ComponentSnapshotViewModel: NSObject, ViewModelType {
+@MainActor final class ComponentSnapshotViewModel: NSObject {
 
-    typealias Input = ComponentSnapshotViewModelInput
-    typealias Output = ComponentSnapshotViewModelOutput
-
-    private var output = PassthroughSubject<Output, Never>()
+    private var output = PassthroughSubject<Event, Never>()
     private var subscriptions = Set<AnyCancellable>()
 
-    private(set) var snapshotRestorableComponent: any SnapshotRestorablePageComponent
+    private var snapshotRestorableComponent: any SnapshotRestorablePageComponent
     private var currentViewedSnapshotID: UUID?
     private var componentSnapshotCoreDataRepository: ComponentSnapshotCoreDataRepositoryType
+    private var trackingSnapshot: any ComponentSnapshotType
+    let updateTrackingSnapshotSignal = PassthroughSubject<Void, Never>()
 
     init(
         componentSnapshotCoreDataRepository: ComponentSnapshotCoreDataRepositoryType,
-        snapshotRestorableComponent: any SnapshotRestorablePageComponent
+        snapshotRestorableComponent: any SnapshotRestorablePageComponent,
+        trackingSnapshot: any ComponentSnapshotType
     ) {
         self.componentSnapshotCoreDataRepository = componentSnapshotCoreDataRepository
         self.snapshotRestorableComponent = snapshotRestorableComponent
+        self.trackingSnapshot = trackingSnapshot
         self.currentViewedSnapshotID = snapshotRestorableComponent.snapshots.first?.snapshotID
     }
 
     deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
 
     @discardableResult
-    func subscribe(input: AnyPublisher<Input, Never>) -> AnyPublisher<Output, Never> {
+    func subscribe(input: AnyPublisher<Action, Never>) -> AnyPublisher<Event, Never> {
         input.sink { [weak self] event in
             guard let self else { return }
 
@@ -51,10 +51,29 @@ final class ComponentSnapshotViewModel: NSObject, ViewModelType {
 
     private func restoreSnapshot() {
         guard let currentViewedSnapshotID else { return }
+        if snapshotRestorableComponent.isMinimumHeight { snapshotRestorableComponent.isMinimumHeight = false }
 
-        snapshotRestorableComponent.revertToSnapshot(snapshotID: currentViewedSnapshotID)
-        componentSnapshotCoreDataRepository.revertComponentContents(modifiedComponent: snapshotRestorableComponent)
-        output.send(.didRestoreSnapshot)
+        if snapshotRestorableComponent.captureState == .needsCapture {
+            trackingSnapshot.description = ""
+            trackingSnapshot.saveMode = .revert
+            trackingSnapshot.makingDate = Date()
+
+            snapshotRestorableComponent.insertTrackingSnapshot(trackingSnapshot: trackingSnapshot)
+        }
+
+        snapshotRestorableComponent.revertComponentContentsUsingSnapshot(snapshotID: currentViewedSnapshotID)
+
+        componentSnapshotCoreDataRepository.revertComponentContents(
+            modifiedComponent: snapshotRestorableComponent,
+            trackingSnapshot: trackingSnapshot
+        )
+        .receive(on: DispatchQueue.main)
+        .sinkToResult { [weak self] _ in
+            guard let self else { return }
+            updateTrackingSnapshotSignal.send(())
+            output.send(.didRestoreSnapshot(snapshotRestorableComponent.componentContents))
+        }
+        .store(in: &subscriptions)
     }
 
     private func removeSnapshot(_ tappedSnapshotID: UUID) {
@@ -74,19 +93,18 @@ final class ComponentSnapshotViewModel: NSObject, ViewModelType {
         currentViewedSnapshotID = currentViewedSnapshot.snapshotID
         output.send(.didUpdateSnapshotMetaData(currentViewedSnapshot.getSnapshotMetaData()))
     }
-}
 
-#if DEBUG
-    extension ComponentSnapshotViewModel {
-        convenience init(
-            snapshotRestorableComponent: any SnapshotRestorablePageComponent,
-            componentSnapshotCoreDataRepository: ComponentSnapshotCoreDataRepositoryType,
-            initialViewedSnapshotID: UUID?
-        ) {
-            self.init(
-                componentSnapshotCoreDataRepository: componentSnapshotCoreDataRepository,
-                snapshotRestorableComponent: snapshotRestorableComponent)
-            self.currentViewedSnapshotID = initialViewedSnapshotID
-        }
+    enum Action {
+        case viewDidLoad
+        case willRestoreSnapshot
+        case willRemoveSnapshot(UUID)
+        case willUpdateSnapshotMetaData(Int)
     }
-#endif
+
+    enum Event {
+        case viewDidLoad(any SnapshotRestorablePageComponent)
+        case didRestoreSnapshot(Codable)
+        case didRemoveSnapshot(SnapshotMetaData?, Int)
+        case didUpdateSnapshotMetaData(SnapshotMetaData)
+    }
+}

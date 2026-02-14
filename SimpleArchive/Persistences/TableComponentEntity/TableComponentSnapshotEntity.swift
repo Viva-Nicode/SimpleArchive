@@ -2,14 +2,30 @@ import CoreData
 import Foundation
 
 @objc(TableComponentSnapshotEntity)
-public class TableComponentSnapshotEntity: NSManagedObject {
+public class TableComponentSnapshotEntity: NSManagedObject, Identifiable {
     func convertToModel() -> TableComponentSnapshot {
         TableComponentSnapshot(
             snapshotID: self.snapshotID,
             makingDate: self.makingDate,
             contents: self.convertToSnapshotContents()!,
             description: self.snapShotDescription,
-            saveMode: .init(rawValue: self.saveMode) ?? .automatic)
+            saveMode: .init(rawValue: self.saveMode) ?? .automatic,
+            modificationHistory: convertToModificationHistory)
+    }
+
+    private var convertToModificationHistory: [TableComponentAction] {
+        guard
+            let jsonString = self.modificationHistory,
+            !jsonString.isEmpty,
+            let data = jsonString.data(using: .utf8)
+        else { return [] }
+
+        do {
+            return try JSONDecoder().decode([TableComponentAction].self, from: data)
+        } catch {
+            assertionFailure("Failed to decode modificationHistory: \(error)")
+            return []
+        }
     }
 
     private func convertToSnapshotContents() -> TableComponentContents? {
@@ -25,6 +41,16 @@ public class TableComponentSnapshotEntity: NSManagedObject {
 
         return contents
     }
+
+    // MARK: - ⚠️ 이걸 static으로 한게 좀 찜찜하다.
+    static func persistTableComponentSnapshotContents(contents: TableComponentContents) -> String {
+        guard let encoded = try? JSONEncoder().encode(contents),
+            let jsonObject = try? JSONSerialization.jsonObject(with: encoded),
+            let sortedData = try? JSONSerialization.data(withJSONObject: jsonObject, options: [.sortedKeys])
+        else { return "" }
+
+        return String(data: sortedData, encoding: .utf8) ?? ""
+    }
 }
 
 extension TableComponentSnapshotEntity {
@@ -39,8 +65,22 @@ extension TableComponentSnapshotEntity {
     @NSManaged public var snapShotDescription: String
     @NSManaged public var snapshotID: UUID
     @NSManaged public var component: TableComponentEntity
+    @NSManaged public var modificationHistory: String?
 }
 
-extension TableComponentSnapshotEntity: Identifiable {
+extension TableComponentSnapshotEntity: PageComponentSnapshotEntity {
+    func updateTrackingSnapshotContents(snapshot: any ComponentSnapshotType) {
+        if let tableComponentSnapshot = snapshot as? TableComponentSnapshot {
+            contents = TableComponentSnapshotEntity.persistTableComponentSnapshotContents(
+                contents: tableComponentSnapshot.snapshotContents)
+            modificationHistory = tableComponentSnapshot.modificationHistory.jsonString
+        }
+    }
 
+    // MARK: - ⚠️ Boiler Plate
+    func updateSnapshotInfo(snapshot: any ComponentSnapshotType) {
+        makingDate = snapshot.makingDate
+        snapShotDescription = snapshot.description
+        saveMode = snapshot.saveMode.rawValue
+    }
 }

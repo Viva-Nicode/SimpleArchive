@@ -56,7 +56,7 @@ final class ComponentFullScreenViewAnimator: NSObject, UIViewControllerAnimatedT
 
         guard
             let window = firstViewController.view.window ?? secondViewController.getView().window,
-            let selectedCell = firstViewController.selectedPageComponentCell
+            let selectedCell = firstViewController.fullscreenTargetComponentView
         else { return nil }
 
         self.toolBarViewRect = selectedCell.toolBarView.convert(selectedCell.toolBarView.bounds, to: window)
@@ -64,7 +64,7 @@ final class ComponentFullScreenViewAnimator: NSObject, UIViewControllerAnimatedT
         self.yellowCircleRect = selectedCell.yellowCircleView.convert(selectedCell.yellowCircleView.bounds, to: window)
         self.greenCircleRect = selectedCell.greenCircleView.convert(selectedCell.greenCircleView.bounds, to: window)
         self.titleLableRect = selectedCell.titleLabel.convert(selectedCell.titleLabel.bounds, to: window)
-        self.textViewRect = firstViewController.pageComponentContentViewRect!
+        self.textViewRect = firstViewController.fullscreenTargetComponentContentsViewFrame!
         self.creationLableRect = selectedCell.creationDateLabel.convert(
             selectedCell.creationDateLabel.bounds, to: window)
         self.componentInformationViewRect = selectedCell.componentInformationView.convert(
@@ -87,7 +87,7 @@ final class ComponentFullScreenViewAnimator: NSObject, UIViewControllerAnimatedT
         containerView.addSubview(toView)
 
         guard
-            firstViewController.selectedPageComponentCell?.toolBarView.snapshotView(afterScreenUpdates: true) != nil,
+            firstViewController.fullscreenTargetComponentView?.toolBarView.snapshotView(afterScreenUpdates: true) != nil,
             let window = firstViewController.view.window ?? secondViewController.getView().window,
             let titleLableSnapshot = secondViewController.titleLabel.snapshotView(afterScreenUpdates: true),
             let creationDateLabelSnapshot = secondViewController
@@ -365,9 +365,9 @@ final class ComponentFullScreenViewAnimator: NSObject, UIViewControllerAnimatedT
 
                 controllerTextViewSnapshot.removeFromSuperview()
 
-                self.firstViewController.selectedPageComponentCell?
-                    .resetupComponentContentViewToDismissFullScreenAnimation()
-                self.firstViewController.selectedPageComponentCell = nil
+                self.firstViewController.fullscreenTargetComponentView?
+                    .detachContentsSnapshotViewDuringDismissFullScreenAnimation()
+                self.firstViewController.fullscreenTargetComponentView = nil
 
                 transitionContext.completeTransition(true)
             }
@@ -375,7 +375,6 @@ final class ComponentFullScreenViewAnimator: NSObject, UIViewControllerAnimatedT
     }
 
     func animateTransition(using transitionContext: UIViewControllerContextTransitioning) {
-
         let isPresenting = type.isPresenting
 
         if isPresenting {

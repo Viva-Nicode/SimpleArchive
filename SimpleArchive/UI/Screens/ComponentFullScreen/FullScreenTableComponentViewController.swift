@@ -3,13 +3,13 @@ import UIKit
 
 final class FullScreenTableComponentViewController: ComponentFullScreenView<TableComponentContentView> {
 
-    init(tableComponent: TableComponent, tableComponentContentView: TableComponentContentView) {
+    init(title: String, createdDate: Date, tableComponentContentView: TableComponentContentView) {
         super.init(componentContentView: tableComponentContentView)
         super.setupUI()
         super.setupConstraints()
         toolBarView.backgroundColor = UIColor(named: "TableComponentToolbarColor")
 
-        setupData(title: tableComponent.title, date: tableComponent.creationDate)
+        setupData(title: title, date: createdDate)
     }
 
     required init?(coder: NSCoder) {

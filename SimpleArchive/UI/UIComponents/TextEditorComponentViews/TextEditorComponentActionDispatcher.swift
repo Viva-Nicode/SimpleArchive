@@ -1,53 +1,29 @@
 import Combine
 import Foundation
 
+@MainActor
 final class TextEditorComponentActionDispatcher {
-    typealias Input = TextEditorComponentViewModel.Action
-    typealias Output = TextEditorComponentViewModel.Event
+    typealias Input = TextEditorComponentViewModelAction
+    typealias Output = TextEditorComponentViewModelEvent
 
     private let dispatcher = PassthroughSubject<Input, Never>()
     private var subscriptions = Set<AnyCancellable>()
-    // 뷰와 뷰모델간의 상호작용을 디스패쳐를 통해서만 가능하도록 강제하려고 뷰모델을 디스패쳐에 숨김.
     private var viewModel: TextEditorComponentViewModel?
 
     func saveTextEditorComponentContentsChanged(contents: String) {
-        dispatcher.send(.willEditTextComponentContents(editedText: contents))
+        dispatcher.send(.textEditorComponentAction(.willEditTextComponentContents(editedText: contents)))
     }
 
     func undoTextEditorComponentContents() {
-        dispatcher.send(.willUndoTextComponentContents)
+        dispatcher.send(.textEditorComponentAction(.willUndoTextComponentContents))
     }
 
-    func captureTextEditorComponentManual(snapshotDescription: String) {
-        dispatcher.send(.willCaptureManualTextComponent(description: snapshotDescription))
+    func captureComponentManual(description: String) {
+        dispatcher.send(.snapshotAction(.willManualCapturePageComponent(description: description)))
     }
 
-    func captureTextEditorComponentAutomatic() {
-        dispatcher.send(.willCaptureAutomaticTextComponent)
-    }
-
-    func navigateToSnapshotView() {
-        dispatcher.send(.willNavigateSnapshotView)
-    }
-
-    func resotreComponentContents() {
-        dispatcher.send(.willRestoreComponentContents)
-    }
-
-    func renamePageComponent(newName: String) {
-        dispatcher.send(.wiilRenameComponent(newName: newName))
-    }
-
-    func foldPageComponent() {
-        dispatcher.send(.willToggleFoldingComponent)
-    }
-
-    func removePageComponent() {
-        dispatcher.send(.willRemovePageComponent)
-    }
-
-    func maximizePageComponent() {
-        dispatcher.send(.willMaximizePageComponent)
+    func navigateComponentSnapshotView() {
+        dispatcher.send(.snapshotAction(.willNavigateComponentSnapshotView))
     }
 
     func bindToViewModel(viewModel: any PageComponentViewModelType, updateUIWithEvent: @escaping (Output) -> Void) {

@@ -3,7 +3,7 @@ import UIKit
 
 final class FullScreenTextEditorComponentViewController: ComponentFullScreenView<UITextView> {
 
-    init(textEditorComponentModel: TextEditorComponent, componentTextView: UITextView) {
+    init(title: String, createDate: Date, componentTextView: UITextView) {
         super.init(componentContentView: componentTextView)
 
         super.setupUI()
@@ -11,7 +11,7 @@ final class FullScreenTextEditorComponentViewController: ComponentFullScreenView
 
         toolBarView.backgroundColor = UIColor(named: "TextEditorComponentToolbarColor")
 
-        setupData(title: textEditorComponentModel.title, date: textEditorComponentModel.creationDate)
+        setupData(title: title, date: createDate)
     }
 
     required init?(coder: NSCoder) {

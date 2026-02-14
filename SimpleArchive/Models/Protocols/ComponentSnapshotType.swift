@@ -13,14 +13,18 @@ protocol PageComponentSnapshotViewFactoryType {
 protocol ComponentSnapshotType: Codable {
     associatedtype ComponentType: PageComponent
 
-    var snapshotID: UUID { get }
-    var makingDate: Date { get }
-    var description: String { get }
-    var saveMode: SnapshotSaveMode { get }
+    var snapshotID: UUID { get set }
+    var makingDate: Date { get set }
+    var description: String { get set }
+    var saveMode: SnapshotSaveMode { get set }
+    var snapshotContents: ComponentType.ContentType { get set }
 
     func revert(component: ComponentType)
+
     func getSnapshotMetaData() -> SnapshotMetaData
     func persistToPersistentStorage(using persistence: ComponentSnapshotPersistenceCreatorType)
+
+    func isEqual(to other: any ComponentSnapshotType) -> Bool
 }
 
 extension ComponentSnapshotType {
@@ -35,6 +39,7 @@ extension ComponentSnapshotType {
 enum SnapshotSaveMode: String, Codable {
     case automatic = "automatic"
     case manual = "manual"
+	case revert = "revert"
 }
 
 struct SnapshotMetaData: Equatable {

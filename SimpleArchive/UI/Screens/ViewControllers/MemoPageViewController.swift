@@ -3,17 +3,20 @@ import Combine
 import MediaPlayer
 import UIKit
 
-final class MemoPageViewController: UIViewController, ViewControllerType {
+final class MemoPageViewController: UIViewController {
 
-    var input = PassthroughSubject<MemoPageViewInput, Never>()
-    var viewModel: MemoPageViewModel
+    var pageViewModel: MemoPageViewModel
+    var pageActionDispatcher = PassthroughSubject<MemoPageViewInput, Never>()
+
     var subscriptions = Set<AnyCancellable>()
+    var taskID: UIBackgroundTaskIdentifier = .invalid
 
-    var selectedPageComponentCell: (any PageComponentViewType)?
-    var pageComponentContentViewRect: CGRect?
-    var selectedComponentIndexForMoveSnapshotView: Int?
+    // MARK: - properties pageComponent fullScreen
+    var fullscreenTargetComponentView: (any PageComponentViewType)?
+    var fullscreenTargetComponentContentsViewFrame: CGRect?
 
     private var componentCollectionViewDataSource: MemoPageComponentCollectionViewDataSource?
+    var snapshotCapturePopupView: SnapshotCapturePopupView?
 
     private let backgroundView: UIStackView = {
         let backgroundView = UIStackView()
@@ -58,25 +61,14 @@ final class MemoPageViewController: UIViewController, ViewControllerType {
         componentPlusButton.translatesAutoresizingMaskIntoConstraints = false
         return componentPlusButton
     }()
+
     private(set) var pageComponentCollectionView: UICollectionView!
     private var audioControlBar = AudioControlBarView()
 
-    init(viewModel: MemoPageViewModel) {
-        self.viewModel = viewModel
+    init(pageViewModel: MemoPageViewModel) {
+        self.pageViewModel = pageViewModel
 
         super.init(nibName: nil, bundle: nil)
-
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(autoCapture),
-            name: UIScene.didEnterBackgroundNotification,
-            object: nil)
-
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(autoCapture),
-            name: UIScene.didDisconnectNotification,
-            object: nil)
 
         NotificationCenter.default.addObserver(
             self,
@@ -94,21 +86,17 @@ final class MemoPageViewController: UIViewController, ViewControllerType {
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
-        // 네비게이션 스택에서 pop되어 vc가 다시 표시되려면 init을 통해야 할때
         let isfreedFromMemory = isMovingFromParent || isBeingDismissed
 
         if isfreedFromMemory {
-            input.send(.willAutoCaptureWhenPopedFromNavigationStack)
             pageComponentCollectionView
                 .visibleCells
                 .compactMap { $0 as? (any PageComponentViewType) }
                 .forEach { $0.freedReferences() }
+            componentCollectionViewDataSource?.freedDataSource()
+            componentCollectionViewDataSource = nil
             subscriptions.removeAll()
         }
-    }
-
-    @objc private func autoCapture() {
-        input.send(.willAutoCaptureOnSceneBackgroundOrDisconnect)
     }
 
     override func viewDidLoad() {
@@ -116,7 +104,7 @@ final class MemoPageViewController: UIViewController, ViewControllerType {
 
         let dynamicHeightFlowLayout = ComponentsPageCollectionViewLayout()
 
-        dynamicHeightFlowLayout.delegate = viewModel
+        dynamicHeightFlowLayout.delegate = pageViewModel
         dynamicHeightFlowLayout.scrollDirection = .vertical
         dynamicHeightFlowLayout.minimumLineSpacing = UIConstants.memoPageViewControllerCollectionViewCellSpacing
 
@@ -128,10 +116,10 @@ final class MemoPageViewController: UIViewController, ViewControllerType {
 
         collectionView.register(
             TextEditorComponentView.self,
-            forCellWithReuseIdentifier: TextEditorComponentView.identifierForUseCollectionView)
+            forCellWithReuseIdentifier: TextEditorComponentView.reuseIdentifier)
         collectionView.register(
             TableComponentView.self,
-            forCellWithReuseIdentifier: TableComponentView.reuseTableComponentIdentifier)
+            forCellWithReuseIdentifier: TableComponentView.reuseIdentifier)
         collectionView.register(
             AudioComponentView.self,
             forCellWithReuseIdentifier: AudioComponentView.reuseAudioComponentIdentifier)
@@ -139,12 +127,12 @@ final class MemoPageViewController: UIViewController, ViewControllerType {
         collectionView.translatesAutoresizingMaskIntoConstraints = false
 
         pageComponentCollectionView = collectionView
-        bind()
-        input.send(.viewDidLoad)
+        bindToMemoPageVM()
+        pageActionDispatcher.send(.viewDidLoad)
     }
 
-    func bind() {
-        let output = viewModel.subscribe(input: input.eraseToAnyPublisher())
+    func bindToMemoPageVM() {
+        let output = pageViewModel.subscribe(input: pageActionDispatcher.eraseToAnyPublisher())
 
         output.sink { [weak self] result in
             guard let self else { return }
@@ -153,7 +141,7 @@ final class MemoPageViewController: UIViewController, ViewControllerType {
                 case .viewDidLoad(let memoPageData, let audioContentsData):
                     let factory = PageComponentCollectionViewCellFactory(
                         collectionView: pageComponentCollectionView,
-                        input: input,
+                        input: pageActionDispatcher,
                         audioContentsDataContainer: audioContentsData)
 
                     componentCollectionViewDataSource = MemoPageComponentCollectionViewDataSource(
@@ -166,63 +154,17 @@ final class MemoPageViewController: UIViewController, ViewControllerType {
                 case .didAppendComponentAt(let index):
                     appendNewComponentView(index: index)
 
-                //                case .didRemoveComponentAt(let index):
-                //                    pageComponentCollectionView.deleteItems(at: [IndexPath(item: index, section: 0)])
+                case .didRemovePageComponent(let componentIndex):
+                    removePageComponent(componentIndex: componentIndex)
 
-                //                case .didToggleComponentSize(let componentIndexMinimized, let isMinimize):
-                //                    updateComponentHeight(componentIndexMinimized: componentIndexMinimized, isMinimize: isMinimize)
+                case .didRenameComponent(let componentIndex, let newName):
+                    renamePageComponent(componentIndex: componentIndex, newName: newName)
 
-                //                case .didMaximizeComponent(let component, let index):
-                //                    presentComponentFullScreen(with: component, index: index)
+                case .didToggleFoldingComponent(let componentIndex, let isMinimized):
+                    toggleComponentFolding(componentIndex: componentIndex, isMinimized: isMinimized)
 
-                //                case .didNavigateSnapshotView(let viewModel, let componentIndex):
-                //                    navigateComponentSnapshotView(viewModel: viewModel, componentIndex: componentIndex)
-
-                //                case .didCompleteComponentCapture(let componentIndex):
-                //                    let indexPath = IndexPath(item: componentIndex, section: 0)
-                //                    if let cell = pageComponentCollectionView.cellForItem(at: indexPath),
-                //                        let captureableComponentView = cell as? CaptureableComponentView
-                //                    {
-                //                        captureableComponentView.completeSnapshotCapturePopupView()
-                //                    }
-
-                // MARK: - Table
-                case .didAppendRowToTableView(let componentIndex, let row):
-                    performWithComponentViewAt(componentIndex) { (_: TableComponentView, contentView) in
-                        contentView.appendEmptyRowToStackView(rowID: row.id)
-                    }
-
-                case .didAppendColumnToTableView(let componentIndex, let column):
-                    performWithComponentViewAt(componentIndex) { (_: TableComponentView, contentView) in
-                        contentView.appendEmptyColumnToStackView(column: column)
-                    }
-
-                case .didApplyTableCellValueChanges(let componentIndex, let rowIndex, let colIndex, let newCellValue):
-                    performWithComponentViewAt(componentIndex) { (_: TableComponentView, contentView) in
-                        contentView.updateUILabelText(rowIndex: rowIndex, cellIndex: colIndex, with: newCellValue)
-                    }
-
-                case .didRemoveRowToTableView(let componentIndex, let removedRowIndex):
-                    performWithComponentViewAt(componentIndex) { (_: TableComponentView, contentView) in
-                        contentView.removeTableComponentRowView(idx: removedRowIndex)
-                    }
-
-                case .didApplyTableColumnChanges(let componentIndex, let columns):
-                    performWithComponentViewAt(componentIndex) { (_: TableComponentView, contentView) in
-                        contentView.applyColumns(columns: columns)
-                    }
-
-                case .didPresentTableColumnEditPopupView(let columns, let tappedColumnIndex, let componentID):
-                    let tableComponentColumnEditPopupView = TableComponentColumnEditPopupView(
-                        columns: columns, tappedColumnIndex: tappedColumnIndex)
-
-                    tableComponentColumnEditPopupView.confirmButtonPublisher
-                        .sink { [weak self] colums in
-                            self?.input.send(.willApplyTableColumnChanges(componentID, colums))
-                        }
-                        .store(in: &subscriptions)
-
-                    tableComponentColumnEditPopupView.show()
+                case .didMaximizePageComponent(let componentIndex):
+                    presentComponentFullScreen(componentIndex: componentIndex)
 
                 // MARK: - Audio
                 case .didAppendAudioTrackRows(let componentIndex, let appendedTrackIndices):
@@ -278,8 +220,7 @@ final class MemoPageViewController: UIViewController, ViewControllerType {
                     removeAudioTrack(componentIndex: componentIndex, trackIndex: trackIndex)
 
                 case .didRemoveAudioTrackAndPlayNextAudio(
-                    let
-                        componentIndex, let trackIndex, let nextIndex, let duration, let audioMetadata, let waveformData
+                    let componentIndex, let trackIndex, let nextIndex, let duration, let audioMetadata, let waveformData
                 ):
                     removeAudioTrackAndPlayNextAudio(
                         componentIndex: componentIndex,
@@ -292,7 +233,6 @@ final class MemoPageViewController: UIViewController, ViewControllerType {
 
                 case .didRemoveAudioTrackAndStopPlaying(let componentIndex, let trackIndex):
                     removeAudioTrackAndStopPlaying(componentIndex: componentIndex, trackIndex: trackIndex)
-
             }
         }
         .store(in: &subscriptions)
@@ -370,106 +310,27 @@ final class MemoPageViewController: UIViewController, ViewControllerType {
         pageComponentCollectionView.scrollToItem(at: indexPath, at: .top, animated: true)
     }
 
-    //    private func updateComponentHeight(componentIndexMinimized: Int, isMinimize: Bool) {
-    //        let path = IndexPath(item: componentIndexMinimized, section: .zero)
-    //        if let cell = pageComponentCollectionView.cellForItem(at: path),
-    //            let pageComponentView = cell as? (any PageComponentViewType)
-    //        {
-    //            if isMinimize {
-    //                pageComponentView.setMinimizeState(isMinimize)
-    //
-    //                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-    //                    UIView.animate(withDuration: 0.3) {
-    //                        self?.pageComponentCollectionView.collectionViewLayout.invalidateLayout()
-    //                    }
-    //                }
-    //            } else {
-    //                pageComponentCollectionView.performBatchUpdates {
-    //                    pageComponentCollectionView.collectionViewLayout.invalidateLayout()
-    //                } completion: { _ in
-    //                    UIView.animate(withDuration: 0.3) {
-    //                        pageComponentView.setMinimizeState(isMinimize)
-    //                    }
-    //                }
-    //            }
-    //        }
-    //    }
+    private func renamePageComponent(componentIndex: Int, newName: String) {
+        let indexPath = IndexPath(item: componentIndex, section: 0)
+        if let cell = pageComponentCollectionView.cellForItem(at: indexPath),
+            let pageComponentView = cell as? (any PageComponentViewType)
+        {
+            pageComponentView.titleLabel.text = newName
+        }
+    }
 
-    //    private func navigateComponentSnapshotView(viewModel: ComponentSnapshotViewModel, componentIndex: Int) {
-    //        let snapshotView = ComponentSnapshotViewController(viewModel: viewModel)
-    //
-    //        snapshotView.hasRestorePublisher
-    //            .sink { [weak self] _ in
-    //                guard let self else { return }
-    //                if let selectedComponentIndexForMoveSnapshotView {
-    //                    let indexPath = IndexPath(item: selectedComponentIndexForMoveSnapshotView, section: 0)
-    //                    pageComponentCollectionView.reloadItems(at: [indexPath])
-    //                }
-    //            }
-    //            .store(in: &subscriptions)
-    //
-    //        selectedComponentIndexForMoveSnapshotView = componentIndex
-    //        navigationController?.pushViewController(snapshotView, animated: true)
-    //    }
-
-    //    private func presentComponentFullScreen(with targetComponent: any PageComponent, index: Int) {
-    //        selectedPageComponentCell =
-    //            pageComponentCollectionView.cellForItem(at: IndexPath(item: index, section: 0))
-    //            as? (any PageComponentViewType)
-    //
-    //        switch targetComponent {
-    //            case let textEditorComponent as TextEditorComponent:
-    //                let contentView = selectedPageComponentCell!.getContentView() as! UITextView
-    //                pageComponentContentViewRect = contentView.convert(contentView.bounds, to: self.view.window!)
-    //
-    //                let fullscreenComponentViewController = FullScreenTextEditorComponentViewController(
-    //                    textEditorComponentModel: textEditorComponent,
-    //                    componentTextView: contentView
-    //                )
-    //                fullscreenComponentViewController.modalPresentationStyle = .fullScreen
-    //                fullscreenComponentViewController.transitioningDelegate = self
-    //
-    //                present(fullscreenComponentViewController, animated: true)
-    //
-    //            case let tableComponent as TableComponent:
-    //
-    //                let contentView = selectedPageComponentCell!.getContentView() as! TableComponentContentView
-    //                pageComponentContentViewRect = contentView.convert(contentView.bounds, to: self.view.window!)
-    //
-    //                let fullScreenTableComponentViewController = FullScreenTableComponentViewController(
-    //                    tableComponent: tableComponent,
-    //                    tableComponentContentView: contentView
-    //                )
-    //                fullScreenTableComponentViewController.modalPresentationStyle = .fullScreen
-    //                fullScreenTableComponentViewController.transitioningDelegate = self
-    //
-    //                present(fullScreenTableComponentViewController, animated: true)
-    //
-    //            case let audioComponent as AudioComponent:
-    //                let contentView = selectedPageComponentCell!.getContentView() as! AudioComponentContentView
-    //
-    //                pageComponentContentViewRect = contentView.convert(contentView.bounds, to: self.view.window!)
-    //
-    //                let fullScreenAudioComponentViewController = FullScreenAudioComponentViewController(
-    //                    audioComponent: audioComponent,
-    //                    audioComponentContentView: contentView
-    //                )
-    //                fullScreenAudioComponentViewController.modalPresentationStyle = .fullScreen
-    //                fullScreenAudioComponentViewController.transitioningDelegate = self
-    //
-    //                present(fullScreenAudioComponentViewController, animated: true)
-    //
-    //            default:
-    //                break
-    //        }
-    //    }
+    private func removePageComponent(componentIndex: Int) {
+        let indexPath = IndexPath(item: componentIndex, section: 0)
+        pageComponentCollectionView.deleteItems(at: [indexPath])
+    }
 
     private func presentCreatingNewComponentView() {
         let createNewComponentView = CreateNewComponentView()
 
         createNewComponentView.componentTypePublisher
             .sink { [weak self] componentType in
-                self?.input.send(.willCreateNewComponent(componentType))
+                guard let self else { return }
+                pageActionDispatcher.send(.willCreateNewComponent(componentType))
             }
             .store(in: &subscriptions)
 
@@ -478,6 +339,39 @@ final class MemoPageViewController: UIViewController, ViewControllerType {
         }
 
         present(createNewComponentView, animated: true)
+    }
+
+    private func toggleComponentFolding(componentIndex: Int, isMinimized: Bool) {
+        let path = IndexPath(item: componentIndex, section: .zero)
+        if let cell = pageComponentCollectionView.cellForItem(at: path),
+            let pageComponentView = cell as? (any PageComponentViewType)
+        {
+            if isMinimized {
+                pageComponentView.setMinimizeState(isMinimized)
+
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+                    UIView.animate(withDuration: 0.3) {
+                        self?.pageComponentCollectionView.collectionViewLayout.invalidateLayout()
+                    }
+                }
+            } else {
+                pageComponentCollectionView.performBatchUpdates {
+                    pageComponentCollectionView.collectionViewLayout.invalidateLayout()
+                } completion: { _ in
+                    UIView.animate(withDuration: 0.3) {
+                        pageComponentView.setMinimizeState(isMinimized)
+                    }
+                }
+            }
+        }
+    }
+
+    private func presentComponentFullScreen(componentIndex: Int) {
+        let indexPath = IndexPath(item: componentIndex, section: 0)
+        fullscreenTargetComponentView =
+            pageComponentCollectionView.cellForItem(at: indexPath) as? (any PageComponentViewType)
+        fullscreenTargetComponentView?.attachContentsSnapshotViewDuringPresentingFullScreenAnimation()
+        fullscreenTargetComponentView?.presentFullScreenPageComponentView()
     }
 
     private func performWithComponentViewAt<ViewType: PageComponentViewType>(
@@ -531,6 +425,7 @@ final class MemoPageViewController: UIViewController, ViewControllerType {
     }
 }
 
+// MARK: - Audio
 extension MemoPageViewController {
     private func appendNewAudioTracks(componentIndex: Int, appendedTrackIndices: [Int]) {
         performWithComponentViewAt(componentIndex) { (_: AudioComponentView, contentView) in
@@ -581,7 +476,7 @@ extension MemoPageViewController {
         audioControlBar.state = .play(
             metadata: audioMetadata,
             duration: duration,
-            dispatcher: MemoPageAudioComponentActionDispatcher(subject: input))
+            dispatcher: MemoPageAudioComponentActionDispatcher(subject: pageActionDispatcher))
     }
 
     private func applyAudioTrackMetadataChanges(
@@ -688,7 +583,7 @@ extension MemoPageViewController {
         audioControlBar.state = .play(
             metadata: audioMetadata,
             duration: duration,
-            dispatcher: MemoPageAudioComponentActionDispatcher(subject: input))
+            dispatcher: MemoPageAudioComponentActionDispatcher(subject: pageActionDispatcher))
     }
 
     private func removeAudioTrackAndStopPlaying(componentIndex: Int, trackIndex: Int) {
@@ -722,78 +617,5 @@ extension MemoPageViewController {
                 .audioDownloadStatePopupView?
                 .setStateToFail()
         }
-    }
-}
-
-protocol ComponentsPageCollectionViewLayoutDelegate: AnyObject {
-    func collectionView(heightForItemAt indexPath: IndexPath) -> CGFloat
-}
-
-final class ComponentsPageCollectionViewLayout: UICollectionViewFlowLayout {
-
-    weak var delegate: ComponentsPageCollectionViewLayoutDelegate?
-    private var cache: [UICollectionViewLayoutAttributes] = []
-    private var contentHeight: CGFloat = 0
-
-    private var contentWidth: CGFloat {
-        guard let collectionView = collectionView else { return 0 }
-        return collectionView.bounds.width - 40
-    }
-
-    override var collectionViewContentSize: CGSize {
-        CGSize(width: contentWidth, height: contentHeight)
-    }
-
-    override func prepare() {
-        super.prepare()
-
-        guard let collectionView = collectionView else { return }
-        collectionView.contentInset = UIEdgeInsets(
-            top: UIConstants.memoPageViewControllerCollectionViewHeaderHeight,
-            left: 0,
-            bottom: UIConstants.memoPageViewControllerCollectionViewFooterHeight,
-            right: 0)
-        cache.removeAll()
-
-        let numberOfItems = collectionView.numberOfItems(inSection: 0)
-        let availableWidth = contentWidth - sectionInset.left - sectionInset.right
-        var yOffset: CGFloat = sectionInset.top
-
-        for item in 0..<numberOfItems {
-            let indexPath = IndexPath(item: item, section: 0)
-            let itemHeight =
-                delegate?.collectionView(heightForItemAt: indexPath)
-                ?? itemSize.height
-
-            let frame = CGRect(
-                x: (collectionView.bounds.width - availableWidth) / 2,
-                y: yOffset,
-                width: availableWidth,
-                height: itemHeight
-            )
-
-            let attributes = UICollectionViewLayoutAttributes(forCellWith: indexPath)
-            attributes.frame = frame
-
-            cache.append(attributes)
-
-            yOffset += itemHeight + minimumLineSpacing
-            contentHeight = max(contentHeight, frame.maxY + sectionInset.bottom)
-        }
-    }
-
-    override func layoutAttributesForSupplementaryView(
-        ofKind elementKind: String,
-        at indexPath: IndexPath
-    ) -> UICollectionViewLayoutAttributes? {
-        cache.first { $0.representedElementKind == elementKind && $0.indexPath == indexPath }
-    }
-
-    override func layoutAttributesForElements(in rect: CGRect) -> [UICollectionViewLayoutAttributes]? {
-        cache.filter { $0.frame.intersects(rect) }
-    }
-
-    override func layoutAttributesForItem(at indexPath: IndexPath) -> UICollectionViewLayoutAttributes? {
-        cache.first { $0.indexPath == indexPath }
     }
 }

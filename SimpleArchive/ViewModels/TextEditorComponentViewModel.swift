@@ -2,71 +2,72 @@ import Combine
 import Foundation
 
 final class TextEditorComponentViewModel: PageComponentViewModelType {
-    private let eventOutput = PassthroughSubject<Event, Never>()
-    private var subscriptions = Set<AnyCancellable>()
-    private let textEditorComponentInteractor: TextEditorComponentInteractor
+    var eventOutput = PassthroughSubject<TextEditorComponentViewModelEvent, Never>()
+    var subscriptions = Set<AnyCancellable>()
 
+    private var interactor: TextEditorComponentInteractor
     private var title: String
     private var createdDate: Date
     private var contents: String
 
     init(textEditorComponentInteractor: TextEditorComponentInteractor) {
-        self.textEditorComponentInteractor = textEditorComponentInteractor
+        self.interactor = textEditorComponentInteractor
         self.title = textEditorComponentInteractor.pageComponent.title
         self.createdDate = textEditorComponentInteractor.pageComponent.creationDate
         self.contents = textEditorComponentInteractor.pageComponent.componentContents
         myLog("\(title)")
     }
 
-    deinit { myLog(String(describing: Swift.type(of: self)),"\(title)", c: .purple) }
+    deinit { myLog(String(describing: Swift.type(of: self)), "\(title)", c: .purple) }
 
-    func bindToView(input: AnyPublisher<Action, Never>) -> AnyPublisher<Event, Never> {
+    func bindToView(input: AnyPublisher<TextEditorComponentViewModelAction, Never>)
+        -> AnyPublisher<TextEditorComponentViewModelEvent, Never>
+    {
         input.sink { [weak self] event in
             guard let self else { return }
             switch event {
-                case .willEditTextComponentContents(let editedText):
-                    textEditorComponentInteractor.saveTextEditorComponentContentsChange(contents: editedText)
 
-                case .willUndoTextComponentContents:
-                    if let undidText = textEditorComponentInteractor.undoTextEditorComponentContents() {
-                        eventOutput.send(.didUndoTextComponentContents(undidText: undidText))
+                case .textEditorComponentAction(let textEditorAction):
+                    switch textEditorAction {
+                        case .willEditTextComponentContents(let editedText):
+                            interactor.saveTextEditorComponentContentsChange(contents: editedText)
+
+                        case .willUndoTextComponentContents:
+                            if let undidText = interactor.undoTextEditorComponentContents() {
+                                eventOutput.send(
+                                    .textEditorComponentEvent(.didUndoTextComponentContents(undidText: undidText)))
+                            }
                     }
 
-                case .willCaptureManualTextComponent(let description):
-                    textEditorComponentInteractor.captureSnapshotManual(description: description)
-                    eventOutput.send(.didCaptureWithManual)
+                case .snapshotAction(let snapshotAction):
+                    switch snapshotAction {
+                        case .willManualCapturePageComponent(let description):
+                            interactor.saveTrackedSnapshotManual(description: description)
+                            eventOutput.send(.snapshotEvent(.didManualCapturePageComponent))
 
-                case .willRestoreComponentContents:
-                    let contents = textEditorComponentInteractor.pageComponentContents
-                    eventOutput.send(.didRestoreComponentContents(contents: contents))
+                        case .willNavigateComponentSnapshotView:
+                            let container = DIContainer.shared
+                            container.setArgument(
+                                ComponentSnapshotViewModel.self,
+                                interactor.pageComponent as any SnapshotRestorablePageComponent)
+                            container.setArgument(
+                                ComponentSnapshotViewModel.self,
+                                interactor.trackingSnapshot as any ComponentSnapshotType)
+                            let componentSnapshotViewModel = container.resolve(ComponentSnapshotViewModel.self)
 
-                case .willNavigateSnapshotView:
-                    let container = DIContainer.shared
-                    container.setArgument(
-                        ComponentSnapshotViewModel.self,
-                        textEditorComponentInteractor.pageComponent as (any SnapshotRestorablePageComponent))
-                    let componentSnapshotViewModel = container.resolve(ComponentSnapshotViewModel.self)
-                    eventOutput.send(.didNavigateSnapshotView(vm: componentSnapshotViewModel))
-
-                case .wiilRenameComponent(let newName):
-                    textEditorComponentInteractor.renamePageComponent(title: newName)
-                    eventOutput.send(.didRenameComponent(newName: newName))
-
-                case .willToggleFoldingComponent:
-                    let isMinimized = textEditorComponentInteractor.toggleFoldingPageComponent()
-                    eventOutput.send(.didToggleFoldingComponent(isMinimized: isMinimized))
-
-                case .willRemovePageComponent:
-                    textEditorComponentInteractor.removePageComponent()
-                    eventOutput.send(.didRemovePageComponent)
-
-                case .willMaximizePageComponent:
-                    let isMaximized = textEditorComponentInteractor.maximizePageComponent()
-                    eventOutput.send(
-                        isMaximized ? .didMaximizePageComponent : .didToggleFoldingComponent(isMinimized: false))
-
-                case .willCaptureAutomaticTextComponent:
-                    textEditorComponentInteractor.captureSnapshotAutomatic()
+                            componentSnapshotViewModel.updateTrackingSnapshotSignal
+                                .sink { [weak self] _ in
+                                    guard let self else { return }
+                                    interactor.trackingSnapshot = TextEditorComponentSnapshot(
+                                        contents: interactor.pageComponent.componentContents,
+                                        description: "",
+                                        saveMode: .automatic,
+                                        modificationHistory: [])
+                                }
+                                .store(in: &subscriptions)
+                            eventOutput.send(
+                                .snapshotEvent(.didNavigateComponentSnapshotView(componentSnapshotViewModel)))
+                    }
             }
         }
         .store(in: &subscriptions)
@@ -77,52 +78,25 @@ final class TextEditorComponentViewModel: PageComponentViewModelType {
     var singleTextEditorComponentViewControllerInitialData: (title: String, createdDate: Date, contents: String) {
         (title, createdDate, contents)
     }
-
-    func clearSubscriptions() {
-        subscriptions.removeAll()
-    }
 }
 
 extension TextEditorComponentViewModel {
     enum Action {
-        // MARK: - Contents
         case willEditTextComponentContents(editedText: String)
         case willUndoTextComponentContents
-
-        // MARK: - Capture & Snapshot
-        case willCaptureManualTextComponent(description: String)
-        case willCaptureAutomaticTextComponent
-        case willRestoreComponentContents
-        case willNavigateSnapshotView
-
-        // MARK: - State
-        case wiilRenameComponent(newName: String)
-        case willToggleFoldingComponent
-        case willRemovePageComponent
-        case willMaximizePageComponent
     }
 
     enum Event {
-        // MARK: - Contents
         case didUndoTextComponentContents(undidText: String)
-
-        // MARK: - Capture & Snapshot
-        case didCaptureWithManual
-        case didNavigateSnapshotView(vm: ComponentSnapshotViewModel)
-        case didRestoreComponentContents(contents: String)
-
-        // MARK: - State
-        case didRenameComponent(newName: String)
-        case didToggleFoldingComponent(isMinimized: Bool)
-        case didRemovePageComponent
-        case didMaximizePageComponent
     }
 }
 
-protocol PageComponentViewModelType: AnyObject {
-    associatedtype Action
-    associatedtype Event
+enum TextEditorComponentViewModelAction {
+    case textEditorComponentAction(TextEditorComponentViewModel.Action)
+    case snapshotAction(SnapshotRestorableComponentAction)
+}
 
-    func bindToView(input: AnyPublisher<Action, Never>) -> AnyPublisher<Event, Never>
-    func clearSubscriptions()
+enum TextEditorComponentViewModelEvent {
+    case textEditorComponentEvent(TextEditorComponentViewModel.Event)
+    case snapshotEvent(SnapshotRestorableComponentEvent)
 }

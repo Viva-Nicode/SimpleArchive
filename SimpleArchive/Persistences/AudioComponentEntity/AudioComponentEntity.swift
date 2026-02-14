@@ -130,6 +130,8 @@ public class AudioComponentEntity: MemoComponentEntity {
     override func removeSnapshot(snapshotID: UUID) {}
 
     override func revertComponentEntityContents(componentModel: any PageComponent) {}
+
+    override func findSnapshotEntityByID(id: UUID) -> PageComponentSnapshotEntity? { nil }
 }
 
 extension AudioComponentEntity {

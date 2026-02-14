@@ -1,7 +1,8 @@
 import Combine
 import UIKit
 
-final class ComponentSnapshotViewController: UIViewController, ViewControllerType {
+@MainActor
+final class ComponentSnapshotViewController: UIViewController {
 
     private let backgroundView: UIStackView = {
         let backgroundView = UIStackView()
@@ -154,12 +155,12 @@ final class ComponentSnapshotViewController: UIViewController, ViewControllerTyp
         return UIButton(configuration: buttonConfiguration)
     }()
 
-    var input = PassthroughSubject<ComponentSnapshotViewModelInput, Never>()
+    var input = PassthroughSubject<ComponentSnapshotViewModel.Action, Never>()
     var viewModel: ComponentSnapshotViewModel
     var subscriptions = Set<AnyCancellable>()
 
-    private var hasRestore: Bool = false
-    private var restoreSubject = PassthroughSubject<Bool, Never>()
+    private var revertedContents: Codable?
+    private var restoreSubject = PassthroughSubject<Codable?, Never>()
     private var snapshotCollectionViewDataSource: ComponentSnapshotCollectionViewDataSource?
     private var snapshotCollectionView: UICollectionView!
 
@@ -182,12 +183,14 @@ final class ComponentSnapshotViewController: UIViewController, ViewControllerTyp
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
-        restoreSubject.send(hasRestore)
+        restoreSubject.send(revertedContents)
         subscriptions.removeAll()
     }
 
-    var hasRestorePublisher: AnyPublisher<Bool, Never> {
-        restoreSubject.filter { $0 }.eraseToAnyPublisher()
+    var hasRestorePublisher: AnyPublisher<Codable, Never> {
+        restoreSubject
+            .compactMap { $0 }
+            .eraseToAnyPublisher()
     }
 
     func bind() {
@@ -206,8 +209,8 @@ final class ComponentSnapshotViewController: UIViewController, ViewControllerTyp
                     saveModeLabel.text = snapshotMetadata.savemode
                     snapshotDescriptionLabel.text = snapshotMetadata.snapshotDescription
 
-                case .didRestoreSnapshot:
-                    hasRestore = true
+                case .didRestoreSnapshot(let revertedContents):
+                    self.revertedContents = revertedContents
                     navigationController?.popViewController(animated: true)
 
                 case .didRemoveSnapshot(let nextViewedSnapshotMetadata, let removedSnapshotIndex):
@@ -249,11 +252,11 @@ final class ComponentSnapshotViewController: UIViewController, ViewControllerTyp
 
         snapshotCollectionView.register(
             TextEditorComponentView.self,
-            forCellWithReuseIdentifier: TextEditorComponentView.identifierForUseCollectionView
+            forCellWithReuseIdentifier: TextEditorComponentView.reuseIdentifier
         )
         snapshotCollectionView.register(
             TableComponentView.self,
-            forCellWithReuseIdentifier: TableComponentView.reuseTableComponentIdentifier
+            forCellWithReuseIdentifier: TableComponentView.reuseIdentifier
         )
 
         let factory = PageComponentSnapshotViewFactory(input: input)

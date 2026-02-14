@@ -94,9 +94,13 @@ final class DIContainer {
 final class DependencyConfigurator {
     static func configureDependencies() {
         configureCommonDependencies()
+
         configureMemoHomeViewModelDependencies()
         configureMemoPageViewModelDependencies()
+
         configureTextEditorComponentViewModelDependencies()
+        configureTableComponentViewModelDependencies()
+
         configureComponentSnapshotViewModelDependencies()
         configureDormantBoxViewModelDependencies()
         configureSingleTableComponentViewModelDependencies()
@@ -187,15 +191,19 @@ final class DependencyConfigurator {
 
         container.register(
             ComponentSnapshotViewModel.self,
-            requiredArgs: [(any SnapshotRestorablePageComponent).self]
+            requiredArgs: [(any SnapshotRestorablePageComponent).self, (any ComponentSnapshotType).self]
         ) {
             let snapshotRestorableComponent =
                 container
                 .getArgument(ComponentSnapshotViewModel.self) as (any SnapshotRestorablePageComponent)
+            let trackingSnapshot =
+                container
+                .getArgument(ComponentSnapshotViewModel.self) as (any ComponentSnapshotType)
 
             return ComponentSnapshotViewModel(
                 componentSnapshotCoreDataRepository: container.resolve(ComponentSnapshotCoreDataRepository.self),
-                snapshotRestorableComponent: snapshotRestorableComponent
+                snapshotRestorableComponent: snapshotRestorableComponent,
+                trackingSnapshot: trackingSnapshot
             )
         }
     }
@@ -226,12 +234,24 @@ final class DependencyConfigurator {
             let textEditorComponent =
                 container.getArgument(TextEditorComponentViewModel.self) as TextEditorComponent
             let memoComponentCoreDataRepository = container.resolve(MemoComponentCoreDataRepository.self)
-            let componentSnapshotCoreDataRepository = container.resolve(ComponentSnapshotCoreDataRepository.self)
             let textEditorComponentInteractor = TextEditorComponentInteractor(
                 textEditorComponent: textEditorComponent,
-                memoComponentCoredataReposotory: memoComponentCoreDataRepository,
-                componentSnapshotCoreDataRepository: componentSnapshotCoreDataRepository)
+                memoComponentCoredataReposotory: memoComponentCoreDataRepository)
             return TextEditorComponentViewModel(textEditorComponentInteractor: textEditorComponentInteractor)
+        }
+    }
+
+    private static func configureTableComponentViewModelDependencies() {
+        let container = DIContainer.shared
+
+        container.register(TableComponentViewModel.self, requiredArgs: [TableComponent.self]) {
+            let tableComponent =
+                container.getArgument(TableComponentViewModel.self) as TableComponent
+            let memoComponentCoreDataRepository = container.resolve(MemoComponentCoreDataRepository.self)
+            let tableComponentInteractor = TableComponentInteractor(
+                tableComponent: tableComponent,
+                memoComponentCoredataReposotory: memoComponentCoreDataRepository)
+            return TableComponentViewModel(tableComponentInteractor: tableComponentInteractor)
         }
     }
 
