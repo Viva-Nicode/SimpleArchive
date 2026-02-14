@@ -34,8 +34,6 @@ final class TableComponentActionDispatcher {
         dispatcher.send(.tableComponentAction(.willPresentTableColumnEditingPopupView(columnID: columnID)))
     }
 
-	// MARK: - ⚠️ Boiler Plate
-
     func captureComponentManual(description: String) {
 		dispatcher.send(.snapshotAction(.willManualCapturePageComponent(description: description)))
     }

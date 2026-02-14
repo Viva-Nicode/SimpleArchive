@@ -52,10 +52,4 @@ extension TextEditorComponentSnapshotEntity: PageComponentSnapshotEntity {
             modificationHistory = textEditorComponentSnapshot.modificationHistory.jsonString
         }
     }
-
-    func updateSnapshotInfo(snapshot: any ComponentSnapshotType) {
-        makingDate = snapshot.makingDate
-        snapShotDescription = snapshot.description
-        saveMode = snapshot.saveMode.rawValue
-    }
 }

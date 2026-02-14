@@ -76,11 +76,4 @@ extension TableComponentSnapshotEntity: PageComponentSnapshotEntity {
             modificationHistory = tableComponentSnapshot.modificationHistory.jsonString
         }
     }
-
-    // MARK: - ⚠️ Boiler Plate
-    func updateSnapshotInfo(snapshot: any ComponentSnapshotType) {
-        makingDate = snapshot.makingDate
-        snapShotDescription = snapshot.description
-        saveMode = snapshot.saveMode.rawValue
-    }
 }

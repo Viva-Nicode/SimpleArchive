@@ -84,21 +84,21 @@ final class TableComponentViewModel: PageComponentViewModelType {
                             container.setArgument(
                                 ComponentSnapshotViewModel.self,
                                 interactor.pageComponent as any SnapshotRestorablePageComponent)
-							container.setArgument(
-								ComponentSnapshotViewModel.self,
-								interactor.trackingSnapshot as any ComponentSnapshotType)
+                            container.setArgument(
+                                ComponentSnapshotViewModel.self,
+                                interactor.trackingSnapshot as any ComponentSnapshotType)
                             let componentSnapshotViewModel = container.resolve(ComponentSnapshotViewModel.self)
 
-							componentSnapshotViewModel.updateTrackingSnapshotSignal
-								.sink { [weak self] _ in
-									guard let self else { return }
-									interactor.trackingSnapshot = TableComponentSnapshot(
-										contents: interactor.pageComponent.componentContents,
-										description: "",
-										saveMode: .automatic,
-										modificationHistory: [])
-								}
-								.store(in: &subscriptions)
+                            componentSnapshotViewModel.updateTrackingSnapshotSignal
+                                .sink { [weak self] _ in
+                                    guard let self else { return }
+                                    interactor.trackingSnapshot = TableComponentSnapshot(
+                                        contents: interactor.pageComponent.componentContents,
+                                        description: "",
+                                        saveMode: .automatic,
+                                        modificationHistory: [])
+                                }
+                                .store(in: &subscriptions)
                             eventOutput.send(
                                 .snapshotEvent(.didNavigateComponentSnapshotView(componentSnapshotViewModel)))
                     }

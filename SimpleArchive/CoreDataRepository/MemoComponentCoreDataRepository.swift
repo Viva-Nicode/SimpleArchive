@@ -69,20 +69,23 @@ final class MemoComponentCoreDataRepository: MemoComponentCoreDataRepositoryType
         -> AnyPublisher<Void, Error>
     {
         coredataStack.update { ctx in
-            // 모델과 대응되는 엔티티를 찾아서 영속성에도 컨텐츠 변경사항을 반영한다.
             let fetchRequest = MemoComponentEntity.findById(id: modifiedComponent.id)
             let componentEntity = try ctx.fetch(fetchRequest).first!
             componentEntity.updatePageComponentEntityContents(componentModel: modifiedComponent)
 
-            // 자동캡쳐를 위해 추적되는 스냅샷을 찾고 없으면 만든다.
-            if let trackingSnapshotEntity = componentEntity.findSnapshotEntityByID(id: snapshot.snapshotID) {
-                trackingSnapshotEntity.updateTrackingSnapshotContents(snapshot: snapshot)
-            } else {
-                let fetchRequest = MemoComponentEntity.findById(id: modifiedComponent.id)
-                let componentEntity = try ctx.fetch(fetchRequest).first!
-                let persistence = CoreDataComponentSnapshotPersistenceCreator(parentComponent: componentEntity)
+            if let snapshotRestorableComponentEntity = componentEntity as? (any SnapshotRestorableComponentEntityType) {
+                if let trackingSnapshotEntity =
+                    snapshotRestorableComponentEntity
+                    .findSnapshotEntityByID(snapshotID: snapshot.snapshotID)
+                {
+                    trackingSnapshotEntity.updateTrackingSnapshotContents(snapshot: snapshot)
+                } else {
+                    let fetchRequest = MemoComponentEntity.findById(id: modifiedComponent.id)
+                    let componentEntity = try ctx.fetch(fetchRequest).first!
+                    let persistence = CoreDataComponentSnapshotPersistenceCreator(parentComponent: componentEntity)
 
-                snapshot.persistToPersistentStorage(using: persistence)
+                    snapshot.persistToPersistentStorage(using: persistence)
+                }
             }
         }
     }
@@ -91,8 +94,14 @@ final class MemoComponentCoreDataRepository: MemoComponentCoreDataRepositoryType
         coredataStack.update { ctx in
             let fetchRequest = MemoComponentEntity.findById(id: componentID)
             if let componentEntity = try ctx.fetch(fetchRequest).first {
-                if let trackingSnapshotEntity = componentEntity.findSnapshotEntityByID(id: snapshot.snapshotID) {
-                    trackingSnapshotEntity.updateSnapshotInfo(snapshot: snapshot)
+                if let snapshotRestorableComponentEntity = componentEntity
+                    as? (any SnapshotRestorableComponentEntityType)
+                {
+                    if let trackingSnapshotEntity = snapshotRestorableComponentEntity.findSnapshotEntityByID(
+                        snapshotID: snapshot.snapshotID)
+                    {
+                        trackingSnapshotEntity.updateSnapshotInfo(snapshot: snapshot)
+                    }
                 }
             }
         }

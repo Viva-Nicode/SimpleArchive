@@ -23,8 +23,11 @@ final class ComponentSnapshotCoreDataRepository: ComponentSnapshotCoreDataReposi
 
     func removeSnapshot(componentID: UUID, snapshotID: UUID) {
         coredataStack.update { ctx in
-            let componentEntity = try ctx.fetch(MemoComponentEntity.findById(id: componentID)).first
-            componentEntity?.removeSnapshot(snapshotID: snapshotID)
+            if let componentEntity = try ctx.fetch(MemoComponentEntity.findById(id: componentID)).first,
+                let snapshotRestorableComponentEntity = componentEntity as? (any SnapshotRestorableComponentEntityType)
+            {
+                snapshotRestorableComponentEntity.removeSnapshot(snapshotID: snapshotID)
+            }
         }
     }
 
@@ -35,19 +38,18 @@ final class ComponentSnapshotCoreDataRepository: ComponentSnapshotCoreDataReposi
         coredataStack.update { ctx in
             let fetchRequest = MemoComponentEntity.findById(id: modifiedComponent.id)
             if let componentEntity = try ctx.fetch(fetchRequest).first {
-                if let trackingSnapshotEntity = componentEntity.findSnapshotEntityByID(id: trackingSnapshot.snapshotID)
+                if let snapshotRestorableComponentEntity = componentEntity
+                    as? (any SnapshotRestorableComponentEntityType)
                 {
-                    trackingSnapshotEntity.updateSnapshotInfo(snapshot: trackingSnapshot)
+                    if let trackingSnapshotEntity = snapshotRestorableComponentEntity.findSnapshotEntityByID(
+                        snapshotID: trackingSnapshot.snapshotID)
+                    {
+                        trackingSnapshotEntity.updateSnapshotInfo(snapshot: trackingSnapshot)
+                    }
+                    componentEntity.isMinimumHeight = modifiedComponent.isMinimumHeight
+                    snapshotRestorableComponentEntity.revertComponentEntityContents(componentModel: modifiedComponent)
                 }
-
-                /* MARK: - 📄 NOTE
-                 폴딩된 상태에서 revert하는 경우 펴져야 해서 isMinimumHeight도 바꿔준다.
-                 */
-                componentEntity.isMinimumHeight = modifiedComponent.isMinimumHeight
-                componentEntity.revertComponentEntityContents(componentModel: modifiedComponent)
-			}else{
-				myLog("컴포넌트 엔티티를 찾을 수 없음")
-			}
+            }
         }
     }
 }

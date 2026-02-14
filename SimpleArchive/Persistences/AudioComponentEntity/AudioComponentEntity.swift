@@ -13,7 +13,6 @@ public class AudioComponentEntity: MemoComponentEntity {
             title: self.title,
             contents: self.convertToContents()
         )
-
         return audioComponent
     }
 
@@ -126,12 +125,6 @@ public class AudioComponentEntity: MemoComponentEntity {
 
         return contents
     }
-
-    override func removeSnapshot(snapshotID: UUID) {}
-
-    override func revertComponentEntityContents(componentModel: any PageComponent) {}
-
-    override func findSnapshotEntityByID(id: UUID) -> PageComponentSnapshotEntity? { nil }
 }
 
 extension AudioComponentEntity {
