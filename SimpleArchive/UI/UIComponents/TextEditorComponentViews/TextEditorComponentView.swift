@@ -4,7 +4,6 @@ import UIKit
 final class TextEditorComponentView: PageComponentView<UITextView, TextEditorComponent> {
     static let reuseIdentifier = "TextEditorComponentView"
 
-    // MARK: - ⚠️ Dispatcher를 바로 갖다주는게 좋을듯. 뷰모델 말고
     private let textEditorActionDispatcher = TextEditorComponentActionDispatcher()
     private var componentSnapshotActionDispatcher: PassthroughSubject<ComponentSnapshotViewModel.Action, Never>?
 

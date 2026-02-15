@@ -4,28 +4,15 @@ import Foundation
 @objc(TextEditorComponentSnapshotEntity)
 public class TextEditorComponentSnapshotEntity: NSManagedObject, Identifiable {
     func convertToModel() -> TextEditorComponentSnapshot {
-        TextEditorComponentSnapshot(
+        let converter = JsonConverter.shared
+        return TextEditorComponentSnapshot(
             snapshotID: self.snapshotID,
             makingDate: self.makingDate,
             contents: self.contents,
             description: self.snapShotDescription,
             saveMode: .init(rawValue: self.saveMode) ?? .automatic,
-            modificationHistory: convertToModificationHistory)
-    }
-
-    private var convertToModificationHistory: [TextEditorComponentAction] {
-        guard
-            let jsonString = self.modificationHistory,
-            !jsonString.isEmpty,
-            let data = jsonString.data(using: .utf8)
-        else { return [] }
-
-        do {
-            return try JSONDecoder().decode([TextEditorComponentAction].self, from: data)
-        } catch {
-            assertionFailure("Failed to decode modificationHistory: \(error)")
-            return []
-        }
+            modificationHistory: self.modificationHistory == nil
+                ? [] : converter.decode([TextEditorComponentAction].self, jsonString: self.modificationHistory!)!)
     }
 }
 
@@ -47,9 +34,10 @@ extension TextEditorComponentSnapshotEntity {
 
 extension TextEditorComponentSnapshotEntity: PageComponentSnapshotEntity {
     func updateTrackingSnapshotContents(snapshot: any ComponentSnapshotType) {
+        let converter = JsonConverter.shared
         if let textEditorComponentSnapshot = snapshot as? TextEditorComponentSnapshot {
-            self.contents = textEditorComponentSnapshot.snapshotContents
-            modificationHistory = textEditorComponentSnapshot.modificationHistory.jsonString
+            contents = textEditorComponentSnapshot.snapshotContents
+            modificationHistory = converter.encode(object: textEditorComponentSnapshot.modificationHistory)
         }
     }
 }

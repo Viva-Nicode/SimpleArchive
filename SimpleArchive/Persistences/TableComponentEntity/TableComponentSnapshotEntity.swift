@@ -4,52 +4,15 @@ import Foundation
 @objc(TableComponentSnapshotEntity)
 public class TableComponentSnapshotEntity: NSManagedObject, Identifiable {
     func convertToModel() -> TableComponentSnapshot {
-        TableComponentSnapshot(
+        let converter = JsonConverter.shared
+        return TableComponentSnapshot(
             snapshotID: self.snapshotID,
             makingDate: self.makingDate,
-            contents: self.convertToSnapshotContents()!,
+            contents: converter.decode(TableComponentContents.self, jsonString: self.contents)!,
             description: self.snapShotDescription,
             saveMode: .init(rawValue: self.saveMode) ?? .automatic,
-            modificationHistory: convertToModificationHistory)
-    }
-
-    private var convertToModificationHistory: [TableComponentAction] {
-        guard
-            let jsonString = self.modificationHistory,
-            !jsonString.isEmpty,
-            let data = jsonString.data(using: .utf8)
-        else { return [] }
-
-        do {
-            return try JSONDecoder().decode([TableComponentAction].self, from: data)
-        } catch {
-            assertionFailure("Failed to decode modificationHistory: \(error)")
-            return []
-        }
-    }
-
-    private func convertToSnapshotContents() -> TableComponentContents? {
-        var contents = TableComponentContents()
-        guard let data = self.contents.data(using: .utf8),
-            let decoded = try? JSONDecoder().decode(TableComponentContents.self, from: data)
-        else { return nil }
-
-        contents.columns = decoded.columns
-        contents.rows = decoded.rows
-        contents.cells = decoded.cells
-        contents.sortBy = decoded.sortBy
-
-        return contents
-    }
-
-    // MARK: - ⚠️ 이걸 static으로 한게 좀 찜찜하다.
-    static func persistTableComponentSnapshotContents(contents: TableComponentContents) -> String {
-        guard let encoded = try? JSONEncoder().encode(contents),
-            let jsonObject = try? JSONSerialization.jsonObject(with: encoded),
-            let sortedData = try? JSONSerialization.data(withJSONObject: jsonObject, options: [.sortedKeys])
-        else { return "" }
-
-        return String(data: sortedData, encoding: .utf8) ?? ""
+            modificationHistory: self.modificationHistory == nil
+                ? [] : converter.decode([TableComponentAction].self, jsonString: self.modificationHistory!)!)
     }
 }
 
@@ -70,10 +33,10 @@ extension TableComponentSnapshotEntity {
 
 extension TableComponentSnapshotEntity: PageComponentSnapshotEntity {
     func updateTrackingSnapshotContents(snapshot: any ComponentSnapshotType) {
+        let converter = JsonConverter.shared
         if let tableComponentSnapshot = snapshot as? TableComponentSnapshot {
-            contents = TableComponentSnapshotEntity.persistTableComponentSnapshotContents(
-                contents: tableComponentSnapshot.snapshotContents)
-            modificationHistory = tableComponentSnapshot.modificationHistory.jsonString
+            contents = converter.encode(object: tableComponentSnapshot.snapshotContents)
+            modificationHistory = converter.encode(object: tableComponentSnapshot.modificationHistory)
         }
     }
 }
