@@ -220,6 +220,10 @@ extension Date {
     }
 }
 
+extension Data {
+	static let defaultAudioThumbnailData = UIImage(named: "defaultMusicThumbnail")!.jpegData(compressionQuality: 1.0)!
+}
+
 enum UIConstants {
     static let componentMinimumHeight: CGFloat = 70.0
     static let tableComponentCellMaximumWidth: CGFloat = 260.0

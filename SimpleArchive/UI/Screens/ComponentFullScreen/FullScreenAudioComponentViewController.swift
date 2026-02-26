@@ -3,13 +3,13 @@ import UIKit
 
 final class FullScreenAudioComponentViewController: ComponentFullScreenView<AudioComponentContentView> {
 
-    init(audioComponent: AudioComponent, audioComponentContentView: AudioComponentContentView) {
+    init(title: String, createdDate: Date, audioComponentContentView: AudioComponentContentView) {
         super.init(componentContentView: audioComponentContentView)
         super.setupUI()
         super.setupConstraints()
         toolBarView.backgroundColor = UIColor(named: "AudioComponentToolbarColor")
 
-        setupData(title: audioComponent.title, date: audioComponent.creationDate)
+        setupData(title: title, date: createdDate)
     }
 
     required init?(coder: NSCoder) {

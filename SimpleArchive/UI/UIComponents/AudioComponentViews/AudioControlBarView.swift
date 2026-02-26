@@ -7,7 +7,7 @@ final class AudioControlBarView: UIView {
 
     enum AudioControlBarViewState {
         case initial
-        case play(metadata: AudioTrackMetadata, duration: TimeInterval?, dispatcher: AudioComponentActionDispatcher)
+        case play(metadata: AudioTrackMetadata, dispatcher: AudioComponentActionDispatcher)
         case resume
         case pause
         case stop
@@ -101,36 +101,25 @@ final class AudioControlBarView: UIView {
         return progressBar
     }()
 
-    private var duration: TimeInterval?
     private var subscriptions: Set<AnyCancellable> = []
-    private var nowPlayingInfoCenter = MPNowPlayingInfoCenter.default()
     private var dispatcher: AudioComponentActionDispatcher?
     private var currentTime: TimeInterval = .zero {
-        didSet {
-            currentTimeLabel.text = currentTime.asMinuteSecond
-            nowPlayingInfoCenter.nowPlayingInfo?[MPNowPlayingInfoPropertyElapsedPlaybackTime] = currentTime
-        }
+        didSet { currentTimeLabel.text = currentTime.asMinuteSecond }
     }
-    var state: AudioControlBarViewState = .initial {
-        didSet {
-            handleState()
-        }
-    }
+    var state: AudioControlBarViewState = .initial { didSet { handleState() } }
 
     init() {
         super.init(frame: .zero)
         setupUI()
         setupConstraints()
         setupActions()
-        setupRemoteTransportControls()
     }
 
     required init?(coder: NSCoder) { fatalError() }
 
-    deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
-    // 해당 뷰 제거 될때 이거 써줘야 함
-//    try? AVAudioSession.sharedInstance().setActive(false)
-//    MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
+    deinit {
+        myLog(String(describing: Swift.type(of: self)), c: .purple)
+    }
 
     private func setupUI() {
         buttonStackView.addSubview(previousButton)
@@ -252,23 +241,9 @@ final class AudioControlBarView: UIView {
     }
 
     func applyUpdatedMetadata(with data: AudioTrackMetadata) {
-        if let title = data.title {
-            titleLabel.text = title
-            nowPlayingInfoCenter.nowPlayingInfo?[MPMediaItemPropertyTitle] = title
-        }
-
-        if let artist = data.artist {
-            artistLabel.text = artist
-            nowPlayingInfoCenter.nowPlayingInfo?[MPMediaItemPropertyArtist] = artist
-        }
-
-        if let thumbnailData = data.thumbnail,
-            let thumbnailImage = UIImage(data: thumbnailData)
-        {
-            thumbnailImageView.image = thumbnailImage
-            nowPlayingInfoCenter.nowPlayingInfo?[MPMediaItemPropertyArtwork] =
-                MPMediaItemArtwork(boundsSize: thumbnailImage.size) { _ in thumbnailImage }
-        }
+        titleLabel.text = data.title
+        artistLabel.text = data.artist
+        thumbnailImageView.image = UIImage(data: data.thumbnail ?? Data())
     }
 
     private func handleState() {
@@ -276,17 +251,15 @@ final class AudioControlBarView: UIView {
             case .initial:
                 break
 
-            case let .play(metadata, duration, dispatcher):
-                configureControlBarForPlayback(metadata: metadata, duration: duration, dispatcher: dispatcher)
+            case .play(let metadata, let dispatcher):
+                configureControlBarForPlayback(metadata: metadata, dispatcher: dispatcher)
 
             case .resume:
                 playPauseButton.setImage(UIImage(systemName: "pause.fill"), for: .normal)
-                nowPlayingInfoCenter.nowPlayingInfo?[MPNowPlayingInfoPropertyPlaybackRate] = 1.0
                 audioProgressBar.startProgress()
 
             case .pause:
                 playPauseButton.setImage(UIImage(systemName: "play.fill"), for: .normal)
-                nowPlayingInfoCenter.nowPlayingInfo?[MPNowPlayingInfoPropertyPlaybackRate] = 0.0
                 audioProgressBar.pauseProgress()
 
             case .stop:
@@ -296,17 +269,11 @@ final class AudioControlBarView: UIView {
 
     private func configureControlBarForPlayback(
         metadata: AudioTrackMetadata,
-        duration: TimeInterval?,
         dispatcher: AudioComponentActionDispatcher
     ) {
         self.dispatcher = dispatcher
-        self.duration = duration
-
-        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [])
-        try? AVAudioSession.sharedInstance().setActive(true)
 
         currentTime = .zero
-
         playPauseButton.isEnabled = true
         previousButton.isEnabled = true
         nextButton.isEnabled = true
@@ -318,39 +285,19 @@ final class AudioControlBarView: UIView {
             self,
             action: #selector(sliderValuecomp(_:)),
             for: [.touchUpInside, .touchUpOutside, .touchCancel])
+
         audioProgressBar.updateCurrentTimeLabel = { self.currentTime = $0 }
 
-        if let title = metadata.title,
-            let artist = metadata.artist,
-            let thumbnailData = metadata.thumbnail,
-            let thumbnail = UIImage(data: thumbnailData)
-        {
-            titleLabel.text = title
-            artistLabel.text = artist
-            thumbnailImageView.image = thumbnail
+        titleLabel.text = metadata.title
+        artistLabel.text = metadata.artist
+        thumbnailImageView.image = UIImage(data: metadata.thumbnail ?? Data())
+        totalTimeLabel.text = metadata.duration?.asMinuteSecond
 
-            if let duration {
-                totalTimeLabel.text = duration.asMinuteSecond
-
-                audioProgressBar.minimumValue = .zero
-                audioProgressBar.maximumValue = duration
-                audioProgressBar.setCurrentProgress(.zero)
-                audioProgressBar.startProgress()
-
-                var info: [String: Any] = [
-                    MPMediaItemPropertyTitle: title,
-                    MPMediaItemPropertyArtist: artist,
-                    MPMediaItemPropertyPlaybackDuration: duration,
-                    MPNowPlayingInfoPropertyElapsedPlaybackTime: 0.0,
-                    MPNowPlayingInfoPropertyPlaybackRate: 1.0,
-                ]
-
-                info[MPMediaItemPropertyArtwork] = MPMediaItemArtwork(boundsSize: thumbnail.size) { _ in
-                    thumbnail
-                }
-
-                nowPlayingInfoCenter.nowPlayingInfo = info
-            }
+        if let duration = metadata.duration {
+            audioProgressBar.minimumValue = .zero
+            audioProgressBar.maximumValue = duration
+            audioProgressBar.setCurrentProgress(.zero)
+            audioProgressBar.startProgress()
         }
     }
 
@@ -366,51 +313,6 @@ final class AudioControlBarView: UIView {
         nextButton.isEnabled = false
         currentTimeLabel.text = "0:00"
         totalTimeLabel.text = "0:00"
-
-        nowPlayingInfoCenter.nowPlayingInfo = nil
-    }
-
-    private func setupRemoteTransportControls() {
-
-        UIApplication.shared.beginReceivingRemoteControlEvents()
-        let remoteCommandCenter = MPRemoteCommandCenter.shared()
-
-        remoteCommandCenter.togglePlayPauseCommand.removeTarget(nil)
-        remoteCommandCenter.togglePlayPauseCommand.isEnabled = true
-        remoteCommandCenter.togglePlayPauseCommand.addTarget { [weak self] _ in
-            guard let self else { return .commandFailed }
-            dispatcher?.togglePlayingState()
-            return .success
-        }
-
-        remoteCommandCenter.changePlaybackPositionCommand.removeTarget(nil)
-        remoteCommandCenter.changePlaybackPositionCommand.isEnabled = true
-        remoteCommandCenter.changePlaybackPositionCommand.addTarget { [weak self] event in
-            guard let self else { return .commandFailed }
-
-            if let positionEvent = event as? MPChangePlaybackPositionCommandEvent {
-                let newTime = positionEvent.positionTime
-                dispatcher?.seekAudioTrack(seek: newTime)
-                return .success
-            }
-            return .commandFailed
-        }
-
-        remoteCommandCenter.nextTrackCommand.removeTarget(nil)
-        remoteCommandCenter.nextTrackCommand.isEnabled = true
-        remoteCommandCenter.nextTrackCommand.addTarget { [weak self] _ in
-            guard let self else { return .commandFailed }
-            dispatcher?.playNextAudioTrack()
-            return .success
-        }
-
-        remoteCommandCenter.previousTrackCommand.removeTarget(nil)
-        remoteCommandCenter.previousTrackCommand.isEnabled = true
-        remoteCommandCenter.previousTrackCommand.addTarget { [weak self] _ in
-            guard let self else { return .commandFailed }
-            dispatcher?.playPreviousAudioTrack()
-            return .success
-        }
     }
 
     @objc private func sliderValuecomp(_ sender: AudioProgressBar) {

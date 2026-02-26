@@ -42,12 +42,4 @@ final class AudioComponent: NSObject, Codable, PageComponent {
     }
 
     deinit { myLog("\(String(describing: Swift.type(of: self))) : \(title)", c: .purple) }
-
-    var trackNames: [String] {
-        componentContents.tracks.map { "\($0.id).\($0.fileExtension)" }
-    }
-
-    func addAudios(audiotracks: [AudioTrack]) -> [Int] {
-        componentContents.addAudios(audiotracks: audiotracks)
-    }
 }

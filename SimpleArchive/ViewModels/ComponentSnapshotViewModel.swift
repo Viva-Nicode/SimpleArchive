@@ -78,14 +78,27 @@ import UIKit
 
     private func removeSnapshot(_ tappedSnapshotID: UUID) {
         guard currentViewedSnapshotID == tappedSnapshotID else { return }
-        let removeResult = snapshotRestorableComponent.removeSnapshot(snapshotID: tappedSnapshotID)
 
-        componentSnapshotCoreDataRepository.removeSnapshot(
-            componentID: snapshotRestorableComponent.id,
-            snapshotID: tappedSnapshotID)
+        if let targetSnapshotIndex = snapshotRestorableComponent
+            .snapshots
+            .firstIndex(where: { $0.snapshotID == tappedSnapshotID })
+        {
+            let nextSnapshotIndex =
+                targetSnapshotIndex + 1 <= snapshotRestorableComponent.snapshots.count - 1
+                ? targetSnapshotIndex + 1 : targetSnapshotIndex - 1
+            let nextSnapshot =
+                nextSnapshotIndex < 0
+                ? nil : snapshotRestorableComponent.snapshots[nextSnapshotIndex]
 
-        currentViewedSnapshotID = removeResult.nextSnapshotID
-        output.send(.didRemoveSnapshot(removeResult.nextSnapshotMetaData, removeResult.removeSnapshotIndex))
+            snapshotRestorableComponent.removeSnapshot(at: targetSnapshotIndex)
+
+            componentSnapshotCoreDataRepository.removeSnapshot(
+                componentID: snapshotRestorableComponent.id,
+                snapshotID: tappedSnapshotID)
+
+            currentViewedSnapshotID = nextSnapshot?.snapshotID
+            output.send(.didRemoveSnapshot(nextSnapshot?.getSnapshotMetaData(), targetSnapshotIndex))
+        }
     }
 
     private func updateSnapshotMetaDataWhenScrolled(snapshotViewIndex: Int) {

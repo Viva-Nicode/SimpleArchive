@@ -1,8 +1,7 @@
 import Combine
 import Foundation
 
-@MainActor
-final class TableComponentActionDispatcher {
+@MainActor final class TableComponentActionDispatcher {
     typealias Input = TableComponentViewModelAction
     typealias Output = TableComponentViewModelEvent
 

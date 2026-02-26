@@ -100,6 +100,7 @@ final class DependencyConfigurator {
 
         configureTextEditorComponentViewModelDependencies()
         configureTableComponentViewModelDependencies()
+        configureAudioComponentViewModelDependencies()
 
         configureComponentSnapshotViewModelDependencies()
         configureDormantBoxViewModelDependencies()
@@ -131,10 +132,6 @@ final class DependencyConfigurator {
             DormantBoxCoreDataRepository(coredataStack: coreDataStack)
         }
 
-        container.register(AudioFileManagerType.self, isSingleton: true) {
-            AudioFileManager()
-        }
-
         container.register(AudioDownloaderType.self, isSingleton: true) {
             AudioDownloader()
         }
@@ -146,6 +143,12 @@ final class DependencyConfigurator {
         container.register(ComponentFactoryType.self) {
             ComponentFactory(creator: TextEditorComponentCreator())
         }
+
+        #if os(iOS)
+            if let LockScreenAudioController = AudioComponentSoundPlayer.shared as? LockScreenAudioControllable {
+                LockScreenAudioController.setLockScreenAudioContoller(with: NowPlayingInfoCenterController())
+            }
+        #endif
     }
 
     private static func configureMemoHomeViewModelDependencies() {
@@ -173,14 +176,12 @@ final class DependencyConfigurator {
 
         container.register(MemoPageViewModel.self, requiredArgs: [MemoPageModel.self]) {
             let memoPageData = container.getArgument(MemoPageViewModel.self) as MemoPageModel
+            let componentFactory = container.resolve(ComponentFactoryType.self)
+            let repository = container.resolve(MemoComponentCoreDataRepository.self)
 
             return MemoPageViewModel(
-                componentFactory: container.resolve(ComponentFactoryType.self),
-                memoComponentCoredataReposotory: container.resolve(MemoComponentCoreDataRepository.self),
-                componentSnapshotCoreDataRepository: container.resolve(ComponentSnapshotCoreDataRepository.self),
-                audioDownloader: container.resolve(AudioDownloaderType.self),
-                audioFileManager: container.resolve(AudioFileManagerType.self),
-                audioTrackController: container.resolve(AudioTrackControllerType.self),
+                componentFactory: componentFactory,
+                memoComponentCoredataReposotory: repository,
                 memoPage: memoPageData
             )
         }
@@ -221,8 +222,7 @@ final class DependencyConfigurator {
 
             return DormantBoxViewModel(
                 dormantBoxCoredataRepository: container.resolve(DormantBoxCoreDataRepository.self),
-                restoredPageListSubject: subject,
-                audioFileManager: container.resolve(AudioFileManagerType.self)
+                restoredPageListSubject: subject
             )
         }
     }
@@ -255,6 +255,23 @@ final class DependencyConfigurator {
         }
     }
 
+    private static func configureAudioComponentViewModelDependencies() {
+        let container = DIContainer.shared
+        container.register(AudioComponentViewModel.self, requiredArgs: [AudioComponent.self]) {
+            let audioComponent =
+                container.getArgument(AudioComponentViewModel.self) as AudioComponent
+            let memoComponentCoreDataRepository = container.resolve(MemoComponentCoreDataRepository.self)
+            let audioComponentDataManger = AudioComponentDataManger(
+                audioComponent: audioComponent,
+                memoComponentCoredataReposotory: memoComponentCoreDataRepository,
+                audioDownloader: container.resolve(AudioDownloaderType.self))
+
+            return AudioComponentViewModel(
+                audioDataManager: audioComponentDataManger,
+                soundPlayer: AudioComponentSoundPlayer.shared)
+        }
+    }
+
     private static func configureSingleTableComponentViewModelDependencies() {
         let container = DIContainer.shared
 
@@ -280,7 +297,6 @@ final class DependencyConfigurator {
                 coredataReposotory: container.resolve(MemoComponentCoreDataRepository.self),
                 audioComponent: audioComponent,
                 audioDownloader: container.resolve(AudioDownloaderType.self),
-                audioFileManager: container.resolve(AudioFileManagerType.self),
                 audioTrackController: container.resolve(AudioTrackControllerType.self),
                 pageTitle: pageName)
         }

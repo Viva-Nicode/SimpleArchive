@@ -1,24 +1,20 @@
 import Combine
 import UIKit
 
-
 final class PageComponentCollectionViewCellFactory: PageComponentViewFactoryType {
-    var audioDataSources: [UUID: AudioComponentDataSource] = [:]
-    var pageComponentVMCache: [UUID: any PageComponentViewModelType] = [:]
-    var subject: PassthroughSubject<MemoPageViewInput, Never>
-    var indexPath: IndexPath?
-    let audioContentsDataContainer: AudioContentsDataContainerType
+    private var pageComponentVMCache: [UUID: any PageComponentViewModelType] = [:]
+    private var componentActionDispatcherCache: [UUID: any PageComponentActionDispatcherType] = [:]
+    private var pageActionDispatcher: PassthroughSubject<MemoPageViewInput, Never>
+    private var indexPath: IndexPath?
 
     weak var collectionView: UICollectionView?
 
     init(
         collectionView: UICollectionView,
         input: PassthroughSubject<MemoPageViewInput, Never>,
-        audioContentsDataContainer: AudioContentsDataContainerType
     ) {
         self.collectionView = collectionView
-        self.subject = input
-        self.audioContentsDataContainer = audioContentsDataContainer
+        self.pageActionDispatcher = input
     }
 
     deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
@@ -47,7 +43,7 @@ final class PageComponentCollectionViewCellFactory: PageComponentViewFactoryType
                 textEditorComponentView.configureTextComponentForMemoPageView(
                     component: textEditorComponent,
                     viewModel: textEditorComponentViewModel,
-                    pageActionDispatcher: subject)
+                    pageActionDispatcher: pageActionDispatcher)
 
                 return textEditorComponentView
 
@@ -71,35 +67,58 @@ final class PageComponentCollectionViewCellFactory: PageComponentViewFactoryType
                 tableComponentView.configureTableComponentForMemoPageView(
                     component: tableComponent,
                     viewModel: tableComponentViewModel,
-                    pageActionDispatcher: subject)
+                    pageActionDispatcher: pageActionDispatcher)
 
                 return tableComponentView
 
             case let audioComponent as AudioComponent:
-                let audioCell =
+                let audioComponentView =
                     collectionView
                     .dequeueReusableCell(
                         withReuseIdentifier: AudioComponentView.reuseAudioComponentIdentifier,
                         for: indexPath
                     ) as! AudioComponentView
 
-                if let datasource = audioDataSources[audioComponent.id] {
-                    audioCell.componentContentView.audioTrackTableView.dataSource = datasource
-                } else {
-                    if let audioContentsData = audioContentsDataContainer.getAudioContentsData(audioComponent.id) {
-                        let datasource = AudioComponentDataSource(audioContentsData: audioContentsData)
-                        audioDataSources[audioComponent.id] = datasource
+                let audioComponentViewModel =
+                    pageComponentVMCache[audioComponent.id] as? AudioComponentViewModel
+                    ?? {
+                        DIContainer.shared.setArgument(AudioComponentViewModel.self, audioComponent)
+                        let viewModel = DIContainer.shared.resolve(AudioComponentViewModel.self)
+                        pageComponentVMCache[audioComponent.id] = viewModel
+                        return viewModel
+                    }()
 
-                        audioCell.componentContentView.audioTrackTableView.dataSource = datasource
-                    }
-                }
+                let audioActionDispatcher: AudioComponentActionDispatcher =
+                    componentActionDispatcherCache[audioComponent.id] as? AudioComponentActionDispatcher
+                    ?? AudioComponentActionDispatcher()
 
-                audioCell.configure(component: audioComponent, pageActionDispatcher: subject)
+                audioActionDispatcher.clearSubscriptions()
 
-                return audioCell
+                let audioComponentUIEventHandler = AudioComponentViewEventHandler(componentView: audioComponentView)
+
+                audioActionDispatcher.bindToViewModel(
+                    viewModel: audioComponentViewModel,
+                    UIEventHandler: audioComponentUIEventHandler)
+
+				componentActionDispatcherCache[audioComponent.id] = audioActionDispatcher
+
+                audioComponentView.configureAudioComponentForMemoPageView(
+                    component: audioComponent,
+                    pageActionDispatcher: pageActionDispatcher,
+                    audioActionDispatcher: audioActionDispatcher)
+
+                return audioComponentView
 
             default:
                 return UICollectionViewCell()
         }
+    }
+
+    func freedVMS() {
+        pageComponentVMCache.values.forEach { $0.clearSubscriptions() }
+    }
+
+    func setIndexPath(indexPath: IndexPath) {
+        self.indexPath = indexPath
     }
 }

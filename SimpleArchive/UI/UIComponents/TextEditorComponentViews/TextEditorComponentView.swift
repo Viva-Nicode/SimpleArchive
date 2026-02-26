@@ -96,7 +96,12 @@ final class TextEditorComponentView: PageComponentView<UITextView, TextEditorCom
         viewModel: any PageComponentViewModelType,
         pageActionDispatcher: PassthroughSubject<MemoPageViewInput, Never>
     ) {
-        super.configure(component: component, pageActionDispatcher: pageActionDispatcher)
+        super
+            .configure(
+                componentID: component.id,
+                componentTitle: component.title,
+                componentCreateAt: component.creationDate,
+                pageActionDispatcher: pageActionDispatcher)
 
         componentContentView.text = component.componentContents
         captureButton.isEnabled = !component.componentContents.isEmpty
@@ -183,7 +188,7 @@ final class TextEditorComponentView: PageComponentView<UITextView, TextEditorCom
         )
     }
 
-	override func reloadComponentContentsWhenRestoreUsingSnapshot(contents: Codable) {
+    override func reloadComponentContentsWhenRestoreUsingSnapshot(contents: Codable) {
         if let textContents = contents as? String {
             UIView.animateKeyframes(withDuration: 0.4, delay: 0, options: []) {
                 UIView.addKeyframe(withRelativeStartTime: 0.0, relativeDuration: 0.2) {

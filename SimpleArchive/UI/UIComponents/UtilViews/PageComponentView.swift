@@ -17,7 +17,7 @@ protocol PageComponentViewType {
     func detachContentsSnapshotViewDuringDismissFullScreenAnimation()
     func attachContentsSnapshotViewDuringPresentingFullScreenAnimation()
     func presentFullScreenPageComponentView()
-	func reloadComponentContentsWhenRestoreUsingSnapshot(contents: Codable)
+    func reloadComponentContentsWhenRestoreUsingSnapshot(contents: Codable)
     func freedReferences()
 }
 
@@ -183,14 +183,16 @@ where ComponentContentType: UIView, PageComponentType: PageComponent {
     }
 
     func configure(
-        component: PageComponentType,
+        componentID: UUID,
+        componentTitle: String,
+        componentCreateAt: Date,
         pageActionDispatcher: PassthroughSubject<MemoPageViewInput, Never>,
     ) {
         self.pageActionDispatcher = pageActionDispatcher
+        self.componentID = componentID
 
-        componentID = component.id
-        titleLabel.text = component.title
-        createdAt = component.creationDate
+        titleLabel.text = componentTitle
+        createdAt = componentCreateAt
 
         setupPageComponentCommonActions()
     }
@@ -250,9 +252,7 @@ where ComponentContentType: UIView, PageComponentType: PageComponent {
                 let popupView = ChangeComponentNamePopupView(componentTitle: titleLabel.text!) { newName in
                     self.pageActionDispatcher?
                         .send(
-                            .willRenameComponent(
-                                componentID: self.componentID, newName: newName
-                            )
+                            .willRenameComponent(componentID: self.componentID, newName: newName)
                         )
                 }
                 popupView.show()
@@ -299,6 +299,6 @@ where ComponentContentType: UIView, PageComponentType: PageComponent {
     }
 
     func reloadComponentContentsWhenRestoreUsingSnapshot(contents: Codable) {
-		fatalError("thie method must override in subclass.")
-	}
+        fatalError("thie method must override in subclass.")
+    }
 }

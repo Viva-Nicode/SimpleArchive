@@ -70,13 +70,13 @@ final class SingleAudioPageViewController: UIViewController, ViewControllerType 
 
             switch result {
                 case .viewDidLoad(let pageTitle, let audioContentsData):
-                    audioComponentDataSource = AudioComponentDataSource(audioContentsData: audioContentsData)
+                    //                    audioComponentDataSource = AudioComponentDataSource(audioContentsData: audioContentsData)
                     setupUI(pageTitle: pageTitle)
                     setupConstraints()
-                    audioComponentContentView.configure(
-                        datasource: audioComponentDataSource,
-                        dispatcher: SinglePageAudioComponentActionDispatcher(subject: input)
-                    )
+                //                    audioComponentContentView.configure(
+                //                        datasource: audioComponentDataSource,
+                //                        dispatcher: SinglePageAudioComponentActionDispatcher(subject: input)
+                //                    )
 
                 case .didPresentInvalidDownloadCode:
                     audioComponentContentView
@@ -86,15 +86,16 @@ final class SingleAudioPageViewController: UIViewController, ViewControllerType 
                 case .didAppendAudioTrackRows(let appededIndices):
                     insertNewAudioTracks(appededIndices: appededIndices)
 
-                case let .didPlayAudioTrack(trackIndex, duration, metadata, waveformData):
+                case .didPlayAudioTrack(let trackIndex, let duration, let metadata, let waveformData):
                     playAudioTrack(
                         trackIndex: trackIndex,
                         duration: duration,
                         audioMetadata: metadata,
                         audioWaveformData: waveformData)
 
-                case let .didApplyAudioMetadataChanges(
-                    trackIndex, editedMetadata, isNowPlayingTrack, trackIndexAfterEdit):
+                case .didApplyAudioMetadataChanges(
+                    let
+                        trackIndex, let editedMetadata, let isNowPlayingTrack, let trackIndexAfterEdit):
                     applyAudioTrackMetadataChanges(
                         targetTrackIndex: trackIndex,
                         metadata: editedMetadata,
@@ -110,7 +111,7 @@ final class SingleAudioPageViewController: UIViewController, ViewControllerType 
                         .progress
                         .setProgress(progress, animated: true)
 
-                case let .didToggleAudioPlayingState(isPlaying, nowPlayingAudioIndex):
+                case .didToggleAudioPlayingState(let isPlaying, let nowPlayingAudioIndex):
                     setAudioPlayingState(
                         isPlaying: isPlaying, nowPlayingAudioIndex: nowPlayingAudioIndex!)
 
@@ -123,8 +124,9 @@ final class SingleAudioPageViewController: UIViewController, ViewControllerType 
                 case .didRemoveAudioTrack(let trackIndex):
                     audioComponentContentView.removeRow(trackIndex: trackIndex)
 
-                case let .didRemoveAudioTrackAndPlayNextAudio(
-                    removeTrackIndex, nextPlayTrackIndex, duration, metadata, waveformData):
+                case .didRemoveAudioTrackAndPlayNextAudio(
+                    let
+                        removeTrackIndex, let nextPlayTrackIndex, let duration, let metadata, let waveformData):
                     removeAudioTrackAndPlayNextAudio(
                         removeTrackIndex: removeTrackIndex,
                         nextPlayTrackIndex: nextPlayTrackIndex,
@@ -206,11 +208,11 @@ final class SingleAudioPageViewController: UIViewController, ViewControllerType 
                 row.audioVisualizer.activateAudioVisualizer(waveFormData: audioWaveformData)
             }
         }
-        audioControlBar.state = .play(
-            metadata: audioMetadata,
-            duration: duration,
-            dispatcher: SinglePageAudioComponentActionDispatcher(subject: input)
-        )
+        //        audioControlBar.state = .play(
+        //            metadata: audioMetadata,
+        //            duration: duration,
+        //            dispatcher: SinglePageAudioComponentActionDispatcher(subject: input)
+        //        )
     }
 
     private func applyAudioTrackMetadataChanges(
@@ -281,11 +283,11 @@ final class SingleAudioPageViewController: UIViewController, ViewControllerType 
                 row.audioVisualizer.activateAudioVisualizer(waveFormData: audioWaveformData)
             }
         }
-        audioControlBar.state = .play(
-            metadata: metadata,
-            duration: duration,
-            dispatcher: SinglePageAudioComponentActionDispatcher(subject: input)
-        )
+        //        audioControlBar.state = .play(
+        //            metadata: metadata,
+        //            duration: duration,
+        //            dispatcher: SinglePageAudioComponentActionDispatcher(subject: input)
+        //        )
     }
 
     private func removeAudioTrackAndStopPlaying(removeTrackIndex: Int) {

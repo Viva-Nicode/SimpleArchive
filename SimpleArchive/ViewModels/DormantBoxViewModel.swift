@@ -14,16 +14,15 @@ import UIKit
 
     private var restoredPageListSubject: PassthroughSubject<[MemoPageModel], Never>
     private var restoredPageList: [MemoPageModel] = []
-    private var audioFileManager: AudioFileManagerType
+    private var audioFileRemover: AudioFileRemover
 
     init(
         dormantBoxCoredataRepository: DormantBoxCoreDataRepositoryType,
         restoredPageListSubject: PassthroughSubject<[MemoPageModel], Never>,
-        audioFileManager: AudioFileManagerType
     ) {
         self.dormantBoxCoredataRepository = dormantBoxCoredataRepository
         self.restoredPageListSubject = restoredPageListSubject
-        self.audioFileManager = audioFileManager
+        self.audioFileRemover = AudioFileManager.getShared(Self.self)!
     }
 
     deinit {
@@ -59,7 +58,7 @@ import UIKit
 
                         for audioComponent in audioComponents {
                             for audioTrack in audioComponent.componentContents.tracks {
-                                audioFileManager.removeAudio(with: audioTrack)
+                                audioFileRemover.removeAudio(with: audioTrack)
                             }
                         }
                         output.send(.didRemovePageFromDormantBox(item.index))

@@ -10,13 +10,18 @@ protocol SnapshotRestorablePageComponent: PageComponent {
 
     func insertTrackingSnapshot(trackingSnapshot: any ComponentSnapshotType)
     func revertComponentContentsUsingSnapshot(snapshotID: UUID)
-    func removeSnapshot(snapshotID: UUID) -> RemoveSnapshotResult
+    func removeSnapshot(at: Int)
 }
 
-struct RemoveSnapshotResult {
-    var removeSnapshotIndex: Int
-    var nextSnapshotID: UUID?
-    var nextSnapshotMetaData: SnapshotMetaData?
+extension SnapshotRestorablePageComponent {
+    func revertComponentContentsUsingSnapshot(snapshotID: UUID) {
+        if let targetSnapshotIndex = snapshots.firstIndex(where: { $0.snapshotID == snapshotID }) {
+            snapshots[targetSnapshotIndex].revert(component: self as! Self.SnapshotType.ComponentType)
+            captureState = .captured
+        }
+    }
+	
+    func removeSnapshot(at: Int) { snapshots.remove(at: at) }
 }
 
 enum CaptureState: Codable, Equatable {

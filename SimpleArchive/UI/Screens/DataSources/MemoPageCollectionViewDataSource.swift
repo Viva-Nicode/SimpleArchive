@@ -2,8 +2,8 @@ import Combine
 import UIKit
 
 final class MemoPageComponentCollectionViewDataSource: NSObject, UICollectionViewDataSource {
-    var memoPage: MemoPageModel
-    var pageComponentViewFactory: PageComponentCollectionViewCellFactory
+    private var memoPage: MemoPageModel
+    private var pageComponentViewFactory: PageComponentCollectionViewCellFactory
 
     init(pageComponentViewFactory: PageComponentCollectionViewCellFactory, memoPage: MemoPageModel) {
         self.memoPage = memoPage
@@ -17,13 +17,13 @@ final class MemoPageComponentCollectionViewDataSource: NSObject, UICollectionVie
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath)
         -> UICollectionViewCell
     {
-        pageComponentViewFactory.indexPath = indexPath
+        pageComponentViewFactory.setIndexPath(indexPath: indexPath)
         let pageComponent = memoPage[indexPath.item]
         let pageComponentView = pageComponent.makeComponentView(using: pageComponentViewFactory)
         return pageComponentView
     }
-	
-	func freedDataSource(){
-		self.pageComponentViewFactory.pageComponentVMCache.values.forEach { $0.clearSubscriptions() }
-	}
+
+    func freedDataSource() {
+        pageComponentViewFactory.freedVMS()
+    }
 }

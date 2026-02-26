@@ -1,8 +1,7 @@
 import Combine
 import Foundation
 
-@MainActor
-protocol PageComponentViewModelType: AnyObject {
+@MainActor protocol PageComponentViewModelType: AnyObject {
     associatedtype Action
     associatedtype Event
 

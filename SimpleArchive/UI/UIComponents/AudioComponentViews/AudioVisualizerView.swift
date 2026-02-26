@@ -35,28 +35,6 @@ final class AudioVisualizerView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func activateAudioVisualizer(waveFormData: AudioWaveformData) {
-        let visualizerSize = self.frame.size
-        bars.forEach { self.addSubview($0) }
-
-        bars.enumerated()
-            .forEach { i, v in
-                let barWidth = visualizerSize.width / CGFloat(barCount)
-                v.frame = CGRect(
-                    x: CGFloat(i) * barWidth,
-                    y: 0,
-                    width: barWidth - waveSpacing,
-                    height: 0
-                )
-                v.backgroundColor = colors[i]
-            }
-
-        startAnimatingBars(
-            barHeights: waveFormData.waveformData,
-            viewHeight: visualizerSize.height,
-            duration: Double(waveFormData.sampleDataCount) / waveFormData.sampleRate)
-    }
-
     private func startAnimatingBars(barHeights: [[Float]], viewHeight: CGFloat, duration: TimeInterval) {
         guard !barHeights.isEmpty else { return }
         self.viewHeight = viewHeight
@@ -90,6 +68,28 @@ final class AudioVisualizerView: UIView {
 }
 
 extension AudioVisualizerView: AudioVisualizerController {
+
+    func activateAudioVisualizer(waveFormData: AudioWaveformData) {
+        let visualizerSize = self.frame.size
+        bars.forEach { self.addSubview($0) }
+
+        bars.enumerated()
+            .forEach { i, v in
+                let barWidth = visualizerSize.width / CGFloat(barCount)
+                v.frame = CGRect(
+                    x: CGFloat(i) * barWidth,
+                    y: 0,
+                    width: barWidth - waveSpacing,
+                    height: 0
+                )
+                v.backgroundColor = colors[i]
+            }
+
+        startAnimatingBars(
+            barHeights: waveFormData.waveformData,
+            viewHeight: visualizerSize.height,
+            duration: Double(waveFormData.sampleDataCount) / waveFormData.sampleRate)
+    }
 
     func resumeVisuzlization() {
         let totalFrames = barHeights.count
@@ -141,6 +141,7 @@ extension AudioVisualizerView: AudioVisualizerController {
 }
 
 protocol AudioVisualizerController: AnyObject {
+    func activateAudioVisualizer(waveFormData: AudioWaveformData)
     func pauseVisuzlization()
     func removeVisuzlization()
     func resumeVisuzlization()

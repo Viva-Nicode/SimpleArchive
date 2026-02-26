@@ -3,13 +3,11 @@ import Combine
 import MediaPlayer
 import UIKit
 
-final class MemoPageViewController: UIViewController {
-
+final class MemoPageViewController: UIViewController, UICollectionViewDelegateFlowLayout {
     var pageViewModel: MemoPageViewModel
     var pageActionDispatcher = PassthroughSubject<MemoPageViewInput, Never>()
 
     var subscriptions = Set<AnyCancellable>()
-    var taskID: UIBackgroundTaskIdentifier = .invalid
 
     // MARK: - properties pageComponent fullScreen
     var fullscreenTargetComponentView: (any PageComponentViewType)?
@@ -63,7 +61,7 @@ final class MemoPageViewController: UIViewController {
     }()
 
     private(set) var pageComponentCollectionView: UICollectionView!
-    private var audioControlBar = AudioControlBarView()
+    var audioControlBar = AudioControlBarView()
 
     init(pageViewModel: MemoPageViewModel) {
         self.pageViewModel = pageViewModel
@@ -102,17 +100,17 @@ final class MemoPageViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        let dynamicHeightFlowLayout = ComponentsPageCollectionViewLayout()
+        let flowLayout = UICollectionViewFlowLayout()
+        flowLayout.scrollDirection = .vertical
+        flowLayout.minimumLineSpacing = UIConstants.memoPageViewControllerCollectionViewCellSpacing
+        flowLayout.minimumInteritemSpacing = .zero
+        flowLayout.sectionInset = .init(top: .zero, left: 20, bottom: .zero, right: 20)
 
-        dynamicHeightFlowLayout.delegate = pageViewModel
-        dynamicHeightFlowLayout.scrollDirection = .vertical
-        dynamicHeightFlowLayout.minimumLineSpacing = UIConstants.memoPageViewControllerCollectionViewCellSpacing
-
-        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: dynamicHeightFlowLayout)
+        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: flowLayout)
 
         collectionView.backgroundColor = .clear
         collectionView.keyboardDismissMode = .onDrag
-        collectionView.isPrefetchingEnabled = false
+        collectionView.translatesAutoresizingMaskIntoConstraints = false
 
         collectionView.register(
             TextEditorComponentView.self,
@@ -124,9 +122,8 @@ final class MemoPageViewController: UIViewController {
             AudioComponentView.self,
             forCellWithReuseIdentifier: AudioComponentView.reuseAudioComponentIdentifier)
 
-        collectionView.translatesAutoresizingMaskIntoConstraints = false
-
         pageComponentCollectionView = collectionView
+        applyCollectionViewInsets(bottomInset: UIConstants.memoPageViewControllerCollectionViewFooterHeight)
         bindToMemoPageVM()
         pageActionDispatcher.send(.viewDidLoad)
     }
@@ -138,11 +135,10 @@ final class MemoPageViewController: UIViewController {
             guard let self else { return }
 
             switch result {
-                case .viewDidLoad(let memoPageData, let audioContentsData):
+                case .viewDidLoad(let memoPageData):
                     let factory = PageComponentCollectionViewCellFactory(
                         collectionView: pageComponentCollectionView,
-                        input: pageActionDispatcher,
-                        audioContentsDataContainer: audioContentsData)
+                        input: pageActionDispatcher)
 
                     componentCollectionViewDataSource = MemoPageComponentCollectionViewDataSource(
                         pageComponentViewFactory: factory,
@@ -165,74 +161,6 @@ final class MemoPageViewController: UIViewController {
 
                 case .didMaximizePageComponent(let componentIndex):
                     presentComponentFullScreen(componentIndex: componentIndex)
-
-                // MARK: - Audio
-                case .didAppendAudioTrackRows(let componentIndex, let appendedTrackIndices):
-                    appendNewAudioTracks(componentIndex: componentIndex, appendedTrackIndices: appendedTrackIndices)
-
-                case .didPresentInvalidDownloadCode(let componentIndex):
-                    presentInvalidDownloadCodePopupView(componentIndex: componentIndex)
-
-                case .didPlayAudioTrack(
-                    let componentIndex, let trackIndex, let duration, let metadata, let waveformData):
-                    playAudioTrack(
-                        componentIndex: componentIndex,
-                        trackIndex: trackIndex,
-                        duration: duration,
-                        audioMetadata: metadata,
-                        audioWaveformData: waveformData)
-
-                case .didApplyAudioMetadataChanges(
-                    let
-                        componentIndex, let trackIndex, let editedMetadata, let isNowPlayingTrack,
-                    let trackIndexAfterEdit):
-                    applyAudioTrackMetadataChanges(
-                        componentIndex: componentIndex,
-                        targetTrackIndex: trackIndex,
-                        metadata: editedMetadata,
-                        isNowPlayingTrack: isNowPlayingTrack,
-                        trackIndexAfterEditing: trackIndexAfterEdit)
-
-                case .didUpdateAudioDownloadProgress(let componentIndex, let progress):
-                    updateAudioDownloadProgress(componentIndex: componentIndex, progress: progress)
-
-                case .didToggleAudioPlayingState(let componentIndex, let trackIndex, let isPlaying):
-                    setAudioPlayingState(
-                        componentIndex: componentIndex,
-                        trackIndex: trackIndex,
-                        isPlaying: isPlaying)
-
-                case .didSeekAudioTrack(let componentIndex, let trackIndex, let seek, let total):
-                    performWithComponentViewAt(componentIndex) { (_: AudioComponentView, contentView) in
-                        let indexPath = IndexPath(row: trackIndex, section: 0)
-                        if let row = contentView.audioTrackTableView.cellForRow(at: indexPath),
-                            let audioRow = row as? AudioTableRowView
-                        {
-                            audioRow.audioVisualizer.seekVisuzlization(rate: seek / total)
-                            self.audioControlBar.seek(seek: seek)
-                        }
-                    }
-
-                case .didSortAudioTracks(let componentIndex, let before, let after):
-                    sortAudioTracks(componentIndex: componentIndex, before: before, after: after)
-
-                case .didRemoveAudioTrack(let componentIndex, let trackIndex):
-                    removeAudioTrack(componentIndex: componentIndex, trackIndex: trackIndex)
-
-                case .didRemoveAudioTrackAndPlayNextAudio(
-                    let componentIndex, let trackIndex, let nextIndex, let duration, let audioMetadata, let waveformData
-                ):
-                    removeAudioTrackAndPlayNextAudio(
-                        componentIndex: componentIndex,
-                        removeAudioRowIndex: trackIndex,
-                        nextPlayingAudioRowIndex: nextIndex,
-                        duration: duration,
-                        audioMetadata: audioMetadata,
-                        audioWaveformData: waveformData
-                    )
-
-                case .didRemoveAudioTrackAndStopPlaying(let componentIndex, let trackIndex):
-                    removeAudioTrackAndStopPlaying(componentIndex: componentIndex, trackIndex: trackIndex)
             }
         }
         .store(in: &subscriptions)
@@ -346,23 +274,11 @@ final class MemoPageViewController: UIViewController {
         if let cell = pageComponentCollectionView.cellForItem(at: path),
             let pageComponentView = cell as? (any PageComponentViewType)
         {
-            if isMinimized {
-                pageComponentView.setMinimizeState(isMinimized)
+            pageComponentView.setMinimizeState(isMinimized)
+        }
 
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-                    UIView.animate(withDuration: 0.3) {
-                        self?.pageComponentCollectionView.collectionViewLayout.invalidateLayout()
-                    }
-                }
-            } else {
-                pageComponentCollectionView.performBatchUpdates {
-                    pageComponentCollectionView.collectionViewLayout.invalidateLayout()
-                } completion: { _ in
-                    UIView.animate(withDuration: 0.3) {
-                        pageComponentView.setMinimizeState(isMinimized)
-                    }
-                }
-            }
+        pageComponentCollectionView.performBatchUpdates {
+            pageComponentCollectionView.collectionViewLayout.invalidateLayout()
         }
     }
 
@@ -372,15 +288,6 @@ final class MemoPageViewController: UIViewController {
             pageComponentCollectionView.cellForItem(at: indexPath) as? (any PageComponentViewType)
         fullscreenTargetComponentView?.attachContentsSnapshotViewDuringPresentingFullScreenAnimation()
         fullscreenTargetComponentView?.presentFullScreenPageComponentView()
-    }
-
-    private func performWithComponentViewAt<ViewType: PageComponentViewType>(
-        _ index: Int, task: (ViewType, ViewType.T) -> Void
-    ) {
-        let indexPath = IndexPath(item: index, section: .zero)
-        if let cell = pageComponentCollectionView.cellForItem(at: indexPath) as? ViewType {
-            task(cell, cell.getContentView())
-        }
     }
 
     @objc private func keyboardWillChangeFrame(_ notification: Notification) {
@@ -416,206 +323,41 @@ final class MemoPageViewController: UIViewController {
             delay: 0,
             options: options,
             animations: {
-                self.pageComponentCollectionView.contentInset.bottom = keyboardHeight
+                let bottomInset = max(UIConstants.memoPageViewControllerCollectionViewFooterHeight, keyboardHeight)
+                self.applyCollectionViewInsets(bottomInset: bottomInset)
                 if let targetIndexPath, keyboardHeight != .zero {
                     self.pageComponentCollectionView.scrollToItem(at: targetIndexPath, at: .bottom, animated: true)
                 }
             }
         )
     }
-}
 
-// MARK: - Audio
-extension MemoPageViewController {
-    private func appendNewAudioTracks(componentIndex: Int, appendedTrackIndices: [Int]) {
-        performWithComponentViewAt(componentIndex) { (_: AudioComponentView, contentView) in
-            contentView
-                .audioDownloadStatePopupView?
-                .dismiss()
-            contentView.insertRow(trackIndices: appendedTrackIndices)
-        }
+    private func applyCollectionViewInsets(bottomInset: CGFloat) {
+        let inset = UIEdgeInsets(
+            top: UIConstants.memoPageViewControllerCollectionViewHeaderHeight,
+            left: .zero,
+            bottom: bottomInset,
+            right: .zero
+        )
+        pageComponentCollectionView.contentInset = inset
+        pageComponentCollectionView.scrollIndicatorInsets = inset
     }
+	
+	func collectionView(
+		_ collectionView: UICollectionView,
+		layout collectionViewLayout: UICollectionViewLayout,
+		sizeForItemAt indexPath: IndexPath
+	) -> CGSize {
+		let horizontalInset: CGFloat
+		if let flowLayout = collectionViewLayout as? UICollectionViewFlowLayout {
+			horizontalInset = flowLayout.sectionInset.left + flowLayout.sectionInset.right
+		} else {
+			horizontalInset = 40
+		}
 
-    private func playAudioTrack(
-        componentIndex: Int,
-        trackIndex: Int,
-        duration: TimeInterval?,
-        audioMetadata: AudioTrackMetadata,
-        audioWaveformData: AudioWaveformData?
-    ) {
-        pageComponentCollectionView
-            .visibleCells
-            .compactMap { $0 as? AudioComponentView }
-            .forEach { acv in
-                acv.componentContentView
-                    .audioTrackTableView
-                    .visibleCells
-                    .map { $0 as! AudioTableRowView }
-                    .forEach { $0.audioVisualizer.removeVisuzlization() }
-            }
-
-        performWithComponentViewAt(componentIndex) { (_: AudioComponentView, contentView) in
-            contentView
-                .audioTrackTableView
-                .visibleCells
-                .map { $0 as! AudioTableRowView }
-                .forEach { $0.audioVisualizer.removeVisuzlization() }
-
-            let trackIndexPath = IndexPath(row: trackIndex, section: .zero)
-            if let row = contentView.audioTrackTableView.cellForRow(at: trackIndexPath),
-                let targetPlayingAudioRow = row as? AudioTableRowView
-            {
-                if let audioWaveformData {
-                    targetPlayingAudioRow.audioVisualizer.activateAudioVisualizer(waveFormData: audioWaveformData)
-                }
-            }
-        }
-
-        audioControlBar.isHidden = false
-
-        audioControlBar.state = .play(
-            metadata: audioMetadata,
-            duration: duration,
-            dispatcher: MemoPageAudioComponentActionDispatcher(subject: pageActionDispatcher))
-    }
-
-    private func applyAudioTrackMetadataChanges(
-        componentIndex: Int,
-        targetTrackIndex: Int,
-        metadata: AudioTrackMetadata,
-        isNowPlayingTrack: Bool,
-        trackIndexAfterEditing: Int?
-    ) {
-        performWithComponentViewAt(componentIndex) { (_: AudioComponentView, contentView) in
-            if let row = contentView.audioTrackTableView.cellForRow(at: .init(row: targetTrackIndex, section: .zero)),
-                let audioTableRowView = row as? AudioTableRowView
-            {
-                audioTableRowView.updateAudioMetadata(metadata)
-            }
-
-            if isNowPlayingTrack {
-                audioControlBar.applyUpdatedMetadata(with: metadata)
-            }
-
-            if let trackIndexAfterEditing {
-                contentView.audioTrackTableView.performBatchUpdates {
-                    let src = IndexPath(row: targetTrackIndex, section: .zero)
-                    let des = IndexPath(row: trackIndexAfterEditing, section: .zero)
-                    contentView.audioTrackTableView.moveRow(at: src, to: des)
-                }
-            }
-        }
-    }
-
-    private func setAudioPlayingState(componentIndex: Int, trackIndex: Int, isPlaying: Bool) {
-        audioControlBar.state = isPlaying ? .resume : .pause
-
-        performWithComponentViewAt(componentIndex) { (_: AudioComponentView, contentView) in
-            let indexPath = IndexPath(row: trackIndex, section: .zero)
-            if let row = contentView.audioTrackTableView.cellForRow(at: indexPath),
-                let audioRow = row as? AudioTableRowView
-            {
-                if isPlaying {
-                    audioRow.audioVisualizer.resumeVisuzlization()
-                } else {
-                    audioRow.audioVisualizer.pauseVisuzlization()
-                }
-            }
-        }
-    }
-
-    private func sortAudioTracks(componentIndex: Int, before: [String], after: [String]) {
-        performWithComponentViewAt(componentIndex) { (_: AudioComponentView, contentView) in
-            let audioTracks = contentView.audioTrackTableView
-            audioTracks.performBatchUpdates {
-                for (newIndex, item) in after.enumerated() {
-                    if let oldIndex = before.firstIndex(of: item),
-                        oldIndex != newIndex
-                    {
-                        let from = IndexPath(row: oldIndex, section: 0)
-                        let to = IndexPath(row: newIndex, section: 0)
-
-                        audioTracks.moveRow(at: from, to: to)
-                    }
-                }
-            }
-        }
-    }
-
-    private func removeAudioTrack(componentIndex: Int, trackIndex: Int) {
-        performWithComponentViewAt(componentIndex) { (_: AudioComponentView, contentView) in
-            contentView.removeRow(trackIndex: trackIndex)
-        }
-    }
-
-    private func removeAudioTrackAndPlayNextAudio(
-        componentIndex: Int,
-        removeAudioRowIndex: Int,
-        nextPlayingAudioRowIndex: Int,
-        duration: TimeInterval?,
-        audioMetadata: AudioTrackMetadata,
-        audioWaveformData: AudioWaveformData?
-    ) {
-        performWithComponentViewAt(componentIndex) { (_: AudioComponentView, contentView) in
-
-            let removeTrackIndexPath = IndexPath(row: removeAudioRowIndex, section: .zero)
-            if let row = contentView.audioTrackTableView.cellForRow(at: removeTrackIndexPath),
-                let targetPlayingAudioRow = row as? AudioTableRowView
-            {
-                targetPlayingAudioRow.audioVisualizer.removeVisuzlization()
-            }
-
-            contentView.removeRow(trackIndex: removeAudioRowIndex)
-
-            let trackIndexPath = IndexPath(row: nextPlayingAudioRowIndex, section: .zero)
-
-            if let row = contentView.audioTrackTableView.cellForRow(at: trackIndexPath),
-                let targetPlayingAudioRow = row as? AudioTableRowView
-            {
-                if let audioWaveformData {
-                    targetPlayingAudioRow.audioVisualizer.activateAudioVisualizer(waveFormData: audioWaveformData)
-                }
-            }
-        }
-
-        audioControlBar.isHidden = false
-
-        audioControlBar.state = .play(
-            metadata: audioMetadata,
-            duration: duration,
-            dispatcher: MemoPageAudioComponentActionDispatcher(subject: pageActionDispatcher))
-    }
-
-    private func removeAudioTrackAndStopPlaying(componentIndex: Int, trackIndex: Int) {
-        audioControlBar.state = .stop
-
-        performWithComponentViewAt(componentIndex) { (_: AudioComponentView, contentView) in
-
-            let removeTrackIndexPath = IndexPath(row: trackIndex, section: .zero)
-            if let row = contentView.audioTrackTableView.cellForRow(at: removeTrackIndexPath),
-                let targetPlayingAudioRow = row as? AudioTableRowView
-            {
-                targetPlayingAudioRow.audioVisualizer.removeVisuzlization()
-            }
-
-            contentView.removeRow(trackIndex: trackIndex)
-        }
-    }
-
-    private func updateAudioDownloadProgress(componentIndex: Int, progress: Float) {
-        performWithComponentViewAt(componentIndex) { (_: AudioComponentView, contentView) in
-            contentView
-                .audioDownloadStatePopupView?
-                .progress
-                .setProgress(progress, animated: true)
-        }
-    }
-
-    private func presentInvalidDownloadCodePopupView(componentIndex: Int) {
-        performWithComponentViewAt(componentIndex) { (_: AudioComponentView, contentView) in
-            contentView
-                .audioDownloadStatePopupView?
-                .setStateToFail()
-        }
-    }
+		let width = collectionView.bounds.width - horizontalInset
+		let isMin = pageViewModel.memoPage[indexPath.item].isMinimumHeight
+		let height = isMin ? UIConstants.componentMinimumHeight : width
+		return .init(width: width, height: height)
+	}
 }

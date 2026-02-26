@@ -80,7 +80,12 @@ final class TableComponentView: PageComponentView<TableComponentContentView, Tab
         viewModel: any PageComponentViewModelType,
         pageActionDispatcher: PassthroughSubject<MemoPageViewInput, Never>
     ) {
-        super.configure(component: component, pageActionDispatcher: pageActionDispatcher)
+        super
+            .configure(
+                componentID: component.id,
+                componentTitle: component.title,
+                componentCreateAt: component.creationDate,
+                pageActionDispatcher: pageActionDispatcher)
 
         componentContentView.configure(
             columns: component.componentContents.columns,
@@ -194,7 +199,7 @@ final class TableComponentView: PageComponentView<TableComponentContentView, Tab
             }
         }
     }
-
+	
     override func presentFullScreenPageComponentView() {
         if let memoPageViewController = parentViewController as? MemoPageViewController {
             memoPageViewController.fullscreenTargetComponentContentsViewFrame = componentContentView.convert(

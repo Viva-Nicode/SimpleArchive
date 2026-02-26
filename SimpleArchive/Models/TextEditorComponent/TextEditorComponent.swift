@@ -43,30 +43,4 @@ final class TextEditorComponent: NSObject, Codable, SnapshotRestorablePageCompon
             captureState = .captured
         }
     }
-
-    func revertComponentContentsUsingSnapshot(snapshotID: UUID) {
-        if let targetSnapshotIndex = snapshots.firstIndex(where: { $0.snapshotID == snapshotID }) {
-            snapshots[targetSnapshotIndex].revert(component: self)
-            captureState = .captured
-        }
-    }
-
-    // MARK: - ⚠️ 얘가 암시적으로 뷰 관련 로직에 영향을 받는 로직 아니야?
-    func removeSnapshot(snapshotID: UUID) -> RemoveSnapshotResult {
-        let targetSnapshotIndex = snapshots.firstIndex(where: { $0.snapshotID == snapshotID })!
-        let nextSnapshotIndex =
-            targetSnapshotIndex + 1 <= snapshots.count - 1
-            ? targetSnapshotIndex + 1 : targetSnapshotIndex - 1
-        let nextSnapshot =
-            nextSnapshotIndex < 0
-            ? nil : snapshots[nextSnapshotIndex]
-        let result = RemoveSnapshotResult(
-            removeSnapshotIndex: targetSnapshotIndex,
-            nextSnapshotID: nextSnapshot?.snapshotID,
-            nextSnapshotMetaData: nextSnapshot?.getSnapshotMetaData()
-        )
-        snapshots.remove(at: targetSnapshotIndex)
-        return result
-    }
-
 }

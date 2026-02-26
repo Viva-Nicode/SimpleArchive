@@ -21,7 +21,6 @@ import UIKit
         coredataReposotory: MemoComponentCoreDataRepositoryType,
         audioComponent: AudioComponent,
         audioDownloader: AudioDownloaderType,
-        audioFileManager: AudioFileManagerType,
         audioTrackController: AudioTrackControllerType,
         pageTitle: String
     ) {
@@ -29,9 +28,9 @@ import UIKit
         self.pageTitle = pageTitle
         self.audioComponent = audioComponent
         self.audioDownloader = audioDownloader
-        self.audioFileManager = audioFileManager
         self.audioTrackController = audioTrackController
         self.audioContentsData = AudioContentsData(audioComponent: audioComponent)
+        self.audioFileManager = AudioFileManager.getShared(Self.self)!
 
         super.init()
 
@@ -120,7 +119,7 @@ import UIKit
 
                 let audioFileID = UUID()
                 let audioFileName = "\(audioFileID).\(audioURL.pathExtension)"
-                try audioFileManager.moveItem(src: audioURL, fileName: audioFileName)
+//                try audioFileManager.moveItem(src: audioURL, fileName: audioFileName)
 
                 let track = AudioTrack(
                     id: audioFileID,
@@ -130,19 +129,20 @@ import UIKit
                     lyrics: lyrics,
                     fileExtension: .init(rawValue: audioURL.pathExtension)!)
 
-                audioFileManager.writeAudioMetadata(audioTrack: track)
+                audioFileManager.writeAudioMetadataWhenAppendNewAudio(audioTrack: track)
                 return track
             }
             .sinkToResult { [weak self] result in
                 guard let self else { return }
                 switch result {
                     case .success(let audioTracks):
-                        let appendedIndices = audioComponent.addAudios(audiotracks: audioTracks)
-
-                        audioComponent.actions.append(
-                            .appendAudio(appendedIndices: appendedIndices, tracks: audioTracks))
-                        coredataReposotory.updateComponentContentChanges(modifiedComponent: audioComponent)
-                        output.send(.didAppendAudioTrackRows(appendedIndices))
+						break
+//                        let appendedIndices = audioComponent.addAudios(audiotracks: audioTracks)
+//
+//                        audioComponent.actions.append(
+//                            .appendAudio(appendedIndices: appendedIndices, tracks: audioTracks))
+//                        coredataReposotory.updateComponentContentChanges(modifiedComponent: audioComponent)
+//                        output.send(.didAppendAudioTrackRows(appendedIndices))
 
                     case .failure(let failure):
                         if let error = failure as? AudioDownloadError {
@@ -193,20 +193,20 @@ import UIKit
                 lyrics: lyrics,
                 fileExtension: .init(rawValue: storedFileURL.pathExtension)!)
 
-            audioFileManager.writeAudioMetadata(audioTrack: track)
+            audioFileManager.writeAudioMetadataWhenAppendNewAudio(audioTrack: track)
             audioTracks.append(track)
         }
 
-        let appendedIndices = audioComponent.addAudios(audiotracks: audioTracks)
-
-        audioComponent.actions.append(.appendAudio(appendedIndices: appendedIndices, tracks: audioTracks))
-        coredataReposotory.updateComponentContentChanges(modifiedComponent: audioComponent)
-        output.send(.didAppendAudioTrackRows(appendedIndices))
+//        let appendedIndices = audioComponent.addAudios(audiotracks: audioTracks)
+//
+//        audioComponent.actions.append(.appendAudio(appendedIndices: appendedIndices, tracks: audioTracks))
+//        coredataReposotory.updateComponentContentChanges(modifiedComponent: audioComponent)
+//        output.send(.didAppendAudioTrackRows(appendedIndices))
     }
 
     private func playAudioTrack(trackIndex: Int) {
         let audioTrack = audioComponent.componentContents.tracks[trackIndex]
-        let audioTrackURL = audioFileManager.createAudioFileURL(fileName: audioComponent.trackNames[trackIndex])
+        let audioTrackURL = audioFileManager.makeAudioTrackAppSandBoxURL(audioTrack: audioTrack)
         let audioPCMData = audioFileManager.readAudioPCMData(audioURL: audioTrackURL)
         let waveformData = scalingPCMDataToWaveformData(pcmData: audioPCMData)
 
@@ -216,10 +216,10 @@ import UIKit
 
         audioContentsData.clean()
 
-        let activeTrackData = ActiveAudioTrackData()
+        let activeTrackData = ActiveAudioTrackVisualizerData()
         activeTrackData.isPlaying = true
         activeTrackData.nowPlayingAudioTrackID = audioTrack.id
-        activeTrackData.audioVisualizerData = waveformData
+        activeTrackData.waveformData = waveformData
         activeTrackData.startTime = CACurrentMediaTime()
 
         let audioTotalDuration = audioTrackController.totalTime
@@ -320,7 +320,8 @@ import UIKit
 
         audioComponent.actions.append(.applyAudioMetadata(audioID: targetAudioTrackID, metadata: newMetadata))
         coredataReposotory.updateComponentContentChanges(modifiedComponent: audioComponent)
-        audioFileManager.writeAudioMetadata(audioTrack: audioComponent.componentContents.tracks[trackIndex])
+        audioFileManager.saveAudioMetaDataEditingTask(
+            audioTrack: audioComponent.componentContents.tracks[trackIndex])
 
         if audioComponent.componentContents.sortBy == .name {
             audioComponent.componentContents.tracks.sort(by: { $0.title < $1.title })
@@ -350,7 +351,7 @@ import UIKit
     private func sortAudioTracks(sortBy: AudioTrackSortBy) {
         audioComponent.componentContents.sortBy = sortBy
 
-        let before = audioComponent.trackNames
+        let before = audioComponent.componentContents.tracks.map { $0.title }
 
         switch sortBy {
             case .name:
@@ -366,7 +367,7 @@ import UIKit
         audioComponent.actions.append(.sortAudioTracks(sortBy: sortBy))
         coredataReposotory.updateComponentContentChanges(modifiedComponent: audioComponent)
 
-        let after = audioComponent.trackNames
+        let after = audioComponent.componentContents.tracks.map { $0.title }
 
         output.send(.didSortAudioTracks(before, after))
     }
@@ -390,8 +391,8 @@ import UIKit
                 if audioTrackController.isPlaying == true {
                     let nextPlayingAudioTrackIndex = min(trackIndex, audioComponent.componentContents.tracks.count - 1)
                     let nextPlayingAudioTrack = audioComponent.componentContents.tracks[nextPlayingAudioTrackIndex]
-                    let audioTrackURL = audioFileManager.createAudioFileURL(
-                        fileName: audioComponent.trackNames[nextPlayingAudioTrackIndex])
+                    let audioTrackURL = audioFileManager.makeAudioTrackAppSandBoxURL(audioTrack: nextPlayingAudioTrack)
+
                     let audioPCMData = audioFileManager.readAudioPCMData(audioURL: audioTrackURL)
                     let waveformData = scalingPCMDataToWaveformData(pcmData: audioPCMData)
 
@@ -403,7 +404,7 @@ import UIKit
 
                     audioContentsData.activeAudioTrackData?.isPlaying = true
                     audioContentsData.activeAudioTrackData?.nowPlayingAudioTrackID = nextPlayingAudioTrack.id
-                    audioContentsData.activeAudioTrackData?.audioVisualizerData = waveformData
+                    audioContentsData.activeAudioTrackData?.waveformData = waveformData
                     audioContentsData.activeAudioTrackData?.startTime = CACurrentMediaTime()
                     audioContentsData.activeAudioTrackData?.totalTime = audioTotalDuration
 

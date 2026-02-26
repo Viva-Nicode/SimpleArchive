@@ -1,11 +1,7 @@
-import AVFAudio
 import Combine
-import SFBAudioEngine
 import UIKit
 
-@MainActor
-final class MemoPageViewModel: NSObject, ViewModelType {
-
+@MainActor final class MemoPageViewModel: NSObject, ViewModelType {
     typealias Input = MemoPageViewInput
     typealias Output = MemoPageViewOutput
 
@@ -14,49 +10,17 @@ final class MemoPageViewModel: NSObject, ViewModelType {
     private(set) var memoPage: MemoPageModel
 
     private var memoComponentCoredataReposotory: MemoComponentCoreDataRepositoryType
-    private var componentSnapshotCoreDataRepository: ComponentSnapshotCoreDataRepositoryType
     private var componentFactory: any ComponentFactoryType
-
-    private var audioDownloader: AudioDownloaderType
-    private var audioTrackController: AudioTrackControllerType
-    private var audioFileManager: AudioFileManagerType
-
-    private var audioContentsDataContainer: AudioContentsDataContainer
 
     init(
         componentFactory: any ComponentFactoryType,
         memoComponentCoredataReposotory: MemoComponentCoreDataRepositoryType,
-        componentSnapshotCoreDataRepository: ComponentSnapshotCoreDataRepositoryType,
-        audioDownloader: AudioDownloaderType,
-        audioFileManager: AudioFileManagerType,
-        audioTrackController: AudioTrackControllerType,
-        memoPage: MemoPageModel
+        memoPage: MemoPageModel,
     ) {
         self.componentFactory = componentFactory
         self.memoComponentCoredataReposotory = memoComponentCoredataReposotory
-        self.componentSnapshotCoreDataRepository = componentSnapshotCoreDataRepository
-        self.audioTrackController = audioTrackController
-        self.audioDownloader = audioDownloader
-        self.audioFileManager = audioFileManager
         self.memoPage = memoPage
-
-        let audioContentsDatas = memoPage
-            .getComponents
-            .compactMap { $0 as? AudioComponent }
-            .map { AudioContentsData(audioComponent: $0) }
-            .map { ($0.audioComponent.id, $0) }
-
-        self.audioContentsDataContainer = AudioContentsDataContainer(
-            audioContentsDataTable: Dictionary(uniqueKeysWithValues: audioContentsDatas))
-
         super.init()
-
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(pauseAudioOnInterruption),
-            name: AVAudioSession.interruptionNotification,
-            object: AVAudioSession.sharedInstance()
-        )
     }
 
     deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
@@ -68,7 +32,7 @@ final class MemoPageViewModel: NSObject, ViewModelType {
 
             switch event {
                 case .viewDidLoad:
-                    output.send(.viewDidLoad(memoPage, audioContentsDataContainer))
+                    output.send(.viewDidLoad(memoPage))
 
                 case .willCreateNewComponent(let componentType):
                     createNewComponent(with: componentType)
@@ -87,41 +51,6 @@ final class MemoPageViewModel: NSObject, ViewModelType {
 
                 case .willMaximizePageComponent(let componentID):
                     maximizeComponent(componentID: componentID)
-
-                // MARK: - Audio
-                case .willDownloadMusicWithCode(let componentID, let downloadCode):
-                    downloadAudio(componentID: componentID, with: downloadCode)
-
-                case .willPlayAudioTrack(let componentID, let trackIndex):
-                    playAudioTrack(componentID: componentID, trackIndex: trackIndex)
-
-                case .willApplyAudioMetadataChanges(let editedMetadata, let componentID, let trackIndex):
-                    applyAudioMetadataChanges(
-                        componentID: componentID, newMetadata: editedMetadata, trackIndex: trackIndex)
-
-                case .willToggleAudioPlayingState:
-                    toggleAudioPlayingState()
-
-                case .willSeekAudioTrack(let seek):
-                    seekAudioTrack(seek: seek)
-
-                case .willSortAudioTracks(let componentID, let sortBy):
-                    sortAudioTracks(componentID: componentID, sortBy: sortBy)
-
-                case .willMoveAudioTrackOrder(let componentID, let src, let des):
-                    moveAudioTrackOrder(componentID: componentID, src: src, des: des)
-
-                case .willRemoveAudioTrack(let componentID, let trackIndex):
-                    removeAudioTrack(componentID: componentID, trackIndex: trackIndex)
-
-                case .willPlayNextAudioTrack:
-                    playNextAudioTrack()
-
-                case .willPlayPreviousAudioTrack:
-                    playPreviousAudioTrack()
-
-                case .willImportAudioFileFromFileSystem(let componentID, let tempURLs):
-                    importAudioFromLocalFileSystem(componentID: componentID, didPickDocumentsAt: tempURLs)
             }
         }
         .store(in: &subscriptions)
@@ -132,10 +61,6 @@ final class MemoPageViewModel: NSObject, ViewModelType {
     private func createNewComponent(with: ComponentType) {
         componentFactory.setCreator(creator: with.getComponentCreator())
         let newComponent = componentFactory.createComponent()
-
-        if let audioComponent = newComponent as? AudioComponent {
-            audioContentsDataContainer[audioComponent.id] = AudioContentsData(audioComponent: audioComponent)
-        }
 
         memoPage.appendChildComponent(component: newComponent)
         memoComponentCoredataReposotory.createComponentEntity(parentPageID: memoPage.id, component: newComponent)
@@ -153,10 +78,9 @@ final class MemoPageViewModel: NSObject, ViewModelType {
     private func togglePageComponentFolding(componentID: UUID) {
         performWithComponentAt(componentID) { index, component in
             component.isMinimumHeight.toggle()
-            memoComponentCoredataReposotory
-                .updateComponentFolding(
-                    componentID: componentID,
-                    isFolding: component.isMinimumHeight)
+            memoComponentCoredataReposotory.updateComponentFolding(
+                componentID: componentID,
+                isFolding: component.isMinimumHeight)
             output.send(
                 .didToggleFoldingComponent(
                     componentIndex: index,
@@ -170,10 +94,9 @@ final class MemoPageViewModel: NSObject, ViewModelType {
         performWithComponentAt(componentID) { index, component in
             if component.isMinimumHeight {
                 component.isMinimumHeight.toggle()
-                memoComponentCoredataReposotory
-                    .updateComponentFolding(
-                        componentID: componentID,
-                        isFolding: component.isMinimumHeight)
+                memoComponentCoredataReposotory.updateComponentFolding(
+                    componentID: componentID,
+                    isFolding: component.isMinimumHeight)
                 output.send(
                     .didToggleFoldingComponent(
                         componentIndex: index,
@@ -188,11 +111,6 @@ final class MemoPageViewModel: NSObject, ViewModelType {
 
     private func removeComponent(componentID: UUID) {
         if let removedComponent = memoPage.removeChildComponentById(componentID) {
-            if let audioComponent = removedComponent.item as? AudioComponent {
-                for audioTrack in audioComponent.componentContents.tracks {
-                    audioFileManager.removeAudio(with: audioTrack)
-                }
-            }
             memoComponentCoredataReposotory.removeComponentEntity(componentID: removedComponent.item.id)
             output.send(.didRemovePageComponent(componentIndex: removedComponent.index))
         }
@@ -205,14 +123,6 @@ final class MemoPageViewModel: NSObject, ViewModelType {
             renderingOrdered: memoPage.getComponents.map { $0.id })
     }
 
-    private func performWithComponentAt<ComponentType: PageComponent>(_ id: UUID, task: (Int, ComponentType) -> Void) {
-        if let pageComponent = memoPage[id],
-            let audioComponent = pageComponent.item as? ComponentType
-        {
-            task(pageComponent.index, audioComponent)
-        }
-    }
-
     private func performWithComponentAt(_ componentID: UUID, task: (Int, any PageComponent) -> Void) {
         if let pageComponent = memoPage[componentID] {
             task(pageComponent.index, pageComponent.item)
@@ -220,470 +130,21 @@ final class MemoPageViewModel: NSObject, ViewModelType {
     }
 }
 
-// MARK: - Audio
-extension MemoPageViewModel: @preconcurrency AVAudioPlayerDelegate {
-
-    private func downloadAudio(componentID: UUID, with code: String) {
-        performWithComponentAt(componentID) { (componentIndex, component: AudioComponent) in
-
-            audioDownloader.handleDownloadedProgressPercent = { [weak self] progress in
-                self?.output.send(.didUpdateAudioDownloadProgress(componentIndex, progress))
-            }
-
-            audioDownloader.downloadTask(with: code)
-                .tryMap { [weak self] url in
-                    guard let self else { return [URL]() }
-                    return try audioFileManager.extractAudioFileURLs(zipURL: url)
-                }
-                .tryMapEnumerated { [weak self] _, audioURL in
-                    guard let self else { throw AudioDownloadError.invalidCode }
-                    let audioMetadata = audioFileManager.readAudioMetadata(audioURL: audioURL)
-
-                    var fileTitle = audioURL.deletingPathExtension().lastPathComponent
-                    if fileTitle.isEmpty { fileTitle = .emptyAudioTitle }
-                    if let metadataTitle = audioMetadata.title, !metadataTitle.isEmpty { fileTitle = metadataTitle }
-
-                    let artist = audioMetadata.artist ?? .emptyAudioArtist
-                    let lyrics = audioMetadata.lyrics ?? ""
-
-                    let defaultAudioThumbnailImage = UIImage(named: "defaultMusicThumbnail")!
-                    let thumnnailImageData =
-                        audioMetadata.thumbnail ?? defaultAudioThumbnailImage.jpegData(compressionQuality: 1.0)!
-
-                    let audioFileID = UUID()
-                    let audioFileName = "\(audioFileID).\(audioURL.pathExtension)"
-                    try audioFileManager.moveItem(src: audioURL, fileName: audioFileName)
-
-                    let track = AudioTrack(
-                        id: audioFileID,
-                        title: fileTitle,
-                        artist: artist,
-                        thumbnail: thumnnailImageData,
-                        lyrics: lyrics,
-                        fileExtension: .init(rawValue: audioURL.pathExtension)!)
-
-                    audioFileManager.writeAudioMetadata(audioTrack: track)
-                    return track
-                }
-                .sinkToResult { [weak self] result in
-                    guard let self else { return }
-                    switch result {
-                        case .success(let audioTracks):
-                            let appendedIndices = component.addAudios(audiotracks: audioTracks)
-
-                            component.actions.append(
-                                .appendAudio(appendedIndices: appendedIndices, tracks: audioTracks)
-                            )
-                            memoComponentCoredataReposotory.updateComponentContentChanges(modifiedComponent: component)
-                            output.send(.didAppendAudioTrackRows(componentIndex, appendedIndices))
-
-                        case .failure(let failure):
-                            if let error = failure as? AudioDownloadError {
-                                switch error {
-                                    case .invalidCode:
-                                        break
-                                    case .unowned(let error):
-                                        print(error.localizedDescription)
-                                    case .fileManagingError(let error):
-                                        print(error.localizedDescription)
-                                }
-                            }
-                            output.send(.didPresentInvalidDownloadCode(componentIndex))
-                    }
-                }
-                .store(in: &subscriptions)
-        }
-    }
-
-    private func importAudioFromLocalFileSystem(componentID: UUID, didPickDocumentsAt urls: [URL]) {
-        var audioTracks: [AudioTrack] = []
-
-        for audioFileUrl in urls {
-
-            let audioID = UUID()
-            let audioFileName = "\(audioID).\(audioFileUrl.pathExtension)"
-            let storedFileURL = audioFileManager.copyFilesToAppDirectory(src: audioFileUrl, des: audioFileName)
-            let audioMetadata = audioFileManager.readAudioMetadata(audioURL: storedFileURL)
-
-            var fileTitle = audioFileUrl.deletingPathExtension().lastPathComponent
-            if fileTitle.isEmpty { fileTitle = .emptyAudioTitle }
-            if let metadataTitle = audioMetadata.title, !metadataTitle.isEmpty { fileTitle = metadataTitle }
-
-            let artist = audioMetadata.artist ?? .emptyAudioArtist
-            let lyrics = audioMetadata.lyrics ?? ""
-
-            let defaultAudioThumbnail = UIImage(named: "defaultMusicThumbnail")!
-            let thumnnailImageData = audioMetadata.thumbnail ?? defaultAudioThumbnail.jpegData(compressionQuality: 1.0)!
-
-            let track = AudioTrack(
-                id: audioID,
-                title: fileTitle,
-                artist: artist,
-                thumbnail: thumnnailImageData,
-                lyrics: lyrics,
-                fileExtension: .init(rawValue: storedFileURL.pathExtension)!)
-
-            audioFileManager.writeAudioMetadata(audioTrack: track)
-            audioTracks.append(track)
-        }
-
-        performWithComponentAt(componentID) { (componentIndex, component: AudioComponent) in
-            let appendedIndices = component.addAudios(audiotracks: audioTracks)
-
-            component.actions.append(.appendAudio(appendedIndices: appendedIndices, tracks: audioTracks))
-            memoComponentCoredataReposotory.updateComponentContentChanges(modifiedComponent: component)
-            output.send(.didAppendAudioTrackRows(componentIndex, appendedIndices))
-        }
-    }
-
-    private func playAudioTrack(componentID: UUID, trackIndex: Int) {
-        performWithComponentAt(componentID) { (componentIndex, component: AudioComponent) in
-
-            let audioTrack = component.componentContents.tracks[trackIndex]
-            let audioTrackURL = audioFileManager.createAudioFileURL(fileName: component.trackNames[trackIndex])
-            let audioPCMData = audioFileManager.readAudioPCMData(audioURL: audioTrackURL)
-            let waveformData = scalingPCMDataToWaveformData(pcmData: audioPCMData)
-
-            if let previousAudioContentsData = audioContentsDataContainer.activeAudioContentsData {
-                previousAudioContentsData.clean()
-            }
-
-            audioTrackController.setAudioURL(audioURL: audioTrackURL)
-            audioTrackController.player?.delegate = self
-            audioTrackController.play()
-
-            let audioTotalDuration = audioTrackController.totalTime
-
-            if let nextAudioContentsData = audioContentsDataContainer[componentID] {
-                let activeAudioTrackData = ActiveAudioTrackData()
-
-                activeAudioTrackData.isPlaying = true
-                activeAudioTrackData.nowPlayingAudioTrackID = audioTrack.id
-                activeAudioTrackData.audioVisualizerData = waveformData
-                activeAudioTrackData.totalTime = audioTotalDuration
-                activeAudioTrackData.startTime = CACurrentMediaTime()
-
-                nextAudioContentsData.activeAudioTrackData = activeAudioTrackData
-            }
-
-            let audioMetadata = AudioTrackMetadata(
-                title: audioTrack.title,
-                artist: audioTrack.artist,
-                lyrics: audioTrack.lyrics,
-                thumbnail: audioTrack.thumbnail)
-
-            output.send(
-                .didPlayAudioTrack(
-                    componentIndex,
-                    trackIndex,
-                    audioTotalDuration,
-                    audioMetadata,
-                    waveformData
-                )
-            )
-        }
-    }
-
-    private func playNextAudioTrack() {
-        if let audioContentsData = audioContentsDataContainer.activeAudioContentsData {
-            if let activeTrackID = audioContentsData.activeAudioTrackData?.nowPlayingAudioTrackID {
-                if var nextTrackIndex =
-                    audioContentsData.audioComponent.componentContents.tracks.firstIndex(where: {
-                        $0.id == activeTrackID
-                    })
-                {
-                    nextTrackIndex += 1
-                    if audioContentsData.audioComponent.componentContents.tracks.count <= nextTrackIndex {
-                        nextTrackIndex = 0
-                    }
-                    playAudioTrack(componentID: audioContentsData.audioComponent.id, trackIndex: nextTrackIndex)
-                }
-            }
-        }
-    }
-
-    private func playPreviousAudioTrack() {
-        if let audioContentsData = audioContentsDataContainer.activeAudioContentsData {
-            if let activeTrackID = audioContentsData.activeAudioTrackData?.nowPlayingAudioTrackID {
-                if var nextTrackIndex =
-                    audioContentsData.audioComponent.componentContents.tracks.firstIndex(where: {
-                        $0.id == activeTrackID
-                    })
-                {
-                    nextTrackIndex -= 1
-                    if 0 > nextTrackIndex {
-                        nextTrackIndex = audioContentsData.audioComponent.componentContents.tracks.count - 1
-                    }
-                    playAudioTrack(componentID: audioContentsData.audioComponent.id, trackIndex: nextTrackIndex)
-                }
-            }
-        }
-    }
-
-    private func toggleAudioPlayingState() {
-        audioTrackController.togglePlaying()
-
-        if let audioContentsData = audioContentsDataContainer.activeAudioContentsData {
-            audioContentsData.activeAudioTrackData?.isPlaying = audioTrackController.isPlaying
-            audioContentsData.activeAudioTrackData?.hasChangePlayingState()
-
-            let activeAudioComponentID = audioContentsData.audioComponent.id
-            if let componentIndex = memoPage[activeAudioComponentID]?.index {
-                let nowPlayingAudioTrackID = audioContentsData.activeAudioTrackData?.nowPlayingAudioTrackID
-                if let nowPlayingAudioTrackIndex = audioContentsData
-                    .audioComponent.componentContents.tracks.firstIndex(where: { $0.id == nowPlayingAudioTrackID })
-                {
-                    output.send(
-                        .didToggleAudioPlayingState(
-                            componentIndex,
-                            nowPlayingAudioTrackIndex,
-                            audioTrackController.isPlaying
-                        )
-                    )
-                }
-            }
-        }
-    }
-
-    private func applyAudioMetadataChanges(componentID: UUID, newMetadata: AudioTrackMetadata, trackIndex: Int) {
-        performWithComponentAt(componentID) { (componentIndex, component: AudioComponent) in
-            let willChangeTrackID = component.componentContents.tracks[trackIndex].id
-            let nowActiveTrackID = audioContentsDataContainer
-                .activeAudioContentsData?
-                .activeAudioTrackData?
-                .nowPlayingAudioTrackID
-            let isEditCurrentlyPlayingAudio = nowActiveTrackID == willChangeTrackID
-            var trackIndexAfterApply: Int?
-
-            if let newTitle = newMetadata.title {
-                component.componentContents.tracks[trackIndex].title = newTitle
-            }
-            if let newArtist = newMetadata.artist {
-                component.componentContents.tracks[trackIndex].artist = newArtist
-            }
-            if let newLyrics = newMetadata.lyrics {
-                component.componentContents.tracks[trackIndex].lyrics = newLyrics
-            }
-            if let newThumbnail = newMetadata.thumbnail {
-                component.componentContents.tracks[trackIndex].thumbnail = newThumbnail
-            }
-
-            component.actions.append(.applyAudioMetadata(audioID: willChangeTrackID, metadata: newMetadata))
-            memoComponentCoredataReposotory.updateComponentContentChanges(modifiedComponent: component)
-            audioFileManager.writeAudioMetadata(audioTrack: component.componentContents.tracks[trackIndex])
-
-            if component.componentContents.sortBy == .name {
-                component.componentContents.tracks.sort(by: { $0.title < $1.title })
-
-                trackIndexAfterApply = component.componentContents.tracks.firstIndex {
-                    $0.id == willChangeTrackID
-                }
-            }
-
-            output.send(
-                .didApplyAudioMetadataChanges(
-                    componentIndex,
-                    trackIndex,
-                    newMetadata,
-                    isEditCurrentlyPlayingAudio,
-                    trackIndexAfterApply
-                )
-            )
-        }
-    }
-
-    private func seekAudioTrack(seek: TimeInterval) {
-        if let audioContentsData = audioContentsDataContainer.activeAudioContentsData {
-            audioTrackController.seek(interval: seek)
-            audioContentsData.seek(seek: seek)
-
-            if let componentIndex = memoPage[audioContentsData.audioComponent.id]?.index {
-                let nowPlayingAudioTrackID = audioContentsData.activeAudioTrackData?.nowPlayingAudioTrackID
-                if let nowPlayingAudioTrackIndex =
-                    audioContentsData.audioComponent
-                    .componentContents.tracks.firstIndex(where: { $0.id == nowPlayingAudioTrackID })
-                {
-                    output.send(
-                        .didSeekAudioTrack(
-                            componentIndex,
-                            nowPlayingAudioTrackIndex,
-                            seek,
-                            audioTrackController.totalTime!
-                        )
-                    )
-                }
-            }
-        }
-    }
-
-    private func moveAudioTrackOrder(componentID: UUID, src: Int, des: Int) {
-        performWithComponentAt(componentID) { (_, audioComponent: AudioComponent) in
-            audioComponent.componentContents.tracks.moveElement(src: src, des: des)
-            audioComponent.componentContents.sortBy = .manual
-
-            audioComponent.actions.append(.moveAudioOrder(src: src, des: des))
-            memoComponentCoredataReposotory.updateComponentContentChanges(modifiedComponent: audioComponent)
-        }
-    }
-
-    private func sortAudioTracks(componentID: UUID, sortBy: AudioTrackSortBy) {
-        performWithComponentAt(componentID) { (componentIndex, audioComponent: AudioComponent) in
-            audioComponent.componentContents.sortBy = sortBy
-
-            let before = audioComponent.trackNames
-
-            switch sortBy {
-                case .name:
-                    audioComponent.componentContents.tracks.sort(by: { $0.title < $1.title })
-
-                case .createDate:
-                    audioComponent.componentContents.tracks.sort(by: { $0.createData > $1.createData })
-
-                case .manual:
-                    break
-            }
-
-            let after = audioComponent.trackNames
-
-            audioComponent.actions.append(.sortAudioTracks(sortBy: sortBy))
-            memoComponentCoredataReposotory.updateComponentContentChanges(modifiedComponent: audioComponent)
-
-            output.send(.didSortAudioTracks(componentIndex, before, after))
-        }
-    }
-
-    private func removeAudioTrack(componentID: UUID, trackIndex: Int) {
-
-        performWithComponentAt(componentID) { (componentIndex, component: AudioComponent) in
-
-            guard let audioContentsData = audioContentsDataContainer.activeAudioContentsData
-            else { return }
-
-            let removedAudioTrack = component.componentContents.tracks.remove(at: trackIndex)
-
-            audioFileManager.removeAudio(with: removedAudioTrack)
-            component.actions.append(.removeAudio(removedAudioID: removedAudioTrack.id))
-            memoComponentCoredataReposotory.updateComponentContentChanges(modifiedComponent: component)
-
-            // 활성화된 오디오 컴포넌트에서 삭제가 발생했다면
-            if audioContentsData.audioComponent.id == componentID {
-
-                // 재생중인데 마지막 한 곡을 삭제했을 때
-                if component.componentContents.tracks.isEmpty {
-                    audioTrackController.reset()
-                    audioContentsData.clean()
-                    output.send(.didRemoveAudioTrackAndStopPlaying(componentIndex, trackIndex))
-                    return
-                }
-
-                // 재생중인 곡을 삭제했을 때
-                if audioContentsData.activeAudioTrackData?.nowPlayingAudioTrackID == removedAudioTrack.id {
-                    if audioTrackController.isPlaying == true {
-
-                        let nextPlayingAudioTrackIndex = min(trackIndex, component.componentContents.tracks.count - 1)
-                        let nextPlayingAudioTrack = component.componentContents.tracks[nextPlayingAudioTrackIndex]
-                        let audioTrackURL = audioFileManager.createAudioFileURL(
-                            fileName: component.trackNames[nextPlayingAudioTrackIndex])
-                        let audioPCMData = audioFileManager.readAudioPCMData(audioURL: audioTrackURL)
-                        let waveformData = scalingPCMDataToWaveformData(pcmData: audioPCMData)
-
-                        audioTrackController.setAudioURL(audioURL: audioTrackURL)
-                        audioTrackController.player?.delegate = self
-                        audioTrackController.play()
-
-                        let audioTotalDuration = audioTrackController.totalTime
-
-                        audioContentsData.activeAudioTrackData?.isPlaying = true
-                        audioContentsData.activeAudioTrackData?.nowPlayingAudioTrackID = nextPlayingAudioTrack.id
-                        audioContentsData.activeAudioTrackData?.audioVisualizerData = waveformData
-                        audioContentsData.activeAudioTrackData?.startTime = CACurrentMediaTime()
-                        audioContentsData.activeAudioTrackData?.totalTime = audioTotalDuration
-
-                        let audioMetadata = AudioTrackMetadata(
-                            title: nextPlayingAudioTrack.title,
-                            artist: nextPlayingAudioTrack.artist,
-                            lyrics: nextPlayingAudioTrack.lyrics,
-                            thumbnail: nextPlayingAudioTrack.thumbnail)
-
-                        output.send(
-                            .didRemoveAudioTrackAndPlayNextAudio(
-                                componentIndex,
-                                trackIndex,
-                                nextPlayingAudioTrackIndex,
-                                audioTotalDuration,
-                                audioMetadata,
-                                waveformData
-                            )
-                        )
-                    } else {
-                        audioTrackController.reset()
-                        audioContentsData.clean()
-                        output.send(.didRemoveAudioTrackAndStopPlaying(componentIndex, trackIndex))
-                    }
-                } else {
-                    output.send(.didRemoveAudioTrack(componentIndex, trackIndex))
-                }
-            } else {
-                output.send(.didRemoveAudioTrack(componentIndex, trackIndex))
-            }
-        }
-    }
-
-    private func scalingPCMDataToWaveformData(pcmData: AudioPCMData?) -> AudioWaveformData? {
-        guard let pcmData else { return nil }
-        let visualizerBarCount = 7
-        let timerIntervalDivisor = 6.0
-        let samplesPerBar = Int(pcmData.sampleRate / timerIntervalDivisor)
-        var averagedPCMData: [Float] = []
-
-        for i in 0..<(pcmData.PCMData.count / samplesPerBar) {
-            let PCMDataSegment = pcmData.PCMData[i * samplesPerBar..<(i + 1) * samplesPerBar]
-            let avg = PCMDataSegment.map { abs($0) }.reduce(0, +) / Float(PCMDataSegment.count)
-            averagedPCMData.append(avg)
-        }
-
-        let maximumData = averagedPCMData.max()!
-        let scaledPCMData =
-            averagedPCMData
-            .map { ($0 / maximumData) }
-            .map { baseBarHeight in
-                (0..<visualizerBarCount)
-                    .map { _ in
-                        max(0.1, min(1.0, baseBarHeight + Float.random(in: -0.25...0.25)))
-                    }
-            }
-
-        return AudioWaveformData(
-            sampleDataCount: pcmData.PCMData.count,
-            sampleRate: pcmData.sampleRate,
-            waveformData: scaledPCMData)
-    }
-
-    @objc private func pauseAudioOnInterruption(_ notification: Notification) {
-        guard let userInfo = notification.userInfo,
-            let typeValue = userInfo[AVAudioSessionInterruptionTypeKey] as? UInt,
-            let type = AVAudioSession.InterruptionType(rawValue: typeValue)
-        else { return }
-
-        switch type {
-            case .began:
-                if audioTrackController.isPlaying { toggleAudioPlayingState() }
-
-            case .ended:
-                if !audioTrackController.isPlaying { toggleAudioPlayingState() }
-
-            @unknown default:
-                print("unknown interrupt")
-        }
-    }
-
-    func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
-        playNextAudioTrack()
-    }
+enum MemoPageViewInput {
+    case viewDidLoad
+    case willCreateNewComponent(ComponentType)
+    case willRemovePageComponent(componentID: UUID)
+    case willChangeComponentOrder(Int, Int)
+    case willRenameComponent(componentID: UUID, newName: String)
+    case willToggleFoldingComponent(componentID: UUID)
+    case willMaximizePageComponent(componentID: UUID)
 }
 
-extension MemoPageViewModel: @preconcurrency ComponentsPageCollectionViewLayoutDelegate {
-    func collectionView(heightForItemAt indexPath: IndexPath) -> CGFloat {
-        memoPage[indexPath.item].isMinimumHeight ? UIConstants.componentMinimumHeight : UIView.screenWidth - 40
-    }
+enum MemoPageViewOutput {
+    case viewDidLoad(MemoPageModel)
+    case didAppendComponentAt(Int)
+    case didRemovePageComponent(componentIndex: Int)
+    case didRenameComponent(componentIndex: Int, newName: String)
+    case didToggleFoldingComponent(componentIndex: Int, isMinimized: Bool)
+    case didMaximizePageComponent(componentIndex: Int)
 }

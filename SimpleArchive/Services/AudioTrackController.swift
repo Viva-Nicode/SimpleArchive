@@ -1,6 +1,9 @@
 import AVFoundation
 import CSFBAudioEngine
 
+/* FIXME: ⚠️ -
+ 이거 없애야 됨.
+ */
 protocol AudioTrackControllerType {
     var player: AVAudioPlayer? { get }
     var isPlaying: Bool { get }
@@ -20,7 +23,7 @@ final class AudioTrackController: NSObject, AudioTrackControllerType {
     private(set) var player: AVAudioPlayer?
     private(set) var audioTrackURL: URL?
 
-    deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
+    deinit { myLog(String(describing: type(of: self)), c: .purple) }
 
     var isPlaying: Bool {
         player?.isPlaying ?? false

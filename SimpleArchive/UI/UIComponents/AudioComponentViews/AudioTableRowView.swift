@@ -66,6 +66,10 @@ final class AudioTableRowView: UITableViewCell {
         fatalError("init(coder:) has not been implemented")
     }
 
+    deinit {
+        audioVisualizer.removeVisuzlization()
+    }
+
     func setupUI() {
         contentView.backgroundColor = .clear
         backgroundColor = .clear
