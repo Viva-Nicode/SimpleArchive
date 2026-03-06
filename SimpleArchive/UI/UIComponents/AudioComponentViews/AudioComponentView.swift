@@ -3,8 +3,8 @@ import UIKit
 
 final class AudioComponentView: PageComponentView<AudioComponentContentView, AudioComponent> {
     private static var audioTableViewScrollOffsetCache: [UUID: CGFloat] = [:]
+    static var order: [UUID: IndexPath] = [:]
     static let reuseAudioComponentIdentifier: String = "reuseAudioComponentIdentifier"
-    private var audioComponentDataSource: AudioComponentDataSource?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -34,10 +34,31 @@ final class AudioComponentView: PageComponentView<AudioComponentContentView, Aud
                 componentContentView.audioTrackTableView.contentOffset.y
         }
         super.prepareForReuse()
+
+        componentContentView.alpha = 1
+        componentContentView.toolBarStackViewHeightConstraint?.constant = 45
+        componentContentView.sortOptionStackViewHeightConstraint?.constant = 30
+        componentContentView.addbuttonHeightConstraint?.constant = 44
+        componentContentView.layoutIfNeeded()
+
+        if let window = window,
+            let host = window as? HostUIWindow,
+            let collectionView,
+            let indexPath = Self.order[componentID]
+        {
+            let controlBarEventHandler = AudioControlBarEventHandler(
+                host: host,
+                collectionView: collectionView,
+                indexPath: indexPath)
+            componentContentView
+                .dispatcher?
+                .switchingHandlerWhenPrepareComponent(controlBarEventHandler: controlBarEventHandler)
+        }
     }
 
     override func freedReferences() {
         super.freedReferences()
+        componentContentView.dispatcher?.clearSubscriptions()
     }
 
     func configureAudioComponentForMemoPageView(
@@ -52,14 +73,10 @@ final class AudioComponentView: PageComponentView<AudioComponentContentView, Aud
                 componentCreateAt: component.creationDate,
                 pageActionDispatcher: pageActionDispatcher)
 
-        audioComponentDataSource = AudioComponentDataSource(audioPageComponent: component)
-        componentContentView.audioTrackTableView.dataSource = audioComponentDataSource
-
         componentContentView.configure(
-            trackCount: component.componentContents.tracks.count,
-            isFolding: component.isMinimumHeight,
-            sortBy: component.componentContents.sortBy,
-            dispatcher: audioActionDispatcher)
+            audioComponent: component,
+            dispatcher: audioActionDispatcher,
+            isComponent: true)
 
         componentContentView.audioTrackTableView.reloadData()
         adjustAudioTableViewScrollOffset(componentID: component.id)

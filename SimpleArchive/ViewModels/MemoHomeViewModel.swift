@@ -202,22 +202,19 @@ final class MemoHomeViewModel: NSObject, ViewModelType {
             if let textEditorComponent = followingPage.getComponents.first as? TextEditorComponent {
                 DIContainer.shared.setArgument(TextEditorComponentViewModel.self, textEditorComponent)
                 let viewModel = DIContainer.shared.resolve(TextEditorComponentViewModel.self)
-                output.send(.didNavigateSingleTextEditorComponentPageView(viewModel))
-            } else if let singleTableComponent = followingPage.getComponents.first as? TableComponent {
-                DIContainer.shared.setArgument(SingleTablePageViewModel.self, singleTableComponent)
-                DIContainer.shared.setArgument(SingleTablePageViewModel.self, followingPage.name)
-                let singleTablePageViewModel = DIContainer.shared.resolve(SingleTablePageViewModel.self)
-                output.send(.didNavigateSingleTableComponentPageView(singleTablePageViewModel))
-            } else if let singleAudioComponent = followingPage.getComponents.first as? AudioComponent {
-                DIContainer.shared.setArgument(SingleAudioPageViewModel.self, singleAudioComponent)
-                DIContainer.shared.setArgument(SingleAudioPageViewModel.self, followingPage.name)
-                let singleAudioPageViewModel = DIContainer.shared.resolve(SingleAudioPageViewModel.self)
-                output.send(.didNavigateSingleAudioComponentPageView(singleAudioPageViewModel))
+                output.send(.didNavigateSingleTextEditorComponentPageView(viewModel, textEditorComponent))
+            } else if let tableComponent = followingPage.getComponents.first as? TableComponent {
+                DIContainer.shared.setArgument(TableComponentViewModel.self, tableComponent)
+                let viewModel = DIContainer.shared.resolve(TableComponentViewModel.self)
+                output.send(.didNavigateSingleTableComponentPageView(viewModel, tableComponent))
+            } else if let audioComponent = followingPage.getComponents.first as? AudioComponent {
+                DIContainer.shared.setArgument(AudioComponentViewModel.self, audioComponent)
+                let viewModel = DIContainer.shared.resolve(AudioComponentViewModel.self)
+                output.send(.didNavigateSingleAudioComponentPageView(viewModel, audioComponent))
             }
         } else {
             DIContainer.shared.setArgument(MemoPageViewModel.self, followingPage)
             let memoPageViewModel = DIContainer.shared.resolve(MemoPageViewModel.self)
-			
             output.send(.didNavigatePageView(memoPageViewModel))
         }
     }

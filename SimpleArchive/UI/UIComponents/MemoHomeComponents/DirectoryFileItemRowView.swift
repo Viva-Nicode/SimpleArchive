@@ -7,6 +7,7 @@ class DirectoryFileItemRowView: UITableViewCell {
     private let innerShadowOffset: CGSize = .init(width: -7, height: 7)
     private let innerShadowOpacity: Float = 0.43
     private let innerShadowRadius: CGFloat = 12
+    private let cornerRadius: CGFloat = 12
 
     override func layoutSubviews() {
         super.layoutSubviews()
@@ -16,9 +17,9 @@ class DirectoryFileItemRowView: UITableViewCell {
 
     private func configureStyle() {
         containerStackView.backgroundColor = UIColor(named: "FixedFileItemBackgroundColor")
-        containerStackView.layer.cornerRadius = 10
-        contentView.layer.cornerRadius = 10
-        layer.cornerRadius = 10
+        containerStackView.layer.cornerRadius = cornerRadius
+        contentView.layer.cornerRadius = cornerRadius
+        layer.cornerRadius = cornerRadius
         containerStackView.layer.masksToBounds = false
 
         innerShadowLayer.frame = bounds
@@ -77,7 +78,7 @@ class DirectoryFileItemRowView: UITableViewCell {
         let containerStackView = UIStackView()
         containerStackView.backgroundColor = .systemGray6
         containerStackView.axis = .horizontal
-        containerStackView.layer.cornerRadius = 10
+        containerStackView.layer.cornerRadius = 12
         containerStackView.layer.masksToBounds = false
         containerStackView.clipsToBounds = false
         containerStackView.spacing = 17

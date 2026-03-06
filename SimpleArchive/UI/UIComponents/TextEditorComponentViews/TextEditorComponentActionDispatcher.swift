@@ -1,14 +1,28 @@
 import Combine
 import Foundation
 
-@MainActor
-final class TextEditorComponentActionDispatcher {
-    typealias Input = TextEditorComponentViewModelAction
-    typealias Output = TextEditorComponentViewModelEvent
+protocol TextEditorComponentActionDispatcherType: PageComponentActionDispatcherType
+where EHT == TextEditorComponentViewEventHandler, VMT == TextEditorComponentViewModel {}
 
-    private let dispatcher = PassthroughSubject<Input, Never>()
+final class TextEditorComponentActionDispatcher: TextEditorComponentActionDispatcherType {
+
+    typealias Action = TextEditorComponentViewModelAction
+    typealias Event = TextEditorComponentViewModelEvent
+
+    private let dispatcher = PassthroughSubject<Action, Never>()
     private var subscriptions = Set<AnyCancellable>()
     private var viewModel: TextEditorComponentViewModel?
+
+    func bindToViewModel(
+        viewModel: TextEditorComponentViewModel,
+        UIEventHandler: TextEditorComponentViewEventHandler
+    ) {
+        self.viewModel = viewModel
+        self.viewModel?
+            .bindToView(input: dispatcher.eraseToAnyPublisher())
+            .sink { UIEventHandler.UIupdateEventHandler($0) }
+            .store(in: &subscriptions)
+    }
 
     func saveTextEditorComponentContentsChanged(contents: String) {
         dispatcher.send(.textEditorComponentAction(.willEditTextComponentContents(editedText: contents)))
@@ -24,14 +38,6 @@ final class TextEditorComponentActionDispatcher {
 
     func navigateComponentSnapshotView() {
         dispatcher.send(.snapshotAction(.willNavigateComponentSnapshotView))
-    }
-
-    func bindToViewModel(viewModel: any PageComponentViewModelType, updateUIWithEvent: @escaping (Output) -> Void) {
-        self.viewModel = viewModel as? TextEditorComponentViewModel
-        self.viewModel?
-            .bindToView(input: dispatcher.eraseToAnyPublisher())
-            .sink { updateUIWithEvent($0) }
-            .store(in: &subscriptions)
     }
 
     func clearSubscriptions() {

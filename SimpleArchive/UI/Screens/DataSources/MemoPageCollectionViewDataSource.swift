@@ -26,4 +26,8 @@ final class MemoPageComponentCollectionViewDataSource: NSObject, UICollectionVie
     func freedDataSource() {
         pageComponentViewFactory.freedVMS()
     }
+
+    func continuous() {
+        pageComponentViewFactory.continuous()
+    }
 }

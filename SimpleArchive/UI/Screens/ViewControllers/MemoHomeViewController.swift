@@ -292,8 +292,8 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
                     navigationController?.pushViewController(DormantBoxViewController(viewModel: vm), animated: true)
 
                 case .didNavigatePageView(let pageViewModel):
-					let MemoPageViewController = MemoPageViewController(pageViewModel: pageViewModel)
-					navigationController?.pushViewController(MemoPageViewController, animated: true)
+                    let MemoPageViewController = MemoPageViewController(pageViewModel: pageViewModel)
+                    navigationController?.pushViewController(MemoPageViewController, animated: true)
 
                 case .didChangedFileName(let newName, let before, let after):
                     changeRowFile(newName: newName, before: before, after: after)
@@ -301,17 +301,43 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
                 case .didSortDirectoryItems(let sortingResult):
                     sortFileTableRows(sortingResult)
 
-                case .didNavigateSingleTextEditorComponentPageView(let vm):
-                    let singleTextEditorPageViewController = SingleTextEditorPageViewController(
-                        textEditorComponentViewModel: vm)
+                case .didNavigateSingleTextEditorComponentPageView(let vm, let textComponent):
+                    let dispatcher = TextEditorComponentActionDispatcher()
+                    let singleTextEditorPageViewController = SingleTextEditorPageViewController()
+                    let textEditorComponentUIEventHandler = TextEditorComponentViewEventHandler(
+                        contentsView: singleTextEditorPageViewController.textEditorView)
+
+                    dispatcher.bindToViewModel(
+                        viewModel: vm,
+                        UIEventHandler: textEditorComponentUIEventHandler)
+
+                    singleTextEditorPageViewController.configure(dispatcher: dispatcher, component: textComponent)
                     navigationController?.pushViewController(singleTextEditorPageViewController, animated: true)
 
-                case .didNavigateSingleTableComponentPageView(let vm):
-                    let singleTablePageViewController = SingleTablePageViewController(viewModel: vm)
+                case .didNavigateSingleTableComponentPageView(let vm, let tableComponent):
+                    let dispatcher = TableComponentActionDispatcher()
+                    let singleTablePageViewController = SingleTablePageViewController()
+                    let tableComponentViewEventHandler = TableComponentViewEventHandler(
+                        contentsView: singleTablePageViewController.tableComponentContentView)
+
+                    dispatcher.bindToViewModel(
+                        viewModel: vm,
+                        UIEventHandler: tableComponentViewEventHandler)
+
+                    singleTablePageViewController.configure(dispatcher: dispatcher, component: tableComponent)
                     navigationController?.pushViewController(singleTablePageViewController, animated: true)
 
-                case .didNavigateSingleAudioComponentPageView(let vm):
-                    let singleAudioPageViewController = SingleAudioPageViewController(viewModel: vm)
+                case .didNavigateSingleAudioComponentPageView(let vm, let audioComponent):
+                    let dispatcher = AudioComponentActionDispatcher()
+                    let singleAudioPageViewController = SingleAudioPageViewController()
+                    let audioComponentUIEventHandler = AudioComponentViewEventHandler(
+						componentView: singleAudioPageViewController.audioComponentContentView)
+
+                    dispatcher.bindToViewModel(
+                        viewModel: vm,
+                        UIEventHandler: audioComponentUIEventHandler)
+
+                    singleAudioPageViewController.configure(dispatcher: dispatcher, audioComponent: audioComponent)
                     navigationController?.pushViewController(singleAudioPageViewController, animated: true)
             }
         }
@@ -416,7 +442,6 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
     }
 
     private func setupActions(_ rootDirectoryID: UUID) {
-
         fileCreatePlusButton.throttleUIViewTapGesturePublisher(interval: 0)
             .sink { [weak self] _ in
                 guard let self else { return }

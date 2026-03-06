@@ -1,7 +1,7 @@
 import Combine
 import UIKit
 
-protocol PageComponentViewType {
+protocol PageComponentViewType: UIView {
     associatedtype T: UIView
 
     func getContentView() -> T
@@ -17,7 +17,6 @@ protocol PageComponentViewType {
     func detachContentsSnapshotViewDuringDismissFullScreenAnimation()
     func attachContentsSnapshotViewDuringPresentingFullScreenAnimation()
     func presentFullScreenPageComponentView()
-    func reloadComponentContentsWhenRestoreUsingSnapshot(contents: Codable)
     func freedReferences()
 }
 
@@ -37,7 +36,6 @@ where ComponentContentType: UIView, PageComponentType: PageComponent {
 
     var snapshotOverlayViewForMaximizationTransition: UIView?
     var componentContentView: ComponentContentType!
-
     func freedReferences() { subscriptions.removeAll() }
 
     var containerView: UIView = {
@@ -197,30 +195,6 @@ where ComponentContentType: UIView, PageComponentType: PageComponent {
         setupPageComponentCommonActions()
     }
 
-    func commonPageEventHandler(event: SnapshotRestorableComponentEvent) {
-        switch event {
-            case .didManualCapturePageComponent:
-                guard let memoPageVC = parentViewController as? MemoPageViewController else { return }
-                memoPageVC.snapshotCapturePopupView?.state = .complete
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                    memoPageVC.snapshotCapturePopupView?.dismiss()
-                }
-
-            case .didNavigateComponentSnapshotView(let componentSnapshotViewModel):
-                guard let memoPageVC = parentViewController as? MemoPageViewController else { return }
-                let snapshotView = ComponentSnapshotViewController(viewModel: componentSnapshotViewModel)
-
-                snapshotView.hasRestorePublisher
-                    .sink { [weak self] in
-                        guard let self else { return }
-                        reloadComponentContentsWhenRestoreUsingSnapshot(contents: $0)
-                    }
-                    .store(in: &subscriptions)
-
-                memoPageVC.navigationController?.pushViewController(snapshotView, animated: true)
-        }
-    }
-
     private func setupPageComponentCommonActions() {
         redCircleView.throttleUIViewTapGesturePublisher()
             .sink { [weak self] _ in
@@ -295,10 +269,6 @@ where ComponentContentType: UIView, PageComponentType: PageComponent {
     }
 
     func presentFullScreenPageComponentView() {
-        fatalError("thie method must override in subclass.")
-    }
-
-    func reloadComponentContentsWhenRestoreUsingSnapshot(contents: Codable) {
         fatalError("thie method must override in subclass.")
     }
 }

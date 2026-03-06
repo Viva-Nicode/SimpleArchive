@@ -1,11 +1,7 @@
 import Combine
 import UIKit
 
-final class TextEditorComponentView: PageComponentView<UITextView, TextEditorComponent> {
-    static let reuseIdentifier = "TextEditorComponentView"
-
-    private let textEditorActionDispatcher = TextEditorComponentActionDispatcher()
-    private var componentSnapshotActionDispatcher: PassthroughSubject<ComponentSnapshotViewModel.Action, Never>?
+final class TextEditorComponentView: PageComponentView<UITextView, TextEditorComponent>, ContentsReloadableView {
 
     private let snapShotView: UIStackView = {
         let snapShotView = UIStackView()
@@ -52,12 +48,17 @@ final class TextEditorComponentView: PageComponentView<UITextView, TextEditorCom
 
     override func prepareForReuse() {
         super.prepareForReuse()
-        textEditorActionDispatcher.clearSubscriptions()
+        textEditorActionDispatcher?.clearSubscriptions()
     }
+
+    static let reuseIdentifier = "TextEditorComponentView"
+
+    private var textEditorActionDispatcher: TextEditorComponentActionDispatcher?
+    private var componentSnapshotActionDispatcher: PassthroughSubject<ComponentSnapshotViewModel.Action, Never>?
 
     override func freedReferences() {
         super.freedReferences()
-        textEditorActionDispatcher.clearSubscriptions()
+        textEditorActionDispatcher?.clearSubscriptions()
     }
 
     override func setupUI() {
@@ -85,6 +86,24 @@ final class TextEditorComponentView: PageComponentView<UITextView, TextEditorCom
         toolBarView.addSubview(snapShotView)
     }
 
+	func reloadUsingRestoredContents(contents: any Codable) {
+		if let textContents = contents as? String {
+			UIView.animateKeyframes(withDuration: 0.4, delay: 0, options: []) {
+				UIView.addKeyframe(withRelativeStartTime: 0.0, relativeDuration: 0.2) {
+					self.collectionView?.collectionViewLayout.invalidateLayout()
+				}
+				UIView.addKeyframe(withRelativeStartTime: 0.2, relativeDuration: 0.4) {
+					self.componentContentView.alpha = 0
+				}
+			} completion: { _ in
+				self.componentContentView.text = textContents
+				UIView.animate(withDuration: 0.2) {
+					self.componentContentView.alpha = 1
+				}
+			}
+		}
+	}
+	
     override func setupConstraints() {
         super.setupConstraints()
         snapShotView.centerYAnchor.constraint(equalTo: toolBarView.centerYAnchor).isActive = true
@@ -94,7 +113,8 @@ final class TextEditorComponentView: PageComponentView<UITextView, TextEditorCom
     func configureTextComponentForMemoPageView(
         component: TextEditorComponent,
         viewModel: any PageComponentViewModelType,
-        pageActionDispatcher: PassthroughSubject<MemoPageViewInput, Never>
+        pageActionDispatcher: PassthroughSubject<MemoPageViewInput, Never>,
+        textActionDispatcher: TextEditorComponentActionDispatcher
     ) {
         super
             .configure(
@@ -103,12 +123,12 @@ final class TextEditorComponentView: PageComponentView<UITextView, TextEditorCom
                 componentCreateAt: component.creationDate,
                 pageActionDispatcher: pageActionDispatcher)
 
+        self.textEditorActionDispatcher = textActionDispatcher
+
         componentContentView.text = component.componentContents
         captureButton.isEnabled = !component.componentContents.isEmpty
 
         componentContentView.alpha = component.isMinimumHeight ? 0 : 1
-
-        textEditorActionDispatcher.bindToViewModel(viewModel: viewModel, updateUIWithEvent: UIupdateEventHandler)
 
         captureButton.throttleTapPublisher()
             .flatMap { [weak self] _ -> AnyPublisher<String, Never> in
@@ -124,21 +144,21 @@ final class TextEditorComponentView: PageComponentView<UITextView, TextEditorCom
             }
             .sink { [weak self] snapshotDescription in
                 guard let self else { return }
-                textEditorActionDispatcher.captureComponentManual(description: snapshotDescription)
+                textEditorActionDispatcher?.captureComponentManual(description: snapshotDescription)
             }
             .store(in: &subscriptions)
 
         snapshotButton.throttleTapPublisher()
             .sink { [weak self] _ in
                 guard let self else { return }
-                textEditorActionDispatcher.navigateComponentSnapshotView()
+                textEditorActionDispatcher?.navigateComponentSnapshotView()
             }
             .store(in: &subscriptions)
 
         undoButton.throttleTapPublisher(interval: 0.25)
             .sink { [weak self] _ in
                 guard let self else { return }
-                textEditorActionDispatcher.undoTextEditorComponentContents()
+                textEditorActionDispatcher?.undoTextEditorComponentContents()
             }
             .store(in: &subscriptions)
     }
@@ -188,24 +208,6 @@ final class TextEditorComponentView: PageComponentView<UITextView, TextEditorCom
         )
     }
 
-    override func reloadComponentContentsWhenRestoreUsingSnapshot(contents: Codable) {
-        if let textContents = contents as? String {
-            UIView.animateKeyframes(withDuration: 0.4, delay: 0, options: []) {
-                UIView.addKeyframe(withRelativeStartTime: 0.0, relativeDuration: 0.2) {
-                    self.collectionView?.collectionViewLayout.invalidateLayout()
-                }
-                UIView.addKeyframe(withRelativeStartTime: 0.2, relativeDuration: 0.4) {
-                    self.componentContentView.alpha = 0
-                }
-            } completion: { _ in
-                self.componentContentView.text = textContents
-                UIView.animate(withDuration: 0.2) {
-                    self.componentContentView.alpha = 1
-                }
-            }
-        }
-    }
-
     override func presentFullScreenPageComponentView() {
         if let memoPageViewController = parentViewController as? MemoPageViewController {
             memoPageViewController.fullscreenTargetComponentContentsViewFrame = componentContentView.convert(
@@ -225,29 +227,9 @@ final class TextEditorComponentView: PageComponentView<UITextView, TextEditorCom
     }
 }
 
-// MARK: - Event Handler
-extension TextEditorComponentView {
-    private func textEditorComponentEventHandler(_ event: TextEditorComponentViewModel.Event) {
-        switch event {
-            case .didUndoTextComponentContents(let undidText):
-                componentContentView.text = undidText
-        }
-    }
-
-    private func UIupdateEventHandler(_ event: TextEditorComponentViewModelEvent) {
-        switch event {
-            case .textEditorComponentEvent(let event):
-                textEditorComponentEventHandler(event)
-
-            case .snapshotEvent(let event):
-                commonPageEventHandler(event: event)
-        }
-    }
-}
-
 extension TextEditorComponentView: UITextViewDelegate {
     func textViewDidChange(_ textView: UITextView) {
-        textEditorActionDispatcher.saveTextEditorComponentContentsChanged(contents: textView.text)
+        textEditorActionDispatcher?.saveTextEditorComponentContentsChanged(contents: textView.text)
         captureButton.isEnabled = !textView.text.isEmpty
     }
 }

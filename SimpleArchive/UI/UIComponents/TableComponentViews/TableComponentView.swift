@@ -1,12 +1,9 @@
 import Combine
 import UIKit
 
-final class TableComponentView: PageComponentView<TableComponentContentView, TableComponent> {
-    static let reuseIdentifier = "reuseTableComponentIdentifier"
+protocol ContentsReloadableView { func reloadUsingRestoredContents(contents: Codable) }
 
-    private let tableActionDispatcher = TableComponentActionDispatcher()
-    private var componentSnapshotActionDispatcher: PassthroughSubject<ComponentSnapshotViewModel.Action, Never>?
-
+final class TableComponentView: PageComponentView<TableComponentContentView, TableComponent>, ContentsReloadableView {
     private let snapShotView: UIStackView = {
         let snapShotView = UIStackView()
         snapShotView.axis = .horizontal
@@ -45,13 +42,18 @@ final class TableComponentView: PageComponentView<TableComponentContentView, Tab
     override func prepareForReuse() {
         super.prepareForReuse()
         componentContentView.prepareForReuse()
-        tableActionDispatcher.clearSubscriptions()
+        tableActionDispatcher?.clearSubscriptions()
     }
 
     override func freedReferences() {
         super.freedReferences()
-        tableActionDispatcher.clearSubscriptions()
+        tableActionDispatcher?.clearSubscriptions()
     }
+
+    static let reuseIdentifier = "reuseTableComponentIdentifier"
+
+    private var tableActionDispatcher: TableComponentActionDispatcher?
+    private var componentSnapshotActionDispatcher: PassthroughSubject<ComponentSnapshotViewModel.Action, Never>?
 
     override func setupUI() {
         componentContentView = TableComponentContentView()
@@ -78,7 +80,8 @@ final class TableComponentView: PageComponentView<TableComponentContentView, Tab
     func configureTableComponentForMemoPageView(
         component: TableComponent,
         viewModel: any PageComponentViewModelType,
-        pageActionDispatcher: PassthroughSubject<MemoPageViewInput, Never>
+        pageActionDispatcher: PassthroughSubject<MemoPageViewInput, Never>,
+        actionDispatcher: TableComponentActionDispatcher
     ) {
         super
             .configure(
@@ -87,15 +90,13 @@ final class TableComponentView: PageComponentView<TableComponentContentView, Tab
                 componentCreateAt: component.creationDate,
                 pageActionDispatcher: pageActionDispatcher)
 
+        self.tableActionDispatcher = actionDispatcher
+
         componentContentView.configure(
             columns: component.componentContents.columns,
             rows: component.componentContents.cellValues,
-            actionDispatcher: tableActionDispatcher,
+            actionDispatcher: actionDispatcher,
             isMinimum: component.isMinimumHeight)
-
-        tableActionDispatcher.bindToViewModel(
-            viewModel: viewModel,
-            updateUIWithEvent: UIupdateEventHandler)
 
         captureButton.throttleTapPublisher()
             .flatMap { [weak self] _ -> AnyPublisher<String, Never> in
@@ -111,14 +112,14 @@ final class TableComponentView: PageComponentView<TableComponentContentView, Tab
             }
             .sink { [weak self] snapshotDescription in
                 guard let self else { return }
-                tableActionDispatcher.captureComponentManual(description: snapshotDescription)
+                tableActionDispatcher?.captureComponentManual(description: snapshotDescription)
             }
             .store(in: &subscriptions)
 
         snapshotButton.throttleTapPublisher()
             .sink { [weak self] _ in
                 guard let self else { return }
-                tableActionDispatcher.navigateComponentSnapshotView()
+                tableActionDispatcher?.navigateComponentSnapshotView()
             }
             .store(in: &subscriptions)
     }
@@ -159,11 +160,7 @@ final class TableComponentView: PageComponentView<TableComponentContentView, Tab
         snapshotButton.removeFromSuperview()
     }
 
-    override func setMinimizeState(_ isMinimize: Bool) {
-        componentContentView.minimizeContentView(isMinimize, isAnimated: true)
-    }
-
-    override func reloadComponentContentsWhenRestoreUsingSnapshot(contents: Codable) {
+    func reloadUsingRestoredContents(contents: Codable) {
         if let tableContents = contents as? TableComponentContents {
             componentContentView.alpha = 0
 
@@ -186,7 +183,7 @@ final class TableComponentView: PageComponentView<TableComponentContentView, Tab
             componentContentView.configure(
                 columns: tableContents.columns,
                 rows: tableContents.cellValues,
-                actionDispatcher: tableActionDispatcher,
+                actionDispatcher: tableActionDispatcher!,
                 isMinimum: false)
 
             UIView.animateKeyframes(withDuration: 0.8, delay: 0, options: []) {
@@ -199,7 +196,11 @@ final class TableComponentView: PageComponentView<TableComponentContentView, Tab
             }
         }
     }
-	
+
+    override func setMinimizeState(_ isMinimize: Bool) {
+        componentContentView.minimizeContentView(isMinimize, isAnimated: true)
+    }
+
     override func presentFullScreenPageComponentView() {
         if let memoPageViewController = parentViewController as? MemoPageViewController {
             memoPageViewController.fullscreenTargetComponentContentsViewFrame = componentContentView.convert(
@@ -214,55 +215,6 @@ final class TableComponentView: PageComponentView<TableComponentContentView, Tab
             fullscreenComponentViewController.transitioningDelegate = memoPageViewController
 
             memoPageViewController.present(fullscreenComponentViewController, animated: true)
-        }
-    }
-}
-
-// MARK: - Event Handler
-extension TableComponentView {
-    private func tableComponentEventHandler(_ event: TableComponentViewModel.Event) {
-        switch event {
-            case .didAppendRowToTableView(let row):
-                componentContentView.appendEmptyRowToStackView(rowID: row.id)
-
-            case .didAppendColumnToTableView(let column):
-                componentContentView.appendEmptyColumnToStackView(column: column)
-
-            case .didApplyTableCellValueChanges(let cellCoord, let cellValue):
-                componentContentView.updateUILabelText(
-                    rowIndex: cellCoord.rowIndex,
-                    cellIndex: cellCoord.columnIndex,
-                    with: cellValue)
-
-            case .didRemoveRowToTableView(let rowIdx):
-                componentContentView.removeTableComponentRowView(idx: rowIdx)
-
-            case .didApplyTableColumnChanges(let columns):
-                componentContentView.applyColumns(columns: columns)
-
-            case .didPresentTableColumnEditPopupView(let columns, let columnIndexTapped):
-                let tableComponentColumnEditPopupView = TableComponentColumnEditPopupView(
-                    columns: columns,
-                    tappedColumnIndex: columnIndexTapped)
-
-                tableComponentColumnEditPopupView.confirmButtonPublisher
-                    .sink { [weak self] colums in
-                        guard let self else { return }
-                        tableActionDispatcher.applyColumnChanges(editedColumns: colums)
-                    }
-                    .store(in: &subscriptions)
-
-                tableComponentColumnEditPopupView.show()
-        }
-    }
-
-    private func UIupdateEventHandler(_ event: TableComponentViewModelEvent) {
-        switch event {
-            case .tableComponentEvent(let tableComponentEvent):
-                tableComponentEventHandler(tableComponentEvent)
-
-            case .snapshotEvent(let event):
-                commonPageEventHandler(event: event)
         }
     }
 }

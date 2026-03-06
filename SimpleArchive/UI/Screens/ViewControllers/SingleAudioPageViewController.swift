@@ -2,8 +2,7 @@ import Combine
 import SFBAudioEngine
 import UIKit
 
-final class SingleAudioPageViewController: UIViewController, ViewControllerType {
-
+final class SingleAudioPageViewController: UIViewController, AudioControlBarActionStrategy {
     private(set) var titleLable: UILabel = {
         let titleLabel = UILabel()
         titleLabel.font = .systemFont(ofSize: 24, weight: .bold)
@@ -36,129 +35,44 @@ final class SingleAudioPageViewController: UIViewController, ViewControllerType 
         return audioComponentContentView
     }()
 
-    typealias Input = SingleAudioPageInput
-    typealias ViewModelType = SingleAudioPageViewModel
-
-    var input = PassthroughSubject<SingleAudioPageInput, Never>()
-    var viewModel: SingleAudioPageViewModel
+    var dispatcher: AudioComponentActionDispatcher?
     var subscriptions = Set<AnyCancellable>()
 
-    private var audioControlBar = AudioControlBarView()
-    private var audioComponentDataSource: AudioComponentDataSource!
-
-    override func viewDidLoad() {
-        bind()
-        input.send(.viewDidLoad)
-    }
-
-    init(viewModel: SingleAudioPageViewModel) {
-        self.viewModel = viewModel
+    init() {
         super.init(nibName: nil, bundle: nil)
+        setupUI()
+        setupConstraints()
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
-    deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
 
-    func bind() {
-        let output = viewModel.subscribe(input: input.eraseToAnyPublisher())
-
-        output.sink { [weak self] result in
-            guard let self else { return }
-
-            switch result {
-                case .viewDidLoad(let pageTitle, let audioContentsData):
-                    //                    audioComponentDataSource = AudioComponentDataSource(audioContentsData: audioContentsData)
-                    setupUI(pageTitle: pageTitle)
-                    setupConstraints()
-                //                    audioComponentContentView.configure(
-                //                        datasource: audioComponentDataSource,
-                //                        dispatcher: SinglePageAudioComponentActionDispatcher(subject: input)
-                //                    )
-
-                case .didPresentInvalidDownloadCode:
-                    audioComponentContentView
-                        .audioDownloadStatePopupView?
-                        .setStateToFail()
-
-                case .didAppendAudioTrackRows(let appededIndices):
-                    insertNewAudioTracks(appededIndices: appededIndices)
-
-                case .didPlayAudioTrack(let trackIndex, let duration, let metadata, let waveformData):
-                    playAudioTrack(
-                        trackIndex: trackIndex,
-                        duration: duration,
-                        audioMetadata: metadata,
-                        audioWaveformData: waveformData)
-
-                case .didApplyAudioMetadataChanges(
-                    let
-                        trackIndex, let editedMetadata, let isNowPlayingTrack, let trackIndexAfterEdit):
-                    applyAudioTrackMetadataChanges(
-                        targetTrackIndex: trackIndex,
-                        metadata: editedMetadata,
-                        isNowPlayingTrack: isNowPlayingTrack,
-                        trackIndexAfterEditing: trackIndexAfterEdit)
-
-                case .didSortAudioTracks(let before, let after):
-                    sortAudioTracks(before: before, after: after)
-
-                case .didUpdateAudioDownloadProgress(let progress):
-                    audioComponentContentView
-                        .audioDownloadStatePopupView?
-                        .progress
-                        .setProgress(progress, animated: true)
-
-                case .didToggleAudioPlayingState(let isPlaying, let nowPlayingAudioIndex):
-                    setAudioPlayingState(
-                        isPlaying: isPlaying, nowPlayingAudioIndex: nowPlayingAudioIndex!)
-
-                case .didSeekAudioTrack(let seek, let totalTime, let nowPlayingAudioIndex):
-                    performWithAudioTrackRowAt(nowPlayingAudioIndex!) { row in
-                        row.audioVisualizer.seekVisuzlization(rate: seek / totalTime!)
-                    }
-                    audioControlBar.seek(seek: seek)
-
-                case .didRemoveAudioTrack(let trackIndex):
-                    audioComponentContentView.removeRow(trackIndex: trackIndex)
-
-                case .didRemoveAudioTrackAndPlayNextAudio(
-                    let
-                        removeTrackIndex, let nextPlayTrackIndex, let duration, let metadata, let waveformData):
-                    removeAudioTrackAndPlayNextAudio(
-                        removeTrackIndex: removeTrackIndex,
-                        nextPlayTrackIndex: nextPlayTrackIndex,
-                        duration: duration,
-                        metadata: metadata,
-                        audioWaveformData: waveformData)
-
-                case .didRemoveAudioTrackAndStopPlaying(let removeTrackIndex):
-                    removeAudioTrackAndStopPlaying(removeTrackIndex: removeTrackIndex)
-            }
+        let coordinator = navigationController?.transitionCoordinator ?? transitionCoordinator
+        let targetWindow = view.window ?? navigationController?.view.window
+        if let host = targetWindow as? HostUIWindow {
+            host.setStrategy(st: self, coordinatedBy: coordinator)
         }
-        .store(in: &subscriptions)
     }
 
-    private func setupUI(pageTitle: String) {
+    deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
+
+    func setupUI() {
         view.backgroundColor = .systemBackground
         view.addSubview(backgroundImageView)
         backgroundImageView.alpha = 0
         backgroundImageWindow.backgroundColor = traitCollection.userInterfaceStyle == .dark ? .black : .white
         backgroundImageView.addSubview(backgroundImageWindow)
 
-        titleLable.text = pageTitle
         view.addSubview(titleLable)
         view.addSubview(audioComponentContentView)
         audioComponentContentView.backgroundColor = .clear
-
-        view.addSubview(audioControlBar)
-
-        audioControlBar.isHidden = true
     }
 
-    private func setupConstraints() {
+    func setupConstraints() {
         NSLayoutConstraint.activate([
             backgroundImageView.topAnchor.constraint(equalTo: view.topAnchor),
             backgroundImageView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
@@ -177,164 +91,53 @@ final class SingleAudioPageViewController: UIViewController, ViewControllerType 
             audioComponentContentView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             audioComponentContentView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             audioComponentContentView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-
-            audioControlBar.widthAnchor.constraint(equalToConstant: UIConstants.audioControlBarViewWidth),
-            audioControlBar.heightAnchor.constraint(equalToConstant: UIConstants.audioControlBarViewHeight),
-            audioControlBar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
-            audioControlBar.centerXAnchor.constraint(equalTo: view.centerXAnchor),
         ])
     }
 
-    private func playAudioTrack(
-        trackIndex: Int,
-        duration: TimeInterval?,
+    func configure(dispatcher: AudioComponentActionDispatcher, audioComponent: AudioComponent) {
+        self.dispatcher = dispatcher
+        titleLable.text = audioComponent.title
+        audioComponentContentView.configure(audioComponent: audioComponent, dispatcher: dispatcher)
+    }
+
+    func active(
+        audioControlBar: AudioControlBarView,
         audioMetadata: AudioTrackMetadata,
-        audioWaveformData: AudioWaveformData?
+        dispatcher: AudioComponentActionDispatcher?
     ) {
-        audioComponentContentView
-            .audioTrackTableView
-            .visibleCells
-            .map { $0 as! AudioTableRowView }
-            .forEach { $0.audioVisualizer.removeVisuzlization() }
-
-        if let thumbnailImageData = audioMetadata.thumbnail {
-            updateBackgroundImage(with: UIImage(data: thumbnailImageData))
+        if let thumbnailData = audioMetadata.thumbnail, let thumbnail = UIImage(data: thumbnailData) {
+            updateBackgroundImage(with: thumbnail)
         }
 
         audioControlBar.isHidden = false
-
-        performWithAudioTrackRowAt(trackIndex) { row in
-            if let audioWaveformData {
-                row.audioVisualizer.activateAudioVisualizer(waveFormData: audioWaveformData)
-            }
-        }
-        //        audioControlBar.state = .play(
-        //            metadata: audioMetadata,
-        //            duration: duration,
-        //            dispatcher: SinglePageAudioComponentActionDispatcher(subject: input)
-        //        )
+        audioControlBar.state = .play(metadata: audioMetadata, dispatcher: dispatcher)
     }
 
-    private func applyAudioTrackMetadataChanges(
-        targetTrackIndex: Int,
-        metadata: AudioTrackMetadata,
-        isNowPlayingTrack: Bool,
-        trackIndexAfterEditing: Int?
+    func applyMetadataChange(
+        audioControlBar: AudioControlBarView,
+        audioMetadata: AudioTrackMetadata
     ) {
-        performWithAudioTrackRowAt(targetTrackIndex) { row in
-            row.updateAudioMetadata(metadata)
+        if let thumbnailData = audioMetadata.thumbnail, let thumbnail = UIImage(data: thumbnailData) {
+            updateBackgroundImage(with: thumbnail)
         }
 
-        if isNowPlayingTrack {
-            if let thumbnailImageData = metadata.thumbnail {
-                updateBackgroundImage(with: UIImage(data: thumbnailImageData))
-            }
-            audioControlBar.applyUpdatedMetadata(with: metadata)
-        }
-
-        if let trackIndexAfterEditing {
-            audioComponentContentView.audioTrackTableView.performBatchUpdates {
-                let src = IndexPath(row: targetTrackIndex, section: .zero)
-                let des = IndexPath(row: trackIndexAfterEditing, section: .zero)
-                self.audioComponentContentView.audioTrackTableView.moveRow(at: src, to: des)
-            }
-        }
+        audioControlBar.applyUpdatedMetadata(with: audioMetadata)
     }
 
-    private func setAudioPlayingState(isPlaying: Bool, nowPlayingAudioIndex: Int) {
-        audioControlBar.state = isPlaying ? .resume : .pause
-        performWithAudioTrackRowAt(nowPlayingAudioIndex) { row in
-            if isPlaying {
-                row.audioVisualizer.resumeVisuzlization()
-            } else {
-                row.audioVisualizer.pauseVisuzlization()
-            }
-        }
-    }
-
-    private func insertNewAudioTracks(appededIndices: [Int]) {
-        audioComponentContentView
-            .audioDownloadStatePopupView?
-            .dismiss()
-        audioComponentContentView.insertRow(trackIndices: appededIndices)
-    }
-
-    private func removeAudioTrackAndPlayNextAudio(
-        removeTrackIndex: Int,
-        nextPlayTrackIndex: Int,
-        duration: TimeInterval?,
-        metadata: AudioTrackMetadata,
-        audioWaveformData: AudioWaveformData?
-    ) {
-        performWithAudioTrackRowAt(removeTrackIndex) { row in
-            row.audioVisualizer.removeVisuzlization()
-        }
-
-        audioComponentContentView.removeRow(trackIndex: removeTrackIndex)
-
-        if let thumbnailImageData = metadata.thumbnail {
-            updateBackgroundImage(with: UIImage(data: thumbnailImageData))
-        }
-
-        audioControlBar.isHidden = false
-
-        performWithAudioTrackRowAt(nextPlayTrackIndex) { row in
-            if let audioWaveformData {
-                row.audioVisualizer.activateAudioVisualizer(waveFormData: audioWaveformData)
-            }
-        }
-        //        audioControlBar.state = .play(
-        //            metadata: metadata,
-        //            duration: duration,
-        //            dispatcher: SinglePageAudioComponentActionDispatcher(subject: input)
-        //        )
-    }
-
-    private func removeAudioTrackAndStopPlaying(removeTrackIndex: Int) {
-        audioComponentContentView.removeRow(trackIndex: removeTrackIndex)
-        audioControlBar.state = .stop
-        updateBackgroundImage(with: nil)
-    }
-
-    private func sortAudioTracks(before: [String], after: [String]) {
-        let trackTable = audioComponentContentView.audioTrackTableView
-        trackTable.performBatchUpdates {
-            for (newIndex, item) in after.enumerated() {
-                if let oldIndex = before.firstIndex(of: item),
-                    oldIndex != newIndex
-                {
-                    let from = IndexPath(row: oldIndex, section: 0)
-                    let to = IndexPath(row: newIndex, section: 0)
-
-                    trackTable.moveRow(at: from, to: to)
-                }
-            }
-        }
-    }
-
-    private func updateBackgroundImage(with image: UIImage?) {
+    private func updateBackgroundImage(with image: UIImage) {
         UIView.transition(
             with: self.backgroundImageView, duration: 1, options: .transitionCrossDissolve,
             animations: {
-                self.backgroundImageView.image = image?.blurred(radius: 7)
+                self.backgroundImageView.image = image.blurred(radius: 7)
             }, completion: nil)
 
         UIView.animate(
             withDuration: 1,
             animations: {
                 self.backgroundImageWindow.alpha =
-                    image == nil ? 0 : self.traitCollection.userInterfaceStyle == .dark ? 0.4 : 0.3
-                self.backgroundImageView.alpha = image == nil ? 0 : 1
+                    self.traitCollection.userInterfaceStyle == .dark ? 0.4 : 0.3
+                self.backgroundImageView.alpha = 1
             }
         )
-    }
-
-    private func performWithAudioTrackRowAt(_ index: Int, task: (AudioTableRowView) -> Void) {
-        let indexPath = IndexPath(row: index, section: .zero)
-        if let row = audioComponentContentView.audioTrackTableView.cellForRow(at: indexPath),
-            let audioTableRow = row as? AudioTableRowView
-        {
-            task(audioTableRow)
-        }
     }
 }

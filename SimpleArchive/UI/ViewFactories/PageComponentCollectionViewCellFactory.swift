@@ -40,10 +40,26 @@ final class PageComponentCollectionViewCellFactory: PageComponentViewFactoryType
                         return viewModel
                     }()
 
+                let textActionDispatcher: TextEditorComponentActionDispatcher =
+                    componentActionDispatcherCache[textEditorComponent.id] as? TextEditorComponentActionDispatcher
+                    ?? TextEditorComponentActionDispatcher()
+
+                textActionDispatcher.clearSubscriptions()
+
+                let textEditorComponentUIEventHandler = TextEditorComponentViewEventHandler(
+                    contentsView: textEditorComponentView.componentContentView)
+
+                textActionDispatcher.bindToViewModel(
+                    viewModel: textEditorComponentViewModel,
+                    UIEventHandler: textEditorComponentUIEventHandler)
+
+                componentActionDispatcherCache[textEditorComponent.id] = textActionDispatcher
+
                 textEditorComponentView.configureTextComponentForMemoPageView(
                     component: textEditorComponent,
                     viewModel: textEditorComponentViewModel,
-                    pageActionDispatcher: pageActionDispatcher)
+                    pageActionDispatcher: pageActionDispatcher,
+                    textActionDispatcher: textActionDispatcher)
 
                 return textEditorComponentView
 
@@ -64,10 +80,26 @@ final class PageComponentCollectionViewCellFactory: PageComponentViewFactoryType
                         return viewModel
                     }()
 
+                let tableActionDispatcher: TableComponentActionDispatcher =
+                    componentActionDispatcherCache[tableComponent.id] as? TableComponentActionDispatcher
+                    ?? TableComponentActionDispatcher()
+
+                tableActionDispatcher.clearSubscriptions()
+
+                let tableComponentUIEventHandler = TableComponentViewEventHandler(
+                    contentsView: tableComponentView.componentContentView)
+
+                tableActionDispatcher.bindToViewModel(
+                    viewModel: tableComponentViewModel,
+                    UIEventHandler: tableComponentUIEventHandler)
+
+                componentActionDispatcherCache[tableComponent.id] = tableActionDispatcher
+
                 tableComponentView.configureTableComponentForMemoPageView(
                     component: tableComponent,
                     viewModel: tableComponentViewModel,
-                    pageActionDispatcher: pageActionDispatcher)
+                    pageActionDispatcher: pageActionDispatcher,
+                    actionDispatcher: tableActionDispatcher)
 
                 return tableComponentView
 
@@ -94,13 +126,15 @@ final class PageComponentCollectionViewCellFactory: PageComponentViewFactoryType
 
                 audioActionDispatcher.clearSubscriptions()
 
-                let audioComponentUIEventHandler = AudioComponentViewEventHandler(componentView: audioComponentView)
+                let audioComponentUIEventHandler = AudioComponentViewEventHandler(
+                    componentView: audioComponentView.componentContentView)
 
                 audioActionDispatcher.bindToViewModel(
                     viewModel: audioComponentViewModel,
                     UIEventHandler: audioComponentUIEventHandler)
 
-				componentActionDispatcherCache[audioComponent.id] = audioActionDispatcher
+                componentActionDispatcherCache[audioComponent.id] = audioActionDispatcher
+                AudioComponentView.order[audioComponent.id] = indexPath
 
                 audioComponentView.configureAudioComponentForMemoPageView(
                     component: audioComponent,
@@ -115,7 +149,20 @@ final class PageComponentCollectionViewCellFactory: PageComponentViewFactoryType
     }
 
     func freedVMS() {
-        pageComponentVMCache.values.forEach { $0.clearSubscriptions() }
+		pageComponentVMCache.values.forEach { $0.clearSubscriptions() }
+		componentActionDispatcherCache.values.forEach{ $0.clearSubscriptions() } 
+    }
+
+    func continuous() {
+        let activeAudioComponentIDs = pageComponentVMCache.compactMap { key, vm -> UUID? in
+            guard let activeAudioVM = vm as? AudioComponentViewModel else { return nil }
+            return activeAudioVM.isActiveAudioViewModel ? key : nil
+        }
+
+        activeAudioComponentIDs.forEach {
+            pageComponentVMCache.removeValue(forKey: $0)
+            componentActionDispatcherCache.removeValue(forKey: $0)
+        }
     }
 
     func setIndexPath(indexPath: IndexPath) {

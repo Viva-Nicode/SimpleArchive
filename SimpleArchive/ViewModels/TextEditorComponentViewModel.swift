@@ -74,10 +74,6 @@ final class TextEditorComponentViewModel: PageComponentViewModelType {
 
         return eventOutput.eraseToAnyPublisher()
     }
-
-    var singleTextEditorComponentViewControllerInitialData: (title: String, createdDate: Date, contents: String) {
-        (title, createdDate, contents)
-    }
 }
 
 extension TextEditorComponentViewModel {

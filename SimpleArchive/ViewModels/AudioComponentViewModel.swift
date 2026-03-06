@@ -2,10 +2,10 @@ import Combine
 import Foundation
 import UIKit
 
-final class AudioComponentViewModel: PageComponentViewModelType {
-    var eventOutput = PassthroughSubject<Event, Never>()
+class AudioComponentViewModel: PageComponentViewModelType {
     var subscriptions = Set<AnyCancellable>()
 
+    private var eventOutput = PassthroughSubject<Event, Never>()
     private var audioDataManager: AudioComponentDataManger
     private var soundPlayer: AudioComponentSoundPlayerType
     private var vmIdentifier: ObjectIdentifier { .init(self) }
@@ -62,11 +62,21 @@ final class AudioComponentViewModel: PageComponentViewModelType {
                 case .willRemoveAudioTrack(let trackIndex):
                     removeAudioTrack(trackIndex: trackIndex)
 
+                case .willScrollToActiveAudioTrack:
+                    if let activeTrackID = soundPlayer.activeTrackID,
+                        let activeAudioTrackIndex = audioDataManager[activeTrackID]
+                    {
+                        eventOutput.send(.didScrollToActiveAudioTrack(activeAudioTrackIndex))
+                    }
             }
         }
         .store(in: &subscriptions)
 
         return eventOutput.eraseToAnyPublisher()
+    }
+
+    var isActiveAudioViewModel: Bool {
+        soundPlayer.nowActiveAudioVMIdentifier == vmIdentifier
     }
 
     private func downloadAudioTracksUsingCode(using code: String) {
@@ -98,7 +108,6 @@ final class AudioComponentViewModel: PageComponentViewModelType {
                 }
             }
             .store(in: &subscriptions)
-
     }
 
     private func playAudioTrack(trackIndex: Int) {
@@ -124,7 +133,10 @@ final class AudioComponentViewModel: PageComponentViewModelType {
             let activeTrackIndex = audioDataManager[activeTrackID]
         {
             eventOutput.send(
-                .didToggleAudioPlayingState(activeTrackIndex: activeTrackIndex, playbackState: playbackState)
+                .didToggleAudioPlayingState(
+                    activeTrackIndex: activeTrackIndex,
+                    playbackState: playbackState
+                )
             )
         }
     }
@@ -223,6 +235,7 @@ extension AudioComponentViewModel {
         case willSortAudioTracks(AudioTrackSortBy)
         case willMoveAudioTrackOrder(Int, Int)
         case willPresentEditAudioMetaDataPopupView(trackIndex: Int)
+        case willScrollToActiveAudioTrack
     }
 
     enum Event {
@@ -238,5 +251,6 @@ extension AudioComponentViewModel {
         case didApplyAudioMetadataChanges(editingResult: MetaDataEditingResult, metadata: AudioTrackMetadata)
         case didInactiveAudioComponent
         case didPresentEditAudioMetaDataPopupView(AudioTrackMetadata)
+        case didScrollToActiveAudioTrack(Int)
     }
 }

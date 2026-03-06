@@ -86,10 +86,10 @@ final class AudioComponentContentView: UIView, UIDocumentPickerDelegate {
     var toolBarStackViewHeightConstraint: NSLayoutConstraint?
     var sortOptionStackViewHeightConstraint: NSLayoutConstraint?
 
-    private var dispatcher: AudioComponentActionDispatcher?
+    private(set) var dispatcher: AudioComponentActionDispatcher?
     private var downloadAudioActionSubscription: AnyCancellable?
-
     private var selectedAudioTrackIndexPath: IndexPath?
+    private var audioComponentDataSource: AudioComponentDataSource?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -204,10 +204,9 @@ final class AudioComponentContentView: UIView, UIDocumentPickerDelegate {
     }
 
     func configure(
-        trackCount: Int,
-        isFolding: Bool,
-        sortBy: AudioTrackSortBy,
+        audioComponent: AudioComponent,
         dispatcher: AudioComponentActionDispatcher,
+        isComponent: Bool = false
     ) {
         self.dispatcher = dispatcher
 
@@ -215,11 +214,13 @@ final class AudioComponentContentView: UIView, UIDocumentPickerDelegate {
         self.audioTrackTableView.dragDelegate = self
         self.audioTrackTableView.dropDelegate = self
         self.audioTrackTableView.isPrefetchingEnabled = false
+        audioComponentDataSource = AudioComponentDataSource(audioPageComponent: audioComponent)
+        audioTrackTableView.dataSource = audioComponentDataSource
 
-        self.audioTrackTotal = trackCount
+        self.audioTrackTotal = audioComponent.componentContents.tracks.count
         totalAudioCountLabel.text = "\(audioTrackTotal) audios in total"
 
-        switch sortBy {
+        switch audioComponent.componentContents.sortBy {
             case .name:
                 sortByNameButton.setTitleColor(.label, for: .normal)
 
@@ -230,56 +231,13 @@ final class AudioComponentContentView: UIView, UIDocumentPickerDelegate {
                 break
         }
 
-        self.alpha = isFolding ? 0 : 1
-        self.toolBarStackViewHeightConstraint?.constant = isFolding ? 0 : 45
-        self.sortOptionStackViewHeightConstraint?.constant = isFolding ? 0 : 30
-        self.addbuttonHeightConstraint?.constant = isFolding ? 0 : 44
-    }
-
-    func activeAudioControlBar(audioMetadata: AudioTrackMetadata) {
-        if let memoPageViewController = parentViewController as? MemoPageViewController,
-            let dispatcher
-        {
-            let audioControlBar = memoPageViewController.audioControlBar
-
-            audioControlBar.isHidden = false
-            audioControlBar.state = .play(
-                metadata: audioMetadata,
-                dispatcher: dispatcher)
+        if isComponent {
+            let isFolding = audioComponent.isMinimumHeight
+            self.alpha = isFolding ? 0 : 1
+            self.toolBarStackViewHeightConstraint?.constant = isFolding ? 0 : 45
+            self.sortOptionStackViewHeightConstraint?.constant = isFolding ? 0 : 30
+            self.addbuttonHeightConstraint?.constant = isFolding ? 0 : 44
         }
-    }
-
-    func applyMetaDataChange(editedMetadata: AudioTrackMetadata) {
-        dispatcher?.changeAudioTrackMetadata(editMetadata: editedMetadata)
-    }
-
-    // Single 전용
-    func configure(
-        datasource: AudioComponentDataSource,
-        dispatcher: AudioComponentActionDispatcher,
-    ) {
-        //        let audioComponent = datasource.audioPageComponent
-        //        self.dispatcher = dispatcher
-        //        self.componentID = audioComponent.id
-        //
-        //        self.audioTrackTableView.dataSource = datasource
-        //        self.audioTrackTableView.delegate = self
-        //        self.audioTrackTableView.dragDelegate = self
-        //        self.audioTrackTableView.dropDelegate = self
-        //
-        //        self.audioTrackTotal = audioComponent.componentContents.tracks.count
-        //        totalAudioCountLabel.text = "\(audioTrackTotal) audios in total"
-        //
-        //        switch audioComponent.componentContents.sortBy {
-        //            case .name:
-        //                sortByNameButton.setTitleColor(.label, for: .normal)
-        //
-        //            case .createDate:
-        //                sortBycreateButton.setTitleColor(.label, for: .normal)
-        //
-        //            case .manual:
-        //                break
-        //        }
     }
 
     func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
@@ -306,7 +264,6 @@ final class AudioComponentContentView: UIView, UIDocumentPickerDelegate {
 }
 
 extension AudioComponentContentView: UITableViewDelegate {
-
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat { 65 }
 
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath)
@@ -342,9 +299,19 @@ extension AudioComponentContentView: UITableViewDelegate {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
                 self.selectedAudioTrackIndexPath = nil
                 tableView.deselectRow(at: indexPath, animated: true)
-			}
+            }
         }
         return indexPath
+    }
+
+    func tableView(
+        _ tableView: UITableView,
+        didEndDisplaying cell: UITableViewCell,
+        forRowAt indexPath: IndexPath
+    ) {
+        if let row = cell as? AudioTableRowView {
+            row.audioVisualizer.removeVisuzlization()
+        }
     }
 }
 
@@ -361,7 +328,6 @@ extension AudioComponentContentView: UITableViewDragDelegate {
 }
 
 extension AudioComponentContentView: UITableViewDropDelegate {
-
     func tableView(_ tableView: UITableView, performDropWith coordinator: any UITableViewDropCoordinator) {
         guard let destinationIndexPath = coordinator.destinationIndexPath else { return }
 

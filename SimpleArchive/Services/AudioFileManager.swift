@@ -45,12 +45,10 @@ final class AudioFileManager: NSObject, AudioFileManagerType {
     static func getShared<UIT>(_ callerType: Any.Type) -> UIT? {
         let AudioComponentInteractorDependency =
             callerType == AudioComponentDataManger.self && UIT.self == AudioFileManagerType.self
-        let SingleAudioPageViewModelDependency =
-            callerType == SingleAudioPageViewModel.self && UIT.self == AudioFileManagerType.self
         let DormantBoxViewModelDependency =
             callerType == DormantBoxViewModel.self && UIT.self == AudioFileRemover.self
 
-        if AudioComponentInteractorDependency || SingleAudioPageViewModelDependency || DormantBoxViewModelDependency {
+        if AudioComponentInteractorDependency || DormantBoxViewModelDependency {
             return self.shared as? UIT
         } else {
             return nil

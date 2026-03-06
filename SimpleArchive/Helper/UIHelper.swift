@@ -1,5 +1,27 @@
 import UIKit
 
+extension UIView {
+	func findSuperViewMatched<T>() -> T? {
+		var current: UIView? = self
+		while let view = current {
+			if let reloadable = view as? T {
+				return reloadable
+			}
+			current = view.superview
+		}
+
+		var responder: UIResponder? = self
+		while let r = responder {
+			if let vc = r as? UIViewController, let reloadable = vc as? T {
+				return reloadable
+			}
+			responder = r.next
+		}
+
+		return nil
+	}
+}
+
 extension UIColor {
     var toHexString: String? {
         var red: CGFloat = 0

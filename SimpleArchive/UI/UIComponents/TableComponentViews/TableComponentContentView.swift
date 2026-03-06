@@ -99,7 +99,7 @@ final class TableComponentContentView: UIView, UIScrollViewDelegate {
     private var editCellPopupViewconfirmButtonStore: AnyCancellable?
     private var editCellPopupViewRemoveRowButtonStore: AnyCancellable?
 
-    private var actionDispatcher: TableComponentActionDispatcher?
+    private(set) var actionDispatcher: TableComponentActionDispatcher?
     private var subscriptions = Set<AnyCancellable>()
 
     // MARK: - Minimization
@@ -397,32 +397,31 @@ final class TableComponentContentView: UIView, UIScrollViewDelegate {
             }
         }
     }
-	
-	func minimizeContentView(_ isMinimum: Bool, isAnimated: Bool) {
-		if isMinimum {
-			UIView.animate(withDuration: isAnimated ? 0.3 : 0.0) { [weak self] in
-				guard let self else { return }
-				tableComponentToolBarStackView.alpha = 0
-				columnScrollView.alpha = 0
-				rowScrollView.alpha = 0
 
-				heightConstraints.forEach { $0.0.constant = .zero }
-				NSLayoutConstraint.deactivate(stackViewConstraints)
-			}
-		} else {
-			UIView.animate(withDuration: isAnimated ? 0.3 : 0.0) { [weak self] in
-				guard let self else { return }
+    func minimizeContentView(_ isMinimum: Bool, isAnimated: Bool) {
+        if isMinimum {
+            UIView.animate(withDuration: isAnimated ? 0.3 : 0.0) { [weak self] in
+                guard let self else { return }
+                tableComponentToolBarStackView.alpha = 0
+                columnScrollView.alpha = 0
+                rowScrollView.alpha = 0
 
-				heightConstraints.forEach { $0.0.constant = $0.1 }
-				NSLayoutConstraint.activate(stackViewConstraints)
+                heightConstraints.forEach { $0.0.constant = .zero }
+                NSLayoutConstraint.deactivate(stackViewConstraints)
+            }
+        } else {
+            UIView.animate(withDuration: isAnimated ? 0.3 : 0.0) { [weak self] in
+                guard let self else { return }
 
-				tableComponentToolBarStackView.alpha = 1
-				columnScrollView.alpha = 1
-				rowScrollView.alpha = 1
-			}
-		}
-	}
+                heightConstraints.forEach { $0.0.constant = $0.1 }
+                NSLayoutConstraint.activate(stackViewConstraints)
 
+                tableComponentToolBarStackView.alpha = 1
+                columnScrollView.alpha = 1
+                rowScrollView.alpha = 1
+            }
+        }
+    }
 
     func appendEmptyRowToStackView(rowID: UUID) {
         let tableComponentRowView = TableComponentRowView(rowID: rowID)

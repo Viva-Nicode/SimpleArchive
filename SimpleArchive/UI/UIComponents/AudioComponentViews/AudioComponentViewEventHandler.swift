@@ -6,37 +6,40 @@ import UIKit
     func UIupdateEventHandler(_ event: EventType)
 }
 
-final class AudioComponentViewEventHandler: ComponentViewEventHandlerType {
-    private var componentView: AudioComponentView
+class AudioComponentViewEventHandler: ComponentViewEventHandlerType {
+    private var componentView: AudioComponentContentView
     private var audioMetaDataEditPopupViewSubscription: AnyCancellable?
 
-    init(componentView: AudioComponentView) {
+    init(componentView: AudioComponentContentView) {
         self.componentView = componentView
     }
+	
+	deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
 
     func UIupdateEventHandler(_ event: AudioComponentViewModel.Event) {
         switch event {
             case .didPlayAudioTrack(let trackIndex, let audioMetadata, let audioWaveformData):
                 let trackIndexPath = IndexPath(row: trackIndex, section: .zero)
 
-                if let row = componentView.componentContentView.audioTrackTableView.cellForRow(at: trackIndexPath),
+                if let row = componentView.audioTrackTableView.cellForRow(at: trackIndexPath),
                     let targetPlayingAudioRow = row as? AudioTableRowView,
                     let audioWaveformData
                 {
                     targetPlayingAudioRow.audioVisualizer.activateAudioVisualizer(waveFormData: audioWaveformData)
                 }
 
-                componentView.componentContentView.activeAudioControlBar(audioMetadata: audioMetadata)
+                if let window = componentView.window, let host = window as? HostUIWindow {
+                    host.activeAudioControlBar(audioMetadata: audioMetadata, dispatcher: componentView.dispatcher)
+                }
 
             case .didToggleAudioPlayingState(let trackIndex, let playbackState):
-                let memoPageViewController = componentView.parentViewController as? MemoPageViewController
-                let audioControlBar = memoPageViewController?.audioControlBar
-
-                audioControlBar?.state = playbackState ? .resume : .pause
+                if let window = componentView.window, let host = window as? HostUIWindow {
+                    host.toggleAudioControlBarPlayBackState(playbackState: playbackState)
+                }
 
                 let trackIndexPath = IndexPath(row: trackIndex, section: .zero)
 
-                if let row = componentView.componentContentView.audioTrackTableView.cellForRow(at: trackIndexPath),
+                if let row = componentView.audioTrackTableView.cellForRow(at: trackIndexPath),
                     let audioRow = row as? AudioTableRowView
                 {
                     if playbackState {
@@ -47,15 +50,15 @@ final class AudioComponentViewEventHandler: ComponentViewEventHandlerType {
                 }
 
             case .didSeekAudioTrack(let trackIndex, let seek, let total):
-                let memoPageViewController = componentView.parentViewController as? MemoPageViewController
-                let audioControlBar = memoPageViewController?.audioControlBar
+                if let window = componentView.window, let host = window as? HostUIWindow {
+                    host.seekAudioControlBarPlayProgress(seek: seek)
+                }
 
                 let indexPath = IndexPath(row: trackIndex, section: 0)
-                if let row = componentView.componentContentView.audioTrackTableView.cellForRow(at: indexPath),
+                if let row = componentView.audioTrackTableView.cellForRow(at: indexPath),
                     let audioRow = row as? AudioTableRowView
                 {
                     audioRow.audioVisualizer.seekVisuzlization(rate: seek / total)
-                    audioControlBar?.seek(seek: seek)
                 }
 
             case .didPresentEditAudioMetaDataPopupView(let metaData):
@@ -65,36 +68,35 @@ final class AudioComponentViewEventHandler: ComponentViewEventHandlerType {
                     .sink { [weak self] editedMetadata in
                         guard let self else { return }
                         audioTrackEditPopupView.dismiss()
-                        componentView.componentContentView.applyMetaDataChange(editedMetadata: editedMetadata)
+                        componentView.dispatcher?.changeAudioTrackMetadata(editMetadata: editedMetadata)
                         audioMetaDataEditPopupViewSubscription = nil
                     }
                 audioTrackEditPopupView.show()
 
             case .didApplyAudioMetadataChanges(let editResult, let metadata):
                 let trackIndexPath = IndexPath(row: editResult.trackIndex, section: 0)
-                if let row = componentView.componentContentView.audioTrackTableView.cellForRow(at: trackIndexPath),
+                if let row = componentView.audioTrackTableView.cellForRow(at: trackIndexPath),
                     let audioTableRowView = row as? AudioTableRowView
                 {
                     audioTableRowView.updateAudioMetadata(metadata)
                 }
 
                 if editResult.isEditingActiveTrack {
-                    let memoPageViewController = componentView.parentViewController as? MemoPageViewController
-                    let audioControlBar = memoPageViewController?.audioControlBar
-                    audioControlBar?.applyUpdatedMetadata(with: metadata)
+                    if let window = componentView.window, let host = window as? HostUIWindow {
+                        host.applyMetadataChangeToAudioControlBar(audioMetadata: metadata)
+                    }
                 }
 
                 if let trackIndexAfterChanges = editResult.trackIndexAfterEditing {
-                    componentView.componentContentView.audioTrackTableView.performBatchUpdates {
+                    componentView.audioTrackTableView.performBatchUpdates {
                         let src = IndexPath(row: editResult.trackIndex, section: .zero)
                         let des = IndexPath(row: trackIndexAfterChanges, section: .zero)
-                        componentView.componentContentView.audioTrackTableView.moveRow(at: src, to: des)
+                        componentView.audioTrackTableView.moveRow(at: src, to: des)
                     }
                 }
 
             case .didInactiveAudioComponent:
                 componentView
-                    .componentContentView
                     .audioTrackTableView
                     .visibleCells
                     .map { $0 as! AudioTableRowView }
@@ -102,28 +104,24 @@ final class AudioComponentViewEventHandler: ComponentViewEventHandlerType {
 
             case .didPresentInvalidDownloadCode:
                 componentView
-                    .componentContentView
                     .audioDownloadStatePopupView?
                     .setStateToFail()
 
             case .didUpdateAudioDownloadProgress(let progressRatio):
                 componentView
-                    .componentContentView
                     .audioDownloadStatePopupView?
                     .progress
                     .setProgress(progressRatio, animated: true)
 
             case .didAppendAudioTrackRows(let appendedIndices):
                 componentView
-                    .componentContentView
                     .audioDownloadStatePopupView?
                     .dismiss()
                 componentView
-                    .componentContentView
                     .insertRow(trackIndices: appendedIndices)
 
             case .didSortAudioTracks(let sortResult):
-                let audioTracks = componentView.componentContentView.audioTrackTableView
+                let audioTracks = componentView.audioTrackTableView
                 audioTracks.performBatchUpdates {
                     for (i, v) in sortResult.enumerated() {
                         let beforeIndexPath = IndexPath(row: i, section: 0)
@@ -133,24 +131,32 @@ final class AudioComponentViewEventHandler: ComponentViewEventHandlerType {
                 }
 
             case .didRemoveAudioTrack(let trackIndex):
-                componentView.componentContentView.removeRow(trackIndex: trackIndex)
+                componentView.removeRow(trackIndex: trackIndex)
 
             case .didRemoveAudioTrackAndStopPlaying(let trackIndex):
-                let memoPageViewController = componentView.parentViewController as? MemoPageViewController
-                let audioControlBar = memoPageViewController?.audioControlBar
-
-                audioControlBar?.isHidden = true
-                audioControlBar?.state = .stop
+                if let window = componentView.window, let host = window as? HostUIWindow {
+                    host.stopAudioControlBar()
+                }
 
                 let removeTrackIndexPath = IndexPath(row: trackIndex, section: .zero)
-                if let row = componentView.componentContentView.audioTrackTableView.cellForRow(
+                if let row = componentView.audioTrackTableView.cellForRow(
                     at: removeTrackIndexPath),
                     let targetPlayingAudioRow = row as? AudioTableRowView
                 {
                     targetPlayingAudioRow.audioVisualizer.removeVisuzlization()
                 }
 
-                componentView.componentContentView.removeRow(trackIndex: trackIndex)
+                componentView.removeRow(trackIndex: trackIndex)
+
+            case .didScrollToActiveAudioTrack(let activeAudioTrackIndex):
+                if let c: AudioComponentView = componentView.findSuperViewMatched(),
+                    let collectionView = c.collectionView,
+                    let ii = AudioComponentView.order[c.componentID]
+                {
+                    collectionView.scrollToItem(at: ii, at: .centeredVertically, animated: true)
+                }
+                let indexPath = IndexPath(row: activeAudioTrackIndex, section: 0)
+                componentView.audioTrackTableView.scrollToRow(at: indexPath, at: .middle, animated: true)
         }
     }
 }

@@ -2,17 +2,22 @@ import Combine
 import Foundation
 
 @MainActor protocol PageComponentActionDispatcherType {
-    associatedtype PCVT: PageComponentViewModelType
-    associatedtype UEHT: ComponentViewEventHandlerType where PCVT.ViewModelEvent == UEHT.EventType
+    associatedtype VMT: PageComponentViewModelType
+    associatedtype EHT: ComponentViewEventHandlerType
 
-    func bindToViewModel(viewModel: PCVT, UIEventHandler: UEHT)
+    func bindToViewModel(viewModel: VMT, UIEventHandler: EHT)
+    func clearSubscriptions()
 }
 
-final class AudioComponentActionDispatcher: PageComponentActionDispatcherType {
-    typealias Input = AudioComponentViewModel.Action
-    typealias Output = AudioComponentViewModel.Event
+protocol AudioComponentActionDispatcherType: PageComponentActionDispatcherType
+where EHT == AudioComponentViewEventHandler, VMT == AudioComponentViewModel {}
 
-    private let dispatcher = PassthroughSubject<Input, Never>()
+/* FIXME: ⚠️ - 핸들러 교체 방식을 전략 패턴으로 바꿔도 될듯 */
+class AudioComponentActionDispatcher: AudioComponentActionDispatcherType {
+    typealias Action = AudioComponentViewModel.Action
+    typealias Event = AudioComponentViewModel.Event
+
+    private let dispatcher = PassthroughSubject<Action, Never>()
     private var subscriptions = Set<AnyCancellable>()
     private var viewModel: AudioComponentViewModel?
 
@@ -21,16 +26,38 @@ final class AudioComponentActionDispatcher: PageComponentActionDispatcherType {
         UIEventHandler: AudioComponentViewEventHandler
     ) {
         self.viewModel = viewModel
+
+        subscriptions.removeAll()
+        viewModel.clearSubscriptions()
+
         self.viewModel?
             .bindToView(input: dispatcher.eraseToAnyPublisher())
             .sink { UIEventHandler.UIupdateEventHandler($0) }
             .store(in: &subscriptions)
     }
 
-    func clearSubscriptions() {
+    func switchingHandlerWhenPrepareComponent(controlBarEventHandler: AudioControlBarEventHandler) {
+        if let viewModel {
+            if viewModel.isActiveAudioViewModel {
+                subscriptions.removeAll()
+                viewModel.clearSubscriptions()
+
+                viewModel
+                    .bindToView(input: dispatcher.eraseToAnyPublisher())
+                    .sink { controlBarEventHandler.UIupdateEventHandler($0) }
+                    .store(in: &subscriptions)
+            }
+        }
+    }
+
+    func switchHandlerWhenOuter(outerAudioEventHandler: OuterAduioEventHandler) {
         subscriptions.removeAll()
         viewModel?.clearSubscriptions()
-        viewModel = nil
+
+        viewModel?
+            .bindToView(input: dispatcher.eraseToAnyPublisher())
+            .sink { outerAudioEventHandler.UIupdateEventHandler($0) }
+            .store(in: &subscriptions)
     }
 
     func downloadMusics(with code: String) {
@@ -79,5 +106,15 @@ final class AudioComponentActionDispatcher: PageComponentActionDispatcherType {
 
     func removeAudioTrack(trackIndex: Int) {
         dispatcher.send(.willRemoveAudioTrack(trackIndex))
+    }
+
+    func scrollToActiveAudioTrack() {
+        dispatcher.send(.willScrollToActiveAudioTrack)
+    }
+
+    func clearSubscriptions() {
+        subscriptions.removeAll()
+        viewModel?.clearSubscriptions()
+        viewModel = nil
     }
 }

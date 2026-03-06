@@ -1,12 +1,28 @@
 import Combine
 import UIKit
 
-final class SingleTextEditorPageViewController: UIViewController, UITextViewDelegate, UIScrollViewDelegate {
-    private let actionDispatcher = TextEditorComponentActionDispatcher()
+protocol ManualCaptureHost: AnyObject {
+    var snapshotCapturePopupView: SnapshotCapturePopupView? { get set }
+    func completeManualCapture()
+}
 
-    var subscriptions = Set<AnyCancellable>()
-    var snapshotCapturePopupView: SnapshotCapturePopupView?
+extension ManualCaptureHost {
+    func completeManualCapture() {
+        snapshotCapturePopupView?.state = .complete
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            self.snapshotCapturePopupView?.dismiss()
+            self.snapshotCapturePopupView = nil
+        }
+    }
+}
 
+final class SingleTextEditorPageViewController:
+    UIViewController,
+    UITextViewDelegate,
+    UIScrollViewDelegate,
+    ManualCaptureHost,
+    ContentsReloadableView
+{
     private(set) var headerView: UIView = {
         let headerView = UIView()
         headerView.translatesAutoresizingMaskIntoConstraints = false
@@ -41,7 +57,7 @@ final class SingleTextEditorPageViewController: UIViewController, UITextViewDele
         textEditorView.translatesAutoresizingMaskIntoConstraints = false
         return textEditorView
     }()
-    private let undoButton: UIButton = {
+    private(set) var undoButton: UIButton = {
         let snapshotButton = UIButton()
         let config = UIImage.SymbolConfiguration(pointSize: 20)
         let snapshowUIImage = UIImage(systemName: "arrowshape.turn.up.backward.fill", withConfiguration: config)
@@ -66,18 +82,17 @@ final class SingleTextEditorPageViewController: UIViewController, UITextViewDele
         return snapshotButton
     }()
 
-    init(textEditorComponentViewModel: TextEditorComponentViewModel) {
+    private var actionDispatcher: TextEditorComponentActionDispatcher?
+
+    var subscriptions = Set<AnyCancellable>()
+    var snapshotCapturePopupView: SnapshotCapturePopupView?
+
+    init() {
         super.init(nibName: nil, bundle: nil)
-
-        let data = textEditorComponentViewModel.singleTextEditorComponentViewControllerInitialData
-
-        setupUI(title: data.title, createDate: data.createdDate, contents: data.contents)
+        //		UIImage(systemName: "keyboard.chevron.compact.down")
+        setupUI()
         setupConstraint()
         setupAction()
-
-        actionDispatcher.bindToViewModel(
-            viewModel: textEditorComponentViewModel,
-            updateUIWithEvent: UIupdateEventHandler)
 
         NotificationCenter.default.addObserver(
             self,
@@ -87,49 +102,20 @@ final class SingleTextEditorPageViewController: UIViewController, UITextViewDele
         )
     }
 
+    func configure(dispatcher: TextEditorComponentActionDispatcher, component: TextEditorComponent) {
+        self.actionDispatcher = dispatcher
+        titleLable.text = component.title
+        createDateLabel.text = component.creationDate.formattedDate
+        textEditorView.text = component.componentContents
+    }
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
     deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
 
-    private func UIupdateEventHandler(_ event: TextEditorComponentViewModelEvent) {
-        switch event {
-            case .textEditorComponentEvent(let textEvent):
-                switch textEvent {
-                    case .didUndoTextComponentContents(let undidText):
-                        textEditorView.text = undidText
-                }
-
-            case .snapshotEvent(let snapshotEvent):
-                switch snapshotEvent {
-                    case .didManualCapturePageComponent:
-                        UIView.animateKeyframes(withDuration: 0.5, delay: 0, options: []) {
-                            UIView.addKeyframe(withRelativeStartTime: 0.0, relativeDuration: 0.5) {
-                                self.textEditorView.alpha = 0
-                            }
-                            UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0.0) {
-//                                self.textEditorView.text = contents
-                            }
-                            UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0.5) {
-                                self.textEditorView.alpha = 1
-                            }
-                        }
-
-                    case .didNavigateComponentSnapshotView(let viewModel):
-                        let snapshotView = ComponentSnapshotViewController(viewModel: viewModel)
-                        snapshotView.hasRestorePublisher
-                            .sink { [weak self] _ in
-                                guard let self else { return }
-//                                actionDispatcher.resotreComponentContents()
-                            }
-                            .store(in: &subscriptions)
-                        navigationController?.pushViewController(snapshotView, animated: true)
-                }
-        }
-    }
-
-    private func setupUI(title: String, createDate: Date, contents: String) {
+    private func setupUI() {
         view.backgroundColor = .systemBackground
         view.addSubview(headerView)
 
@@ -139,12 +125,8 @@ final class SingleTextEditorPageViewController: UIViewController, UITextViewDele
         headerView.addSubview(snapshotButton)
         headerView.addSubview(captureButton)
 
-        titleLable.text = title
-        createDateLabel.text = createDate.formattedDate
-
         view.addSubview(textEditorView)
         textEditorView.delegate = self
-        textEditorView.text = contents
     }
 
     private func setupConstraint() {
@@ -179,12 +161,12 @@ final class SingleTextEditorPageViewController: UIViewController, UITextViewDele
     private func setupAction() {
         undoButton
             .throttleTapPublisher(owner: self, interval: 0.25)
-            .sink { $0.actionDispatcher.undoTextEditorComponentContents() }
+            .sink { $0.actionDispatcher?.undoTextEditorComponentContents() }
             .store(in: &subscriptions)
 
         snapshotButton
             .throttleTapPublisher(owner: self)
-            .sink { $0.actionDispatcher.navigateComponentSnapshotView() }
+            .sink { $0.actionDispatcher?.navigateComponentSnapshotView() }
             .store(in: &subscriptions)
 
         captureButton
@@ -198,13 +180,30 @@ final class SingleTextEditorPageViewController: UIViewController, UITextViewDele
             }
             .sink { [weak self] snapshotDescription in
                 guard let self else { return }
-                actionDispatcher.captureComponentManual(description: snapshotDescription)
+                actionDispatcher?.captureComponentManual(description: snapshotDescription)
             }
             .store(in: &subscriptions)
     }
+	
+	func reloadUsingRestoredContents(contents: any Codable) {
+		if let textContents = contents as? String {
+			UIView.animateKeyframes(withDuration: 0.4, delay: 0, options: []) {
+				UIView.addKeyframe(withRelativeStartTime: 0.2, relativeDuration: 0.4) {
+					self.textEditorView.alpha = 0
+				}
+			} completion: { _ in
+				DispatchQueue.main.async {
+					self.textEditorView.text = textContents
+					UIView.animate(withDuration: 0.2) {
+						self.textEditorView.alpha = 1
+					}
+				}
+			}
+		}
+	}
 
     func textViewDidChange(_ textView: UITextView) {
-        actionDispatcher.saveTextEditorComponentContentsChanged(contents: textView.text)
+        actionDispatcher?.saveTextEditorComponentContentsChanged(contents: textView.text)
         captureButton.isEnabled = !textView.text.isEmpty
     }
 
@@ -223,7 +222,7 @@ final class SingleTextEditorPageViewController: UIViewController, UITextViewDele
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
         if isMovingFromParent || isBeingDismissed {
-            actionDispatcher.clearSubscriptions()
+            actionDispatcher?.clearSubscriptions()
             subscriptions.removeAll()
         }
     }

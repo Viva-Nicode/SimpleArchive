@@ -104,8 +104,6 @@ final class DependencyConfigurator {
 
         configureComponentSnapshotViewModelDependencies()
         configureDormantBoxViewModelDependencies()
-        configureSingleTableComponentViewModelDependencies()
-        configureSingleAudioComponentViewModelDependencies()
     }
 
     private static func configureCommonDependencies() {
@@ -134,10 +132,6 @@ final class DependencyConfigurator {
 
         container.register(AudioDownloaderType.self, isSingleton: true) {
             AudioDownloader()
-        }
-
-        container.register(AudioTrackControllerType.self, isSingleton: true) {
-            AudioTrackController()
         }
 
         container.register(ComponentFactoryType.self) {
@@ -269,36 +263,6 @@ final class DependencyConfigurator {
             return AudioComponentViewModel(
                 audioDataManager: audioComponentDataManger,
                 soundPlayer: AudioComponentSoundPlayer.shared)
-        }
-    }
-
-    private static func configureSingleTableComponentViewModelDependencies() {
-        let container = DIContainer.shared
-
-        container.register(SingleTablePageViewModel.self, requiredArgs: [TableComponent.self, String.self]) {
-            let tableComponent = container.getArgument(SingleTablePageViewModel.self) as TableComponent
-            let pageName = container.getArgument(SingleTablePageViewModel.self) as String
-            return SingleTablePageViewModel(
-                coredataReposotory: container.resolve(MemoComponentCoreDataRepository.self),
-                tableComponent: tableComponent,
-                pageTitle: pageName
-            )
-        }
-    }
-
-    private static func configureSingleAudioComponentViewModelDependencies() {
-        let container = DIContainer.shared
-
-        container.register(SingleAudioPageViewModel.self, requiredArgs: [AudioComponent.self, String.self]) {
-            let audioComponent = container.getArgument(SingleAudioPageViewModel.self) as AudioComponent
-            let pageName = container.getArgument(SingleAudioPageViewModel.self) as String
-
-            return SingleAudioPageViewModel(
-                coredataReposotory: container.resolve(MemoComponentCoreDataRepository.self),
-                audioComponent: audioComponent,
-                audioDownloader: container.resolve(AudioDownloaderType.self),
-                audioTrackController: container.resolve(AudioTrackControllerType.self),
-                pageTitle: pageName)
         }
     }
 }

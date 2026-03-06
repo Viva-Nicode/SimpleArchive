@@ -8,7 +8,6 @@ import Foundation
     associatedtype ViewModelAction
     associatedtype ViewModelEvent
 
-    var eventOutput: PassthroughSubject<ViewModelEvent, Never> { get set }
     var subscriptions: Set<AnyCancellable> { get set }
 
     func bindToView(input: AnyPublisher<ViewModelAction, Never>) -> AnyPublisher<ViewModelEvent, Never>

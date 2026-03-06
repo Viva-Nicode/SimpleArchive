@@ -1,16 +1,12 @@
 import Combine
 import UIKit
 
-final class SingleTablePageViewController: UIViewController, ViewControllerType, UIScrollViewDelegate
+final class SingleTablePageViewController:
+    UIViewController,
+    UIScrollViewDelegate,
+    ManualCaptureHost,
+    ContentsReloadableView
 {
-    typealias Input = SingleTablePageInput
-    typealias ViewModelType = SingleTablePageViewModel
-
-    var input = PassthroughSubject<SingleTablePageInput, Never>()
-    var viewModel: SingleTablePageViewModel
-    var subscriptions = Set<AnyCancellable>()
-    var snapshotCapturePopupView: SnapshotCapturePopupView?
-
     private(set) var headerView: UIView = {
         let headerView = UIView()
         headerView.translatesAutoresizingMaskIntoConstraints = false
@@ -34,12 +30,6 @@ final class SingleTablePageViewController: UIViewController, ViewControllerType,
         createDateLabel.translatesAutoresizingMaskIntoConstraints = false
         return createDateLabel
     }()
-    private(set) var tableComponentContentView: TableComponentContentView = {
-        let tableComponentContentView = TableComponentContentView()
-        tableComponentContentView.backgroundColor = .systemGray6
-        tableComponentContentView.translatesAutoresizingMaskIntoConstraints = false
-        return tableComponentContentView
-    }()
     private(set) var captureButton: UIButton = {
         let snapshotButton = UIButton()
         let config = UIImage.SymbolConfiguration(pointSize: 22)
@@ -56,15 +46,22 @@ final class SingleTablePageViewController: UIViewController, ViewControllerType,
         snapshotButton.translatesAutoresizingMaskIntoConstraints = false
         return snapshotButton
     }()
+    private(set) var tableComponentContentView: TableComponentContentView = {
+        let tableComponentContentView = TableComponentContentView()
+        tableComponentContentView.backgroundColor = .systemGray6
+        tableComponentContentView.translatesAutoresizingMaskIntoConstraints = false
+        return tableComponentContentView
+    }()
 
-    override func viewDidLoad() {
-        bind()
-        input.send(.viewDidLoad)
-    }
+    var subscriptions = Set<AnyCancellable>()
+    var snapshotCapturePopupView: SnapshotCapturePopupView?
+    private var actionDispatcher: TableComponentActionDispatcher?
 
-    init(viewModel: SingleTablePageViewModel) {
-        self.viewModel = viewModel
+    init() {
         super.init(nibName: nil, bundle: nil)
+        setupUI()
+        setupConstraint()
+        setupAction()
     }
 
     required init?(coder: NSCoder) {
@@ -73,125 +70,53 @@ final class SingleTablePageViewController: UIViewController, ViewControllerType,
 
     deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
 
-    func bind() {
-        let output = viewModel.subscribe(input: input.eraseToAnyPublisher())
+    func reloadUsingRestoredContents(contents: Codable) {
+        if let tableContents = contents as? TableComponentContents {
+            tableComponentContentView.alpha = 0
 
-        output.sink { [weak self] result in
-            guard let self else { return }
+            tableComponentContentView = TableComponentContentView()
+            tableComponentContentView.alpha = 0
+            tableComponentContentView.translatesAutoresizingMaskIntoConstraints = false
+            tableComponentContentView.layer.cornerRadius = 10
+            tableComponentContentView.layer.maskedCorners = [
+                .layerMaxXMaxYCorner, .layerMinXMaxYCorner,
+            ]
+            tableComponentContentView.backgroundColor = .systemGray6
 
-            switch result {
-                case .viewDidLoad(let title, let date, let detail, let id):
-                    setupUI(memoTitle: title, createDate: date)
-                    setupConstraint()
-                    tableComponentContentView.configure(
-                        columns: detail.columns,
-                        rows: detail.cellValues,
-						actionDispatcher: .init(),
-                        isMinimum: false)
+            view.addSubview(tableComponentContentView)
 
-//                case .didNavigateSnapshotView(let vm):
-//                    let snapshotView = ComponentSnapshotViewController(viewModel: vm)
-//
-//                    snapshotView.hasRestorePublisher
-//                        .sink { [weak self] _ in
-//                            guard let self else { return }
-//                            input.send(.willRestoreComponent)
-//                        }
-//                        .store(in: &subscriptions)
-//                    navigationController?.pushViewController(snapshotView, animated: true)
+            NSLayoutConstraint.activate([
+                tableComponentContentView
+                    .topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 10),
+                tableComponentContentView
+                    .leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                tableComponentContentView
+                    .trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                tableComponentContentView
+                    .bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            ])
 
-//                case .didRestoreComponent(let detail):
-//                    UIView.animateKeyframes(withDuration: 0.5, delay: 0, options: []) {
-//
-//                        UIView.addKeyframe(withRelativeStartTime: 0.0, relativeDuration: 0.5) { [weak self] in
-//                            guard let self else { return }
-//                            tableComponentContentView.alpha = 0
-//                        }
-//
-//                        UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0.0) { [weak self] in
-//                            guard let self else { return }
-//                            tableComponentContentView.configure(
-//                                columns: detail.columns,
-//                                rows: detail.cellValues,
-//                                actionDispatcher: SinglePageTableComponentActionDispatcher(subject: input),
-//                                isMinimum: false)
-//                        }
-//
-//                        UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0.5) { [weak self] in
-//                            guard let self else { return }
-//                            tableComponentContentView.alpha = 1
-//                        }
-//                    }
+            tableComponentContentView.configure(
+                columns: tableContents.columns,
+                rows: tableContents.cellValues,
+                actionDispatcher: actionDispatcher!,
+                isMinimum: false)
 
-                case .didAppendRowToTableView(let row):
-                    tableComponentContentView.appendEmptyRowToStackView(rowID: row.id)
-
-                case .didAppendColumnToTableView(let column):
-                    tableComponentContentView.appendEmptyColumnToStackView(column: column)
-
-                case .didApplyTableCellValueChanges(let row, let column, let newCellValue):
-                    tableComponentContentView.updateUILabelText(
-                        rowIndex: row,
-                        cellIndex: column,
-                        with: newCellValue
-                    )
-
-                case .didRemoveRowToTableView(let removedRowIndex):
-                    tableComponentContentView.removeTableComponentRowView(idx: removedRowIndex)
-
-                case .didPresentTableColumnEditPopupView(let columns, let columnIndex):
-                    let tableComponentColumnEditPopupView = TableComponentColumnEditPopupView(
-                        columns: columns, tappedColumnIndex: columnIndex)
-
-                    tableComponentColumnEditPopupView.confirmButtonPublisher
-                        .sink { self.input.send(.willApplyTableColumnChanges($0)) }
-                        .store(in: &subscriptions)
-
-                    tableComponentColumnEditPopupView.show()
-
-                case .didApplyTableColumnChanges(let columns):
-                    tableComponentContentView.applyColumns(columns: columns)
-
-//                case .didCompleteComponentCapture:
-                    
+            UIView.animateKeyframes(withDuration: 0.8, delay: 0, options: []) {
+                UIView.addKeyframe(withRelativeStartTime: 0.4, relativeDuration: 0.8) {
+                    self.tableComponentContentView.alpha = 1
+                }
             }
         }
-        .store(in: &subscriptions)
     }
 
-    private func setupUI(memoTitle: String, createDate: Date) {
+    private func setupUI() {
         view.backgroundColor = .systemBackground
         view.addSubview(headerView)
         headerView.addSubview(titleLable)
         headerView.addSubview(createDateLabel)
-        headerView.addSubview(captureButton)
-
-        captureButton.throttleTapPublisher()
-            .flatMap { [weak self] _ -> AnyPublisher<String, Never> in
-                guard let self else { return Empty().eraseToAnyPublisher() }
-
-                let popup = SnapshotCapturePopupView()
-                self.snapshotCapturePopupView = popup
-                popup.show()
-
-                return popup.captureButtonPublisher
-            }
-            .sink { [weak self] snapshotDescription in
-                guard let self else { return }
-//                self.input.send(.willCaptureComponent(snapshotDescription))
-            }
-            .store(in: &subscriptions)
         headerView.addSubview(snapshotButton)
-
-        snapshotButton.throttleTapPublisher()
-            .sink { [weak self] _ in
-                guard let self else { return }
-//                input.send(.willNavigateSnapshotView)
-            }
-            .store(in: &subscriptions)
-
-        titleLable.text = memoTitle
-        createDateLabel.text = createDate.formattedDate
+        headerView.addSubview(captureButton)
 
         view.addSubview(tableComponentContentView)
     }
@@ -222,10 +147,43 @@ final class SingleTablePageViewController: UIViewController, ViewControllerType,
         ])
     }
 
+    private func setupAction() {
+        snapshotButton
+            .throttleTapPublisher(owner: self)
+            .sink { $0.actionDispatcher?.navigateComponentSnapshotView() }
+            .store(in: &subscriptions)
+
+        captureButton
+            .throttleTapPublisher(owner: self)
+            .flatMap { weakself -> AnyPublisher<String, Never> in
+                let snapshotCapturePopupView = SnapshotCapturePopupView()
+                weakself.snapshotCapturePopupView = snapshotCapturePopupView
+                snapshotCapturePopupView.show()
+
+                return snapshotCapturePopupView.captureButtonPublisher
+            }
+            .sink { [weak self] snapshotDescription in
+                guard let self else { return }
+                actionDispatcher?.captureComponentManual(description: snapshotDescription)
+            }
+            .store(in: &subscriptions)
+    }
+
+    func configure(dispatcher: TableComponentActionDispatcher, component: TableComponent) {
+        self.actionDispatcher = dispatcher
+        titleLable.text = component.title
+        createDateLabel.text = component.creationDate.formattedDate
+        tableComponentContentView.configure(
+            columns: component.componentContents.columns,
+            rows: component.componentContents.cellValues,
+            actionDispatcher: dispatcher,
+            isMinimum: false)
+    }
+
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
         if isMovingFromParent || isBeingDismissed {
-            input.send(.viewWillDisappear)
+            actionDispatcher?.clearSubscriptions()
             subscriptions.removeAll()
         }
     }

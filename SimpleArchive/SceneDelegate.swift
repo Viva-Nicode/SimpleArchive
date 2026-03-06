@@ -1,7 +1,7 @@
+import Combine
 import UIKit
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
-
     var window: UIWindow?
 
     func scene(
@@ -11,7 +11,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     ) {
         guard let windowScene = (scene as? UIWindowScene) else { return }
 
-        let window = UIWindow(windowScene: windowScene)
+        let window = HostUIWindow(windowScene: windowScene)
 
         DependencyConfigurator.configureDependencies()
 
@@ -26,6 +26,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         window.rootViewController = indexViewController
         window.makeKeyAndVisible()
+        window.bringSubviewToFront(window.audioControlBar)
 
         self.window = window
     }

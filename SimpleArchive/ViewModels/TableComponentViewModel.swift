@@ -139,3 +139,13 @@ enum TableComponentViewModelEvent {
     case tableComponentEvent(TableComponentViewModel.Event)
     case snapshotEvent(SnapshotRestorableComponentEvent)
 }
+
+enum SnapshotRestorableComponentAction {
+	case willManualCapturePageComponent(description: String)
+	case willNavigateComponentSnapshotView
+}
+
+enum SnapshotRestorableComponentEvent {
+	case didManualCapturePageComponent
+	case didNavigateComponentSnapshotView(ComponentSnapshotViewModel)
+}

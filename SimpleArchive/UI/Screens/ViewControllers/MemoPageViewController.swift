@@ -3,13 +3,17 @@ import Combine
 import MediaPlayer
 import UIKit
 
-final class MemoPageViewController: UIViewController, UICollectionViewDelegateFlowLayout {
+final class MemoPageViewController:
+    UIViewController,
+    UICollectionViewDelegateFlowLayout,
+    ManualCaptureHost,
+    AudioControlBarActionStrategy
+{
     var pageViewModel: MemoPageViewModel
     var pageActionDispatcher = PassthroughSubject<MemoPageViewInput, Never>()
 
     var subscriptions = Set<AnyCancellable>()
 
-    // MARK: - properties pageComponent fullScreen
     var fullscreenTargetComponentView: (any PageComponentViewType)?
     var fullscreenTargetComponentContentsViewFrame: CGRect?
 
@@ -61,7 +65,6 @@ final class MemoPageViewController: UIViewController, UICollectionViewDelegateFl
     }()
 
     private(set) var pageComponentCollectionView: UICollectionView!
-    var audioControlBar = AudioControlBarView()
 
     init(pageViewModel: MemoPageViewModel) {
         self.pageViewModel = pageViewModel
@@ -81,52 +84,6 @@ final class MemoPageViewController: UIViewController, UICollectionViewDelegateFl
     }
 
     deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
-
-    override func viewDidDisappear(_ animated: Bool) {
-        super.viewDidDisappear(animated)
-        let isfreedFromMemory = isMovingFromParent || isBeingDismissed
-
-        if isfreedFromMemory {
-            pageComponentCollectionView
-                .visibleCells
-                .compactMap { $0 as? (any PageComponentViewType) }
-                .forEach { $0.freedReferences() }
-            componentCollectionViewDataSource?.freedDataSource()
-            componentCollectionViewDataSource = nil
-            subscriptions.removeAll()
-        }
-    }
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-
-        let flowLayout = UICollectionViewFlowLayout()
-        flowLayout.scrollDirection = .vertical
-        flowLayout.minimumLineSpacing = UIConstants.memoPageViewControllerCollectionViewCellSpacing
-        flowLayout.minimumInteritemSpacing = .zero
-        flowLayout.sectionInset = .init(top: .zero, left: 20, bottom: .zero, right: 20)
-
-        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: flowLayout)
-
-        collectionView.backgroundColor = .clear
-        collectionView.keyboardDismissMode = .onDrag
-        collectionView.translatesAutoresizingMaskIntoConstraints = false
-
-        collectionView.register(
-            TextEditorComponentView.self,
-            forCellWithReuseIdentifier: TextEditorComponentView.reuseIdentifier)
-        collectionView.register(
-            TableComponentView.self,
-            forCellWithReuseIdentifier: TableComponentView.reuseIdentifier)
-        collectionView.register(
-            AudioComponentView.self,
-            forCellWithReuseIdentifier: AudioComponentView.reuseAudioComponentIdentifier)
-
-        pageComponentCollectionView = collectionView
-        applyCollectionViewInsets(bottomInset: UIConstants.memoPageViewControllerCollectionViewFooterHeight)
-        bindToMemoPageVM()
-        pageActionDispatcher.send(.viewDidLoad)
-    }
 
     func bindToMemoPageVM() {
         let output = pageViewModel.subscribe(input: pageActionDispatcher.eraseToAnyPublisher())
@@ -166,6 +123,76 @@ final class MemoPageViewController: UIViewController, UICollectionViewDelegateFl
         .store(in: &subscriptions)
     }
 
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        let flowLayout = UICollectionViewFlowLayout()
+        flowLayout.scrollDirection = .vertical
+        flowLayout.minimumLineSpacing = UIConstants.memoPageViewControllerCollectionViewCellSpacing
+        flowLayout.minimumInteritemSpacing = .zero
+        flowLayout.sectionInset = .init(top: .zero, left: 20, bottom: .zero, right: 20)
+
+        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: flowLayout)
+
+        collectionView.backgroundColor = .clear
+        collectionView.keyboardDismissMode = .onDrag
+        collectionView.translatesAutoresizingMaskIntoConstraints = false
+
+        collectionView.register(
+            TextEditorComponentView.self,
+            forCellWithReuseIdentifier: TextEditorComponentView.reuseIdentifier)
+        collectionView.register(
+            TableComponentView.self,
+            forCellWithReuseIdentifier: TableComponentView.reuseIdentifier)
+        collectionView.register(
+            AudioComponentView.self,
+            forCellWithReuseIdentifier: AudioComponentView.reuseAudioComponentIdentifier)
+
+        pageComponentCollectionView = collectionView
+        applyCollectionViewInsets(bottomInset: UIConstants.memoPageViewControllerCollectionViewFooterHeight)
+        bindToMemoPageVM()
+        pageActionDispatcher.send(.viewDidLoad)
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+
+        let coordinator = navigationController?.transitionCoordinator ?? transitionCoordinator
+        let targetWindow = view.window ?? navigationController?.view.window
+        if let host = targetWindow as? HostUIWindow {
+            host.setStrategy(st: self, coordinatedBy: coordinator)
+        }
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        let isfreedFromMemory = isMovingFromParent || isBeingDismissed
+
+        if isfreedFromMemory {
+            let coordinator = navigationController?.transitionCoordinator ?? transitionCoordinator
+            let targetWindow = view.window ?? navigationController?.view.window
+            if let host = targetWindow as? HostUIWindow {
+                componentCollectionViewDataSource?.continuous()
+				
+                let outerAduioEventHandler = OuterAduioEventHandler(host: host)
+                host.audioControlBar.dispatcher?
+                    .switchHandlerWhenOuter(outerAudioEventHandler: outerAduioEventHandler)
+                host.transformOuter(coordinatedBy: coordinator)
+            }
+        }
+    }
+
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        let isfreedFromMemory = isMovingFromParent || isBeingDismissed
+
+        if isfreedFromMemory {
+            componentCollectionViewDataSource?.freedDataSource()
+            componentCollectionViewDataSource = nil
+            subscriptions.removeAll()
+        }
+    }
+
     private func setupUI(pageName: String) {
         view.backgroundColor = .systemBackground
         view.addSubview(backgroundView)
@@ -193,9 +220,6 @@ final class MemoPageViewController: UIViewController, UICollectionViewDelegateFl
         pageComponentCollectionView.dropDelegate = self
         pageComponentCollectionView.dragDelegate = self
         pageComponentCollectionView.delegate = self
-
-        view.addSubview(audioControlBar)
-        audioControlBar.isHidden = true
     }
 
     private func setupConstraints() {
@@ -224,11 +248,6 @@ final class MemoPageViewController: UIViewController, UICollectionViewDelegateFl
 
             pageComponentCollectionView.leadingAnchor.constraint(equalTo: backgroundView.leadingAnchor),
             pageComponentCollectionView.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor),
-
-            audioControlBar.widthAnchor.constraint(equalToConstant: UIConstants.audioControlBarViewWidth),
-            audioControlBar.heightAnchor.constraint(equalToConstant: UIConstants.audioControlBarViewHeight),
-            audioControlBar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
-            audioControlBar.centerXAnchor.constraint(equalTo: view.centerXAnchor),
         ])
     }
 
@@ -342,22 +361,22 @@ final class MemoPageViewController: UIViewController, UICollectionViewDelegateFl
         pageComponentCollectionView.contentInset = inset
         pageComponentCollectionView.scrollIndicatorInsets = inset
     }
-	
-	func collectionView(
-		_ collectionView: UICollectionView,
-		layout collectionViewLayout: UICollectionViewLayout,
-		sizeForItemAt indexPath: IndexPath
-	) -> CGSize {
-		let horizontalInset: CGFloat
-		if let flowLayout = collectionViewLayout as? UICollectionViewFlowLayout {
-			horizontalInset = flowLayout.sectionInset.left + flowLayout.sectionInset.right
-		} else {
-			horizontalInset = 40
-		}
 
-		let width = collectionView.bounds.width - horizontalInset
-		let isMin = pageViewModel.memoPage[indexPath.item].isMinimumHeight
-		let height = isMin ? UIConstants.componentMinimumHeight : width
-		return .init(width: width, height: height)
-	}
+    func collectionView(
+        _ collectionView: UICollectionView,
+        layout collectionViewLayout: UICollectionViewLayout,
+        sizeForItemAt indexPath: IndexPath
+    ) -> CGSize {
+        let horizontalInset: CGFloat
+        if let flowLayout = collectionViewLayout as? UICollectionViewFlowLayout {
+            horizontalInset = flowLayout.sectionInset.left + flowLayout.sectionInset.right
+        } else {
+            horizontalInset = 40
+        }
+
+        let width = collectionView.bounds.width - horizontalInset
+        let isMin = pageViewModel.memoPage[indexPath.item].isMinimumHeight
+        let height = isMin ? UIConstants.componentMinimumHeight : width
+        return .init(width: width, height: height)
+    }
 }

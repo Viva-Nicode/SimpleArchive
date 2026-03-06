@@ -90,10 +90,13 @@ extension AudioVisualizerView: AudioVisualizerController {
             viewHeight: visualizerSize.height,
             duration: Double(waveFormData.sampleDataCount) / waveFormData.sampleRate)
     }
+	
+	
 
     func resumeVisuzlization() {
         let totalFrames = barHeights.count
         let interval = duration / Double(totalFrames)
+        
         audioVisualizeTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] timer in
             guard let self else { return }
             if self.visualizerProgress >= self.totalFrames {
