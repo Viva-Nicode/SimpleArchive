@@ -249,7 +249,7 @@ final class MemoHomeViewModel: NSObject, ViewModelType {
                 output.send(.didInsertRowToHomeTable(.zero, insertedIndices))
             }
 
-        DIContainer.shared.setArgument(DormantBoxViewModel.self, restoredPageListSubjectSubscription)
+        DIContainer.shared.setArgument(DormantBoxViewModel.self, restoredPageListSubject)
         let dormantBoxViewModel = DIContainer.shared.resolve(DormantBoxViewModel.self)
 
         output.send(.didNavigateDormantBoxView(dormantBoxViewModel))

@@ -70,46 +70,6 @@ final class SingleTablePageViewController:
 
     deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
 
-    func reloadUsingRestoredContents(contents: Codable) {
-        if let tableContents = contents as? TableComponentContents {
-            tableComponentContentView.alpha = 0
-
-            tableComponentContentView = TableComponentContentView()
-            tableComponentContentView.alpha = 0
-            tableComponentContentView.translatesAutoresizingMaskIntoConstraints = false
-            tableComponentContentView.layer.cornerRadius = 10
-            tableComponentContentView.layer.maskedCorners = [
-                .layerMaxXMaxYCorner, .layerMinXMaxYCorner,
-            ]
-            tableComponentContentView.backgroundColor = .systemGray6
-
-            view.addSubview(tableComponentContentView)
-
-            NSLayoutConstraint.activate([
-                tableComponentContentView
-                    .topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 10),
-                tableComponentContentView
-                    .leadingAnchor.constraint(equalTo: view.leadingAnchor),
-                tableComponentContentView
-                    .trailingAnchor.constraint(equalTo: view.trailingAnchor),
-                tableComponentContentView
-                    .bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
-            ])
-
-            tableComponentContentView.configure(
-                columns: tableContents.columns,
-                rows: tableContents.cellValues,
-                actionDispatcher: actionDispatcher!,
-                isMinimum: false)
-
-            UIView.animateKeyframes(withDuration: 0.8, delay: 0, options: []) {
-                UIView.addKeyframe(withRelativeStartTime: 0.4, relativeDuration: 0.8) {
-                    self.tableComponentContentView.alpha = 1
-                }
-            }
-        }
-    }
-
     private func setupUI() {
         view.backgroundColor = .systemBackground
         view.addSubview(headerView)
@@ -169,18 +129,58 @@ final class SingleTablePageViewController:
             .store(in: &subscriptions)
     }
 
-	func configure(dispatcher: TableComponentActionDispatcher, component: TableComponent, pageName:String) {
+    func configure(dispatcher: TableComponentActionDispatcher, component: TableComponent, pageName: String) {
         self.actionDispatcher = dispatcher
-        
-		titleLable.text = pageName
+
+        titleLable.text = pageName
         createDateLabel.text = component.creationDate.formattedDate
-        
-		tableComponentContentView.configure(
+
+        tableComponentContentView.configure(
             columns: component.componentContents.columns,
             rows: component.componentContents.cellValues,
             actionDispatcher: dispatcher,
             isMinimum: false)
     }
+	
+	func reloadUsingRestoredContents(contents: Codable) {
+		if let tableContents = contents as? TableComponentContents {
+			tableComponentContentView.alpha = 0
+
+			tableComponentContentView = TableComponentContentView()
+			tableComponentContentView.alpha = 0
+			tableComponentContentView.translatesAutoresizingMaskIntoConstraints = false
+			tableComponentContentView.layer.cornerRadius = 10
+			tableComponentContentView.layer.maskedCorners = [
+				.layerMaxXMaxYCorner, .layerMinXMaxYCorner,
+			]
+			tableComponentContentView.backgroundColor = .systemGray6
+
+			view.addSubview(tableComponentContentView)
+
+			NSLayoutConstraint.activate([
+				tableComponentContentView
+					.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 10),
+				tableComponentContentView
+					.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+				tableComponentContentView
+					.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+				tableComponentContentView
+					.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+			])
+
+			tableComponentContentView.configure(
+				columns: tableContents.columns,
+				rows: tableContents.cellValues,
+				actionDispatcher: actionDispatcher!,
+				isMinimum: false)
+
+			UIView.animateKeyframes(withDuration: 0.8, delay: 0, options: []) {
+				UIView.addKeyframe(withRelativeStartTime: 0.4, relativeDuration: 0.8) {
+					self.tableComponentContentView.alpha = 1
+				}
+			}
+		}
+	}
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)

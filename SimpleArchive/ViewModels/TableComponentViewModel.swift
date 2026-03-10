@@ -37,17 +37,13 @@ final class TableComponentViewModel: PageComponentViewModelType {
 
                         case .willApplyTableCellChanges(let columnID, let rowID, let cellValue):
                             let tableCoordinate =
-                                interactor
-                                .applyTableCellValue(
+                                interactor.applyTableCellValue(
                                     colID: columnID,
                                     rowID: rowID,
                                     newCellValue: cellValue)
                             eventOutput.send(
                                 .tableComponentEvent(
-                                    .didApplyTableCellValueChanges(
-                                        cellCoord: tableCoordinate,
-                                        cellValue: cellValue
-                                    )
+                                    .didApplyTableCellValueChanges(cellCoord: tableCoordinate, cellValue: cellValue)
                                 )
                             )
 
@@ -61,8 +57,7 @@ final class TableComponentViewModel: PageComponentViewModelType {
 
                         case .willPresentTableColumnEditingPopupView(let columnID):
                             let columnIndex =
-                                interactor
-                                .presentTableComponentColumnEditPopupView(columnID: columnID)
+                                interactor.presentTableComponentColumnEditPopupView(columnID: columnID)
                             eventOutput.send(
                                 .tableComponentEvent(
                                     .didPresentTableColumnEditPopupView(
@@ -141,11 +136,11 @@ enum TableComponentViewModelEvent {
 }
 
 enum SnapshotRestorableComponentAction {
-	case willManualCapturePageComponent(description: String)
-	case willNavigateComponentSnapshotView
+    case willManualCapturePageComponent(description: String)
+    case willNavigateComponentSnapshotView
 }
 
 enum SnapshotRestorableComponentEvent {
-	case didManualCapturePageComponent
-	case didNavigateComponentSnapshotView(ComponentSnapshotViewModel)
+    case didManualCapturePageComponent
+    case didNavigateComponentSnapshotView(ComponentSnapshotViewModel)
 }
