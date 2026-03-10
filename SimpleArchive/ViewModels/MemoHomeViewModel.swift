@@ -206,12 +206,12 @@ final class MemoHomeViewModel: NSObject, ViewModelType {
             } else if let tableComponent = followingPage.getComponents.first as? TableComponent {
                 DIContainer.shared.setArgument(TableComponentViewModel.self, tableComponent)
                 let viewModel = DIContainer.shared.resolve(TableComponentViewModel.self)
-				let pageName = followingPage.name
+                let pageName = followingPage.name
                 output.send(.didNavigateSingleTableComponentPageView(viewModel, tableComponent, pageName))
             } else if let audioComponent = followingPage.getComponents.first as? AudioComponent {
                 DIContainer.shared.setArgument(AudioComponentViewModel.self, audioComponent)
                 let viewModel = DIContainer.shared.resolve(AudioComponentViewModel.self)
-				let pageName = followingPage.name
+                let pageName = followingPage.name
                 output.send(.didNavigateSingleAudioComponentPageView(viewModel, audioComponent, pageName))
             }
         } else {
