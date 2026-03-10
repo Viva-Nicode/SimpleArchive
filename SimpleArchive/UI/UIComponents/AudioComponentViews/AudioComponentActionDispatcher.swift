@@ -12,14 +12,13 @@ import Foundation
 protocol AudioComponentActionDispatcherType: PageComponentActionDispatcherType
 where EHT == AudioComponentViewEventHandler, VMT == AudioComponentViewModel {}
 
-/* FIXME: ⚠️ - 핸들러 교체 방식을 전략 패턴으로 바꿔도 될듯 */
 class AudioComponentActionDispatcher: AudioComponentActionDispatcherType {
     typealias Action = AudioComponentViewModel.Action
     typealias Event = AudioComponentViewModel.Event
 
     private let dispatcher = PassthroughSubject<Action, Never>()
     private var subscriptions = Set<AnyCancellable>()
-    private var viewModel: AudioComponentViewModel?
+    private(set) var viewModel: AudioComponentViewModel?
 
     func bindToViewModel(
         viewModel: AudioComponentViewModel,
@@ -36,7 +35,9 @@ class AudioComponentActionDispatcher: AudioComponentActionDispatcherType {
             .store(in: &subscriptions)
     }
 
-    func switchingHandlerWhenPrepareComponent(controlBarEventHandler: AudioControlBarEventHandler) {
+    deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
+
+    func setEventHandler(controlBarEventHandler: AudioControlBarEventHandler) {
         if let viewModel {
             if viewModel.isActiveAudioViewModel {
                 subscriptions.removeAll()
@@ -50,14 +51,18 @@ class AudioComponentActionDispatcher: AudioComponentActionDispatcherType {
         }
     }
 
-    func switchHandlerWhenOuter(outerAudioEventHandler: OuterAduioEventHandler) {
+    func setEventHandler(thinAudioControlBarEventHandler: ThinAudioControlBarEventHandler) {
         subscriptions.removeAll()
         viewModel?.clearSubscriptions()
 
         viewModel?
             .bindToView(input: dispatcher.eraseToAnyPublisher())
-            .sink { outerAudioEventHandler.UIupdateEventHandler($0) }
+            .sink { thinAudioControlBarEventHandler.UIupdateEventHandler($0) }
             .store(in: &subscriptions)
+    }
+
+    func dissmissAudioControlBar() {
+        dispatcher.send(.willDismissAudioControlBar)
     }
 
     func downloadMusics(with code: String) {

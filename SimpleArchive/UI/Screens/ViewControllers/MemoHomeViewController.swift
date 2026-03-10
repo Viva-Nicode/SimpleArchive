@@ -15,6 +15,7 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
             self.totalFileCountLabel.text = "\(directoryFileCount) files in total"
         }
     }
+    private var audioControlBarHost: AudioControlBarHostType
 
     private(set) var backgroundView: UIStackView = {
         let backgroundView = UIStackView()
@@ -24,8 +25,6 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
         backgroundView.translatesAutoresizingMaskIntoConstraints = false
         return backgroundView
     }()
-
-    // MARK: - Header Views
     private(set) var headerStackView: UIStackView = {
         let headerStackView = UIStackView()
         headerStackView.axis = .horizontal
@@ -52,8 +51,6 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
         let button = UIButton(configuration: config)
         return button
     }()
-
-    // MARK: - Fixed File Views
     private(set) var fixedFilesLable: BasePaddingLabel = {
         let fixedFilesLable = BasePaddingLabel(padding: .init(top: 0, left: 15, bottom: 0, right: 15))
         fixedFilesLable.text = "📌 Fixed Pages"
@@ -81,8 +78,6 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         return collectionView
     }()
-
-    // MARK: - Directory Path Views
     private(set) var rootDirectoryLable: UIStackView = {
         let directoryPathLabel = MemoHomeDirectoryNameLabel(name: "Home")
         directoryPathLabel.setHomePathLabel()
@@ -103,8 +98,6 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
         stackView.translatesAutoresizingMaskIntoConstraints = false
         return stackView
     }()
-
-    // MARK: - FileSorting PullDown Button View
     private(set) var totalFileCountLabel: UILabel = {
         let totalFileCountLabel = UILabel()
         return totalFileCountLabel
@@ -137,8 +130,6 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
         $0.font = .systemFont(ofSize: 16, weight: .regular)
         return $0
     }(UILabel())
-
-    // MARK: - Home File Views
     private(set) var directoryCollectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .horizontal
@@ -152,8 +143,6 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
         collectionView.isScrollEnabled = false
         return collectionView
     }()
-
-    // MARK: - Create Item Button
     private(set) var fileCreatePlusButton: UIView = {
         let image = UIImage(systemName: "plus")
         let buttonImageView = UIImageView(image: image)
@@ -230,8 +219,9 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
         return $0
     }(UIView())
 
-    init(memoHomeViewModel: MemoHomeViewModel) {
+    init(memoHomeViewModel: MemoHomeViewModel, audioControlBarHost: AudioControlBarHostType) {
         self.viewModel = memoHomeViewModel
+        self.audioControlBarHost = audioControlBarHost
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -292,7 +282,9 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
                     navigationController?.pushViewController(DormantBoxViewController(viewModel: vm), animated: true)
 
                 case .didNavigatePageView(let pageViewModel):
-                    let MemoPageViewController = MemoPageViewController(pageViewModel: pageViewModel)
+                    let MemoPageViewController = MemoPageViewController(
+                        pageViewModel: pageViewModel,
+                        audioControlBarHost: audioControlBarHost)
                     navigationController?.pushViewController(MemoPageViewController, animated: true)
 
                 case .didChangedFileName(let newName, let before, let after):
@@ -314,7 +306,7 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
                     singleTextEditorPageViewController.configure(dispatcher: dispatcher, component: textComponent)
                     navigationController?.pushViewController(singleTextEditorPageViewController, animated: true)
 
-                case .didNavigateSingleTableComponentPageView(let vm, let tableComponent):
+                case .didNavigateSingleTableComponentPageView(let vm, let tableComponent, let pageName):
                     let dispatcher = TableComponentActionDispatcher()
                     let singleTablePageViewController = SingleTablePageViewController()
                     let tableComponentViewEventHandler = TableComponentViewEventHandler(
@@ -324,21 +316,38 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
                         viewModel: vm,
                         UIEventHandler: tableComponentViewEventHandler)
 
-                    singleTablePageViewController.configure(dispatcher: dispatcher, component: tableComponent)
+                    singleTablePageViewController.configure(
+                        dispatcher: dispatcher,
+                        component: tableComponent,
+                        pageName: pageName)
+
                     navigationController?.pushViewController(singleTablePageViewController, animated: true)
 
-                case .didNavigateSingleAudioComponentPageView(let vm, let audioComponent):
-                    let dispatcher = AudioComponentActionDispatcher()
-                    let singleAudioPageViewController = SingleAudioPageViewController()
-                    let audioComponentUIEventHandler = AudioComponentViewEventHandler(
-						componentView: singleAudioPageViewController.audioComponentContentView)
+                case .didNavigateSingleAudioComponentPageView(let vm, let audioComponent, let pageName):
+                    let singleAudioViewController =
+                        audioControlBarHost.getSingleAudioViewControllerContinuousPlaybackSession(
+                            audioComponent: audioComponent, pageName: pageName)
+                        ?? {
+                            let dispatcher = AudioComponentActionDispatcher()
+                            let singleAudioPageViewController = SingleAudioPageViewController(
+                                audioControlBarHost: self.audioControlBarHost)
+                            let audioComponentUIEventHandler = AudioComponentViewEventHandler(
+                                componentView: singleAudioPageViewController.audioComponentContentView,
+                                audioControlBarHost: self.audioControlBarHost)
 
-                    dispatcher.bindToViewModel(
-                        viewModel: vm,
-                        UIEventHandler: audioComponentUIEventHandler)
+                            dispatcher.bindToViewModel(
+                                viewModel: vm,
+                                UIEventHandler: audioComponentUIEventHandler)
 
-                    singleAudioPageViewController.configure(dispatcher: dispatcher, audioComponent: audioComponent)
-                    navigationController?.pushViewController(singleAudioPageViewController, animated: true)
+                            singleAudioPageViewController.configure(
+                                dispatcher: dispatcher,
+                                audioComponent: audioComponent,
+                                pageName: pageName)
+
+                            return singleAudioPageViewController
+                        }()
+
+                    navigationController?.pushViewController(singleAudioViewController, animated: true)
             }
         }
         .store(in: &subscriptions)
@@ -425,19 +434,19 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
             directoryPathStackView.trailingAnchor.constraint(equalTo: directoryPathView.trailingAnchor),
 
             fileCreatePlusButton.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor, constant: -22),
-            fileCreatePlusButton.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor, constant: -70),
+            fileCreatePlusButton.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor, constant: -100),
             fileCreatePlusButton.widthAnchor.constraint(equalToConstant: 55),
             fileCreatePlusButton.heightAnchor.constraint(equalToConstant: 55),
 
             createFolderButton.widthAnchor.constraint(equalToConstant: 55),
             createFolderButton.heightAnchor.constraint(equalToConstant: 55),
             createFolderButton.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor, constant: -22),
-            createFolderButton.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor, constant: -70),
+            createFolderButton.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor, constant: -100),
 
             createPageButton.widthAnchor.constraint(equalToConstant: 55),
             createPageButton.heightAnchor.constraint(equalToConstant: 55),
             createPageButton.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor, constant: -22),
-            createPageButton.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor, constant: -70),
+            createPageButton.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor, constant: -100),
         ])
     }
 

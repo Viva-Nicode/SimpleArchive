@@ -8,13 +8,15 @@ import UIKit
 
 class AudioComponentViewEventHandler: ComponentViewEventHandlerType {
     private var componentView: AudioComponentContentView
+    private var audioControlBarHost: AudioControlBarHostType
     private var audioMetaDataEditPopupViewSubscription: AnyCancellable?
 
-    init(componentView: AudioComponentContentView) {
+    init(componentView: AudioComponentContentView, audioControlBarHost: AudioControlBarHostType) {
         self.componentView = componentView
+        self.audioControlBarHost = audioControlBarHost
     }
-	
-	deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
+
+    deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
 
     func UIupdateEventHandler(_ event: AudioComponentViewModel.Event) {
         switch event {
@@ -28,14 +30,19 @@ class AudioComponentViewEventHandler: ComponentViewEventHandlerType {
                     targetPlayingAudioRow.audioVisualizer.activateAudioVisualizer(waveFormData: audioWaveformData)
                 }
 
-                if let window = componentView.window, let host = window as? HostUIWindow {
-                    host.activeAudioControlBar(audioMetadata: audioMetadata, dispatcher: componentView.dispatcher)
+                audioControlBarHost.activeAudioControlBar(
+                    audioMetadata: audioMetadata,
+                    dispatcher: componentView.dispatcher)
+
+                if let vc = componentView.parentViewController as? SingleAudioPageViewController,
+                    let thumbnailData = audioMetadata.thumbnail,
+                    let thumbnail = UIImage(data: thumbnailData)
+                {
+                    vc.updateBackgroundImage(with: thumbnail)
                 }
 
             case .didToggleAudioPlayingState(let trackIndex, let playbackState):
-                if let window = componentView.window, let host = window as? HostUIWindow {
-                    host.toggleAudioControlBarPlayBackState(playbackState: playbackState)
-                }
+                audioControlBarHost.toggleAudioControlBarPlayBackState(playbackState: playbackState)
 
                 let trackIndexPath = IndexPath(row: trackIndex, section: .zero)
 
@@ -50,9 +57,7 @@ class AudioComponentViewEventHandler: ComponentViewEventHandlerType {
                 }
 
             case .didSeekAudioTrack(let trackIndex, let seek, let total):
-                if let window = componentView.window, let host = window as? HostUIWindow {
-                    host.seekAudioControlBarPlayProgress(seek: seek)
-                }
+                audioControlBarHost.seekAudioControlBarPlayProgress(seek: seek)
 
                 let indexPath = IndexPath(row: trackIndex, section: 0)
                 if let row = componentView.audioTrackTableView.cellForRow(at: indexPath),
@@ -82,8 +87,13 @@ class AudioComponentViewEventHandler: ComponentViewEventHandlerType {
                 }
 
                 if editResult.isEditingActiveTrack {
-                    if let window = componentView.window, let host = window as? HostUIWindow {
-                        host.applyMetadataChangeToAudioControlBar(audioMetadata: metadata)
+                    audioControlBarHost.applyMetadataChangeToAudioControlBar(audioMetadata: metadata)
+
+                    if let vc = componentView.parentViewController as? SingleAudioPageViewController,
+                        let thumbnailData = metadata.thumbnail,
+                        let thumbnail = UIImage(data: thumbnailData)
+                    {
+                        vc.updateBackgroundImage(with: thumbnail)
                     }
                 }
 
@@ -134,9 +144,7 @@ class AudioComponentViewEventHandler: ComponentViewEventHandlerType {
                 componentView.removeRow(trackIndex: trackIndex)
 
             case .didRemoveAudioTrackAndStopPlaying(let trackIndex):
-                if let window = componentView.window, let host = window as? HostUIWindow {
-                    host.stopAudioControlBar()
-                }
+                audioControlBarHost.stopAudioControlBar()
 
                 let removeTrackIndexPath = IndexPath(row: trackIndex, section: .zero)
                 if let row = componentView.audioTrackTableView.cellForRow(
@@ -151,12 +159,21 @@ class AudioComponentViewEventHandler: ComponentViewEventHandlerType {
             case .didScrollToActiveAudioTrack(let activeAudioTrackIndex):
                 if let c: AudioComponentView = componentView.findSuperViewMatched(),
                     let collectionView = c.collectionView,
-                    let ii = AudioComponentView.order[c.componentID]
+                    let ii = AudioComponentView.audioComponentOrder[c.componentID]
                 {
                     collectionView.scrollToItem(at: ii, at: .centeredVertically, animated: true)
                 }
                 let indexPath = IndexPath(row: activeAudioTrackIndex, section: 0)
                 componentView.audioTrackTableView.scrollToRow(at: indexPath, at: .middle, animated: true)
+
+            case .didDismissAudioControlBar:
+                audioControlBarHost.stopAudioControlBar()
+
+                componentView
+                    .audioTrackTableView
+                    .visibleCells
+                    .map { $0 as! AudioTableRowView }
+                    .forEach { $0.audioVisualizer.removeVisuzlization() }
         }
     }
 }

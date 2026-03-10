@@ -1,7 +1,6 @@
 import UIKit
 
 final class AudioProgressBar: UIControl {
-
     private let trackView: UIView = {
         let view = UIView()
         view.backgroundColor = .systemGray3
@@ -33,6 +32,9 @@ final class AudioProgressBar: UIControl {
         didSet {
             currentProgress = min(max(currentProgress, minimumValue), maximumValue)
             updateProgressBarWidth()
+            if [.began, .changed, .ended, .cancelled, .failed].contains(panGesture?.state) {
+                return
+            }
             updateCurrentTimeLabel?(currentProgress)
         }
     }
@@ -41,6 +43,12 @@ final class AudioProgressBar: UIControl {
         didSet {
             self.isUserInteractionEnabled = isScrubbingEnabled
         }
+    }
+
+    private var panGesture: UIPanGestureRecognizer?
+
+    func setGesture(panGesture: UIPanGestureRecognizer) {
+        self.panGesture = panGesture
     }
 
     override init(frame: CGRect) {
@@ -103,6 +111,7 @@ final class AudioProgressBar: UIControl {
     }
 
     override func beginTracking(_ touch: UITouch, with event: UIEvent?) -> Bool {
+        panGesture?.isEnabled = false
         updateCurrentProgressWithTracking(from: touch)
         return true
     }
@@ -113,6 +122,7 @@ final class AudioProgressBar: UIControl {
     }
 
     override func endTracking(_ touch: UITouch?, with event: UIEvent?) {
+        panGesture?.isEnabled = true
         super.endTracking(touch, with: event)
         sendActions(for: .touchUpInside)
     }

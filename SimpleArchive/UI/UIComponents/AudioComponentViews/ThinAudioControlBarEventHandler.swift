@@ -1,7 +1,8 @@
-class OuterAduioEventHandler: ComponentViewEventHandlerType {
-    private var host: AudioControlBarHost
 
-    init(host: AudioControlBarHost) {
+class ThinAudioControlBarEventHandler: ComponentViewEventHandlerType {
+    private var host: AudioControlBarHostType
+
+    init(host: AudioControlBarHostType) {
         self.host = host
     }
 
@@ -15,6 +16,9 @@ class OuterAduioEventHandler: ComponentViewEventHandlerType {
 
             case .didSeekAudioTrack(_, let seek, _):
                 host.seekAudioControlBarPlayProgress(seek: seek)
+				
+			case .didDismissAudioControlBar:
+				host.stopAudioControlBar()
 
             default:
                 break

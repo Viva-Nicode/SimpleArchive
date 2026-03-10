@@ -169,11 +169,13 @@ final class SingleTablePageViewController:
             .store(in: &subscriptions)
     }
 
-    func configure(dispatcher: TableComponentActionDispatcher, component: TableComponent) {
+	func configure(dispatcher: TableComponentActionDispatcher, component: TableComponent, pageName:String) {
         self.actionDispatcher = dispatcher
-        titleLable.text = component.title
+        
+		titleLable.text = pageName
         createDateLabel.text = component.creationDate.formattedDate
-        tableComponentContentView.configure(
+        
+		tableComponentContentView.configure(
             columns: component.componentContents.columns,
             rows: component.componentContents.cellValues,
             actionDispatcher: dispatcher,

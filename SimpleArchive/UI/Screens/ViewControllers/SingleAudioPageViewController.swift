@@ -1,8 +1,6 @@
-import Combine
-import SFBAudioEngine
 import UIKit
 
-final class SingleAudioPageViewController: UIViewController, AudioControlBarActionStrategy {
+final class SingleAudioPageViewController: UIViewController {
     private(set) var titleLable: UILabel = {
         let titleLabel = UILabel()
         titleLabel.font = .systemFont(ofSize: 24, weight: .bold)
@@ -36,9 +34,10 @@ final class SingleAudioPageViewController: UIViewController, AudioControlBarActi
     }()
 
     var dispatcher: AudioComponentActionDispatcher?
-    var subscriptions = Set<AnyCancellable>()
+    private var audioControlBarHost: AudioControlBarHostType
 
-    init() {
+    init(audioControlBarHost: AudioControlBarHostType) {
+        self.audioControlBarHost = audioControlBarHost
         super.init(nibName: nil, bundle: nil)
         setupUI()
         setupConstraints()
@@ -50,11 +49,22 @@ final class SingleAudioPageViewController: UIViewController, AudioControlBarActi
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        audioControlBarHost.setAudioControlBarLayoutAsDefault()
+    }
 
-        let coordinator = navigationController?.transitionCoordinator ?? transitionCoordinator
-        let targetWindow = view.window ?? navigationController?.view.window
-        if let host = targetWindow as? HostUIWindow {
-            host.setStrategy(st: self, coordinatedBy: coordinator)
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+
+        if isMovingFromParent || isBeingDismissed {
+            audioControlBarHost.setAudioControlBarLayoutAsThin()
+        }
+    }
+
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+
+        if isMovingFromParent || isBeingDismissed {
+            audioControlBarHost.setAudioControlBarEventHandlerForThin()
         }
     }
 
@@ -94,37 +104,13 @@ final class SingleAudioPageViewController: UIViewController, AudioControlBarActi
         ])
     }
 
-    func configure(dispatcher: AudioComponentActionDispatcher, audioComponent: AudioComponent) {
+    func configure(dispatcher: AudioComponentActionDispatcher, audioComponent: AudioComponent, pageName: String) {
         self.dispatcher = dispatcher
-        titleLable.text = audioComponent.title
+        titleLable.text = pageName
         audioComponentContentView.configure(audioComponent: audioComponent, dispatcher: dispatcher)
     }
 
-    func active(
-        audioControlBar: AudioControlBarView,
-        audioMetadata: AudioTrackMetadata,
-        dispatcher: AudioComponentActionDispatcher?
-    ) {
-        if let thumbnailData = audioMetadata.thumbnail, let thumbnail = UIImage(data: thumbnailData) {
-            updateBackgroundImage(with: thumbnail)
-        }
-
-        audioControlBar.isHidden = false
-        audioControlBar.state = .play(metadata: audioMetadata, dispatcher: dispatcher)
-    }
-
-    func applyMetadataChange(
-        audioControlBar: AudioControlBarView,
-        audioMetadata: AudioTrackMetadata
-    ) {
-        if let thumbnailData = audioMetadata.thumbnail, let thumbnail = UIImage(data: thumbnailData) {
-            updateBackgroundImage(with: thumbnail)
-        }
-
-        audioControlBar.applyUpdatedMetadata(with: audioMetadata)
-    }
-
-    private func updateBackgroundImage(with image: UIImage) {
+    func updateBackgroundImage(with image: UIImage) {
         UIView.transition(
             with: self.backgroundImageView, duration: 1, options: .transitionCrossDissolve,
             animations: {

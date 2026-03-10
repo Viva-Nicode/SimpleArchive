@@ -68,6 +68,10 @@ class AudioComponentViewModel: PageComponentViewModelType {
                     {
                         eventOutput.send(.didScrollToActiveAudioTrack(activeAudioTrackIndex))
                     }
+
+                case .willDismissAudioControlBar:
+					soundPlayer.stopPlaying()
+					eventOutput.send(.didDismissAudioControlBar)
             }
         }
         .store(in: &subscriptions)
@@ -77,6 +81,18 @@ class AudioComponentViewModel: PageComponentViewModelType {
 
     var isActiveAudioViewModel: Bool {
         soundPlayer.nowActiveAudioVMIdentifier == vmIdentifier
+    }
+
+    var audioComponentID: UUID {
+        audioDataManager.pageComponent.id
+    }
+
+    var currentTrackIndex: Int? {
+        if let id = soundPlayer.activeTrackID {
+            return audioDataManager[id]
+        } else {
+            return nil
+        }
     }
 
     private func downloadAudioTracksUsingCode(using code: String) {
@@ -210,6 +226,7 @@ class AudioComponentViewModel: PageComponentViewModelType {
 
     func clearSubscriptions() {
         subscriptions.removeAll()
+		
     }
 }
 
@@ -236,6 +253,7 @@ extension AudioComponentViewModel {
         case willMoveAudioTrackOrder(Int, Int)
         case willPresentEditAudioMetaDataPopupView(trackIndex: Int)
         case willScrollToActiveAudioTrack
+        case willDismissAudioControlBar
     }
 
     enum Event {
@@ -252,5 +270,6 @@ extension AudioComponentViewModel {
         case didInactiveAudioComponent
         case didPresentEditAudioMetaDataPopupView(AudioTrackMetadata)
         case didScrollToActiveAudioTrack(Int)
+		case didDismissAudioControlBar
     }
 }

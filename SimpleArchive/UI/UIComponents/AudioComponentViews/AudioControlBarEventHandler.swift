@@ -2,17 +2,17 @@ import Foundation
 import UIKit
 
 class AudioControlBarEventHandler: ComponentViewEventHandlerType {
-    private var host: AudioControlBarHost
+    private var host: AudioControlBarHostType
     private var indexPath: IndexPath
     private var collectionView: UICollectionView
 
-    init(host: AudioControlBarHost, collectionView: UICollectionView, indexPath: IndexPath) {
+    init(host: AudioControlBarHostType, collectionView: UICollectionView, indexPath: IndexPath) {
         self.host = host
         self.indexPath = indexPath
         self.collectionView = collectionView
     }
-	
-	deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
+
+    deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
 
     func UIupdateEventHandler(_ event: AudioComponentViewModel.Event) {
         switch event {
@@ -27,15 +27,19 @@ class AudioControlBarEventHandler: ComponentViewEventHandlerType {
 
             case .didScrollToActiveAudioTrack(let activeAudioTrackIndex):
                 CATransaction.begin()
-                CATransaction.setCompletionBlock {
-                    if let acv = self.collectionView.cellForItem(at: self.indexPath) as? AudioComponentView {
-                        let indexPath = IndexPath(row: activeAudioTrackIndex, section: 0)
-                        acv.componentContentView.audioTrackTableView.scrollToRow(
-                            at: indexPath, at: .middle, animated: true)
-                    }
+				collectionView.scrollToItem(at: indexPath, at: .centeredVertically, animated: true)
+				
+				DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [self] in
+					if let acv = self.collectionView.cellForItem(at: self.indexPath) as? AudioComponentView {
+						let indexPath = IndexPath(row: activeAudioTrackIndex, section: 0)
+						acv.componentContentView.audioTrackTableView.scrollToRow(
+							at: indexPath, at: .middle, animated: true)
+					}
                 }
-                collectionView.scrollToItem(at: indexPath, at: .centeredVertically, animated: true)
-                CATransaction.commit()
+				CATransaction.commit()
+
+            case .didDismissAudioControlBar:
+                host.stopAudioControlBar()
 
             default:
                 break

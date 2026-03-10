@@ -3,7 +3,7 @@ import UIKit
 
 final class AudioComponentView: PageComponentView<AudioComponentContentView, AudioComponent> {
     private static var audioTableViewScrollOffsetCache: [UUID: CGFloat] = [:]
-    static var order: [UUID: IndexPath] = [:]
+    static var audioComponentOrder: [UUID: IndexPath] = [:]
     static let reuseAudioComponentIdentifier: String = "reuseAudioComponentIdentifier"
 
     override init(frame: CGRect) {
@@ -29,30 +29,28 @@ final class AudioComponentView: PageComponentView<AudioComponentContentView, Aud
     }
 
     override func prepareForReuse() {
+        super.prepareForReuse()
+
         if let componentID {
             Self.audioTableViewScrollOffsetCache[componentID] =
                 componentContentView.audioTrackTableView.contentOffset.y
         }
-        super.prepareForReuse()
 
-        componentContentView.alpha = 1
-        componentContentView.toolBarStackViewHeightConstraint?.constant = 45
-        componentContentView.sortOptionStackViewHeightConstraint?.constant = 30
-        componentContentView.addbuttonHeightConstraint?.constant = 44
-        componentContentView.layoutIfNeeded()
+        componentContentView.minimizeContentView(false)
 
-        if let window = window,
-            let host = window as? HostUIWindow,
+        if let memoPageVC = parentViewController as? MemoPageViewController,
             let collectionView,
-            let indexPath = Self.order[componentID]
+            let indexPath = Self.audioComponentOrder[componentID]
         {
+            let host = memoPageVC.audioControlBarHost
             let controlBarEventHandler = AudioControlBarEventHandler(
                 host: host,
                 collectionView: collectionView,
                 indexPath: indexPath)
+
             componentContentView
                 .dispatcher?
-                .switchingHandlerWhenPrepareComponent(controlBarEventHandler: controlBarEventHandler)
+                .setEventHandler(controlBarEventHandler: controlBarEventHandler)
         }
     }
 

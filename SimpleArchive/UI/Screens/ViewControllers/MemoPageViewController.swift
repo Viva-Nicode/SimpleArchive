@@ -1,13 +1,10 @@
-import AVFAudio
 import Combine
-import MediaPlayer
 import UIKit
 
 final class MemoPageViewController:
     UIViewController,
     UICollectionViewDelegateFlowLayout,
-    ManualCaptureHost,
-    AudioControlBarActionStrategy
+    ManualCaptureHost
 {
     var pageViewModel: MemoPageViewModel
     var pageActionDispatcher = PassthroughSubject<MemoPageViewInput, Never>()
@@ -65,9 +62,11 @@ final class MemoPageViewController:
     }()
 
     private(set) var pageComponentCollectionView: UICollectionView!
+    private(set) var audioControlBarHost: AudioControlBarHostType
 
-    init(pageViewModel: MemoPageViewModel) {
+    init(pageViewModel: MemoPageViewModel, audioControlBarHost: AudioControlBarHostType) {
         self.pageViewModel = pageViewModel
+        self.audioControlBarHost = audioControlBarHost
 
         super.init(nibName: nil, bundle: nil)
 
@@ -95,7 +94,13 @@ final class MemoPageViewController:
                 case .viewDidLoad(let memoPageData):
                     let factory = PageComponentCollectionViewCellFactory(
                         collectionView: pageComponentCollectionView,
-                        input: pageActionDispatcher)
+                        input: pageActionDispatcher,
+                        audioControlBarHost: audioControlBarHost)
+
+                    audioControlBarHost.injectDispatcherContinuousPlaybackSessionInFactory(
+                        factory: factory,
+                        pageData: memoPageData,
+                        collectionView: pageComponentCollectionView)
 
                     componentCollectionViewDataSource = MemoPageComponentCollectionViewDataSource(
                         pageComponentViewFactory: factory,
@@ -156,12 +161,7 @@ final class MemoPageViewController:
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-
-        let coordinator = navigationController?.transitionCoordinator ?? transitionCoordinator
-        let targetWindow = view.window ?? navigationController?.view.window
-        if let host = targetWindow as? HostUIWindow {
-            host.setStrategy(st: self, coordinatedBy: coordinator)
-        }
+        audioControlBarHost.setAudioControlBarLayoutAsDefault()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -169,27 +169,22 @@ final class MemoPageViewController:
         let isfreedFromMemory = isMovingFromParent || isBeingDismissed
 
         if isfreedFromMemory {
-            let coordinator = navigationController?.transitionCoordinator ?? transitionCoordinator
-            let targetWindow = view.window ?? navigationController?.view.window
-            if let host = targetWindow as? HostUIWindow {
-                componentCollectionViewDataSource?.continuous()
-				
-                let outerAduioEventHandler = OuterAduioEventHandler(host: host)
-                host.audioControlBar.dispatcher?
-                    .switchHandlerWhenOuter(outerAudioEventHandler: outerAduioEventHandler)
-                host.transformOuter(coordinatedBy: coordinator)
-            }
+            audioControlBarHost.setAudioControlBarLayoutAsThin()
         }
     }
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
+
         let isfreedFromMemory = isMovingFromParent || isBeingDismissed
 
         if isfreedFromMemory {
             componentCollectionViewDataSource?.freedDataSource()
             componentCollectionViewDataSource = nil
+
             subscriptions.removeAll()
+
+            audioControlBarHost.setAudioControlBarEventHandlerForThin()
         }
     }
 

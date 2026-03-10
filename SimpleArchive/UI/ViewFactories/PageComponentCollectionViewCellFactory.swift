@@ -6,15 +6,18 @@ final class PageComponentCollectionViewCellFactory: PageComponentViewFactoryType
     private var componentActionDispatcherCache: [UUID: any PageComponentActionDispatcherType] = [:]
     private var pageActionDispatcher: PassthroughSubject<MemoPageViewInput, Never>
     private var indexPath: IndexPath?
+    private var audioControlBarHost: AudioControlBarHostType
 
     weak var collectionView: UICollectionView?
 
     init(
         collectionView: UICollectionView,
         input: PassthroughSubject<MemoPageViewInput, Never>,
+        audioControlBarHost: AudioControlBarHostType
     ) {
         self.collectionView = collectionView
         self.pageActionDispatcher = input
+        self.audioControlBarHost = audioControlBarHost
     }
 
     deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
@@ -127,14 +130,15 @@ final class PageComponentCollectionViewCellFactory: PageComponentViewFactoryType
                 audioActionDispatcher.clearSubscriptions()
 
                 let audioComponentUIEventHandler = AudioComponentViewEventHandler(
-                    componentView: audioComponentView.componentContentView)
+                    componentView: audioComponentView.componentContentView,
+                    audioControlBarHost: audioControlBarHost)
 
                 audioActionDispatcher.bindToViewModel(
                     viewModel: audioComponentViewModel,
                     UIEventHandler: audioComponentUIEventHandler)
 
                 componentActionDispatcherCache[audioComponent.id] = audioActionDispatcher
-                AudioComponentView.order[audioComponent.id] = indexPath
+                AudioComponentView.audioComponentOrder[audioComponent.id] = indexPath
 
                 audioComponentView.configureAudioComponentForMemoPageView(
                     component: audioComponent,
@@ -148,12 +152,16 @@ final class PageComponentCollectionViewCellFactory: PageComponentViewFactoryType
         }
     }
 
-    func freedVMS() {
-		pageComponentVMCache.values.forEach { $0.clearSubscriptions() }
-		componentActionDispatcherCache.values.forEach{ $0.clearSubscriptions() } 
+    func injectContineiousPlaybackDispatcher(
+        audioComponentId: UUID,
+        dispatcher: any PageComponentActionDispatcherType,
+        vm: any PageComponentViewModelType
+    ) {
+        componentActionDispatcherCache[audioComponentId] = dispatcher
+        pageComponentVMCache[audioComponentId] = vm
     }
 
-    func continuous() {
+    func freedVMS() {
         let activeAudioComponentIDs = pageComponentVMCache.compactMap { key, vm -> UUID? in
             guard let activeAudioVM = vm as? AudioComponentViewModel else { return nil }
             return activeAudioVM.isActiveAudioViewModel ? key : nil
@@ -163,6 +171,9 @@ final class PageComponentCollectionViewCellFactory: PageComponentViewFactoryType
             pageComponentVMCache.removeValue(forKey: $0)
             componentActionDispatcherCache.removeValue(forKey: $0)
         }
+
+        pageComponentVMCache.values.forEach { $0.clearSubscriptions() }
+        componentActionDispatcherCache.values.forEach { $0.clearSubscriptions() }
     }
 
     func setIndexPath(indexPath: IndexPath) {

@@ -11,12 +11,14 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     ) {
         guard let windowScene = (scene as? UIWindowScene) else { return }
 
-        let window = HostUIWindow(windowScene: windowScene)
+        let window = AudioControlBarHostWindow(windowScene: windowScene)
 
         DependencyConfigurator.configureDependencies()
 
         let memoHomeViewModel = DIContainer.shared.resolve(MemoHomeViewModel.self)
-        let memoHomeViewController = MemoHomeViewController(memoHomeViewModel: memoHomeViewModel)
+        let memoHomeViewController = MemoHomeViewController(
+            memoHomeViewModel: memoHomeViewModel,
+			audioControlBarHost: window)
         let indexViewController = UINavigationController(rootViewController: memoHomeViewController)
 
         indexViewController.navigationBar.isHidden = true
@@ -26,7 +28,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         window.rootViewController = indexViewController
         window.makeKeyAndVisible()
-        window.bringSubviewToFront(window.audioControlBar)
+
+        window.followUpAudioControlBarOnWindow()
 
         self.window = window
     }
