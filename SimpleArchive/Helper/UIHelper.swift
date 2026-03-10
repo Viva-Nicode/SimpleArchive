@@ -1,5 +1,27 @@
 import UIKit
 
+extension UIView {
+	func findSuperViewMatched<T>() -> T? {
+		var current: UIView? = self
+		while let view = current {
+			if let reloadable = view as? T {
+				return reloadable
+			}
+			current = view.superview
+		}
+
+		var responder: UIResponder? = self
+		while let r = responder {
+			if let vc = r as? UIViewController, let reloadable = vc as? T {
+				return reloadable
+			}
+			responder = r.next
+		}
+
+		return nil
+	}
+}
+
 extension UIColor {
     var toHexString: String? {
         var red: CGFloat = 0
@@ -166,7 +188,6 @@ extension UIView {
     }
 
     enum BorderColor {
-
         case red
         case blue
         case green
@@ -221,6 +242,10 @@ extension Date {
     }
 }
 
+extension Data {
+	static let defaultAudioThumbnailData = UIImage(named: "defaultMusicThumbnail")!.jpegData(compressionQuality: 1.0)!
+}
+
 enum UIConstants {
     static let componentMinimumHeight: CGFloat = 70.0
     static let tableComponentCellMaximumWidth: CGFloat = 260.0
@@ -237,5 +262,18 @@ enum UIConstants {
     enum TableComponentCellEditPopupViewConstants {
         static let rowElementWidth: CGFloat = ((UIView.screenWidth * 0.8) - 40) / 3
         static let editingSeparatorLineHeight: CGFloat = 25
+    }
+}
+
+extension UICollectionViewCell {
+    var collectionView: UICollectionView? {
+        var responder: UIResponder? = self
+        while let r = responder {
+            if let collectionView = r as? UICollectionView {
+                return collectionView
+            }
+            responder = r.next
+        }
+        return nil
     }
 }

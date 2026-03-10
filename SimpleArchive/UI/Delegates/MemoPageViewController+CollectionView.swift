@@ -5,21 +5,6 @@ extension MemoPageViewController: UICollectionViewDelegate {
     func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
         view.endEditing(true)
     }
-
-    func collectionView(
-        _ collectionView: UICollectionView,
-        didEndDisplaying cell: UICollectionViewCell,
-        forItemAt indexPath: IndexPath
-    ) {
-        if let audioCell = cell as? AudioComponentView {
-            audioCell
-                .componentContentView
-                .audioTrackTableView
-                .visibleCells
-                .map { $0 as! AudioTableRowView }
-                .forEach { $0.audioVisualizer.removeVisuzlization() }
-        }
-    }
 }
 
 extension MemoPageViewController: UICollectionViewDragDelegate {
@@ -29,7 +14,7 @@ extension MemoPageViewController: UICollectionViewDragDelegate {
         itemsForBeginning session: any UIDragSession, at indexPath: IndexPath
     ) -> [UIDragItem] {
 
-        let dragedComponent = viewModel.memoPage[indexPath.item]
+        let dragedComponent = pageViewModel.memoPage[indexPath.item]
 
         switch dragedComponent.type {
             case .text:
@@ -69,7 +54,8 @@ extension MemoPageViewController: UICollectionViewDropDelegate {
         if let item = coordinator.items.first, let sourceIndexPath = item.sourceIndexPath {
             collectionView.performBatchUpdates(
                 {
-                    input.send(.willChangeComponentOrder(sourceIndexPath.item, destinationIndexPath.item))
+                    pageActionDispatcher.send(
+                        .willChangeComponentOrder(sourceIndexPath.item, destinationIndexPath.item))
                     collectionView.moveItem(at: sourceIndexPath, to: destinationIndexPath)
                 }, completion: nil)
 

@@ -46,8 +46,6 @@ class NewDirectoryPopupView: PopupView {
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
-    deinit { print("deinit NewDirectoryPopupView") }
 
     override func didMoveToWindow() {
         super.didMoveToWindow()

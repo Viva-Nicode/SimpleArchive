@@ -5,38 +5,23 @@ import UIKit
 protocol SnapshotRestorablePageComponent: PageComponent {
     associatedtype SnapshotType: ComponentSnapshotType
 
-    var snapshots: [SnapshotType] { get }
+    var snapshots: [SnapshotType] { get set }
     var captureState: CaptureState { get set }
 
-    func setCaptureState(to state: CaptureState)
-    func currentIfUnsaved() -> Self?
-
-    @discardableResult
-    func makeSnapshot(desc: String, saveMode: SnapshotSaveMode) -> SnapshotType
-    func revertToSnapshot(snapshotID: UUID)
-    func removeSnapshot(snapshotID: UUID) -> RemoveSnapshotResult
-}
-
-struct RemoveSnapshotResult {
-    var removeSnapshotIndex: Int
-    var nextSnapshotID: UUID?
-    var nextSnapshotMetaData: SnapshotMetaData?
+    func insertTrackingSnapshot(trackingSnapshot: any ComponentSnapshotType)
+    func revertComponentContentsUsingSnapshot(snapshotID: UUID)
+    func removeSnapshot(at: Int)
 }
 
 extension SnapshotRestorablePageComponent {
-    func setCaptureState(to state: CaptureState) {
-        self.captureState = state
-    }
-
-    func currentIfUnsaved() -> Self? {
-        switch self.captureState {
-            case .needsCapture:
-                return self
-
-            case .captured:
-                return nil
+    func revertComponentContentsUsingSnapshot(snapshotID: UUID) {
+        if let targetSnapshotIndex = snapshots.firstIndex(where: { $0.snapshotID == snapshotID }) {
+            snapshots[targetSnapshotIndex].revert(component: self as! Self.SnapshotType.ComponentType)
+            captureState = .captured
         }
     }
+	
+    func removeSnapshot(at: Int) { snapshots.remove(at: at) }
 }
 
 enum CaptureState: Codable, Equatable {

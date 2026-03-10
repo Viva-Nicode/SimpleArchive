@@ -41,13 +41,5 @@ final class AudioComponent: NSObject, Codable, PageComponent {
         case id, creationDate, title, renderingOrder, isMinimumHeight, componentContents
     }
 
-    deinit { print("deinit AudioComponentModel : \(title)") }
-
-    var trackNames: [String] {
-        componentContents.tracks.map { "\($0.id).\($0.fileExtension)" }
-    }
-
-    func addAudios(audiotracks: [AudioTrack]) -> [Int] {
-        componentContents.addAudios(audiotracks: audiotracks)
-    }
+    deinit { myLog("\(String(describing: Swift.type(of: self))) : \(title)", c: .purple) }
 }

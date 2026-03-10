@@ -1,7 +1,7 @@
 import Combine
 import CoreData
 
-struct MemoDirectoryCoreDataRepository: MemoDirectoryCoreDataRepositoryType {
+final class MemoDirectoryCoreDataRepository: MemoDirectoryCoreDataRepositoryType {
 
     private let coredataStack: PersistentStore
 
@@ -32,7 +32,7 @@ struct MemoDirectoryCoreDataRepository: MemoDirectoryCoreDataRepositoryType {
                             parentDirectory: nil)
 
                         systemDirectoryCase.setId(systemDirectory.id)
-                        coredataStack.update { ctx in
+                        self.coredataStack.update { ctx in
                             let persistence = CoreDataStorageItemPersistenceCreator(context: ctx)
                             systemDirectory.persistToPersistentStorage(using: persistence)
                         }
@@ -52,7 +52,7 @@ struct MemoDirectoryCoreDataRepository: MemoDirectoryCoreDataRepositoryType {
         coredataStack.update { ctx in
             let fetchRequest = MemoDirectoryEntity.findDirectoryEntityById(id: storageItem.parentDirectory!.id)
             let parentDirectoryEntity = try ctx.fetch(fetchRequest).first
-            let persistence = CoreDataStorageItemPersistenceCreator(context: ctx)
+            let persistence = CoreDataStorageItemPersistenceCreator(parentDirectoryEntity: parentDirectoryEntity)
 
             persistence.parentDirectoryEntity = parentDirectoryEntity
             storageItem.persistToPersistentStorage(using: persistence)

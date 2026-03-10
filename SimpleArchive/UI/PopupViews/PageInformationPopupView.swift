@@ -187,8 +187,6 @@ class PageInformationPopupView: PopupView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    deinit { print("FileInformationPopupView deinit") }
-
     var confirmButtonPublisher: AnyPublisher<(UUID?, String?), Never> {
         confirmButton.throttleTapPublisher()
             .map { [weak self] _ in

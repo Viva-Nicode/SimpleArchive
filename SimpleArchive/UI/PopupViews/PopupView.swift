@@ -39,6 +39,8 @@ class PopupView: UIView, PopupViewDetailConfigurable {
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
+    
+    deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
 
     func popupViewDetailConfigure() { fatalError("This method must be overridden by subclass") }
 

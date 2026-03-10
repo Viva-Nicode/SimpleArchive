@@ -47,6 +47,12 @@ extension UIControl {
         GestruePublisher(control: self, event: .touchUpInside)
             .throttle(for: .seconds(interval), scheduler: RunLoop.main, latest: false)
     }
+
+    func throttleTapPublisher<T: AnyObject>(owner: T, interval: TimeInterval = 1.0) -> AnyPublisher<T, Never> {
+        self.throttleTapPublisher(interval: interval)
+            .compactMap { [weak owner] _ in owner }
+            .eraseToAnyPublisher()
+    }
 }
 
 extension UITapGestureRecognizer {

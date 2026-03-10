@@ -2,28 +2,17 @@ import CoreData
 import Foundation
 
 @objc(TableComponentSnapshotEntity)
-public class TableComponentSnapshotEntity: NSManagedObject {
+public class TableComponentSnapshotEntity: NSManagedObject, Identifiable {
     func convertToModel() -> TableComponentSnapshot {
-        TableComponentSnapshot(
+        let converter = JsonConverter.shared
+        return TableComponentSnapshot(
             snapshotID: self.snapshotID,
             makingDate: self.makingDate,
-            contents: self.convertToSnapshotContents()!,
+            contents: converter.decode(TableComponentContents.self, jsonString: self.contents)!,
             description: self.snapShotDescription,
-            saveMode: .init(rawValue: self.saveMode) ?? .automatic)
-    }
-
-    private func convertToSnapshotContents() -> TableComponentContents? {
-        var contents = TableComponentContents()
-        guard let data = self.contents.data(using: .utf8),
-            let decoded = try? JSONDecoder().decode(TableComponentContents.self, from: data)
-        else { return nil }
-
-        contents.columns = decoded.columns
-        contents.rows = decoded.rows
-        contents.cells = decoded.cells
-        contents.sortBy = decoded.sortBy
-
-        return contents
+            saveMode: .init(rawValue: self.saveMode) ?? .automatic,
+            modificationHistory: self.modificationHistory == nil
+                ? [] : converter.decode([TableComponentAction].self, jsonString: self.modificationHistory!)!)
     }
 }
 
@@ -39,8 +28,15 @@ extension TableComponentSnapshotEntity {
     @NSManaged public var snapShotDescription: String
     @NSManaged public var snapshotID: UUID
     @NSManaged public var component: TableComponentEntity
+    @NSManaged public var modificationHistory: String?
 }
 
-extension TableComponentSnapshotEntity: Identifiable {
-
+extension TableComponentSnapshotEntity: PageComponentSnapshotEntity {
+    func updateTrackingSnapshotContents(snapshot: any ComponentSnapshotType) {
+        let converter = JsonConverter.shared
+        if let tableComponentSnapshot = snapshot as? TableComponentSnapshot {
+            contents = converter.encode(object: tableComponentSnapshot.snapshotContents)
+            modificationHistory = converter.encode(object: tableComponentSnapshot.modificationHistory)
+        }
+    }
 }

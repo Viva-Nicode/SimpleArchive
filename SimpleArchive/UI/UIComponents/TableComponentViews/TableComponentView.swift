@@ -1,14 +1,9 @@
 import Combine
 import UIKit
 
-final class TableComponentView: PageComponentView<TableComponentContentView, TableComponent>,
-    CaptureableComponentView
-{
+protocol ContentsReloadableView { func reloadUsingRestoredContents(contents: Codable) }
 
-    static let reuseTableComponentIdentifier: String = "reuseTableComponentIdentifier"
-    private var snapshotInputActionSubject: PassthroughSubject<ComponentSnapshotViewModelInput, Never>?
-    var snapshotCapturePopupView: SnapshotCapturePopupView?
-
+final class TableComponentView: PageComponentView<TableComponentContentView, TableComponent>, ContentsReloadableView {
     private let snapShotView: UIStackView = {
         let snapShotView = UIStackView()
         snapShotView.axis = .horizontal
@@ -44,7 +39,21 @@ final class TableComponentView: PageComponentView<TableComponentContentView, Tab
         fatalError("init(coder:) has not been implemented")
     }
 
-    deinit { print("deinit TableComponentView") }
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        componentContentView.prepareForReuse()
+        tableActionDispatcher?.clearSubscriptions()
+    }
+
+    override func freedReferences() {
+        super.freedReferences()
+        tableActionDispatcher?.clearSubscriptions()
+    }
+
+    static let reuseIdentifier = "reuseTableComponentIdentifier"
+
+    private var tableActionDispatcher: TableComponentActionDispatcher?
+    private var componentSnapshotActionDispatcher: PassthroughSubject<ComponentSnapshotViewModel.Action, Never>?
 
     override func setupUI() {
         componentContentView = TableComponentContentView()
@@ -62,63 +71,66 @@ final class TableComponentView: PageComponentView<TableComponentContentView, Tab
         toolBarView.addSubview(snapShotView)
     }
 
-    override func prepareForReuse() {
-        componentContentView.prepareForReuse()
-    }
-
     override func setupConstraints() {
         super.setupConstraints()
         snapShotView.centerYAnchor.constraint(equalTo: toolBarView.centerYAnchor).isActive = true
         snapShotView.trailingAnchor.constraint(equalTo: toolBarView.trailingAnchor, constant: -10).isActive = true
     }
 
-    // 페이지 뷰 전용 configure
-    override func configure(
+    func configureTableComponentForMemoPageView(
         component: TableComponent,
-        input subject: PassthroughSubject<MemoPageViewInput, Never>
+        viewModel: any PageComponentViewModelType,
+        pageActionDispatcher: PassthroughSubject<MemoPageViewInput, Never>,
+        actionDispatcher: TableComponentActionDispatcher
     ) {
-        super.configure(component: component, input: subject)
+        super
+            .configure(
+                componentID: component.id,
+                componentTitle: component.title,
+                componentCreateAt: component.creationDate,
+                pageActionDispatcher: pageActionDispatcher)
+
+        self.tableActionDispatcher = actionDispatcher
 
         componentContentView.configure(
             columns: component.componentContents.columns,
             rows: component.componentContents.cellValues,
-            dispatcher: MemoPageTableComponentActionDispatcher(subject: subject),
-            isMinimum: component.isMinimumHeight,
-            componentID: componentID
-        )
+            actionDispatcher: actionDispatcher,
+            isMinimum: component.isMinimumHeight)
 
         captureButton.throttleTapPublisher()
             .flatMap { [weak self] _ -> AnyPublisher<String, Never> in
-                guard let self else { return Empty().eraseToAnyPublisher() }
+                guard let self,
+                    let memoPageVC = parentViewController as? MemoPageViewController
+                else { return Empty().eraseToAnyPublisher() }
 
-                let popup = SnapshotCapturePopupView()
-                self.snapshotCapturePopupView = popup
-                popup.show()
+                let snapshotCapturePopupView = SnapshotCapturePopupView()
+                memoPageVC.snapshotCapturePopupView = snapshotCapturePopupView
+                snapshotCapturePopupView.show()
 
-                return popup.captureButtonPublisher
+                return snapshotCapturePopupView.captureButtonPublisher
             }
             .sink { [weak self] snapshotDescription in
                 guard let self else { return }
-                self.pageInputActionSubject?.send(.willCaptureComponent(componentID, snapshotDescription))
+                tableActionDispatcher?.captureComponentManual(description: snapshotDescription)
             }
             .store(in: &subscriptions)
 
         snapshotButton.throttleTapPublisher()
             .sink { [weak self] _ in
                 guard let self else { return }
-                pageInputActionSubject?.send(.willNavigateSnapshotView(componentID))
+                tableActionDispatcher?.navigateComponentSnapshotView()
             }
             .store(in: &subscriptions)
     }
 
-    // 스냅샷 뷰 전용 configure
     func configure(
         snapshotID: UUID,
         snapshotDetail: TableComponentContents,
-        input subject: PassthroughSubject<ComponentSnapshotViewModelInput, Never>
+        snapshotActionDispatcher: PassthroughSubject<ComponentSnapshotViewModel.Action, Never>
     ) {
-        snapshotInputActionSubject = subject
-        pageInputActionSubject = PassthroughSubject<MemoPageViewInput, Never>()
+        self.componentSnapshotActionDispatcher = snapshotActionDispatcher
+        pageActionDispatcher = PassthroughSubject<MemoPageViewInput, Never>()
 
         componentContentView.configure(
             columns: snapshotDetail.columns,
@@ -129,14 +141,15 @@ final class TableComponentView: PageComponentView<TableComponentContentView, Tab
         componentContentView.constraints
             .filter { $0.firstAnchor == componentContentView.topAnchor }
             .forEach { $0.isActive = false }
-        
+
         componentContentView.topAnchor.constraint(equalTo: toolBarView.bottomAnchor).isActive = true
 
         subscriptions.removeAll()
 
         redCircleView.throttleUIViewTapGesturePublisher()
-            .sink { _ in
-                self.snapshotInputActionSubject?.send(.willRemoveSnapshot(snapshotID))
+            .sink { [weak self] _ in
+                guard let self else { return }
+                componentSnapshotActionDispatcher?.send(.willRemoveSnapshot(snapshotID))
             }
             .store(in: &subscriptions)
 
@@ -147,7 +160,61 @@ final class TableComponentView: PageComponentView<TableComponentContentView, Tab
         snapshotButton.removeFromSuperview()
     }
 
+    func reloadUsingRestoredContents(contents: Codable) {
+        if let tableContents = contents as? TableComponentContents {
+            componentContentView.alpha = 0
+
+            componentContentView = TableComponentContentView()
+            componentContentView.alpha = 0
+            componentContentView.translatesAutoresizingMaskIntoConstraints = false
+            componentContentView.layer.cornerRadius = 10
+            componentContentView.layer.maskedCorners = [.layerMaxXMaxYCorner, .layerMinXMaxYCorner]
+            componentContentView.backgroundColor = .systemGray6
+
+            containerView.addSubview(componentContentView)
+
+            NSLayoutConstraint.activate([
+                componentContentView.topAnchor.constraint(equalTo: componentInformationView.bottomAnchor),
+                componentContentView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+                componentContentView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
+                componentContentView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor),
+            ])
+
+            componentContentView.configure(
+                columns: tableContents.columns,
+                rows: tableContents.cellValues,
+                actionDispatcher: tableActionDispatcher!,
+                isMinimum: false)
+
+            UIView.animateKeyframes(withDuration: 0.8, delay: 0, options: []) {
+                UIView.addKeyframe(withRelativeStartTime: 0.0, relativeDuration: 0.4) {
+                    self.collectionView?.collectionViewLayout.invalidateLayout()
+                }
+                UIView.addKeyframe(withRelativeStartTime: 0.4, relativeDuration: 0.8) {
+                    self.componentContentView.alpha = 1
+                }
+            }
+        }
+    }
+
     override func setMinimizeState(_ isMinimize: Bool) {
-        componentContentView.minimizeContentView(isMinimize)
+        componentContentView.minimizeContentView(isMinimize, isAnimated: true)
+    }
+
+    override func presentFullScreenPageComponentView() {
+        if let memoPageViewController = parentViewController as? MemoPageViewController {
+            memoPageViewController.fullscreenTargetComponentContentsViewFrame = componentContentView.convert(
+                componentContentView.bounds, to: memoPageViewController.view.window!)
+
+            let fullscreenComponentViewController = FullScreenTableComponentViewController(
+                title: titleLabel.text!,
+                createdDate: createdAt,
+                tableComponentContentView: componentContentView
+            )
+            fullscreenComponentViewController.modalPresentationStyle = .fullScreen
+            fullscreenComponentViewController.transitioningDelegate = memoPageViewController
+
+            memoPageViewController.present(fullscreenComponentViewController, animated: true)
+        }
     }
 }

@@ -2,76 +2,181 @@ import Combine
 import UIKit
 
 final class PageComponentCollectionViewCellFactory: PageComponentViewFactoryType {
-    var audioDataSources: [UUID: AudioComponentDataSource] = [:]
-    var subject: PassthroughSubject<MemoPageViewInput, Never>
-    var indexPath: IndexPath?
-    let audioContentsDataContainer: AudioContentsDataContainerType
+    private var pageComponentVMCache: [UUID: any PageComponentViewModelType] = [:]
+    private var componentActionDispatcherCache: [UUID: any PageComponentActionDispatcherType] = [:]
+    private var pageActionDispatcher: PassthroughSubject<MemoPageViewInput, Never>
+    private var indexPath: IndexPath?
+    private var audioControlBarHost: AudioControlBarHostType
 
     weak var collectionView: UICollectionView?
 
     init(
         collectionView: UICollectionView,
         input: PassthroughSubject<MemoPageViewInput, Never>,
-        audioContentsDataContainer: AudioContentsDataContainerType
+        audioControlBarHost: AudioControlBarHostType
     ) {
         self.collectionView = collectionView
-        self.subject = input
-        self.audioContentsDataContainer = audioContentsDataContainer
+        self.pageActionDispatcher = input
+        self.audioControlBarHost = audioControlBarHost
     }
+
+    deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
 
     func makeComponentView(from component: any PageComponent) -> UICollectionViewCell {
         guard let collectionView, let indexPath else { return UICollectionViewCell() }
 
         switch component {
-            case let textComponent as TextEditorComponent:
-                let textCell =
+            case let textEditorComponent as TextEditorComponent:
+                let textEditorComponentView =
                     collectionView
                     .dequeueReusableCell(
-                        withReuseIdentifier: TextEditorComponentView.identifierForUseCollectionView,
+                        withReuseIdentifier: TextEditorComponentView.reuseIdentifier,
                         for: indexPath
                     ) as! TextEditorComponentView
 
-                textCell.configure(component: textComponent, input: subject)
+                let textEditorComponentViewModel =
+                    pageComponentVMCache[textEditorComponent.id] as? TextEditorComponentViewModel
+                    ?? {
+                        DIContainer.shared.setArgument(TextEditorComponentViewModel.self, textEditorComponent)
+                        let viewModel = DIContainer.shared.resolve(TextEditorComponentViewModel.self)
+                        pageComponentVMCache[textEditorComponent.id] = viewModel
+                        return viewModel
+                    }()
 
-                return textCell
+                let textActionDispatcher: TextEditorComponentActionDispatcher =
+                    componentActionDispatcherCache[textEditorComponent.id] as? TextEditorComponentActionDispatcher
+                    ?? TextEditorComponentActionDispatcher()
+
+                textActionDispatcher.clearSubscriptions()
+
+                let textEditorComponentUIEventHandler = TextEditorComponentViewEventHandler(
+                    contentsView: textEditorComponentView.componentContentView)
+
+                textActionDispatcher.bindToViewModel(
+                    viewModel: textEditorComponentViewModel,
+                    UIEventHandler: textEditorComponentUIEventHandler)
+
+                componentActionDispatcherCache[textEditorComponent.id] = textActionDispatcher
+
+                textEditorComponentView.configureTextComponentForMemoPageView(
+                    component: textEditorComponent,
+                    viewModel: textEditorComponentViewModel,
+                    pageActionDispatcher: pageActionDispatcher,
+                    textActionDispatcher: textActionDispatcher)
+
+                return textEditorComponentView
 
             case let tableComponent as TableComponent:
-                let tableCell =
+                let tableComponentView =
                     collectionView
                     .dequeueReusableCell(
-                        withReuseIdentifier: TableComponentView.reuseTableComponentIdentifier,
+                        withReuseIdentifier: TableComponentView.reuseIdentifier,
                         for: indexPath
                     ) as! TableComponentView
 
-                tableCell.configure(component: tableComponent, input: subject)
+                let tableComponentViewModel =
+                    pageComponentVMCache[tableComponent.id] as? TableComponentViewModel
+                    ?? {
+                        DIContainer.shared.setArgument(TableComponentViewModel.self, tableComponent)
+                        let viewModel = DIContainer.shared.resolve(TableComponentViewModel.self)
+                        pageComponentVMCache[tableComponent.id] = viewModel
+                        return viewModel
+                    }()
 
-                return tableCell
+                let tableActionDispatcher: TableComponentActionDispatcher =
+                    componentActionDispatcherCache[tableComponent.id] as? TableComponentActionDispatcher
+                    ?? TableComponentActionDispatcher()
+
+                tableActionDispatcher.clearSubscriptions()
+
+                let tableComponentUIEventHandler = TableComponentViewEventHandler(
+                    contentsView: tableComponentView.componentContentView)
+
+                tableActionDispatcher.bindToViewModel(
+                    viewModel: tableComponentViewModel,
+                    UIEventHandler: tableComponentUIEventHandler)
+
+                componentActionDispatcherCache[tableComponent.id] = tableActionDispatcher
+
+                tableComponentView.configureTableComponentForMemoPageView(
+                    component: tableComponent,
+                    viewModel: tableComponentViewModel,
+                    pageActionDispatcher: pageActionDispatcher,
+                    actionDispatcher: tableActionDispatcher)
+
+                return tableComponentView
 
             case let audioComponent as AudioComponent:
-                let audioCell =
+                let audioComponentView =
                     collectionView
                     .dequeueReusableCell(
                         withReuseIdentifier: AudioComponentView.reuseAudioComponentIdentifier,
                         for: indexPath
                     ) as! AudioComponentView
 
-                if let datasource = audioDataSources[audioComponent.id] {
-                    audioCell.componentContentView.audioTrackTableView.dataSource = datasource
-                } else {
-                    if let audioContentsData = audioContentsDataContainer.getAudioContentsData(audioComponent.id) {
-                        let datasource = AudioComponentDataSource(audioContentsData: audioContentsData)
-                        audioDataSources[audioComponent.id] = datasource
+                let audioComponentViewModel =
+                    pageComponentVMCache[audioComponent.id] as? AudioComponentViewModel
+                    ?? {
+                        DIContainer.shared.setArgument(AudioComponentViewModel.self, audioComponent)
+                        let viewModel = DIContainer.shared.resolve(AudioComponentViewModel.self)
+                        pageComponentVMCache[audioComponent.id] = viewModel
+                        return viewModel
+                    }()
 
-                        audioCell.componentContentView.audioTrackTableView.dataSource = datasource
-                    }
-                }
+                let audioActionDispatcher: AudioComponentActionDispatcher =
+                    componentActionDispatcherCache[audioComponent.id] as? AudioComponentActionDispatcher
+                    ?? AudioComponentActionDispatcher()
 
-                audioCell.configure(component: audioComponent, input: subject)
+                audioActionDispatcher.clearSubscriptions()
 
-                return audioCell
+                let audioComponentUIEventHandler = AudioComponentViewEventHandler(
+                    componentView: audioComponentView.componentContentView,
+                    audioControlBarHost: audioControlBarHost)
+
+                audioActionDispatcher.bindToViewModel(
+                    viewModel: audioComponentViewModel,
+                    UIEventHandler: audioComponentUIEventHandler)
+
+                componentActionDispatcherCache[audioComponent.id] = audioActionDispatcher
+                AudioComponentView.audioComponentOrder[audioComponent.id] = indexPath
+
+                audioComponentView.configureAudioComponentForMemoPageView(
+                    component: audioComponent,
+                    pageActionDispatcher: pageActionDispatcher,
+                    audioActionDispatcher: audioActionDispatcher)
+
+                return audioComponentView
 
             default:
                 return UICollectionViewCell()
         }
+    }
+
+    func injectContineiousPlaybackDispatcher(
+        audioComponentId: UUID,
+        dispatcher: any PageComponentActionDispatcherType,
+        vm: any PageComponentViewModelType
+    ) {
+        componentActionDispatcherCache[audioComponentId] = dispatcher
+        pageComponentVMCache[audioComponentId] = vm
+    }
+
+    func freedVMS() {
+        let activeAudioComponentIDs = pageComponentVMCache.compactMap { key, vm -> UUID? in
+            guard let activeAudioVM = vm as? AudioComponentViewModel else { return nil }
+            return activeAudioVM.isActiveAudioViewModel ? key : nil
+        }
+
+        activeAudioComponentIDs.forEach {
+            pageComponentVMCache.removeValue(forKey: $0)
+            componentActionDispatcherCache.removeValue(forKey: $0)
+        }
+
+        pageComponentVMCache.values.forEach { $0.clearSubscriptions() }
+        componentActionDispatcherCache.values.forEach { $0.clearSubscriptions() }
+    }
+
+    func setIndexPath(indexPath: IndexPath) {
+        self.indexPath = indexPath
     }
 }

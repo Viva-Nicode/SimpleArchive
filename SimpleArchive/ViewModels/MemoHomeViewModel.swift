@@ -1,7 +1,8 @@
 import Combine
 import UIKit
 
-@MainActor class MemoHomeViewModel: NSObject, ViewModelType {
+@MainActor
+final class MemoHomeViewModel: NSObject, ViewModelType {
 
     typealias Input = MemoHomeViewInput
     typealias Output = MemoHomeViewOutput
@@ -60,7 +61,8 @@ import UIKit
                     changeFileName(fileID: fileID, newName: newName)
 
                 case .willNavigateFixedPageView(let pageIndex):
-                    moveToFixedPage(followingPageIndex: pageIndex)
+                    let followingPage = fixedFileDirectory[pageIndex] as! MemoPageModel
+                    moveToPage(followingPage: followingPage)
 
                 case .willSortDirectoryItems(let sortBy):
                     changeSortCriteria(sortBy: sortBy)
@@ -88,8 +90,9 @@ import UIKit
                 case .willMoveToFollowingDirectory(let index):
                     moveToFollowingDirectory(index: index)
 
-                case .willNavigatePageView(let index):
-                    moveToPage(followingPageIndex: index)
+                case .willNavigatePageView(let pageIndex):
+                    let followingPage = directoryStack.last![pageIndex] as! MemoPageModel
+                    moveToPage(followingPage: followingPage)
 
                 case .willPresentFileInformationPopupView(let fileIndex):
                     showFileInformation(fileIndexToShowInformation: fileIndex)
@@ -173,52 +176,9 @@ import UIKit
                 followingDirectory.name,
                 followingDirectory.id,
                 followingDirectory.getSortBy(),
-                followingDirectory.getChildItemSize())
+                followingDirectory.getChildItemSize()
+            )
         )
-    }
-
-    private func moveToPage(followingPageIndex: Int) {
-        guard
-            let memoComponentCoreDataRepository = DIContainer.shared.resolve(MemoComponentCoreDataRepository.self),
-            let componentFactory = DIContainer.shared.resolve(ComponentFactory.self)
-        else { return }
-
-        let followingPage = directoryStack.last![followingPageIndex] as! MemoPageModel
-
-        if followingPage.isSingleComponentPage {
-            if let singleTextEditorComponent = followingPage.getComponents.first as? TextEditorComponent {
-                let vm = SingleTextEditorPageViewModel(
-                    coredataReposotory: memoComponentCoreDataRepository,
-                    textEditorComponent: singleTextEditorComponent,
-                    pageTitle: followingPage.name)
-                output.send(.didNavigateSingleTextEditorComponentPageView(vm))
-            } else if let singleTableComponent = followingPage.getComponents.first as? TableComponent {
-                let vm = SingleTablePageViewModel(
-                    coredataReposotory: memoComponentCoreDataRepository,
-                    tableComponent: singleTableComponent,
-                    pageTitle: followingPage.name)
-                output.send(.didNavigateSingleTableComponentPageView(vm))
-            } else if let singleAudioComponent = followingPage.getComponents.first as? AudioComponent {
-                let vm = SingleAudioPageViewModel(
-                    coredataReposotory: memoComponentCoreDataRepository,
-                    audioComponent: singleAudioComponent,
-                    audioDownloader: AudioDownloader(),
-                    audioFileManager: AudioFileManager(),
-                    audioTrackController: AudioTrackController(),
-                    pageTitle: followingPage.name)
-                output.send(.didNavigateSingleAudioComponentPageView(vm))
-            }
-        } else {
-            let memoPageViewModel = MemoPageViewModel(
-                componentFactory: componentFactory,
-                memoComponentCoredataReposotory: memoComponentCoreDataRepository,
-                audioDownloader: AudioDownloader(),
-                audioFileManager: AudioFileManager(),
-                audioTrackController: AudioTrackController(),
-                page: followingPage)
-
-            output.send(.didNavigatePageView(memoPageViewModel))
-        }
     }
 
     private func moveToPreviousDirectory(destinationDirectoryID: UUID) {
@@ -237,47 +197,26 @@ import UIKit
         )
     }
 
-    private func moveToFixedPage(followingPageIndex: Int) {
-        guard
-            let memoComponentCoreDataRepository = DIContainer.shared.resolve(MemoComponentCoreDataRepository.self),
-            let componentFactory = DIContainer.shared.resolve(ComponentFactory.self)
-        else { return }
-
-        let followingPage = fixedFileDirectory[followingPageIndex] as! MemoPageModel
-
+    private func moveToPage(followingPage: MemoPageModel) {
         if followingPage.isSingleComponentPage {
-            if let singleTextEditorComponent = followingPage.getComponents.first as? TextEditorComponent {
-                let vm = SingleTextEditorPageViewModel(
-                    coredataReposotory: memoComponentCoreDataRepository,
-                    textEditorComponent: singleTextEditorComponent,
-                    pageTitle: followingPage.name)
-                output.send(.didNavigateSingleTextEditorComponentPageView(vm))
-            } else if let singleTableComponent = followingPage.getComponents.first as? TableComponent {
-                let vm = SingleTablePageViewModel(
-                    coredataReposotory: memoComponentCoreDataRepository,
-                    tableComponent: singleTableComponent,
-                    pageTitle: followingPage.name)
-                output.send(.didNavigateSingleTableComponentPageView(vm))
-            } else if let singleAudioComponent = followingPage.getComponents.first as? AudioComponent {
-                let vm = SingleAudioPageViewModel(
-                    coredataReposotory: memoComponentCoreDataRepository,
-                    audioComponent: singleAudioComponent,
-                    audioDownloader: AudioDownloader(),
-                    audioFileManager: AudioFileManager(),
-                    audioTrackController: AudioTrackController(),
-                    pageTitle: followingPage.name,
-                )
-                output.send(.didNavigateSingleAudioComponentPageView(vm))
+            if let textEditorComponent = followingPage.getComponents.first as? TextEditorComponent {
+                DIContainer.shared.setArgument(TextEditorComponentViewModel.self, textEditorComponent)
+                let viewModel = DIContainer.shared.resolve(TextEditorComponentViewModel.self)
+                output.send(.didNavigateSingleTextEditorComponentPageView(viewModel, textEditorComponent))
+            } else if let tableComponent = followingPage.getComponents.first as? TableComponent {
+                DIContainer.shared.setArgument(TableComponentViewModel.self, tableComponent)
+                let viewModel = DIContainer.shared.resolve(TableComponentViewModel.self)
+                let pageName = followingPage.name
+                output.send(.didNavigateSingleTableComponentPageView(viewModel, tableComponent, pageName))
+            } else if let audioComponent = followingPage.getComponents.first as? AudioComponent {
+                DIContainer.shared.setArgument(AudioComponentViewModel.self, audioComponent)
+                let viewModel = DIContainer.shared.resolve(AudioComponentViewModel.self)
+                let pageName = followingPage.name
+                output.send(.didNavigateSingleAudioComponentPageView(viewModel, audioComponent, pageName))
             }
         } else {
-            let memoPageViewModel = MemoPageViewModel(
-                componentFactory: componentFactory,
-                memoComponentCoredataReposotory: memoComponentCoreDataRepository,
-                audioDownloader: AudioDownloader(),
-                audioFileManager: AudioFileManager(),
-                audioTrackController: AudioTrackController(),
-                page: followingPage)
-
+            DIContainer.shared.setArgument(MemoPageViewModel.self, followingPage)
+            let memoPageViewModel = DIContainer.shared.resolve(MemoPageViewModel.self)
             output.send(.didNavigatePageView(memoPageViewModel))
         }
     }
@@ -296,14 +235,6 @@ import UIKit
     }
 
     private func getDormantBoxViewModel() {
-        guard let dormantBoxCoreDataRepository = DIContainer.shared.resolve(DormantBoxCoreDataRepository.self)
-        else { return }
-
-        let dormantBoxViewModel = DormantBoxViewModel(
-            dormantBoxCoredataRepository: dormantBoxCoreDataRepository,
-            restoredPageListSubject: restoredPageListSubject,
-            audioFileManager: AudioFileManager())
-
         restoredPageListSubjectSubscription =
             restoredPageListSubject
             .sink { [weak self] restoredPageList in
@@ -317,11 +248,14 @@ import UIKit
                 let insertedIndices = restoredPageList.map { self.directoryStack.first![$0.id]!.index }
                 output.send(.didInsertRowToHomeTable(.zero, insertedIndices))
             }
+
+        DIContainer.shared.setArgument(DormantBoxViewModel.self, restoredPageListSubject)
+        let dormantBoxViewModel = DIContainer.shared.resolve(DormantBoxViewModel.self)
+
         output.send(.didNavigateDormantBoxView(dormantBoxViewModel))
     }
 
     private func fixPage(with dropedPageIdsInFixedTable: [UUID]) {
-
         memoPageCoredataReposotory.fixPages(pageIds: dropedPageIdsInFixedTable)
 
         var insertRowIndexPaths = [IndexPath]()
@@ -354,7 +288,6 @@ import UIKit
     }
 
     private func unfixPage(with dropedpagesInHomeTable: [UUID]) {
-
         memoPageCoredataReposotory.unfixPages(
             parentDirectoryId: directoryStack.last!.id,
             pageIds: dropedpagesInHomeTable)

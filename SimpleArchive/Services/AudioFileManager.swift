@@ -1,56 +1,76 @@
+import AVFoundation
 import Foundation
 import SFBAudioEngine
 import ZIPFoundation
 
-protocol AudioFileManagerType {
-    func createAudioFileURL(fileName: String) -> URL
+protocol AudioFileRemover {
     func removeAudio(with audio: AudioTrack)
+}
+
+protocol AudioFileManagerType: AudioFileRemover {
+    func makeAudioTrackAppSandBoxURL(audioTrack: AudioTrack) -> URL
 
     func copyFilesToAppDirectory(src: URL, des: String) -> URL
     func extractAudioFileURLs(zipURL: URL) throws -> [URL]
-    func moveItem(src: URL, fileName: String) throws
 
     func readAudioMetadata(audioURL: URL) -> AudioTrackMetadata
     func readAudioPCMData(audioURL: URL?) -> AudioPCMData?
-    func writeAudioMetadata(audioTrack: AudioTrack)
+
+    func writeAudioMetadataWhenAppendNewAudio(audioTrack: AudioTrack)
+    func writeCachedAudioMetaDataOnFile(audioTracks: [AudioTrack])
+
+    func saveAudioMetaDataEditingTask(audioTrack: AudioTrack)
 }
 
 final class AudioFileManager: NSObject, AudioFileManagerType {
-
     private var fileManager = FileManager.default
-    private let archiveURL: URL
+    private var audioMetaDataWriter: AudioMetadataWriterType = AudioMetadataWriter()
+    private let musicArchiveDirectoryURL: URL
 
-    override init() {
+    private static let shared = AudioFileManager()
+
+    private override init() {
         let fileManager = FileManager.default
         let documentsDir = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
 
-        archiveURL = documentsDir.appendingPathComponent("SimpleArchiveMusics")
+        musicArchiveDirectoryURL = documentsDir.appendingPathComponent("SimpleArchiveMusics")
 
-        if !fileManager.fileExists(atPath: archiveURL.path) {
-            try? fileManager.createDirectory(at: archiveURL, withIntermediateDirectories: true)
+        if !fileManager.fileExists(atPath: musicArchiveDirectoryURL.path) {
+            try? fileManager.createDirectory(at: musicArchiveDirectoryURL, withIntermediateDirectories: true)
         }
     }
 
-    deinit { print("deinit AudioFileManager") }
+    deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
 
-    func createAudioFileURL(fileName: String) -> URL {
-        archiveURL.appendingPathComponent(fileName)
+    static func getShared<UIT>(_ callerType: Any.Type) -> UIT? {
+        let AudioComponentInteractorDependency =
+            callerType == AudioComponentDataManger.self && UIT.self == AudioFileManagerType.self
+        let DormantBoxViewModelDependency =
+            callerType == DormantBoxViewModel.self && UIT.self == AudioFileRemover.self
+
+        if AudioComponentInteractorDependency || DormantBoxViewModelDependency {
+            return self.shared as? UIT
+        } else {
+            return nil
+        }
     }
 
-    func removeAudio(with audio: AudioTrack) {
-        let trackURL =
-            archiveURL
-            .appendingPathComponent("\(audio.id)")
-            .appendingPathExtension(audio.fileExtension.rawValue)
-        try? fileManager.removeItem(at: trackURL)
+    func makeAudioTrackAppSandBoxURL(audioTrack: AudioTrack) -> URL {
+        let fileName = "\(audioTrack.id).\(audioTrack.fileExtension)"
+        return musicArchiveDirectoryURL.appendingPathComponent(fileName)
     }
 
     func copyFilesToAppDirectory(src: URL, des: String) -> URL {
-        guard src.startAccessingSecurityScopedResource() else { fatalError() }
-        defer { src.stopAccessingSecurityScopedResource() }
+        let destinationURL = musicArchiveDirectoryURL.appendingPathComponent(des)
 
-        let destinationURL = archiveURL.appendingPathComponent(des)
+        let isNeed = isNeedPermision(src)
+
+        if isNeed {
+            guard src.startAccessingSecurityScopedResource() else { return destinationURL }
+        }
+
         try? fileManager.copyItem(at: src, to: destinationURL)
+        if isNeed { src.stopAccessingSecurityScopedResource() }
         return destinationURL
     }
 
@@ -67,15 +87,12 @@ final class AudioFileManager: NSObject, AudioFileManagerType {
         return files.filter { ["mp3", "m4a"].contains($0.pathExtension.lowercased()) }
     }
 
-    func moveItem(src: URL, fileName: String) throws {
-        let des = archiveURL.appendingPathComponent(fileName)
-        try fileManager.moveItem(at: src, to: des)
-    }
-
     func readAudioMetadata(audioURL: URL) -> AudioTrackMetadata {
         var metadata = AudioTrackMetadata()
+        metadata.audioURL = audioURL
 
         if let audioFile = try? AudioFile(readingPropertiesAndMetadataFrom: audioURL) {
+            metadata.duration = audioFile.properties.duration
 
             if let metadataTitle = audioFile.metadata.title, !metadataTitle.isEmpty {
                 metadata.title = metadataTitle
@@ -102,6 +119,7 @@ final class AudioFileManager: NSObject, AudioFileManagerType {
 
         let audioFormat = file.processingFormat
         let audioFrameCount = UInt32(file.length)
+        let sampleRate = audioFormat.sampleRate
 
         guard let buffer = AVAudioPCMBuffer(pcmFormat: audioFormat, frameCapacity: audioFrameCount)
         else { return nil }
@@ -109,66 +127,70 @@ final class AudioFileManager: NSObject, AudioFileManagerType {
         do {
             try file.read(into: buffer)
         } catch {
-            print("\(#function) : \(error)")
             return nil
         }
 
         let PCMData = UnsafeBufferPointer(start: buffer.floatChannelData![0], count: Int(buffer.frameLength))
-        let sampleRate = audioFormat.sampleRate
+
         return AudioPCMData(sampleRate: sampleRate, PCMData: Array(PCMData))
     }
 
-    func writeAudioMetadata(audioTrack: AudioTrack) {
+    func writeAudioMetadataWhenAppendNewAudio(audioTrack: AudioTrack) {
+        let trackURL = makeAudioTrackAppSandBoxURL(audioTrack: audioTrack)
+        DispatchQueue.global(qos: .background)
+            .async {
+                self.audioMetaDataWriter.writeMetaDataOnAudioFile(audioTrack: audioTrack, url: trackURL)
+            }
+    }
 
-        let fileName = "\(audioTrack.id).\(audioTrack.fileExtension)"
-        let trackURL = archiveURL.appendingPathComponent(fileName)
+    func saveAudioMetaDataEditingTask(audioTrack: AudioTrack) {
+        let trackURL = makeAudioTrackAppSandBoxURL(audioTrack: audioTrack)
+        DispatchQueue.global(qos: .background)
+            .async {
+                self.audioMetaDataWriter.saveMetaDataWritingTask(trackID: audioTrack.id, audioURL: trackURL)
+            }
+    }
 
-        if let audioFile = try? AudioFile(readingPropertiesAndMetadataFrom: trackURL) {
-            let picture = AttachedPicture(imageData: audioTrack.thumbnail, type: .frontCover)
+    func writeCachedAudioMetaDataOnFile(audioTracks: [AudioTrack]) {
+        DispatchQueue.global()
+            .async {
+                self.audioMetaDataWriter.writeSavedMetaDataOnAudioFile(audioTracks: audioTracks)
+            }
+    }
 
-            let audioMetadata = AudioMetadata(dictionaryRepresentation: [
-                .attachedPictures: [picture.dictionaryRepresentation] as NSArray,
-                .title: NSString(string: audioTrack.title),
-                .artist: NSString(string: audioTrack.artist),
-                .lyrics: NSString(string: audioTrack.lyrics),
-            ])
+    func removeAudio(with audio: AudioTrack) {
+        let trackURL =
+            musicArchiveDirectoryURL
+            .appendingPathComponent("\(audio.id)")
+            .appendingPathExtension(audio.fileExtension.rawValue)
+        audioMetaDataWriter.removeMetaDataWritingTask(trackID: audio.id)
+        try? fileManager.removeItem(at: trackURL)
+    }
 
-            audioFile.metadata = audioMetadata
-            try? audioFile.writeMetadata()
+    private func isNeedPermision(_ url: URL) -> Bool {
+        let sandboxRoots: [URL] = [
+            fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!,
+            fileManager.urls(for: .libraryDirectory, in: .userDomainMask).first!,
+            fileManager.temporaryDirectory,
+        ]
+        let isInsideSandbox = sandboxRoots.contains {
+            url.standardizedFileURL.path.hasPrefix($0.standardizedFileURL.path)
         }
+        return !isInsideSandbox
     }
 }
 
 struct AudioTrackMetadata: Codable, Equatable {
+    var audioTrackID: UUID?
+    var audioURL: URL?
     var title: String?
     var artist: String?
     var lyrics: String?
     var thumbnail: Data?
+    var duration: TimeInterval?
 }
 
 struct AudioPCMData: Codable, Equatable {
     let sampleRate: Double
     let PCMData: [Float]
 }
-
-#if DEBUG
-    extension AudioFileManager {
-        func cleanFileSystem() {
-            guard fileManager.fileExists(atPath: archiveURL.path) else { return }
-
-            do {
-                let contents = try fileManager.contentsOfDirectory(
-                    at: archiveURL,
-                    includingPropertiesForKeys: nil,
-                    options: []
-                )
-
-                for url in contents {
-                    try fileManager.removeItem(at: url)
-                }
-            } catch {
-                assertionFailure("Failed to clean audio file system: \(error)")
-            }
-        }
-    }
-#endif

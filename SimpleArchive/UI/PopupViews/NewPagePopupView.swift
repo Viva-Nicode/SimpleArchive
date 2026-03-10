@@ -69,8 +69,6 @@ final class NewPagePopupView: PopupView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    deinit { print("deinit NewPagePopupView") }
-
     override func didMoveToWindow() {
         super.didMoveToWindow()
         if window != nil {

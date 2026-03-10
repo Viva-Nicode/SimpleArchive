@@ -4,13 +4,6 @@ import UIKit
 
 final class AudioComponentContentView: UIView, UIDocumentPickerDelegate {
 
-    private var componentID: UUID!
-    private var dispatcher: AudioComponentActionDispatcher?
-    private var downloadAudioActionSubscription: AnyCancellable?
-    private var thumbnameSubscription: AnyCancellable?
-    private var editAudioTrackMetadataConfrimButtonSubscription: AnyCancellable?
-    private(set) var audioDownloadStatePopupView: AudioDownloadStatePopupView?
-
     private(set) var audioComponentToolBarStackView: UIStackView = {
         let audioComponentToolBarStackView = UIStackView()
         audioComponentToolBarStackView.axis = .horizontal
@@ -87,10 +80,16 @@ final class AudioComponentContentView: UIView, UIDocumentPickerDelegate {
         return tableView
     }()
 
+    var audioDownloadStatePopupView: AudioDownloadStatePopupView?
     var audioTrackTotal: Int = 0
     var addbuttonHeightConstraint: NSLayoutConstraint?
     var toolBarStackViewHeightConstraint: NSLayoutConstraint?
     var sortOptionStackViewHeightConstraint: NSLayoutConstraint?
+
+    private(set) var dispatcher: AudioComponentActionDispatcher?
+    private var downloadAudioActionSubscription: AnyCancellable?
+    private var selectedAudioTrackIndexPath: IndexPath?
+    private var audioComponentDataSource: AudioComponentDataSource?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -104,7 +103,7 @@ final class AudioComponentContentView: UIView, UIDocumentPickerDelegate {
         setupConstraints()
     }
 
-    deinit { print("deinit AudioComponentContentView") }
+    deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
 
     private func setupUI() {
         audioTrackTableView.backgroundColor = .clear
@@ -118,16 +117,16 @@ final class AudioComponentContentView: UIView, UIDocumentPickerDelegate {
         audioAddButton.addAction(
             UIAction { [weak self] _ in
                 guard let self else { return }
-                let popupView = AudioDownloadPopupView()
-                downloadAudioActionSubscription = popupView
+                let audioDownloadPopupView = AudioDownloadPopupView()
+                downloadAudioActionSubscription = audioDownloadPopupView
                     .downloadButtonActionPublisher
-                    .sink {
-                        self.audioDownloadStatePopupView = AudioDownloadStatePopupView()
-                        self.audioDownloadStatePopupView?.show()
-                        self.dispatcher?.downloadMusics(componentID: self.componentID, with: $0)
-                        self.downloadAudioActionSubscription = nil
+                    .sink { [weak self] code in
+                        self?.audioDownloadStatePopupView = AudioDownloadStatePopupView()
+                        self?.audioDownloadStatePopupView?.show()
+                        self?.dispatcher?.downloadMusics(with: code)
+                        self?.downloadAudioActionSubscription = nil
                     }
-                popupView.show()
+                audioDownloadPopupView.show()
             }, for: .touchUpInside)
 
         audioAddFromFileSystemButton.addAction(
@@ -147,7 +146,7 @@ final class AudioComponentContentView: UIView, UIDocumentPickerDelegate {
                 guard let self else { return }
                 sortBycreateButton.setTitleColor(.gray, for: .normal)
                 sortByNameButton.setTitleColor(.label, for: .normal)
-                dispatcher?.changeSortByAudioTracks(componentID: componentID, sortBy: .name)
+                dispatcher?.changeSortByAudioTracks(sortBy: .name)
             }, for: .touchUpInside)
 
         sortBycreateButton.addAction(
@@ -155,7 +154,7 @@ final class AudioComponentContentView: UIView, UIDocumentPickerDelegate {
                 guard let self else { return }
                 sortByNameButton.setTitleColor(.gray, for: .normal)
                 sortBycreateButton.setTitleColor(.label, for: .normal)
-                dispatcher?.changeSortByAudioTracks(componentID: componentID, sortBy: .createDate)
+                dispatcher?.changeSortByAudioTracks(sortBy: .createDate)
             }, for: .touchUpInside)
 
         addSubview(sortOptionStackView)
@@ -204,48 +203,19 @@ final class AudioComponentContentView: UIView, UIDocumentPickerDelegate {
         )
     }
 
-    // Single 전용
     func configure(
-        datasource: AudioComponentDataSource,
+        audioComponent: AudioComponent,
         dispatcher: AudioComponentActionDispatcher,
-    ) {
-        let audioComponent = datasource.audioContentsData.audioComponent
-        self.dispatcher = dispatcher
-        self.componentID = audioComponent.id
-
-        self.audioTrackTableView.dataSource = datasource
-        self.audioTrackTableView.delegate = self
-        self.audioTrackTableView.dragDelegate = self
-        self.audioTrackTableView.dropDelegate = self
-
-        self.audioTrackTotal = audioComponent.componentContents.tracks.count
-        totalAudioCountLabel.text = "\(audioTrackTotal) audios in total"
-
-        switch audioComponent.componentContents.sortBy {
-            case .name:
-                sortByNameButton.setTitleColor(.label, for: .normal)
-
-            case .createDate:
-                sortBycreateButton.setTitleColor(.label, for: .normal)
-
-            case .manual:
-                break
-        }
-    }
-    
-    // MemoPage 전용 configure
-    func configure(
-        content audioComponent: AudioComponent,
-        dispatcher: AudioComponentActionDispatcher,
-        componentID: UUID
+        isComponent: Bool = false
     ) {
         self.dispatcher = dispatcher
-        self.componentID = componentID
 
         self.audioTrackTableView.delegate = self
         self.audioTrackTableView.dragDelegate = self
         self.audioTrackTableView.dropDelegate = self
         self.audioTrackTableView.isPrefetchingEnabled = false
+        audioComponentDataSource = AudioComponentDataSource(audioPageComponent: audioComponent)
+        audioTrackTableView.dataSource = audioComponentDataSource
 
         self.audioTrackTotal = audioComponent.componentContents.tracks.count
         totalAudioCountLabel.text = "\(audioTrackTotal) audios in total"
@@ -261,14 +231,17 @@ final class AudioComponentContentView: UIView, UIDocumentPickerDelegate {
                 break
         }
 
-        self.alpha = audioComponent.isMinimumHeight ? 0 : 1
-        self.toolBarStackViewHeightConstraint?.constant = audioComponent.isMinimumHeight ? 0 : 45
-        self.sortOptionStackViewHeightConstraint?.constant = audioComponent.isMinimumHeight ? 0 : 30
-        self.addbuttonHeightConstraint?.constant = audioComponent.isMinimumHeight ? 0 : 44
+        if isComponent {
+            let isFolding = audioComponent.isMinimumHeight
+            self.alpha = isFolding ? 0 : 1
+            self.toolBarStackViewHeightConstraint?.constant = isFolding ? 0 : 45
+            self.sortOptionStackViewHeightConstraint?.constant = isFolding ? 0 : 30
+            self.addbuttonHeightConstraint?.constant = isFolding ? 0 : 44
+        }
     }
 
     func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
-        dispatcher?.importAudioFilesFromFileSystem(componentID: componentID, urls: urls)
+        dispatcher?.importAudioFilesFromFileSystem(urls: urls)
     }
 
     func insertRow(trackIndices: [Int]) {
@@ -293,34 +266,12 @@ final class AudioComponentContentView: UIView, UIDocumentPickerDelegate {
 extension AudioComponentContentView: UITableViewDelegate {
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat { 65 }
 
-    func tableView(
-        _ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath
-    )
+    func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath)
         -> UISwipeActionsConfiguration?
     {
         let editAction = UIContextualAction(style: .normal, title: nil) { [weak self] _, _, completionHandler in
             guard let self = self else { return }
-
-            if let cell = tableView.cellForRow(at: indexPath), let audioTableRowView = cell as? AudioTableRowView {
-                let title = audioTableRowView.titleLabel.text
-                let artist = audioTableRowView.artistLabel.text
-                let thumbnail = audioTableRowView.thumbnailImageView.image
-
-                let audioTrackEditPopupView = AudioTrackEditPopupView(
-                    title: title, artist: artist, thumbnail: thumbnail)
-
-                editAudioTrackMetadataConfrimButtonSubscription = audioTrackEditPopupView.confirmButtonPublisher
-                    .sink { [weak self] editedMetadata in
-                        guard let self else { return }
-                        audioTrackEditPopupView.dismiss()
-                        self.dispatcher?
-                            .changeAudioTrackMetadata(
-                                editMetadata: editedMetadata,
-                                componentID: self.componentID,
-                                trackIndex: indexPath.row)
-                    }
-                audioTrackEditPopupView.show()
-            }
+            dispatcher?.presentAudioMetaDataEditingPopupView(trackIndex: indexPath.row)
             completionHandler(true)
         }
         editAction.image = UIImage(systemName: "square.and.pencil")
@@ -328,7 +279,7 @@ extension AudioComponentContentView: UITableViewDelegate {
 
         let deleteAction = UIContextualAction(style: .destructive, title: nil) { [weak self] _, _, completionHandler in
             guard let self = self else { return }
-            dispatcher?.removeAudioTrack(componentID: componentID, trackIndex: indexPath.row)
+            dispatcher?.removeAudioTrack(trackIndex: indexPath.row)
             completionHandler(true)
         }
         deleteAction.image = UIImage(systemName: "trash")
@@ -338,9 +289,29 @@ extension AudioComponentContentView: UITableViewDelegate {
         return configuration
     }
 
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
-        dispatcher?.playAudioTrack(componentID: componentID, with: indexPath.row)
+    func tableView(_ tableView: UITableView, willSelectRowAt indexPath: IndexPath) -> IndexPath? {
+        if selectedAudioTrackIndexPath == indexPath {
+            dispatcher?.playAudioTrack(with: indexPath.row)
+            self.selectedAudioTrackIndexPath = nil
+            tableView.deselectRow(at: indexPath, animated: true)
+        } else {
+            selectedAudioTrackIndexPath = indexPath
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                self.selectedAudioTrackIndexPath = nil
+                tableView.deselectRow(at: indexPath, animated: true)
+            }
+        }
+        return indexPath
+    }
+
+    func tableView(
+        _ tableView: UITableView,
+        didEndDisplaying cell: UITableViewCell,
+        forRowAt indexPath: IndexPath
+    ) {
+        if let row = cell as? AudioTableRowView {
+            row.audioVisualizer.removeVisuzlization()
+        }
     }
 }
 
@@ -357,16 +328,14 @@ extension AudioComponentContentView: UITableViewDragDelegate {
 }
 
 extension AudioComponentContentView: UITableViewDropDelegate {
-
     func tableView(_ tableView: UITableView, performDropWith coordinator: any UITableViewDropCoordinator) {
         guard let destinationIndexPath = coordinator.destinationIndexPath else { return }
 
         if let item = coordinator.items.first, let sourceIndexPath = item.sourceIndexPath {
-
             let fromIndex = sourceIndexPath.row
             let toIndex = destinationIndexPath.row
 
-            dispatcher?.moveAudioTrackOrder(componentID: componentID, src: fromIndex, des: toIndex)
+            dispatcher?.moveAudioTrackOrder(src: fromIndex, des: toIndex)
 
             tableView.performBatchUpdates(
                 {

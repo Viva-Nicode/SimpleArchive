@@ -28,8 +28,7 @@ final class AudioDownloadPopupView: PopupView {
         confirmButton.isEnabled = false
         confirmButton.layer.cornerRadius = 5
         confirmButton.configuration = .plain()
-        confirmButton.configuration?.contentInsets = NSDirectionalEdgeInsets(
-            top: 12, leading: 0, bottom: 12, trailing: 0)
+        confirmButton.configuration?.contentInsets = .init(top: 12, leading: 0, bottom: 12, trailing: 0)
 
         var titleAttr = AttributedString.init("download")
         titleAttr.font = .systemFont(ofSize: 15, weight: .regular)
@@ -44,8 +43,6 @@ final class AudioDownloadPopupView: PopupView {
             .map { _ in self.downloadCodeTextField.text! }
             .eraseToAnyPublisher()
     }
-
-    deinit { print("deinit MusicDownloadPopupView") }
 
     override func didMoveToWindow() {
         super.didMoveToWindow()

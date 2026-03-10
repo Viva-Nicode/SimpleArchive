@@ -9,9 +9,9 @@ protocol PageComponentPersistenceCreatorType {
     func persistAudioComponent(audioComponent: AudioComponent)
 }
 
-protocol PageComponentViewFactoryType {
+@MainActor protocol PageComponentViewFactoryType {
     associatedtype ViewType
-    func makeComponentView(from component: any PageComponent) -> ViewType
+	func makeComponentView(from component: any PageComponent) -> ViewType
 }
 
 protocol PageComponent: AnyObject, Identifiable, Codable {
@@ -27,11 +27,12 @@ protocol PageComponent: AnyObject, Identifiable, Codable {
     var isMinimumHeight: Bool { get set }
 
     func persistToPersistentStorage(using persistence: PageComponentPersistenceCreatorType)
+	@MainActor
     func makeComponentView<Factory: PageComponentViewFactoryType>(using factory: Factory) -> Factory.ViewType
 }
 
 extension PageComponent {
-    func makeComponentView<Factory: PageComponentViewFactoryType>(using factory: Factory) -> Factory.ViewType {
+	@MainActor func makeComponentView<Factory: PageComponentViewFactoryType>(using factory: Factory) -> Factory.ViewType {
         factory.makeComponentView(from: self)
     }
 }

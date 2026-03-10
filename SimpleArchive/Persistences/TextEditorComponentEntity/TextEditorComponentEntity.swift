@@ -2,8 +2,7 @@ import CoreData
 import Foundation
 
 @objc(TextEditorComponentEntity)
-public class TextEditorComponentEntity: MemoComponentEntity {
-
+public class TextEditorComponentEntity: MemoComponentEntity, SnapshotRestorableComponentEntityType {
     override func convertToModel() -> any PageComponent {
         let textEditorComponent = TextEditorComponent(
             id: self.id,
@@ -20,16 +19,6 @@ public class TextEditorComponentEntity: MemoComponentEntity {
         return textEditorComponent
     }
 
-    override func removeSnapshot(snapshotID: UUID) {
-        guard
-            let context = managedObjectContext,
-            let removedSnapshotIndex = snapshots.firstIndex(where: { $0.snapshotID == snapshotID })
-        else { return }
-
-        let removedSnapshot = snapshots.remove(at: removedSnapshotIndex)
-        context.delete(removedSnapshot)
-    }
-
     override func updatePageComponentEntityContents(componentModel: any PageComponent) {
         guard
             let textEditorComponent = componentModel as? TextEditorComponent
@@ -37,7 +26,7 @@ public class TextEditorComponentEntity: MemoComponentEntity {
         self.contents = textEditorComponent.componentContents
     }
 
-    override func revertComponentEntityContents(componentModel: any PageComponent) {
+    func revertComponentEntityContents(componentModel: any PageComponent) {
         guard
             let textEditorComponent = componentModel as? TextEditorComponent
         else { return }

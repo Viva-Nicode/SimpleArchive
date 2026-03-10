@@ -1,11 +1,6 @@
 import Combine
 import Foundation
 
-enum TextEditorComponentAction: Codable {
-    case insert(range: Range<Int>, text: String)
-    case replace(range: Range<Int>, from: String, to: String)
-}
-
 final class TextEditorComponent: NSObject, Codable, SnapshotRestorablePageComponent {
 
     var id: UUID
@@ -14,7 +9,7 @@ final class TextEditorComponent: NSObject, Codable, SnapshotRestorablePageCompon
     var type: ComponentType { .text }
     var creationDate: Date
     var title: String
-    var componentContents: String
+    var componentContents: String { didSet { captureState = .needsCapture } }
     var captureState: CaptureState
     var snapshots: [TextEditorComponentSnapshot] = []
     var actions: [TextEditorComponentAction] = []
@@ -39,36 +34,13 @@ final class TextEditorComponent: NSObject, Codable, SnapshotRestorablePageCompon
         self.snapshots = componentSnapshots
     }
 
-    deinit { print("deinit TextEditorComponentModel : \(title)") }
+    deinit { myLog(String(describing: Swift.type(of: self)), "\(title)", c: .purple) }
 
-    @discardableResult
-    func makeSnapshot(desc: String, saveMode: SnapshotSaveMode) -> TextEditorComponentSnapshot {
-        let snapshot = TextEditorComponentSnapshot(contents: componentContents, description: desc, saveMode: saveMode)
-        snapshots.insert(snapshot, at: 0)
-        return snapshot
-    }
-
-    func revertToSnapshot(snapshotID: UUID) {
-        if let targetSnapshotIndex = snapshots.firstIndex(where: { $0.snapshotID == snapshotID }) {
-            snapshots[targetSnapshotIndex].revert(component: self)
-            setCaptureState(to: .captured)
+    func insertTrackingSnapshot(trackingSnapshot: any ComponentSnapshotType) {
+        if let textEditorComponentSnapshot = trackingSnapshot as? TextEditorComponentSnapshot {
+            snapshots.insert(textEditorComponentSnapshot, at: 0)
+            actions = []
+            captureState = .captured
         }
-    }
-
-    func removeSnapshot(snapshotID: UUID) -> RemoveSnapshotResult {
-        let targetSnapshotIndex = snapshots.firstIndex(where: { $0.snapshotID == snapshotID })!
-        let nextSnapshotIndex =
-            targetSnapshotIndex + 1 <= snapshots.count - 1
-            ? targetSnapshotIndex + 1 : targetSnapshotIndex - 1
-        let nextSnapshot =
-            nextSnapshotIndex < 0
-            ? nil : snapshots[nextSnapshotIndex]
-        let result = RemoveSnapshotResult(
-            removeSnapshotIndex: targetSnapshotIndex,
-            nextSnapshotID: nextSnapshot?.snapshotID,
-            nextSnapshotMetaData: nextSnapshot?.getSnapshotMetaData()
-        )
-        snapshots.remove(at: targetSnapshotIndex)
-        return result
     }
 }

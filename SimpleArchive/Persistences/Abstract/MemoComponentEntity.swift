@@ -2,21 +2,12 @@ import CoreData
 import Foundation
 
 @objc(MemoComponentEntity)
-public class MemoComponentEntity: NSManagedObject {
-
+public class MemoComponentEntity: NSManagedObject, Identifiable {
     func convertToModel() -> any PageComponent {
         fatalError("Method is not overridden.")
     }
 
-    func removeSnapshot(snapshotID: UUID) {
-        fatalError("Method is not overridden.")
-    }
-
     func updatePageComponentEntityContents(componentModel: any PageComponent) {
-        fatalError("Method is not overridden.")
-    }
-
-    func revertComponentEntityContents(componentModel: any PageComponent) {
         fatalError("Method is not overridden.")
     }
 }
@@ -37,14 +28,10 @@ extension MemoComponentEntity {
 
     @nonobjc public class func findById(id: UUID) -> NSFetchRequest<MemoComponentEntity> {
         let fetchRequest = NSFetchRequest<MemoComponentEntity>(entityName: "MemoComponentEntity")
-        let fetchPredicate = NSPredicate(format: "%K == %@", (\MemoComponentEntity.id)._kvcKeyPathString!, id as CVarArg)
+        let fetchPredicate = NSPredicate(
+            format: "%K == %@", (\MemoComponentEntity.id)._kvcKeyPathString!, id as CVarArg)
         fetchRequest.predicate = fetchPredicate
         fetchRequest.fetchLimit = 1
         return fetchRequest
     }
 }
-
-extension MemoComponentEntity: Identifiable {
-
-}
-

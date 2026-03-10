@@ -2,7 +2,7 @@ import CoreData
 import Foundation
 
 @objc(TableComponentEntity)
-public class TableComponentEntity: MemoComponentEntity {
+public class TableComponentEntity: MemoComponentEntity, SnapshotRestorableComponentEntityType {
     override func convertToModel() -> any PageComponent {
         let tableComponent = TableComponent(
             id: self.id,
@@ -18,16 +18,6 @@ public class TableComponentEntity: MemoComponentEntity {
         )
 
         return tableComponent
-    }
-
-    override func removeSnapshot(snapshotID: UUID) {
-        guard
-            let context = managedObjectContext,
-            let removedSnapshotIndex = snapshots.firstIndex(where: { $0.snapshotID == snapshotID })
-        else { return }
-
-        let removedSnapshot = snapshots.remove(at: removedSnapshotIndex)
-        context.delete(removedSnapshot)
     }
 
     override func updatePageComponentEntityContents(componentModel: any PageComponent) {
@@ -108,7 +98,7 @@ public class TableComponentEntity: MemoComponentEntity {
         }
     }
 
-    override func revertComponentEntityContents(componentModel: any PageComponent) {
+    func revertComponentEntityContents(componentModel: any PageComponent) {
         guard
             let tableComponent = componentModel as? TableComponent,
             let context = managedObjectContext

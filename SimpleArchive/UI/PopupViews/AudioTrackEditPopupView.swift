@@ -4,7 +4,6 @@ import PhotosUI
 import UIKit
 
 final class AudioTrackEditPopupView: PopupView {
-
     private let albumThumbnailLabel: UILabel = {
         let albumThumbnailLabel = UILabel()
         albumThumbnailLabel.text = "Thumbnail"
@@ -89,53 +88,71 @@ final class AudioTrackEditPopupView: PopupView {
         confirmButton.throttleTapPublisher()
             .map { [weak self] _ in
                 guard let self else { return AudioTrackMetadata() }
-
-                var title =
-                    originTitle == audioTrackTitleTextField.text
-                    ? nil : audioTrackTitleTextField.text?.trimmingCharacters(in: .whitespaces)
-                title = title != nil && title!.isEmpty ? .emptyAudioTitle : title
-
-                var artist =
-                    originArtist == audioTrackArtistTextField.text
-                    ? nil : audioTrackArtistTextField.text?.trimmingCharacters(in: .whitespaces)
-                artist = artist != nil && artist!.isEmpty ? .emptyAudioArtist : artist
-
-                let thumbnail =
-                    originThumbnail == thumbnailImage.image
-                    ? nil : thumbnailImage.image?.jpegData(compressionQuality: 1.0)
-
-                return AudioTrackMetadata(
-                    title: title,
-                    artist: artist,
-                    thumbnail: thumbnail)
+                self.syncTextMetadataFromCurrentInputs()
+                return self.audioMetaData
             }
             .eraseToAnyPublisher()
     }
 
-    var originTitle: String?
-    var originArtist: String?
-    var originThumbnail: UIImage?
+    private var audioMetaData: AudioTrackMetadata
 
-    init(title: String?, artist: String?, thumbnail: UIImage?) {
-        originTitle = title
-        audioTrackTitleTextField.text = title
-
-        originArtist = artist
-        audioTrackArtistTextField.text = artist
-
-        originThumbnail = thumbnail
-        thumbnailImage.image = thumbnail
+    init(metadata: AudioTrackMetadata) {
+        audioMetaData = metadata
         super.init()
+
+        configureInitialFields(with: metadata)
+
+        audioTrackTitleTextField.addTarget(self, action: #selector(handleTitleTextFieldChange), for: .editingChanged)
+        audioTrackArtistTextField.addTarget(self, action: #selector(handleArtistTextFieldChange), for: .editingChanged)
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
-    deinit { print("AudioTrackEditPopupView deinit") }
+    deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
+
+    @objc private func handleTitleTextFieldChange() {
+        audioMetaData.title = normalizedTitleText()
+    }
+
+    @objc private func handleArtistTextFieldChange() {
+        audioMetaData.artist = normalizedArtistText()
+    }
+
+    private func configureInitialFields(with metadata: AudioTrackMetadata) {
+        audioTrackTitleTextField.text = metadata.title
+        audioTrackArtistTextField.text = metadata.artist
+
+        if let thumbnailData = metadata.thumbnail,
+            let image = UIImage(data: thumbnailData)
+        {
+            thumbnailImage.image = image
+        }
+
+        syncTextMetadataFromCurrentInputs()
+    }
+
+    private func syncTextMetadataFromCurrentInputs() {
+        audioMetaData.title = normalizedTitleText()
+        audioMetaData.artist = normalizedArtistText()
+    }
+
+    private func normalizedTitleText() -> String? {
+        guard let title = audioTrackTitleTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines) else {
+            return nil
+        }
+        return title.isEmpty ? .emptyAudioTitle : title
+    }
+
+    private func normalizedArtistText() -> String? {
+        guard let artist = audioTrackArtistTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines) else {
+            return nil
+        }
+        return artist.isEmpty ? .emptyAudioArtist : artist
+    }
 
     override func popupViewDetailConfigure() {
-
         cancelButton.addAction(UIAction { _ in self.dismiss() }, for: .touchUpInside)
 
         alertContainer.addArrangedSubview(albumThumbnailLabel)
@@ -203,9 +220,11 @@ extension AudioTrackEditPopupView: PHPickerViewControllerDelegate {
         let itemProvider = results.first?.itemProvider
 
         if let itemProvider = itemProvider, itemProvider.canLoadObject(ofClass: UIImage.self) {
-            itemProvider.loadObject(ofClass: UIImage.self) { (image, error) in
+            itemProvider.loadObject(ofClass: UIImage.self) { (image, _) in
                 DispatchQueue.main.async {
-                    self.thumbnailImage.image = (image as? UIImage)?.audioTrackThumbnailSquared
+                    guard let selectedImage = (image as? UIImage)?.audioTrackThumbnailSquared else { return }
+                    self.thumbnailImage.image = selectedImage
+                    self.audioMetaData.thumbnail = selectedImage.jpegData(compressionQuality: 1.0)
                 }
             }
         }
