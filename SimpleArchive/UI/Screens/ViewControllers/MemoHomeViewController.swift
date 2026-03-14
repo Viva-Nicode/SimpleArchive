@@ -433,20 +433,20 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
             directoryPathStackView.leadingAnchor.constraint(equalTo: directoryPathView.leadingAnchor),
             directoryPathStackView.trailingAnchor.constraint(equalTo: directoryPathView.trailingAnchor),
 
-            fileCreatePlusButton.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor, constant: -22),
-            fileCreatePlusButton.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor, constant: -100),
+            fileCreatePlusButton.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor, constant: -15),
+            fileCreatePlusButton.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor, constant: -60),
             fileCreatePlusButton.widthAnchor.constraint(equalToConstant: 55),
             fileCreatePlusButton.heightAnchor.constraint(equalToConstant: 55),
 
             createFolderButton.widthAnchor.constraint(equalToConstant: 55),
             createFolderButton.heightAnchor.constraint(equalToConstant: 55),
-            createFolderButton.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor, constant: -22),
-            createFolderButton.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor, constant: -100),
+            createFolderButton.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor, constant: -15),
+            createFolderButton.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor, constant: -60),
 
             createPageButton.widthAnchor.constraint(equalToConstant: 55),
             createPageButton.heightAnchor.constraint(equalToConstant: 55),
-            createPageButton.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor, constant: -22),
-            createPageButton.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor, constant: -100),
+            createPageButton.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor, constant: -15),
+            createPageButton.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor, constant: -60),
         ])
     }
 

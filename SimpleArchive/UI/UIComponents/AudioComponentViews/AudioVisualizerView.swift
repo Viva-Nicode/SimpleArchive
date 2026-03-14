@@ -63,12 +63,12 @@ final class AudioVisualizerView: UIView {
             self.visualizerProgress += 1
             print("\(self.visualizerProgress) : \(self.totalFrames)")
         }
+		
         RunLoop.main.add(audioVisualizeTimer!, forMode: .common)
     }
 }
 
 extension AudioVisualizerView: AudioVisualizerController {
-
     func activateAudioVisualizer(waveFormData: AudioWaveformData) {
         let visualizerSize = self.frame.size
         bars.forEach { self.addSubview($0) }
@@ -90,13 +90,11 @@ extension AudioVisualizerView: AudioVisualizerController {
             viewHeight: visualizerSize.height,
             duration: Double(waveFormData.sampleDataCount) / waveFormData.sampleRate)
     }
-	
-	
 
     func resumeVisuzlization() {
         let totalFrames = barHeights.count
         let interval = duration / Double(totalFrames)
-        
+
         audioVisualizeTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] timer in
             guard let self else { return }
             if self.visualizerProgress >= self.totalFrames {

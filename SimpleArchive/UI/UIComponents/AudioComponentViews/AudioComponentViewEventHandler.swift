@@ -174,6 +174,9 @@ class AudioComponentViewEventHandler: ComponentViewEventHandlerType {
                     .visibleCells
                     .map { $0 as! AudioTableRowView }
                     .forEach { $0.audioVisualizer.removeVisuzlization() }
+
+            case .didChangeAudioSessionStateAsThin(_):
+                break
         }
     }
 }

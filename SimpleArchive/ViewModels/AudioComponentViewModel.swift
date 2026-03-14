@@ -70,8 +70,11 @@ class AudioComponentViewModel: PageComponentViewModelType {
                     }
 
                 case .willDismissAudioControlBar:
-					soundPlayer.stopPlaying()
-					eventOutput.send(.didDismissAudioControlBar)
+                    soundPlayer.stopPlaying()
+                    eventOutput.send(.didDismissAudioControlBar)
+
+                case .willChangeAudioSessionStateAsThin:
+                    eventOutput.send(.didChangeAudioSessionStateAsThin(audioDataManager.pageComponent))
             }
         }
         .store(in: &subscriptions)
@@ -226,7 +229,7 @@ class AudioComponentViewModel: PageComponentViewModelType {
 
     func clearSubscriptions() {
         subscriptions.removeAll()
-		
+
     }
 }
 
@@ -254,6 +257,8 @@ extension AudioComponentViewModel {
         case willPresentEditAudioMetaDataPopupView(trackIndex: Int)
         case willScrollToActiveAudioTrack
         case willDismissAudioControlBar
+
+        case willChangeAudioSessionStateAsThin
     }
 
     enum Event {
@@ -270,6 +275,8 @@ extension AudioComponentViewModel {
         case didInactiveAudioComponent
         case didPresentEditAudioMetaDataPopupView(AudioTrackMetadata)
         case didScrollToActiveAudioTrack(Int)
-		case didDismissAudioControlBar
+        case didDismissAudioControlBar
+
+        case didChangeAudioSessionStateAsThin(AudioComponent)
     }
 }

@@ -60,6 +60,10 @@ class AudioComponentActionDispatcher: AudioComponentActionDispatcherType {
             .sink { thinAudioControlBarEventHandler.UIupdateEventHandler($0) }
             .store(in: &subscriptions)
     }
+	
+	func changeAudioControlBarStateAsThin(){
+		dispatcher.send(.willChangeAudioSessionStateAsThin)
+	}
 
     func dissmissAudioControlBar() {
         dispatcher.send(.willDismissAudioControlBar)

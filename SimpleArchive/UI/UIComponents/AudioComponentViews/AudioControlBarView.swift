@@ -103,7 +103,7 @@ final class AudioControlBarView: UIView {
         totalTimeLabel.translatesAutoresizingMaskIntoConstraints = false
         return totalTimeLabel
     }()
-    private let audioProgressBar: AudioProgressBar = {
+    private(set) var audioProgressBar: AudioProgressBar = {
         let progressBar = AudioProgressBar()
         progressBar.translatesAutoresizingMaskIntoConstraints = false
         return progressBar
@@ -134,17 +134,14 @@ final class AudioControlBarView: UIView {
     }
     var state: AudioControlBarViewState = .initial { didSet { handleState() } }
 
-    private var isThinLayoutApplied = false
-
     private let defaultThumbnailSize = UIConstants.audioControlBarViewThumbnailWidth
     private let thinThumbnailSize = UIConstants.audioControlBarViewThumbnailWidth / 2
 
-    private var thumbnailWidthConstraint: NSLayoutConstraint!
-    private var thumbnailHeightConstraint: NSLayoutConstraint!
-    private var thumbnailCenterYConstraint: NSLayoutConstraint!
-
     private var thinTitleCenterYConstraint: NSLayoutConstraint!
     private var thinButtonStackCenterYConstraint: NSLayoutConstraint!
+    private var controlViewBottomConstraint: NSLayoutConstraint!
+
+    private var expendedContentConstraints: [NSLayoutConstraint] = []
 
     private var defaultTitleConstraints: [NSLayoutConstraint] = []
     private var thinTitleConstraints: [NSLayoutConstraint] = []
@@ -158,9 +155,7 @@ final class AudioControlBarView: UIView {
     private var thinFadeViews: [UIView] { [artistLabel, currentTimeLabel, totalTimeLabel, audioProgressBar] }
     private var thinButtonFadeViews: [UIView] { [previousButton, nextButton] }
 
-    private var panGesture: UIPanGestureRecognizer?
-    private var panStartPointInWindow: CGPoint?
-    private var panStartOriginY: CGFloat = 0
+    private(set) var audioTrackListView = ExpendedAudioControlBarTrackListView()
 
     init() {
         super.init(frame: .zero)
@@ -169,14 +164,28 @@ final class AudioControlBarView: UIView {
         setupActions()
         isHidden = true
     }
+    private var blockerView: UIView!
 
     required init?(coder: NSCoder) { fatalError() }
 
     deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
 
+    func blockTouch() {
+        bringSubviewToFront(blockerView)
+    }
+
+    func unblockTouch() {
+        sendSubviewToBack(blockerView)
+    }
+
     private func setupUI() {
         addSubview(blurView)
         sendSubviewToBack(blurView)
+        blockerView = UIView(frame: self.bounds)
+        blockerView.backgroundColor = .clear
+        blockerView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        blockerView.isUserInteractionEnabled = true
+        addSubview(blockerView)
 
         buttonStackView.addSubview(previousButton)
         buttonStackView.addSubview(playPauseButton)
@@ -192,55 +201,84 @@ final class AudioControlBarView: UIView {
         controlView.addSubview(totalTimeLabel)
         controlView.addSubview(buttonStackView)
 
+        addSubview(audioTrackListView)
+		audioTrackListView.alpha = 0
+
         layer.cornerRadius = 12
         backgroundColor = .clear
         translatesAutoresizingMaskIntoConstraints = false
     }
 
+    private var defaultThumnbnailConstraints: [NSLayoutConstraint] = []
+    private var thinThumbnailConstraints: [NSLayoutConstraint] = []
+    private var expendedThumbnailConstraints: [NSLayoutConstraint] = []
+    private var thinContentConstraints: [NSLayoutConstraint] = []
+
     private func setupConstraints() {
-        thumbnailWidthConstraint = thumbnailImageView.widthAnchor.constraint(equalToConstant: defaultThumbnailSize)
-        thumbnailHeightConstraint = thumbnailImageView.heightAnchor.constraint(equalToConstant: defaultThumbnailSize)
-        thumbnailCenterYConstraint = thumbnailImageView.centerYAnchor.constraint(equalTo: centerYAnchor)
-        thinTitleCenterYConstraint = titleLabel.centerYAnchor.constraint(equalTo: controlView.centerYAnchor)
-        thinButtonStackCenterYConstraint = buttonStackView.centerYAnchor.constraint(equalTo: controlView.centerYAnchor)
-
-        let baseConstraints = [
-            blurView.topAnchor.constraint(equalTo: topAnchor),
-            blurView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            blurView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            blurView.bottomAnchor.constraint(equalTo: bottomAnchor),
-
-            thumbnailWidthConstraint!,
-            thumbnailHeightConstraint!,
-            thumbnailImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
-            thumbnailCenterYConstraint!,
-
-            controlView.topAnchor.constraint(equalTo: topAnchor),
-            controlView.bottomAnchor.constraint(equalTo: bottomAnchor),
-            controlView.leadingAnchor.constraint(equalTo: thumbnailImageView.trailingAnchor, constant: 10),
-            controlView.trailingAnchor.constraint(equalTo: trailingAnchor),
-
-            playPauseButton.widthAnchor.constraint(equalToConstant: 40),
-            playPauseButton.heightAnchor.constraint(equalToConstant: 35),
-            playPauseButton.centerYAnchor.constraint(equalTo: buttonStackView.centerYAnchor),
-            playPauseButton.centerXAnchor.constraint(equalTo: buttonStackView.centerXAnchor),
+        defaultThumnbnailConstraints = [
+            thumbnailImageView.heightAnchor.constraint(equalToConstant: defaultThumbnailSize),
+            thumbnailImageView.widthAnchor.constraint(equalToConstant: defaultThumbnailSize),
+            thumbnailImageView.centerYAnchor.constraint(equalTo: controlView.centerYAnchor),
         ]
 
-		defaultTitleConstraints = [
+        thinThumbnailConstraints = [
+            thumbnailImageView.heightAnchor.constraint(equalToConstant: thinThumbnailSize),
+            thumbnailImageView.widthAnchor.constraint(equalToConstant: thinThumbnailSize),
+            thumbnailImageView.centerYAnchor.constraint(equalTo: controlView.centerYAnchor),
+        ]
+
+        expendedThumbnailConstraints = [
+            thumbnailImageView.heightAnchor.constraint(equalToConstant: defaultThumbnailSize),
+            thumbnailImageView.widthAnchor.constraint(equalToConstant: defaultThumbnailSize),
+            thumbnailImageView.topAnchor.constraint(equalTo: topAnchor, constant: 20),
+        ]
+
+        expendedContentConstraints = [
+            audioTrackListView.topAnchor.constraint(equalTo: thumbnailImageView.bottomAnchor, constant: 20),
+            audioTrackListView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
+            audioTrackListView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10),
+            audioTrackListView.bottomAnchor.constraint(equalTo: bottomAnchor),
+        ]
+
+        thinContentConstraints = [
+            audioTrackListView.heightAnchor.constraint(equalToConstant: 0),
+            audioTrackListView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
+            audioTrackListView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10),
+            audioTrackListView.bottomAnchor.constraint(equalTo: bottomAnchor),
+        ]
+
+        thinTitleCenterYConstraint = titleLabel.centerYAnchor.constraint(equalTo: controlView.centerYAnchor)
+        thinButtonStackCenterYConstraint = buttonStackView.centerYAnchor.constraint(equalTo: controlView.centerYAnchor)
+        controlViewBottomConstraint = controlView.bottomAnchor.constraint(equalTo: bottomAnchor)
+
+        let baseConstraints =
+            [
+                blurView.topAnchor.constraint(equalTo: topAnchor),
+                blurView.leadingAnchor.constraint(equalTo: leadingAnchor),
+                blurView.trailingAnchor.constraint(equalTo: trailingAnchor),
+                blurView.bottomAnchor.constraint(equalTo: bottomAnchor),
+
+                thumbnailImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
+
+                controlView.topAnchor.constraint(equalTo: topAnchor),
+                controlViewBottomConstraint!,
+                controlView.leadingAnchor.constraint(equalTo: thumbnailImageView.trailingAnchor, constant: 10),
+                controlView.trailingAnchor.constraint(equalTo: trailingAnchor),
+
+                playPauseButton.widthAnchor.constraint(equalToConstant: 40),
+                playPauseButton.heightAnchor.constraint(equalToConstant: 35),
+                playPauseButton.centerYAnchor.constraint(equalTo: buttonStackView.centerYAnchor),
+                playPauseButton.centerXAnchor.constraint(equalTo: buttonStackView.centerXAnchor),
+            ] + defaultThumnbnailConstraints + thinContentConstraints
+
+        defaultTitleConstraints = [
             titleLabel.topAnchor.constraint(equalTo: controlView.topAnchor, constant: 12),
             titleLabel.centerXAnchor.constraint(equalTo: controlView.centerXAnchor),
             titleLabel.widthAnchor.constraint(equalToConstant: 180),
             titleLabel.heightAnchor.constraint(equalToConstant: 30),
         ]
 
-		thinTitleConstraints = [
-            titleLabel.leadingAnchor.constraint(equalTo: controlView.leadingAnchor, constant: 8),
-            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: buttonStackView.leadingAnchor, constant: -8),
-            thinTitleCenterYConstraint!,
-            titleLabel.heightAnchor.constraint(equalToConstant: 28),
-        ]
-
-		dafaultDetailConstraints = [
+        dafaultDetailConstraints = [
             artistLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 5),
             artistLabel.centerXAnchor.constraint(equalTo: controlView.centerXAnchor),
             artistLabel.widthAnchor.constraint(equalToConstant: 180),
@@ -252,24 +290,31 @@ final class AudioControlBarView: UIView {
             totalTimeLabel.trailingAnchor.constraint(equalTo: controlView.trailingAnchor, constant: -10),
             totalTimeLabel.bottomAnchor.constraint(equalTo: audioProgressBar.topAnchor),
 
+            audioProgressBar.topAnchor.constraint(equalTo: artistLabel.bottomAnchor, constant: 20),
             audioProgressBar.widthAnchor.constraint(equalToConstant: 180),
             audioProgressBar.heightAnchor.constraint(equalToConstant: 5),
             audioProgressBar.centerXAnchor.constraint(equalTo: controlView.centerXAnchor),
-            audioProgressBar.bottomAnchor.constraint(equalTo: buttonStackView.topAnchor, constant: -10),
         ]
 
-		defaultButtonStackConstraints = [
+        defaultButtonStackConstraints = [
+            buttonStackView.topAnchor.constraint(equalTo: audioProgressBar.bottomAnchor, constant: 10),
             buttonStackView.heightAnchor.constraint(equalToConstant: 40),
             buttonStackView.widthAnchor.constraint(equalToConstant: 170),
             buttonStackView.centerXAnchor.constraint(equalTo: controlView.centerXAnchor),
-            buttonStackView.bottomAnchor.constraint(equalTo: controlView.bottomAnchor, constant: -10),
         ]
 
-		thinButtonStackConstraints = [
+        thinTitleConstraints = [
+            titleLabel.leadingAnchor.constraint(equalTo: controlView.leadingAnchor, constant: 0),
+			titleLabel.widthAnchor.constraint(equalToConstant: 180),
+			titleLabel.heightAnchor.constraint(equalToConstant: 30),
+            thinTitleCenterYConstraint!,
+        ]
+
+        thinButtonStackConstraints = [
             buttonStackView.heightAnchor.constraint(equalToConstant: 35),
             buttonStackView.widthAnchor.constraint(equalToConstant: 40),
             buttonStackView.trailingAnchor.constraint(equalTo: controlView.trailingAnchor, constant: -12),
-			thinButtonStackCenterYConstraint!,
+            thinButtonStackCenterYConstraint!,
         ]
 
         previousNextButtonConstraints = [
@@ -319,74 +364,6 @@ final class AudioControlBarView: UIView {
                 self?.dispatcher?.scrollToActiveAudioTrack()
             }
             .store(in: &subscriptions)
-    }
-
-    override func didMoveToWindow() {
-        super.didMoveToWindow()
-        panGesture = UIPanGestureRecognizer(target: self, action: #selector(panGestureAction))
-        addGestureRecognizer(panGesture!)
-        audioProgressBar.setGesture(panGesture: panGesture!)
-    }
-
-    @objc func panGestureAction(_ sender: UIPanGestureRecognizer) {
-        guard let window = self.window else { return }
-        let currentPoint = sender.location(in: window)
-
-        switch sender.state {
-            case .began:
-                panStartPointInWindow = currentPoint
-                panStartOriginY = frame.origin.y
-
-            case .changed:
-                guard let start = panStartPointInWindow else { return }
-                let deltaY = currentPoint.y - start.y
-                frame.origin.y = panStartOriginY + deltaY
-
-                if deltaY > 0 {
-                    self.alpha = 1 - deltaY * 0.004
-                }
-
-            case .ended, .cancelled, .failed:
-                guard let start = panStartPointInWindow else { return }
-                let deltaY = currentPoint.y - start.y
-
-                if deltaY > 0 {
-                    let movedDown = deltaY
-                    myLog("ended: moved DOWN \(movedDown)")
-                    if movedDown >= (isThinLayoutApplied ? 30.0 : 100.0) {
-                        audioProgressBar.pauseProgress()
-                        UIView.animate(withDuration: 0.3) {
-                            self.alpha = 0
-                            self.frame.origin.y += 100
-                        } completion: { _ in
-                            self.alpha = 1
-                            self.isHidden = true
-                            self.dispatcher?.dissmissAudioControlBar()
-                        }
-                        return
-                    }
-                } else if deltaY < 0 {
-                    let movedUp = -deltaY
-                    myLog("ended: moved UP \(movedUp)")
-
-                }
-
-                UIView.animate(
-                    withDuration: 0.4,
-                    delay: 0,
-                    usingSpringWithDamping: 0.45,
-                    initialSpringVelocity: 0.7,
-                    options: [.curveEaseInOut]
-                ) {
-                    self.frame.origin.y = self.panStartOriginY
-                    self.alpha = 1
-                }
-
-                panStartPointInWindow = nil
-
-            default:
-                break
-        }
     }
 
     func seek(seek: TimeInterval) {
@@ -478,51 +455,111 @@ final class AudioControlBarView: UIView {
     }
 
     func setAudioControlBarLayoutAsDefault() {
-        guard isThinLayoutApplied else { return }
-        isThinLayoutApplied = false
+        NSLayoutConstraint.deactivate(
+            thinTitleConstraints
+                + thinButtonStackConstraints
+                + thinThumbnailConstraints
+                + expendedThumbnailConstraints
+                + expendedContentConstraints
+        )
+        controlViewBottomConstraint.isActive = true
 
-        NSLayoutConstraint.deactivate(thinTitleConstraints + thinButtonStackConstraints)
         NSLayoutConstraint.activate(
-			defaultTitleConstraints
+            defaultTitleConstraints
+                + defaultThumnbnailConstraints
                 + dafaultDetailConstraints
                 + defaultButtonStackConstraints
                 + previousNextButtonConstraints
+                + thinContentConstraints
         )
 
-		thinButtonFadeViews.forEach { $0.isHidden = false }
-		thinButtonFadeViews.forEach { $0.alpha = 1 }
-		thinFadeViews.forEach { $0.isHidden = false }
-		thinFadeViews.forEach { $0.alpha = 1 }
+        thinButtonFadeViews.forEach { $0.isHidden = false }
+        thinButtonFadeViews.forEach { $0.alpha = 1 }
+        thinFadeViews.forEach { $0.isHidden = false }
+        thinFadeViews.forEach { $0.alpha = 1 }
 
-        thumbnailWidthConstraint.constant = defaultThumbnailSize
-        thumbnailHeightConstraint.constant = defaultThumbnailSize
         thumbnailImageView.layer.cornerRadius = defaultThumbnailSize / 2
 
         layer.cornerRadius = 12
         blurView.layer.cornerRadius = 13
+
+        audioTrackListView.alpha = 0
     }
 
     func setAudioControlBarLayoutAsThin() {
-        guard !isThinLayoutApplied else { return }
-        isThinLayoutApplied = true
-
         NSLayoutConstraint.deactivate(
-			defaultTitleConstraints
+            defaultTitleConstraints
                 + defaultButtonStackConstraints
                 + previousNextButtonConstraints
+                + expendedContentConstraints
+                + expendedThumbnailConstraints
+                + defaultThumnbnailConstraints
         )
-        NSLayoutConstraint.activate(thinTitleConstraints + thinButtonStackConstraints)
 
-		thinButtonFadeViews.forEach { $0.isHidden = false }
-		thinButtonFadeViews.forEach { $0.alpha = 0 }
-		thinFadeViews.forEach { $0.isHidden = false }
-		thinFadeViews.forEach { $0.alpha = 0 }
+        controlViewBottomConstraint.isActive = false
+        controlViewBottomConstraint = controlView.bottomAnchor.constraint(equalTo: bottomAnchor)
+        controlViewBottomConstraint.isActive = true
 
-        thumbnailWidthConstraint.constant = thinThumbnailSize
-        thumbnailHeightConstraint.constant = thinThumbnailSize
         thumbnailImageView.layer.cornerRadius = thinThumbnailSize / 2
+        NSLayoutConstraint.activate(
+            thinTitleConstraints
+                + thinButtonStackConstraints
+                + thinThumbnailConstraints
+                + thinContentConstraints
+        )
 
-        layer.cornerRadius = 37.5
-        blurView.layer.cornerRadius = 38.5
+        thinButtonFadeViews.forEach {
+            $0.isHidden = false
+            $0.alpha = 0
+        }
+        thinFadeViews.forEach {
+            $0.isHidden = false
+            $0.alpha = 0
+        }
+
+        //        audioTrackListView.isHidden = false
+        audioTrackListView.alpha = 0
+
+        layer.cornerRadius = 35
+        blurView.layer.cornerRadius = 35
+    }
+
+    func setAudioControlBarLayoutAsExpanded() {
+        NSLayoutConstraint.deactivate(
+            thinTitleConstraints
+                + thinButtonStackConstraints
+                + thinThumbnailConstraints
+                + thinContentConstraints
+                + defaultThumnbnailConstraints
+        )
+		
+        controlViewBottomConstraint.isActive = false
+		controlViewBottomConstraint = controlView.bottomAnchor.constraint(equalTo: audioTrackListView.topAnchor)
+		controlViewBottomConstraint.isActive = true
+		
+        NSLayoutConstraint.activate(
+            defaultTitleConstraints
+                + dafaultDetailConstraints
+                + defaultButtonStackConstraints
+                + previousNextButtonConstraints
+                + expendedThumbnailConstraints
+                + expendedContentConstraints
+        )
+
+        thinButtonFadeViews.forEach { $0.isHidden = false }
+        thinButtonFadeViews.forEach { $0.alpha = 1 }
+        thinFadeViews.forEach { $0.isHidden = false }
+        thinFadeViews.forEach { $0.alpha = 1 }
+
+        thumbnailImageView.layer.cornerRadius = defaultThumbnailSize / 2
+
+        layer.cornerRadius = 12
+        blurView.layer.cornerRadius = 13
+        audioTrackListView.alpha = 1
+    }
+
+    func setAudioTrackListView(data: AudioComponent) -> ExpendedAudioControlBarTrackListView {
+        audioTrackListView.configure(audioComponent: data)
+        return audioTrackListView
     }
 }

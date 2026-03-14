@@ -27,15 +27,17 @@ final class AudioProgressBar: UIControl {
     var maximumValue: TimeInterval = 1.0 {
         didSet { updateProgressBarWidth() }
     }
+	
+	var isProgressUpdateEnable = true
+	
 
     private(set) var currentProgress: TimeInterval = 0.0 {
         didSet {
             currentProgress = min(max(currentProgress, minimumValue), maximumValue)
-            updateProgressBarWidth()
-            if [.began, .changed, .ended, .cancelled, .failed].contains(panGesture?.state) {
-                return
+			if isProgressUpdateEnable {
+                updateProgressBarWidth()
+                updateCurrentTimeLabel?(currentProgress)
             }
-            updateCurrentTimeLabel?(currentProgress)
         }
     }
 
