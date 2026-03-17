@@ -74,7 +74,12 @@ class AudioComponentViewModel: PageComponentViewModelType {
                     eventOutput.send(.didDismissAudioControlBar)
 
                 case .willChangeAudioSessionStateAsThin:
-                    eventOutput.send(.didChangeAudioSessionStateAsThin(audioDataManager.pageComponent))
+                    if let activeTrackID = soundPlayer.activeTrackID,
+                        let activeAudioTrackIndex = audioDataManager[activeTrackID]
+                    {
+                        eventOutput.send(
+                            .didChangeAudioSessionStateAsThin(audioDataManager.pageComponent, activeAudioTrackIndex))
+                    }
             }
         }
         .store(in: &subscriptions)
@@ -277,6 +282,6 @@ extension AudioComponentViewModel {
         case didScrollToActiveAudioTrack(Int)
         case didDismissAudioControlBar
 
-        case didChangeAudioSessionStateAsThin(AudioComponent)
+        case didChangeAudioSessionStateAsThin(AudioComponent, Int)
     }
 }

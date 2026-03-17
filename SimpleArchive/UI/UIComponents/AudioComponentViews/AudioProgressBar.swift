@@ -27,14 +27,13 @@ final class AudioProgressBar: UIControl {
     var maximumValue: TimeInterval = 1.0 {
         didSet { updateProgressBarWidth() }
     }
-	
-	var isProgressUpdateEnable = true
-	
+
+    var isProgressUpdateEnable = true
 
     private(set) var currentProgress: TimeInterval = 0.0 {
         didSet {
             currentProgress = min(max(currentProgress, minimumValue), maximumValue)
-			if isProgressUpdateEnable {
+            if isProgressUpdateEnable {
                 updateProgressBarWidth()
                 updateCurrentTimeLabel?(currentProgress)
             }
@@ -130,11 +129,11 @@ final class AudioProgressBar: UIControl {
     }
 
     @objc private func updatePlaybackProgress() {
-        guard !isTracking else { return }
-
         let currentTime = CACurrentMediaTime()
         let deltaTime = currentTime - lastUpdateTime
         lastUpdateTime = currentTime
+
+        guard !isTracking else { return }
 
         if currentProgress < maximumValue {
             currentProgress += deltaTime

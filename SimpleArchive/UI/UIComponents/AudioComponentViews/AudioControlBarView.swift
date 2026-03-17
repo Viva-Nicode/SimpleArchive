@@ -4,7 +4,7 @@ import MediaPlayer
 import SwiftUI
 import UIKit
 
-final class AudioControlBarView: UIView {
+final class AudioControlBarView: UIView, UITableViewDelegate {
 
     enum AudioControlBarViewState {
         case initial
@@ -126,6 +126,13 @@ final class AudioControlBarView: UIView {
 
         return blurView
     }()
+    private var blockerView: UIView = {
+        let blockerView = UIView()
+        blockerView.backgroundColor = .clear
+        blockerView.isUserInteractionEnabled = true
+        blockerView.translatesAutoresizingMaskIntoConstraints = false
+        return blockerView
+    }()
 
     private var subscriptions: Set<AnyCancellable> = []
     private(set) var dispatcher: AudioComponentActionDispatcher?
@@ -152,10 +159,16 @@ final class AudioControlBarView: UIView {
     private var thinButtonStackConstraints: [NSLayoutConstraint] = []
     private var previousNextButtonConstraints: [NSLayoutConstraint] = []
 
+    private var defaultThumnbnailConstraints: [NSLayoutConstraint] = []
+    private var thinThumbnailConstraints: [NSLayoutConstraint] = []
+    private var expendedThumbnailConstraints: [NSLayoutConstraint] = []
+    private var thinContentConstraints: [NSLayoutConstraint] = []
+
     private var thinFadeViews: [UIView] { [artistLabel, currentTimeLabel, totalTimeLabel, audioProgressBar] }
     private var thinButtonFadeViews: [UIView] { [previousButton, nextButton] }
 
     private(set) var audioTrackListView = ExpendedAudioControlBarTrackListView()
+    private var selectedAudioTrackIndexPath: IndexPath?
 
     init() {
         super.init(frame: .zero)
@@ -164,27 +177,13 @@ final class AudioControlBarView: UIView {
         setupActions()
         isHidden = true
     }
-    private var blockerView: UIView!
 
     required init?(coder: NSCoder) { fatalError() }
 
     deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
 
-    func blockTouch() {
-        bringSubviewToFront(blockerView)
-    }
-
-    func unblockTouch() {
-        sendSubviewToBack(blockerView)
-    }
-
     private func setupUI() {
         addSubview(blurView)
-        sendSubviewToBack(blurView)
-        blockerView = UIView(frame: self.bounds)
-        blockerView.backgroundColor = .clear
-        blockerView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        blockerView.isUserInteractionEnabled = true
         addSubview(blockerView)
 
         buttonStackView.addSubview(previousButton)
@@ -202,17 +201,15 @@ final class AudioControlBarView: UIView {
         controlView.addSubview(buttonStackView)
 
         addSubview(audioTrackListView)
-		audioTrackListView.alpha = 0
+        audioTrackListView.alpha = 0
+        audioTrackListView.tableView.delegate = self
+		
+		sendSubviewToBack(blurView)
 
         layer.cornerRadius = 12
         backgroundColor = .clear
         translatesAutoresizingMaskIntoConstraints = false
     }
-
-    private var defaultThumnbnailConstraints: [NSLayoutConstraint] = []
-    private var thinThumbnailConstraints: [NSLayoutConstraint] = []
-    private var expendedThumbnailConstraints: [NSLayoutConstraint] = []
-    private var thinContentConstraints: [NSLayoutConstraint] = []
 
     private func setupConstraints() {
         defaultThumnbnailConstraints = [
@@ -235,15 +232,15 @@ final class AudioControlBarView: UIView {
 
         expendedContentConstraints = [
             audioTrackListView.topAnchor.constraint(equalTo: thumbnailImageView.bottomAnchor, constant: 20),
-            audioTrackListView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
-            audioTrackListView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10),
+            audioTrackListView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 5),
+            audioTrackListView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -5),
             audioTrackListView.bottomAnchor.constraint(equalTo: bottomAnchor),
         ]
 
         thinContentConstraints = [
             audioTrackListView.heightAnchor.constraint(equalToConstant: 0),
-            audioTrackListView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
-            audioTrackListView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10),
+            audioTrackListView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 5),
+            audioTrackListView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -5),
             audioTrackListView.bottomAnchor.constraint(equalTo: bottomAnchor),
         ]
 
@@ -257,6 +254,11 @@ final class AudioControlBarView: UIView {
                 blurView.leadingAnchor.constraint(equalTo: leadingAnchor),
                 blurView.trailingAnchor.constraint(equalTo: trailingAnchor),
                 blurView.bottomAnchor.constraint(equalTo: bottomAnchor),
+
+                blockerView.topAnchor.constraint(equalTo: topAnchor),
+                blockerView.leadingAnchor.constraint(equalTo: leadingAnchor),
+                blockerView.trailingAnchor.constraint(equalTo: trailingAnchor),
+                blockerView.bottomAnchor.constraint(equalTo: bottomAnchor),
 
                 thumbnailImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
 
@@ -305,8 +307,8 @@ final class AudioControlBarView: UIView {
 
         thinTitleConstraints = [
             titleLabel.leadingAnchor.constraint(equalTo: controlView.leadingAnchor, constant: 0),
-			titleLabel.widthAnchor.constraint(equalToConstant: 180),
-			titleLabel.heightAnchor.constraint(equalToConstant: 30),
+            titleLabel.widthAnchor.constraint(equalToConstant: 180),
+            titleLabel.heightAnchor.constraint(equalToConstant: 30),
             thinTitleCenterYConstraint!,
         ]
 
@@ -517,8 +519,7 @@ final class AudioControlBarView: UIView {
             $0.alpha = 0
         }
 
-        //        audioTrackListView.isHidden = false
-        audioTrackListView.alpha = 0
+        audioTrackListView.updateLayoutToThin()
 
         layer.cornerRadius = 35
         blurView.layer.cornerRadius = 35
@@ -532,11 +533,11 @@ final class AudioControlBarView: UIView {
                 + thinContentConstraints
                 + defaultThumnbnailConstraints
         )
-		
+
         controlViewBottomConstraint.isActive = false
-		controlViewBottomConstraint = controlView.bottomAnchor.constraint(equalTo: audioTrackListView.topAnchor)
-		controlViewBottomConstraint.isActive = true
-		
+        controlViewBottomConstraint = controlView.bottomAnchor.constraint(equalTo: audioTrackListView.topAnchor)
+        controlViewBottomConstraint.isActive = true
+
         NSLayoutConstraint.activate(
             defaultTitleConstraints
                 + dafaultDetailConstraints
@@ -555,11 +556,30 @@ final class AudioControlBarView: UIView {
 
         layer.cornerRadius = 12
         blurView.layer.cornerRadius = 13
-        audioTrackListView.alpha = 1
-    }
 
-    func setAudioTrackListView(data: AudioComponent) -> ExpendedAudioControlBarTrackListView {
-        audioTrackListView.configure(audioComponent: data)
-        return audioTrackListView
+        audioTrackListView.updateLayoytToExpended()
+    }
+	
+	func blockTouch() {
+		bringSubviewToFront(blockerView)
+	}
+
+	func unblockTouch() {
+		sendSubviewToBack(blockerView)
+	}
+
+    func tableView(_ tableView: UITableView, willSelectRowAt indexPath: IndexPath) -> IndexPath? {
+        if selectedAudioTrackIndexPath == indexPath {
+            dispatcher?.playAudioTrack(with: indexPath.row)
+            self.selectedAudioTrackIndexPath = nil
+            tableView.deselectRow(at: indexPath, animated: true)
+        } else {
+            selectedAudioTrackIndexPath = indexPath
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                self.selectedAudioTrackIndexPath = nil
+                tableView.deselectRow(at: indexPath, animated: true)
+            }
+        }
+        return indexPath
     }
 }

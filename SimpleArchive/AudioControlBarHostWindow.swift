@@ -7,30 +7,36 @@ enum AudioControlBarLayoutState {
 }
 
 final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
-    private let timing = UISpringTimingParameters(mass: 0.5, stiffness: 100, damping: 7, initialVelocity: .zero)
     private var audioControlBar: AudioControlBarView
+    private var audioControlBarLayoutState: AudioControlBarLayoutState = .default
+
     private var defaultAudioControlBarConstraints: [NSLayoutConstraint] = []
     private var thinAudioControlBarConstraints: [NSLayoutConstraint] = []
-    private let durationFactor = 0.7
     private var expendedAudioControlBarConstraints: [NSLayoutConstraint] = []
-
-    private(set) var audioControlBarLayoutState: AudioControlBarLayoutState = .default
+    private var dismissAudioControlBarConstraints: [NSLayoutConstraint] = []
 
     private var panGesture: UIPanGestureRecognizer!
     private var panStartPointInWindow: CGPoint?
     private var panStartOriginY: CGFloat = 0
+    private var isSwipingFast = false
 
-    private var thinToExpandedAnimator: UIViewPropertyAnimator?
+    private var thinExpandedTransitionAnimator: UIViewPropertyAnimator?
+    private var thinToDismissAnimator: UIViewPropertyAnimator?
 
-    private let thinToExpandedRequiredDistance: CGFloat = 100
-    private let thinToExpandedInteractiveMaxDistance: CGFloat = 500
+    private var thinBottonConstant: CGFloat = -52.5
+    private let expendedBottonConstant = (UIView.screenHeight - 500) * -0.5 + 50
+    private let expendedContentsWidth = UIView.screenWidth - 50
+    private let expendedContentHeight: CGFloat = 500
 
     override init(windowScene: UIWindowScene) {
         audioControlBar = AudioControlBarView()
 
         super.init(windowScene: windowScene)
 
-        setGesture()
+        panGesture = UIPanGestureRecognizer(target: self, action: #selector(panGestureAction))
+        audioControlBar.addGestureRecognizer(panGesture)
+        audioControlBar.audioProgressBar.setGesture(panGesture: panGesture)
+
         addSubview(audioControlBar)
 
         defaultAudioControlBarConstraints = [
@@ -46,295 +52,26 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
             audioControlBar.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 5),
             audioControlBar.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -80),
             audioControlBar.heightAnchor.constraint(equalToConstant: 70),
-            audioControlBar.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -52.5),
+            audioControlBar.bottomAnchor.constraint(equalTo: bottomAnchor, constant: thinBottonConstant),
         ]
 
-        let dd = (UIView.screenHeight - 500) * -0.5 + 40
+        dismissAudioControlBarConstraints = [
+            audioControlBar.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 5),
+            audioControlBar.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -80),
+            audioControlBar.heightAnchor.constraint(equalToConstant: 70),
+            audioControlBar.bottomAnchor.constraint(equalTo: bottomAnchor, constant: 50),
+        ]
 
         expendedAudioControlBarConstraints = [
-            audioControlBar.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
-            audioControlBar.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -20),
-            audioControlBar.heightAnchor.constraint(equalToConstant: 500),
-            audioControlBar.bottomAnchor.constraint(equalTo: bottomAnchor, constant: dd),
+            audioControlBar.centerXAnchor.constraint(equalTo: centerXAnchor),
+            audioControlBar.widthAnchor.constraint(equalToConstant: expendedContentsWidth),
+            audioControlBar.heightAnchor.constraint(equalToConstant: expendedContentHeight),
+            audioControlBar.bottomAnchor.constraint(equalTo: bottomAnchor, constant: expendedBottonConstant),
         ]
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
-    }
-
-    private func setGesture() {
-        panGesture = UIPanGestureRecognizer(target: self, action: #selector(panGestureAction))
-        audioControlBar.addGestureRecognizer(panGesture)
-        audioControlBar.audioProgressBar.setGesture(panGesture: panGesture)
-    }
-
-    private func updateThinToExpandedInteraction() {
-        let timing = UISpringTimingParameters(mass: 0.45, stiffness: 100, damping: 7, initialVelocity: .zero)
-        let animator = UIViewPropertyAnimator(duration: 0, timingParameters: timing)
-
-		audioControlBar.alpha = 1
-		
-        animator.addAnimations {
-            NSLayoutConstraint.deactivate(self.thinAudioControlBarConstraints)
-            NSLayoutConstraint.activate(self.expendedAudioControlBarConstraints)
-            self.audioControlBar.setAudioControlBarLayoutAsExpanded()
-            self.layoutIfNeeded()
-        }
-
-        animator.isReversed = false
-
-        animator.addCompletion { position in
-            if position == .end {
-                self.audioControlBarLayoutState = .expended
-            } else {
-                self.audioControlBarLayoutState = .thin
-                NSLayoutConstraint.deactivate(self.expendedAudioControlBarConstraints)
-                self.audioControlBar.setAudioControlBarLayoutAsThin()
-                NSLayoutConstraint.activate(self.thinAudioControlBarConstraints)
-				self.layoutIfNeeded()
-            }
-            self.thinToExpandedAnimator = nil
-            self.panGesture.isEnabled = true
-            self.audioControlBar.audioProgressBar.isProgressUpdateEnable = true
-            self.audioControlBar.unblockTouch()
-        }
-
-        thinToExpandedAnimator = animator
-        animator.startAnimation()
-        animator.pauseAnimation()
-    }
-
-    private func updateExpandedToThinInteraction() {
-        let timing = UISpringTimingParameters(mass: 0.3, stiffness: 100, damping: 7, initialVelocity: .zero)
-        let animator = UIViewPropertyAnimator(duration: 0.6, timingParameters: timing)
-
-        animator.addAnimations {
-            NSLayoutConstraint.deactivate(self.expendedAudioControlBarConstraints)
-            self.audioControlBar.setAudioControlBarLayoutAsThin()
-            NSLayoutConstraint.activate(self.thinAudioControlBarConstraints)
-            self.layoutIfNeeded()
-        }
-
-        animator.isReversed = false
-
-        animator.addCompletion { position in
-            if position == .end {
-                myLog("thin 성공")
-                self.audioControlBarLayoutState = .thin
-            } else {
-                myLog("thin 취소됨")
-                self.audioControlBarLayoutState = .expended
-                NSLayoutConstraint.deactivate(self.thinAudioControlBarConstraints)
-                NSLayoutConstraint.activate(self.expendedAudioControlBarConstraints)
-                self.audioControlBar.setAudioControlBarLayoutAsExpanded()
-                self.layoutIfNeeded()
-            }
-            self.panGesture.isEnabled = true
-            self.audioControlBar.audioProgressBar.isProgressUpdateEnable = true
-            self.audioControlBar.unblockTouch()
-            self.thinToExpandedAnimator = nil
-        }
-
-        thinToExpandedAnimator = animator
-        animator.startAnimation()
-        animator.pauseAnimation()
-    }
-
-    private func dismissAudioControlBar() {
-        audioControlBar.audioProgressBar.pauseProgress()
-
-        UIView.animate(withDuration: 0.3) {
-            self.audioControlBar.alpha = 0
-            self.audioControlBar.frame.origin.y += 100
-        } completion: { _ in
-            self.audioControlBar.alpha = 1
-            self.audioControlBar.isHidden = true
-            self.audioControlBarLayoutState = .default
-
-            NSLayoutConstraint.deactivate(self.expendedAudioControlBarConstraints)
-            NSLayoutConstraint.deactivate(self.thinAudioControlBarConstraints)
-            NSLayoutConstraint.activate(self.defaultAudioControlBarConstraints)
-            self.audioControlBar.setAudioControlBarLayoutAsDefault()
-
-            self.audioControlBar.dispatcher?.dissmissAudioControlBar()
-
-            self.panGesture.isEnabled = true
-            self.audioControlBar.audioProgressBar.isProgressUpdateEnable = true
-            self.audioControlBar.unblockTouch()
-            self.thinToExpandedAnimator = nil
-
-            self.layoutIfNeeded()
-        }
-    }
-
-    private func gestureChanges(deltaY: CGFloat) {
-        let isDraggingBotton = deltaY > 0
-        let deltaAbs = abs(deltaY)
-
-        switch audioControlBarLayoutState {
-            case .default:
-                if isDraggingBotton {
-                    audioControlBar.frame.origin.y = panStartOriginY + deltaAbs
-                    audioControlBar.alpha = 1 - deltaAbs * 0.004
-                } else {
-                    audioControlBar.frame.origin.y = panStartOriginY
-                    audioControlBar.alpha = 1
-                }
-
-            case .thin:
-                if isDraggingBotton {
-                    thinToExpandedAnimator?.fractionComplete = 0
-                    thinToExpandedAnimator?.isReversed = true
-                    thinToExpandedAnimator?.continueAnimation(withTimingParameters: nil, durationFactor: 0)
-                    thinToExpandedAnimator = nil
-
-                    audioControlBar.frame.origin.y = panStartOriginY + deltaAbs
-                    audioControlBar.alpha = 1 - deltaAbs * 0.008
-                } else {
-                    if thinToExpandedAnimator == nil {
-                        updateThinToExpandedInteraction()
-                    } else {
-                        let progress = min(max(deltaAbs / thinToExpandedInteractiveMaxDistance, 0), 1)
-                        thinToExpandedAnimator?.fractionComplete = progress
-                    }
-                }
-
-            case .expended:
-                if isDraggingBotton {
-                    if thinToExpandedAnimator == nil {
-                        updateExpandedToThinInteraction()
-                    } else {
-                        let progress = min(max(deltaAbs / thinToExpandedInteractiveMaxDistance, 0), 1)
-                        thinToExpandedAnimator?.fractionComplete = progress
-                    }
-                } else {
-                    thinToExpandedAnimator?.fractionComplete = 0
-                }
-        }
-    }
-
-    private func gestureComplete(deltaY: CGFloat) {
-        let isDraggingBotton = deltaY > 0
-        let deltaAbs = abs(deltaY)
-
-        switch audioControlBarLayoutState {
-            case .default:
-                if isDraggingBotton {
-                    if deltaAbs >= 100 {
-                        dismissAudioControlBar()
-                    } else {
-                        transitionAnimationWith {
-                            self.audioControlBar.alpha = 1
-                            self.audioControlBar.frame.origin.y = self.panStartOriginY
-                        }
-                        audioControlBar.audioProgressBar.isProgressUpdateEnable = true
-                        panGesture.isEnabled = true
-                        audioControlBar.unblockTouch()
-                    }
-                } else {
-                    transitionAnimationWith {
-                        self.audioControlBar.alpha = 1
-                        self.audioControlBar.frame.origin.y = self.panStartOriginY
-                    }
-                    audioControlBar.audioProgressBar.isProgressUpdateEnable = true
-                    panGesture.isEnabled = true
-                    audioControlBar.unblockTouch()
-                }
-
-            case .thin:
-                if isDraggingBotton {
-                    if deltaAbs >= 50 {
-                        dismissAudioControlBar()
-                    } else {
-                        if let thinToExpandedAnimator {
-                            self.audioControlBar.alpha = 1
-                            self.audioControlBar.frame.origin.y = self.panStartOriginY
-                            thinToExpandedAnimator.isReversed = true
-                            thinToExpandedAnimator
-                                .continueAnimation(withTimingParameters: nil, durationFactor: durationFactor)
-                        } else {
-                            audioControlBarLayoutState = .thin
-
-                            audioControlBar.audioProgressBar.isProgressUpdateEnable = false
-                            panGesture.isEnabled = false
-                            audioControlBar.blockTouch()
-
-                            transitionAnimationWith(
-                                {
-                                    self.audioControlBar.alpha = 1
-                                    self.audioControlBar.frame.origin.y = self.panStartOriginY
-                                },
-                                comp: {
-                                    self.audioControlBar.audioProgressBar.isProgressUpdateEnable = true
-                                    self.panGesture.isEnabled = true
-                                    self.audioControlBar.unblockTouch()
-                                })
-                        }
-                    }
-                } else {
-                    if deltaAbs >= 100 {
-                        audioControlBarLayoutState = .expended
-                        thinToExpandedAnimator?
-                            .continueAnimation(withTimingParameters: nil, durationFactor: durationFactor)
-                    } else {
-                        audioControlBarLayoutState = .thin
-                        thinToExpandedAnimator?.isReversed = true
-                        thinToExpandedAnimator?
-                            .continueAnimation(withTimingParameters: nil, durationFactor: durationFactor)
-                    }
-                }
-
-            case .expended:
-                if isDraggingBotton {
-                    if deltaAbs >= 100 {
-                        audioControlBarLayoutState = .thin
-                        thinToExpandedAnimator?
-                            .continueAnimation(withTimingParameters: nil, durationFactor: 0.7)
-                    } else {
-                        audioControlBarLayoutState = .expended
-                        thinToExpandedAnimator?.isReversed = true
-                        thinToExpandedAnimator?
-                            .continueAnimation(withTimingParameters: nil, durationFactor: 1.0)
-                    }
-                } else {
-                    myLog("expended에서 위로 들어올림")
-
-                    audioControlBarLayoutState = .expended
-
-                    thinToExpandedAnimator?.isReversed = true
-                    thinToExpandedAnimator?.continueAnimation(withTimingParameters: nil, durationFactor: 1.0)
-
-                    thinToExpandedAnimator = nil
-                }
-        }
-    }
-
-    @objc func panGestureAction(_ sender: UIPanGestureRecognizer) {
-        let currentPoint = sender.location(in: self)
-
-        switch sender.state {
-            case .began:
-                audioControlBar.blockTouch()
-                audioControlBar.audioProgressBar.isProgressUpdateEnable = false
-
-                panStartPointInWindow = currentPoint
-                panStartOriginY = audioControlBar.frame.origin.y
-
-            case .changed:
-                guard let start = panStartPointInWindow else { return }
-                let deltaY = currentPoint.y - start.y
-                gestureChanges(deltaY: deltaY)
-
-            case .ended, .cancelled, .failed:
-                panGesture.isEnabled = false
-                guard let start = panStartPointInWindow else { return }
-                let deltaY = currentPoint.y - start.y
-                gestureComplete(deltaY: deltaY)
-
-            default:
-                break
-        }
     }
 
     func setAudioControlBarLayoutAsDefault() {
@@ -425,56 +162,20 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
                     self.layoutIfNeeded()
                 }
 
-            case .thin:
-                break
-
-            case .expended:
-                self.audioControlBarLayoutState = .thin
-
-                NSLayoutConstraint.deactivate(self.expendedAudioControlBarConstraints)
-                NSLayoutConstraint.activate(self.thinAudioControlBarConstraints)
-                self.audioControlBar.setAudioControlBarLayoutAsThin()
-                self.layoutIfNeeded()
-
-        }
-    }
-
-    func setAudioControlBarLayoutAsExpended() {
-        switch audioControlBarLayoutState {
-            case .default:
-                break
-
-            case .thin:
-                transitionAnimationWith {
-                    self.audioControlBarLayoutState = .expended
-
-                    NSLayoutConstraint.deactivate(self.thinAudioControlBarConstraints)
-                    NSLayoutConstraint.activate(self.expendedAudioControlBarConstraints)
-                    self.audioControlBar.setAudioControlBarLayoutAsExpanded()
-                    self.layoutIfNeeded()
-                }
-
-            case .expended:
+            default:
                 break
         }
-    }
-
-    private func transitionAnimationWith(_ with: @escaping () -> Void, comp: (() -> Void)? = nil) {
-        UIView.animate(
-            withDuration: 0.4, delay: 0, usingSpringWithDamping: 0.45,
-            initialSpringVelocity: 0.7, options: [.curveEaseInOut],
-            animations: { with() }, completion: { _ in comp?() })
     }
 
     func setAudioControlBarEventHandlerForThin() {
-        let thinAudioEventHandler = ThinAudioControlBarEventHandler(host: self)
+        let thinAudioEventHandler = ThinAudioControlBarEventHandler(
+            host: self, list: audioControlBar.audioTrackListView)
         audioControlBar.dispatcher?.setEventHandler(thinAudioControlBarEventHandler: thinAudioEventHandler)
         audioControlBar.dispatcher?.changeAudioControlBarStateAsThin()
     }
 
     func getSingleAudioViewControllerContinuousPlaybackSession(
-        audioComponent: AudioComponent,
-        pageName: String
+        audioComponent: AudioComponent, pageName: String
     ) -> SingleAudioPageViewController? {
 
         if audioControlBar.dispatcher?.viewModel?.audioComponentID == audioComponent.id {
@@ -535,9 +236,12 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
     }
 
     func activeAudioControlBar(audioMetadata: AudioTrackMetadata, dispatcher: AudioComponentActionDispatcher?) {
-        audioControlBar.alpha = 0
-        audioControlBar.isHidden = false
-        UIView.animate(withDuration: 0.3) { self.audioControlBar.alpha = 1 }
+        if audioControlBar.isHidden {
+            audioControlBar.alpha = 0
+            audioControlBar.isHidden = false
+            UIView.animate(withDuration: 0.3) { self.audioControlBar.alpha = 1 }
+        }
+		enableAudioControlBarUserInteracting()
         audioControlBar.state = .play(metadata: audioMetadata, dispatcher: dispatcher)
     }
 
@@ -562,8 +266,361 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
         bringSubviewToFront(audioControlBar)
     }
 
-    func setListiViewData(data: AudioComponent) -> ExpendedAudioControlBarTrackListView {
-        audioControlBar.setAudioTrackListView(data: data)
+    private func setThinToExpandedAnimation() {
+        let timing = UISpringTimingParameters(mass: 0.45, stiffness: 100, damping: 7, initialVelocity: .zero)
+        let animator = UIViewPropertyAnimator(duration: 0, timingParameters: timing)
+
+        audioControlBar.alpha = 1
+
+        animator.addAnimations {
+            NSLayoutConstraint.deactivate(self.dismissAudioControlBarConstraints)
+            NSLayoutConstraint.deactivate(self.thinAudioControlBarConstraints)
+            NSLayoutConstraint.activate(self.expendedAudioControlBarConstraints)
+            self.audioControlBar.setAudioControlBarLayoutAsExpanded()
+            self.layoutIfNeeded()
+        }
+
+        animator.addCompletion { position in
+            switch position {
+                case .end:
+                    self.audioControlBarLayoutState = .expended
+                    self.enableAudioControlBarUserInteracting()
+
+                case .start:
+                    self.audioControlBarLayoutState = .thin
+
+                    NSLayoutConstraint.deactivate(self.expendedAudioControlBarConstraints)
+                    self.audioControlBar.setAudioControlBarLayoutAsThin()
+                    NSLayoutConstraint.activate(self.thinAudioControlBarConstraints)
+                    self.layoutIfNeeded()
+
+                    self.enableAudioControlBarUserInteracting()
+
+                case .current:
+                    self.audioControlBarLayoutState = .thin
+
+                    NSLayoutConstraint.deactivate(self.dismissAudioControlBarConstraints)
+                    NSLayoutConstraint.deactivate(self.expendedAudioControlBarConstraints)
+                    self.audioControlBar.setAudioControlBarLayoutAsThin()
+                    NSLayoutConstraint.activate(self.thinAudioControlBarConstraints)
+                    self.layoutIfNeeded()
+
+                    self.setThinToDismissAnimation()
+
+                @unknown default:
+                    break
+            }
+            self.thinExpandedTransitionAnimator = nil
+        }
+
+        thinExpandedTransitionAnimator = animator
+
+        animator.startAnimation()
+        animator.pauseAnimation()
+    }
+
+    private func setExpandedToThinAnimation() {
+        let timing = UISpringTimingParameters(mass: 0.3, stiffness: 100, damping: 7, initialVelocity: .zero)
+        let animator = UIViewPropertyAnimator(duration: 0, timingParameters: timing)
+
+        animator.addAnimations {
+            NSLayoutConstraint.deactivate(self.expendedAudioControlBarConstraints)
+            self.audioControlBar.setAudioControlBarLayoutAsThin()
+            NSLayoutConstraint.activate(self.thinAudioControlBarConstraints)
+            self.layoutIfNeeded()
+        }
+
+        animator.addCompletion { position in
+            if position == .end {
+                self.audioControlBarLayoutState = .thin
+            } else {
+                self.audioControlBarLayoutState = .expended
+
+                NSLayoutConstraint.deactivate(self.thinAudioControlBarConstraints)
+                NSLayoutConstraint.activate(self.expendedAudioControlBarConstraints)
+                self.audioControlBar.setAudioControlBarLayoutAsExpanded()
+                self.layoutIfNeeded()
+            }
+
+            self.enableAudioControlBarUserInteracting()
+            self.thinExpandedTransitionAnimator = nil
+        }
+
+        thinExpandedTransitionAnimator = animator
+
+        animator.startAnimation()
+        animator.pauseAnimation()
+    }
+
+    private func enableAudioControlBarUserInteracting() {
+        panGesture.isEnabled = true
+        audioControlBar.audioProgressBar.isProgressUpdateEnable = true
+        audioControlBar.unblockTouch()
+    }
+
+    private func setThinToDismissAnimation() {
+        let timing = UISpringTimingParameters(mass: 0.3, stiffness: 100, damping: 7, initialVelocity: .zero)
+        thinToDismissAnimator = UIViewPropertyAnimator(duration: 0, timingParameters: timing)
+
+        thinToDismissAnimator?
+            .addAnimations {
+                self.audioControlBar.alpha = 0
+                NSLayoutConstraint.deactivate(self.defaultAudioControlBarConstraints)
+                NSLayoutConstraint.deactivate(self.thinAudioControlBarConstraints)
+                NSLayoutConstraint.activate(self.dismissAudioControlBarConstraints)
+                self.layoutIfNeeded()
+            }
+
+        thinToDismissAnimator?
+            .addCompletion { position in
+                switch position {
+                    case .end:
+                        self.audioControlBarLayoutState = .default
+
+                        self.audioControlBar.audioProgressBar.pauseProgress()
+
+                        NSLayoutConstraint.deactivate(self.dismissAudioControlBarConstraints)
+                        NSLayoutConstraint.deactivate(self.expendedAudioControlBarConstraints)
+                        NSLayoutConstraint.deactivate(self.thinAudioControlBarConstraints)
+                        NSLayoutConstraint.activate(self.defaultAudioControlBarConstraints)
+
+                        self.audioControlBar.setAudioControlBarLayoutAsDefault()
+                        self.audioControlBar.dispatcher?.dissmissAudioControlBar()
+
+                        self.enableAudioControlBarUserInteracting()
+                        self.layoutIfNeeded()
+
+                    case .start:
+                        self.audioControlBarLayoutState = .thin
+
+                        NSLayoutConstraint.deactivate(self.dismissAudioControlBarConstraints)
+                        NSLayoutConstraint.deactivate(self.expendedAudioControlBarConstraints)
+                        self.audioControlBar.setAudioControlBarLayoutAsThin()
+                        NSLayoutConstraint.activate(self.thinAudioControlBarConstraints)
+                        self.layoutIfNeeded()
+
+                        self.enableAudioControlBarUserInteracting()
+
+                    case .current:
+                        self.audioControlBarLayoutState = .thin
+
+                        NSLayoutConstraint.deactivate(self.dismissAudioControlBarConstraints)
+                        NSLayoutConstraint.deactivate(self.expendedAudioControlBarConstraints)
+                        self.audioControlBar.setAudioControlBarLayoutAsThin()
+                        NSLayoutConstraint.activate(self.thinAudioControlBarConstraints)
+                        self.layoutIfNeeded()
+
+                    @unknown default:
+                        break
+                }
+
+                self.thinToDismissAnimator = nil
+            }
+
+        self.thinToDismissAnimator?.startAnimation()
+        self.thinToDismissAnimator?.pauseAnimation()
+    }
+
+    private func dismissAudioControlBar() {
+        audioControlBar.audioProgressBar.pauseProgress()
+        UIView.animate(withDuration: 0.3) {
+            self.audioControlBar.alpha = 0
+            self.audioControlBar.frame.origin.y += 100
+        } completion: { _ in
+            self.audioControlBar.isHidden = true
+            self.audioControlBarLayoutState = .default
+
+            NSLayoutConstraint.deactivate(self.expendedAudioControlBarConstraints)
+            NSLayoutConstraint.deactivate(self.thinAudioControlBarConstraints)
+            NSLayoutConstraint.activate(self.defaultAudioControlBarConstraints)
+
+            self.audioControlBar.setAudioControlBarLayoutAsDefault()
+            self.audioControlBar.dispatcher?.dissmissAudioControlBar()
+
+            self.thinExpandedTransitionAnimator = nil
+            self.thinToDismissAnimator = nil
+
+            self.layoutIfNeeded()
+        }
+    }
+
+    @objc func panGestureAction(_ sender: UIPanGestureRecognizer) {
+        let currentPoint = sender.location(in: self)
+        let velocity = sender.velocity(in: self)
+
+        isSwipingFast = velocity.y.magnitude >= 300
+
+        switch sender.state {
+            case .began:
+                audioControlBar.blockTouch()
+                audioControlBar.audioProgressBar.isProgressUpdateEnable = false
+
+                panStartPointInWindow = currentPoint
+                panStartOriginY = audioControlBar.frame.origin.y
+
+            case .changed:
+                guard let start = panStartPointInWindow else { return }
+                let deltaY = currentPoint.y - start.y
+                gestureChanges(deltaY: deltaY)
+
+            case .ended, .cancelled, .failed:
+                panGesture.isEnabled = false
+                guard let start = panStartPointInWindow else { return }
+                let deltaY = currentPoint.y - start.y
+                gestureComplete(deltaY: deltaY)
+
+            default:
+                break
+        }
+    }
+
+    private func gestureChanges(deltaY: CGFloat) {
+        let isDraggingBotton = deltaY > 0
+        let deltaAbs = abs(deltaY)
+
+        switch audioControlBarLayoutState {
+            case .default:
+                if isDraggingBotton {
+                    audioControlBar.frame.origin.y = panStartOriginY + deltaAbs
+                    audioControlBar.alpha = 1 - deltaAbs * 0.004
+                } else {
+                    audioControlBar.frame.origin.y = max(panStartOriginY - deltaAbs, panStartOriginY - 150)
+                    audioControlBar.alpha = 1
+                }
+
+            case .thin:
+                if isDraggingBotton {
+                    thinExpandedTransitionAnimator?.stopAnimation(false)
+                    thinExpandedTransitionAnimator?.finishAnimation(at: .current)
+                    thinExpandedTransitionAnimator = nil
+
+                    if thinToDismissAnimator == nil {
+                        setThinToDismissAnimation()
+                    }
+
+                    let progress = min(max(deltaAbs / 100, 0), 1)
+                    thinToDismissAnimator?.fractionComplete = progress
+                } else {
+                    thinToDismissAnimator?.stopAnimation(false)
+                    thinToDismissAnimator?.finishAnimation(at: .current)
+
+                    if thinExpandedTransitionAnimator == nil {
+                        setThinToExpandedAnimation()
+                    } else {
+                        let progress = min(max(deltaAbs / expendedContentHeight, 0), 1)
+                        thinExpandedTransitionAnimator?.fractionComplete = progress
+                    }
+                }
+
+            case .expended:
+                if isDraggingBotton {
+                    if thinExpandedTransitionAnimator == nil {
+                        setExpandedToThinAnimation()
+                    } else {
+                        let progress = min(max(deltaAbs / expendedContentHeight, 0), 1)
+                        thinExpandedTransitionAnimator?.fractionComplete = progress
+                    }
+                } else {
+                    thinExpandedTransitionAnimator?.fractionComplete = 0
+                }
+        }
+    }
+
+    private func gestureComplete(deltaY: CGFloat) {
+        let isDraggingBotton = deltaY > 0
+        let deltaAbs = abs(deltaY)
+
+        switch audioControlBarLayoutState {
+            case .default:
+                if isDraggingBotton {
+                    if deltaAbs >= 100 || isSwipingFast {
+                        dismissAudioControlBar()
+                    } else {
+                        transitionAnimationWith {
+                            self.audioControlBar.alpha = 1
+                            self.audioControlBar.frame.origin.y = self.panStartOriginY
+                        } comp: {
+                            self.enableAudioControlBarUserInteracting()
+                        }
+                    }
+                } else {
+                    transitionAnimationWith {
+                        self.audioControlBar.alpha = 1
+                        self.audioControlBar.frame.origin.y = self.panStartOriginY
+                    } comp: {
+                        self.enableAudioControlBarUserInteracting()
+                    }
+                }
+
+            case .thin:
+                if isDraggingBotton {
+                    guard let thinToDismissAnimator else {
+                        audioControlBarLayoutState = .thin
+                        enableAudioControlBarUserInteracting()
+                        return
+                    }
+                    if deltaAbs >= 70 || isSwipingFast {
+                        audioControlBarLayoutState = .default
+                        thinToDismissAnimator.continueAnimation(withTimingParameters: nil, durationFactor: 1)
+                    } else {
+                        audioControlBarLayoutState = .thin
+                        thinToDismissAnimator.isReversed = true
+                        let timing = UISpringTimingParameters(
+                            mass: 0.3, stiffness: 5, damping: 1, initialVelocity: .init(dx: 0, dy: 0.5))
+                        thinToDismissAnimator.continueAnimation(withTimingParameters: timing, durationFactor: 1)
+                    }
+                } else {
+                    guard let thinExpandedTransitionAnimator else {
+                        audioControlBarLayoutState = .thin
+                        enableAudioControlBarUserInteracting()
+                        return
+                    }
+
+                    if deltaAbs >= 150 || isSwipingFast {
+                        audioControlBarLayoutState = .expended
+                        thinExpandedTransitionAnimator
+                            .continueAnimation(withTimingParameters: nil, durationFactor: 0.7)
+                    } else {
+                        audioControlBarLayoutState = .thin
+
+                        thinExpandedTransitionAnimator.isReversed = true
+                        thinExpandedTransitionAnimator
+                            .continueAnimation(withTimingParameters: nil, durationFactor: 0.7)
+                    }
+                }
+
+            case .expended:
+                guard let thinExpandedTransitionAnimator else {
+                    audioControlBarLayoutState = .expended
+                    enableAudioControlBarUserInteracting()
+                    return
+                }
+                if isDraggingBotton {
+                    if deltaAbs >= 150 || isSwipingFast {
+                        audioControlBarLayoutState = .thin
+                        thinExpandedTransitionAnimator
+                            .continueAnimation(withTimingParameters: nil, durationFactor: 0.7)
+                    } else {
+                        audioControlBarLayoutState = .expended
+                        thinExpandedTransitionAnimator.isReversed = true
+                        thinExpandedTransitionAnimator
+                            .continueAnimation(withTimingParameters: nil, durationFactor: 1.0)
+                    }
+                } else {
+                    audioControlBarLayoutState = .expended
+
+                    thinExpandedTransitionAnimator.isReversed = true
+                    thinExpandedTransitionAnimator
+                        .continueAnimation(withTimingParameters: nil, durationFactor: 1.0)
+                }
+        }
+    }
+
+    private func transitionAnimationWith(_ with: @escaping () -> Void, comp: (() -> Void)? = nil) {
+        UIView.animate(
+            withDuration: 0.4, delay: 0, usingSpringWithDamping: 0.45,
+            initialSpringVelocity: 0.7, options: [.curveEaseInOut],
+            animations: { with() }, completion: { _ in comp?() })
     }
 }
 
@@ -573,7 +630,6 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
     func applyMetadataChangeToAudioControlBar(audioMetadata: AudioTrackMetadata)
     func seekAudioControlBarPlayProgress(seek: TimeInterval)
     func stopAudioControlBar()
-    func setListiViewData(data: AudioComponent) -> ExpendedAudioControlBarTrackListView
 
     func setAudioControlBarLayoutAsDefault()
     func setAudioControlBarLayoutAsThin()
