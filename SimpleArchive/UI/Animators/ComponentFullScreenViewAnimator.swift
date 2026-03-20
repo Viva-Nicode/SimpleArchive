@@ -76,7 +76,6 @@ final class ComponentFullScreenViewAnimator: NSObject, UIViewControllerAnimatedT
     }
 
     func presentAnimation(transitionContext: UIViewControllerContextTransitioning) {
-
         let containerView = transitionContext.containerView
 
         guard let toView = secondViewController.getView() else {
@@ -229,7 +228,6 @@ final class ComponentFullScreenViewAnimator: NSObject, UIViewControllerAnimatedT
     }
 
     func dismissAnimation(transitionContext: UIViewControllerContextTransitioning) {
-
         let containerView = transitionContext.containerView
 
         guard
@@ -317,9 +315,8 @@ final class ComponentFullScreenViewAnimator: NSObject, UIViewControllerAnimatedT
         .forEach {
             containerView.addSubview($0)
         }
-
         UIView.animateKeyframes(
-            withDuration: Self.duration, delay: 0, options: .calculationModeCubic,
+			withDuration: Self.duration, delay: 0, options: .calculationModeCubic,
             animations: {
                 UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1) {
 

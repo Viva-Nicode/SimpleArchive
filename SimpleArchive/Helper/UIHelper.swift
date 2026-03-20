@@ -1,25 +1,25 @@
 import UIKit
 
 extension UIView {
-	func findSuperViewMatched<T>() -> T? {
-		var current: UIView? = self
-		while let view = current {
-			if let reloadable = view as? T {
-				return reloadable
-			}
-			current = view.superview
-		}
+    func findSuperViewMatched<T>() -> T? {
+        var current: UIView? = self
+        while let view = current {
+            if let reloadable = view as? T {
+                return reloadable
+            }
+            current = view.superview
+        }
 
-		var responder: UIResponder? = self
-		while let r = responder {
-			if let vc = r as? UIViewController, let reloadable = vc as? T {
-				return reloadable
-			}
-			responder = r.next
-		}
+        var responder: UIResponder? = self
+        while let r = responder {
+            if let vc = r as? UIViewController, let reloadable = vc as? T {
+                return reloadable
+            }
+            responder = r.next
+        }
 
-		return nil
-	}
+        return nil
+    }
 }
 
 extension UIColor {
@@ -170,6 +170,12 @@ extension UIResponder {
 }
 
 extension UIView {
+    static func springAnimation(_ with: @escaping () -> Void, comp: (() -> Void)? = nil) {
+        UIView.animate(
+            withDuration: 0.4, delay: 0, usingSpringWithDamping: 0.45,
+            initialSpringVelocity: 0.7, options: [.curveEaseInOut],
+            animations: { with() }, completion: { _ in comp?() })
+    }
 
     public static var spacerView: UIView {
         let view = UIView()
@@ -243,7 +249,7 @@ extension Date {
 }
 
 extension Data {
-	static let defaultAudioThumbnailData = UIImage(named: "defaultMusicThumbnail")!.jpegData(compressionQuality: 1.0)!
+    static let defaultAudioThumbnailData = UIImage(named: "defaultMusicThumbnail")!.jpegData(compressionQuality: 1.0)!
 }
 
 enum UIConstants {

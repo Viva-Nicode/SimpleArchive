@@ -143,7 +143,7 @@ where ContentViewType: UIView {
             containerStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             containerStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             containerStackView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            containerStackView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            containerStackView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
             toolBarView.heightAnchor.constraint(equalToConstant: 35),
             toolBarView.leadingAnchor.constraint(equalTo: containerStackView.leadingAnchor),

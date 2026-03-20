@@ -2,7 +2,6 @@ import SFBAudioEngine
 import UIKit
 
 final class AudioTableRowView: UITableViewCell {
-
     private let containerView: UIView = {
         let containerView = UIView()
         containerView.backgroundColor = .clear
@@ -55,6 +54,8 @@ final class AudioTableRowView: UITableViewCell {
 
         audioVisualizer.removeVisuzlization()
     }
+	
+	override func setHighlighted(_ highlighted: Bool, animated: Bool) { return }
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -115,6 +116,13 @@ final class AudioTableRowView: UITableViewCell {
         artistLabel.text = audioTrack.artist
         thumbnailImageView.image = UIImage(data: audioTrack.thumbnail)
     }
+	
+	func setHighlighting(_ highlighted: Bool) {
+		UIView.animate(withDuration: highlighted ? 0 : 0.3) {
+			super.setHighlighted(highlighted, animated: false)
+			self.contentView.backgroundColor = highlighted ? .systemGreen.withAlphaComponent(0.25) : .clear
+		}
+	}
 
     func updateAudioMetadata(_ data: AudioTrackMetadata) {
         if let title = data.title {

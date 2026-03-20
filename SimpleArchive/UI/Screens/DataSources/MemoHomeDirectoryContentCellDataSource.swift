@@ -43,7 +43,7 @@ extension MemoHomeDirectoryContentCellDataSource: UITableViewDelegate {
     ) -> UISwipeActionsConfiguration? {
 
         let showFileInfomation =
-            UIContextualAction(style: .normal, title: "share") { (_, _, success: @escaping (Bool) -> Void) in
+            UIContextualAction(style: .normal, title: "info") { (_, _, success: @escaping (Bool) -> Void) in
                 self.input.send(.willPresentFileInformationPopupView(indexPath.section))
                 success(true)
             }

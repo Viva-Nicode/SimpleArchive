@@ -2,7 +2,6 @@ import Combine
 import UIKit
 
 final class TextEditorComponentView: PageComponentView<UITextView, TextEditorComponent>, ContentsReloadableView {
-
     private let snapShotView: UIStackView = {
         let snapShotView = UIStackView()
         snapShotView.axis = .horizontal
@@ -67,7 +66,10 @@ final class TextEditorComponentView: PageComponentView<UITextView, TextEditorCom
         componentContentView.autocorrectionType = .no
         componentContentView.spellCheckingType = .no
         componentContentView.autocapitalizationType = .none
+        componentContentView.alwaysBounceVertical = true
+        componentContentView.keyboardDismissMode = .onDrag
         componentContentView.backgroundColor = .systemGray6
+        componentContentView.contentInset.bottom = 170
         componentContentView.textColor = .label
         componentContentView.font = .systemFont(ofSize: 15)
         componentContentView.translatesAutoresizingMaskIntoConstraints = false
@@ -86,24 +88,24 @@ final class TextEditorComponentView: PageComponentView<UITextView, TextEditorCom
         toolBarView.addSubview(snapShotView)
     }
 
-	func reloadUsingRestoredContents(contents: any Codable) {
-		if let textContents = contents as? String {
-			UIView.animateKeyframes(withDuration: 0.4, delay: 0, options: []) {
-				UIView.addKeyframe(withRelativeStartTime: 0.0, relativeDuration: 0.2) {
-					self.collectionView?.collectionViewLayout.invalidateLayout()
-				}
-				UIView.addKeyframe(withRelativeStartTime: 0.2, relativeDuration: 0.4) {
-					self.componentContentView.alpha = 0
-				}
-			} completion: { _ in
-				self.componentContentView.text = textContents
-				UIView.animate(withDuration: 0.2) {
-					self.componentContentView.alpha = 1
-				}
-			}
-		}
-	}
-	
+    func reloadUsingRestoredContents(contents: any Codable) {
+        if let textContents = contents as? String {
+            UIView.animateKeyframes(withDuration: 0.4, delay: 0, options: []) {
+                UIView.addKeyframe(withRelativeStartTime: 0.0, relativeDuration: 0.2) {
+                    self.collectionView?.collectionViewLayout.invalidateLayout()
+                }
+                UIView.addKeyframe(withRelativeStartTime: 0.2, relativeDuration: 0.4) {
+                    self.componentContentView.alpha = 0
+                }
+            } completion: { _ in
+                self.componentContentView.text = textContents
+                UIView.animate(withDuration: 0.2) {
+                    self.componentContentView.alpha = 1
+                }
+            }
+        }
+    }
+
     override func setupConstraints() {
         super.setupConstraints()
         snapShotView.centerYAnchor.constraint(equalTo: toolBarView.centerYAnchor).isActive = true

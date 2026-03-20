@@ -155,7 +155,6 @@ where ComponentContentType: UIView, PageComponentType: PageComponent {
 
             titleLabel.centerXAnchor.constraint(equalTo: toolBarView.centerXAnchor),
             titleLabel.centerYAnchor.constraint(equalTo: toolBarView.centerYAnchor),
-
             titleLabel.widthAnchor.constraint(lessThanOrEqualToConstant: 130),
 
             toolBarView.topAnchor.constraint(equalTo: containerView.topAnchor),

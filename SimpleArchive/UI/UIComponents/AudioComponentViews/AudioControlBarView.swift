@@ -5,15 +5,6 @@ import SwiftUI
 import UIKit
 
 final class AudioControlBarView: UIView, UITableViewDelegate {
-
-    enum AudioControlBarViewState {
-        case initial
-        case play(metadata: AudioTrackMetadata, dispatcher: AudioComponentActionDispatcher?)
-        case resume
-        case pause
-        case stop
-    }
-
     private let titleLabel: UILabel = {
         let titleLabel = UILabel()
         titleLabel.numberOfLines = 2
@@ -202,9 +193,9 @@ final class AudioControlBarView: UIView, UITableViewDelegate {
 
         addSubview(audioTrackListView)
         audioTrackListView.alpha = 0
-        audioTrackListView.tableView.delegate = self
-		
-		sendSubviewToBack(blurView)
+        audioTrackListView.audioTrackTableView.delegate = self
+
+        sendSubviewToBack(blurView)
 
         layer.cornerRadius = 12
         backgroundColor = .clear
@@ -559,14 +550,10 @@ final class AudioControlBarView: UIView, UITableViewDelegate {
 
         audioTrackListView.updateLayoytToExpended()
     }
-	
-	func blockTouch() {
-		bringSubviewToFront(blockerView)
-	}
 
-	func unblockTouch() {
-		sendSubviewToBack(blockerView)
-	}
+    func blockTouch() { bringSubviewToFront(blockerView) }
+
+    func unblockTouch() { sendSubviewToBack(blockerView) }
 
     func tableView(_ tableView: UITableView, willSelectRowAt indexPath: IndexPath) -> IndexPath? {
         if selectedAudioTrackIndexPath == indexPath {
@@ -581,5 +568,26 @@ final class AudioControlBarView: UIView, UITableViewDelegate {
             }
         }
         return indexPath
+    }
+}
+
+enum AudioControlBarViewState: Equatable {
+    case initial
+    case play(metadata: AudioTrackMetadata, dispatcher: AudioComponentActionDispatcher?)
+    case resume
+    case pause
+    case stop
+
+    static func == (lhs: AudioControlBarViewState, rhs: AudioControlBarViewState) -> Bool {
+        switch (lhs, rhs) {
+            case (.initial, .initial),
+                (.play, .play),
+                (.resume, .resume),
+                (.pause, .pause),
+                (.stop, .stop):
+                return true
+            default:
+                return false
+        }
     }
 }

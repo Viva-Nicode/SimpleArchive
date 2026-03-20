@@ -94,17 +94,17 @@ public func progressTime(_ closure: () -> Void) -> TimeInterval {
 }
 
 extension URL {
-	func printAllFileAbsolutePaths() {
-		let fm = FileManager.default
-		do {
-			let fileURLs = try fm.contentsOfDirectory(
-				at: self,
-				includingPropertiesForKeys: nil,
-				options: [.skipsHiddenFiles]
-			)
-			fileURLs.forEach { print($0.path) }
-		} catch {
-			print("Failed to read directory:", error)
-		}
-	}
+    func printAllFileAbsolutePaths() {
+        let fm = FileManager.default
+        do {
+            let fileURLs = try fm.contentsOfDirectory(
+                at: self,
+                includingPropertiesForKeys: nil,
+                options: [.skipsHiddenFiles]
+            )
+            fileURLs.forEach { print($0.path) }
+        } catch {
+            print("Failed to read directory:", error)
+        }
+    }
 }

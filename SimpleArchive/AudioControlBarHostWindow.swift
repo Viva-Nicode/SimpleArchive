@@ -7,7 +7,7 @@ enum AudioControlBarLayoutState {
 }
 
 final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
-    private var audioControlBar: AudioControlBarView
+    private(set) var audioControlBar: AudioControlBarView
     private var audioControlBarLayoutState: AudioControlBarLayoutState = .default
 
     private var defaultAudioControlBarConstraints: [NSLayoutConstraint] = []
@@ -27,6 +27,17 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
     private let expendedBottonConstant = (UIView.screenHeight - 500) * -0.5 + 50
     private let expendedContentsWidth = UIView.screenWidth - 50
     private let expendedContentHeight: CGFloat = 500
+
+    private var invisibleControlBarVC: UIViewController?
+    private let invisibleControlBarViewTypes = [
+        UIDocumentPickerViewController.self,
+        CreateNewComponentView.self,
+        FullScreenAudioComponentViewController.self,
+        FullScreenTextEditorComponentViewController.self,
+        FullScreenTableComponentViewController.self,
+    ]
+
+    var audioControlBarState: AudioControlBarViewState { audioControlBar.state }
 
     override init(windowScene: UIWindowScene) {
         audioControlBar = AudioControlBarView()
@@ -74,62 +85,49 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
         fatalError("init(coder:) has not been implemented")
     }
 
+    override func becomeKey() {
+        super.becomeKey()
+        bringSubviewToFront(audioControlBar)
+    }
+
+    // layoutSubviews와 didAddSubview로 audioControlBar가 숨겨져야하는 뷰가 present될때를 감지하여 가시성을 토클한다.
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        if invisibleControlBarVC != nil && invisibleControlBarVC?.view.window == nil {
+            audioControlBar.isHidden = false
+            UIView.animate(
+                withDuration: 0.3,
+                animations: { self.audioControlBar.alpha = 1 },
+                completion: { _ in self.invisibleControlBarVC = nil }
+            )
+        }
+    }
+
+    override func didAddSubview(_ subview: UIView) {
+        super.didAddSubview(subview)
+        bringSubviewToFront(audioControlBar)
+
+        if let rootVC = rootViewController as? UINavigationController,
+            let topVC = rootVC.topViewController,
+            let invisibleControlBarVC = topVC.presentedViewController,
+            invisibleControlBarViewTypes.contains(where: { invisibleControlBarVC.isKind(of: $0) }),
+            ![.initial, .stop].contains(audioControlBarState)
+        {
+            if self.invisibleControlBarVC != nil { return }
+            self.invisibleControlBarVC = invisibleControlBarVC
+
+            UIView.animate(
+                withDuration: 0.3,
+                animations: { self.audioControlBar.alpha = 0 },
+                completion: { _ in self.audioControlBar.isHidden = true })
+        }
+    }
+
     func setAudioControlBarLayoutAsDefault() {
-        switch audioControlBarLayoutState {
-            case .default:
-                break
-
-            case .thin:
-                if let navigationController = rootViewController as? UINavigationController,
-                    let coordinator = navigationController.transitionCoordinator
-                {
-                    coordinator.animate(
-                        alongsideTransition: { _ in
-                            self.audioControlBarLayoutState = .default
-
-                            NSLayoutConstraint.deactivate(self.thinAudioControlBarConstraints)
-                            NSLayoutConstraint.activate(self.defaultAudioControlBarConstraints)
-                            self.audioControlBar.setAudioControlBarLayoutAsDefault()
-                            self.layoutIfNeeded()
-                        },
-                        completion: { context in
-                            if context.isCancelled {
-                                self.audioControlBarLayoutState = .thin
-
-                                NSLayoutConstraint.deactivate(self.defaultAudioControlBarConstraints)
-                                NSLayoutConstraint.activate(self.thinAudioControlBarConstraints)
-                                self.audioControlBar.setAudioControlBarLayoutAsThin()
-                                self.layoutIfNeeded()
-                            }
-                        }
-                    )
-                }
-
-            case .expended:
-                if let navigationController = rootViewController as? UINavigationController,
-                    let coordinator = navigationController.transitionCoordinator
-                {
-                    coordinator.animate(
-                        alongsideTransition: { _ in
-                            self.audioControlBarLayoutState = .default
-
-                            NSLayoutConstraint.deactivate(self.expendedAudioControlBarConstraints)
-                            NSLayoutConstraint.activate(self.defaultAudioControlBarConstraints)
-                            self.audioControlBar.setAudioControlBarLayoutAsDefault()
-                            self.layoutIfNeeded()
-                        },
-                        completion: { context in
-                            if context.isCancelled {
-                                self.audioControlBarLayoutState = .expended
-
-                                NSLayoutConstraint.deactivate(self.defaultAudioControlBarConstraints)
-                                NSLayoutConstraint.activate(self.expendedAudioControlBarConstraints)
-                                self.audioControlBar.setAudioControlBarLayoutAsExpanded()
-                                self.layoutIfNeeded()
-                            }
-                        }
-                    )
-                }
+        if let navigationController = rootViewController as? UINavigationController,
+            let coordinator = navigationController.transitionCoordinator
+        {
+            coordinator.animate { _ in self.updateLayoutConstraintToDefault() }
         }
     }
 
@@ -139,27 +137,12 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
                 if let navigationController = rootViewController as? UINavigationController,
                     let coordinator = navigationController.transitionCoordinator
                 {
-                    coordinator.notifyWhenInteractionChanges { context in
-                        guard context.isCancelled else { return }
-
-                        self.transitionAnimationWith {
-                            self.audioControlBarLayoutState = .default
-
-                            NSLayoutConstraint.deactivate(self.thinAudioControlBarConstraints)
-                            NSLayoutConstraint.activate(self.defaultAudioControlBarConstraints)
-                            self.audioControlBar.setAudioControlBarLayoutAsDefault()
-                            self.layoutIfNeeded()
+                    coordinator.animate(
+                        alongsideTransition: { _ in self.updateLayoutConstraintToThin() },
+                        completion: {
+                            if $0.isCancelled { self.updateLayoutConstraintToDefault() }
                         }
-                    }
-                }
-
-                transitionAnimationWith {
-                    self.audioControlBarLayoutState = .thin
-
-                    NSLayoutConstraint.deactivate(self.defaultAudioControlBarConstraints)
-                    NSLayoutConstraint.activate(self.thinAudioControlBarConstraints)
-                    self.audioControlBar.setAudioControlBarLayoutAsThin()
-                    self.layoutIfNeeded()
+                    )
                 }
 
             default:
@@ -168,9 +151,12 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
     }
 
     func setAudioControlBarEventHandlerForThin() {
-        let thinAudioEventHandler = ThinAudioControlBarEventHandler(
-            host: self, list: audioControlBar.audioTrackListView)
-        audioControlBar.dispatcher?.setEventHandler(thinAudioControlBarEventHandler: thinAudioEventHandler)
+        let continuousPlaybackControlBarEventHandler = ContinuousPlaybackControlBarEventHandler(
+            audioControlBarHost: self,
+            expendedAudioList: audioControlBar.audioTrackListView)
+        audioControlBar.dispatcher?
+            .setEventHandler(
+                continuousPlaybackControlBarEventHandler: continuousPlaybackControlBarEventHandler)
         audioControlBar.dispatcher?.changeAudioControlBarStateAsThin()
     }
 
@@ -241,7 +227,7 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
             audioControlBar.isHidden = false
             UIView.animate(withDuration: 0.3) { self.audioControlBar.alpha = 1 }
         }
-		enableAudioControlBarUserInteracting()
+        enableAudioControlBarUserInteracting()
         audioControlBar.state = .play(metadata: audioMetadata, dispatcher: dispatcher)
     }
 
@@ -262,15 +248,9 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
         audioControlBar.isHidden = true
     }
 
-    func followUpAudioControlBarOnWindow() {
-        bringSubviewToFront(audioControlBar)
-    }
-
     private func setThinToExpandedAnimation() {
         let timing = UISpringTimingParameters(mass: 0.45, stiffness: 100, damping: 7, initialVelocity: .zero)
         let animator = UIViewPropertyAnimator(duration: 0, timingParameters: timing)
-
-        audioControlBar.alpha = 1
 
         animator.addAnimations {
             NSLayoutConstraint.deactivate(self.dismissAudioControlBarConstraints)
@@ -287,24 +267,11 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
                     self.enableAudioControlBarUserInteracting()
 
                 case .start:
-                    self.audioControlBarLayoutState = .thin
-
-                    NSLayoutConstraint.deactivate(self.expendedAudioControlBarConstraints)
-                    self.audioControlBar.setAudioControlBarLayoutAsThin()
-                    NSLayoutConstraint.activate(self.thinAudioControlBarConstraints)
-                    self.layoutIfNeeded()
-
+                    self.updateLayoutConstraintToThin()
                     self.enableAudioControlBarUserInteracting()
 
                 case .current:
-                    self.audioControlBarLayoutState = .thin
-
-                    NSLayoutConstraint.deactivate(self.dismissAudioControlBarConstraints)
-                    NSLayoutConstraint.deactivate(self.expendedAudioControlBarConstraints)
-                    self.audioControlBar.setAudioControlBarLayoutAsThin()
-                    NSLayoutConstraint.activate(self.thinAudioControlBarConstraints)
-                    self.layoutIfNeeded()
-
+                    self.updateLayoutConstraintToThin()
                     self.setThinToDismissAnimation()
 
                 @unknown default:
@@ -334,12 +301,7 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
             if position == .end {
                 self.audioControlBarLayoutState = .thin
             } else {
-                self.audioControlBarLayoutState = .expended
-
-                NSLayoutConstraint.deactivate(self.thinAudioControlBarConstraints)
-                NSLayoutConstraint.activate(self.expendedAudioControlBarConstraints)
-                self.audioControlBar.setAudioControlBarLayoutAsExpanded()
-                self.layoutIfNeeded()
+                self.updateLayoutConstraintToExpended()
             }
 
             self.enableAudioControlBarUserInteracting()
@@ -375,40 +337,18 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
             .addCompletion { position in
                 switch position {
                     case .end:
-                        self.audioControlBarLayoutState = .default
-
                         self.audioControlBar.audioProgressBar.pauseProgress()
-
-                        NSLayoutConstraint.deactivate(self.dismissAudioControlBarConstraints)
-                        NSLayoutConstraint.deactivate(self.expendedAudioControlBarConstraints)
-                        NSLayoutConstraint.deactivate(self.thinAudioControlBarConstraints)
-                        NSLayoutConstraint.activate(self.defaultAudioControlBarConstraints)
-
-                        self.audioControlBar.setAudioControlBarLayoutAsDefault()
                         self.audioControlBar.dispatcher?.dissmissAudioControlBar()
-
                         self.enableAudioControlBarUserInteracting()
-                        self.layoutIfNeeded()
+                        self.updateLayoutConstraintToDefault()
 
                     case .start:
-                        self.audioControlBarLayoutState = .thin
-
-                        NSLayoutConstraint.deactivate(self.dismissAudioControlBarConstraints)
-                        NSLayoutConstraint.deactivate(self.expendedAudioControlBarConstraints)
-                        self.audioControlBar.setAudioControlBarLayoutAsThin()
-                        NSLayoutConstraint.activate(self.thinAudioControlBarConstraints)
-                        self.layoutIfNeeded()
-
+                        self.updateLayoutConstraintToThin()
                         self.enableAudioControlBarUserInteracting()
 
                     case .current:
-                        self.audioControlBarLayoutState = .thin
-
-                        NSLayoutConstraint.deactivate(self.dismissAudioControlBarConstraints)
-                        NSLayoutConstraint.deactivate(self.expendedAudioControlBarConstraints)
-                        self.audioControlBar.setAudioControlBarLayoutAsThin()
-                        NSLayoutConstraint.activate(self.thinAudioControlBarConstraints)
-                        self.layoutIfNeeded()
+                        self.audioControlBar.alpha = 1
+                        self.updateLayoutConstraintToThin()
 
                     @unknown default:
                         break
@@ -425,16 +365,10 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
         audioControlBar.audioProgressBar.pauseProgress()
         UIView.animate(withDuration: 0.3) {
             self.audioControlBar.alpha = 0
-            self.audioControlBar.frame.origin.y += 100
+            self.audioControlBar.frame.origin.y += 200
         } completion: { _ in
             self.audioControlBar.isHidden = true
-            self.audioControlBarLayoutState = .default
-
-            NSLayoutConstraint.deactivate(self.expendedAudioControlBarConstraints)
-            NSLayoutConstraint.deactivate(self.thinAudioControlBarConstraints)
-            NSLayoutConstraint.activate(self.defaultAudioControlBarConstraints)
-
-            self.audioControlBar.setAudioControlBarLayoutAsDefault()
+            self.updateLayoutConstraintToDefault()
             self.audioControlBar.dispatcher?.dissmissAudioControlBar()
 
             self.thinExpandedTransitionAnimator = nil
@@ -442,6 +376,38 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
 
             self.layoutIfNeeded()
         }
+    }
+
+    private func updateLayoutConstraintToDefault() {
+        audioControlBarLayoutState = .default
+
+        NSLayoutConstraint.deactivate(dismissAudioControlBarConstraints)
+        NSLayoutConstraint.deactivate(expendedAudioControlBarConstraints)
+        NSLayoutConstraint.deactivate(thinAudioControlBarConstraints)
+        NSLayoutConstraint.activate(defaultAudioControlBarConstraints)
+        audioControlBar.setAudioControlBarLayoutAsDefault()
+        layoutIfNeeded()
+    }
+
+    private func updateLayoutConstraintToThin() {
+        audioControlBarLayoutState = .thin
+
+        NSLayoutConstraint.deactivate(dismissAudioControlBarConstraints)
+        NSLayoutConstraint.deactivate(expendedAudioControlBarConstraints)
+        NSLayoutConstraint.deactivate(defaultAudioControlBarConstraints)
+        audioControlBar.setAudioControlBarLayoutAsThin()
+        NSLayoutConstraint.activate(thinAudioControlBarConstraints)
+        layoutIfNeeded()
+    }
+
+    private func updateLayoutConstraintToExpended() {
+        audioControlBarLayoutState = .expended
+
+        NSLayoutConstraint.deactivate(thinAudioControlBarConstraints)
+        NSLayoutConstraint.deactivate(defaultAudioControlBarConstraints)
+        NSLayoutConstraint.activate(expendedAudioControlBarConstraints)
+        audioControlBar.setAudioControlBarLayoutAsExpanded()
+        layoutIfNeeded()
     }
 
     @objc func panGestureAction(_ sender: UIPanGestureRecognizer) {
@@ -494,9 +460,7 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
                     thinExpandedTransitionAnimator?.finishAnimation(at: .current)
                     thinExpandedTransitionAnimator = nil
 
-                    if thinToDismissAnimator == nil {
-                        setThinToDismissAnimation()
-                    }
+                    if thinToDismissAnimator == nil { setThinToDismissAnimation() }
 
                     let progress = min(max(deltaAbs / 100, 0), 1)
                     thinToDismissAnimator?.fractionComplete = progress
@@ -536,7 +500,7 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
                     if deltaAbs >= 100 || isSwipingFast {
                         dismissAudioControlBar()
                     } else {
-                        transitionAnimationWith {
+                        UIView.springAnimation {
                             self.audioControlBar.alpha = 1
                             self.audioControlBar.frame.origin.y = self.panStartOriginY
                         } comp: {
@@ -544,7 +508,7 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
                         }
                     }
                 } else {
-                    transitionAnimationWith {
+                    UIView.springAnimation {
                         self.audioControlBar.alpha = 1
                         self.audioControlBar.frame.origin.y = self.panStartOriginY
                     } comp: {
@@ -615,13 +579,6 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
                 }
         }
     }
-
-    private func transitionAnimationWith(_ with: @escaping () -> Void, comp: (() -> Void)? = nil) {
-        UIView.animate(
-            withDuration: 0.4, delay: 0, usingSpringWithDamping: 0.45,
-            initialSpringVelocity: 0.7, options: [.curveEaseInOut],
-            animations: { with() }, completion: { _ in comp?() })
-    }
 }
 
 @MainActor protocol AudioControlBarHostType: AnyObject {
@@ -633,15 +590,10 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
 
     func setAudioControlBarLayoutAsDefault()
     func setAudioControlBarLayoutAsThin()
-
-    func followUpAudioControlBarOnWindow()
     func setAudioControlBarEventHandlerForThin()
 
-    func getSingleAudioViewControllerContinuousPlaybackSession(
-        audioComponent: AudioComponent,
-        pageName: String
-    ) -> SingleAudioPageViewController?
-
+    func getSingleAudioViewControllerContinuousPlaybackSession(audioComponent: AudioComponent, pageName: String)
+        -> SingleAudioPageViewController?
     func injectDispatcherContinuousPlaybackSessionInFactory(
         factory: PageComponentCollectionViewCellFactory,
         pageData: MemoPageModel,

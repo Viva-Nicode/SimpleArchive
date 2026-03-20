@@ -76,6 +76,7 @@ final class AudioComponentContentView: UIView, UIDocumentPickerDelegate {
             bottom: UIConstants.singleAudioViewControllerTableViewFooterHeight,
             right: 0)
         tableView.register(AudioTableRowView.self, forCellReuseIdentifier: AudioTableRowView.reuseIdentifier)
+		tableView.rowHeight = 65
         tableView.translatesAutoresizingMaskIntoConstraints = false
         return tableView
     }()
@@ -88,7 +89,6 @@ final class AudioComponentContentView: UIView, UIDocumentPickerDelegate {
 
     private(set) var dispatcher: AudioComponentActionDispatcher?
     private var downloadAudioActionSubscription: AnyCancellable?
-    private var selectedAudioTrackIndexPath: IndexPath?
     private var audioComponentDataSource: AudioComponentDataSource?
 
     override init(frame: CGRect) {
@@ -264,8 +264,6 @@ final class AudioComponentContentView: UIView, UIDocumentPickerDelegate {
 }
 
 extension AudioComponentContentView: UITableViewDelegate {
-    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat { 65 }
-
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath)
         -> UISwipeActionsConfiguration?
     {
@@ -290,15 +288,15 @@ extension AudioComponentContentView: UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, willSelectRowAt indexPath: IndexPath) -> IndexPath? {
-        if selectedAudioTrackIndexPath == indexPath {
-            dispatcher?.playAudioTrack(with: indexPath.row)
-            self.selectedAudioTrackIndexPath = nil
-            tableView.deselectRow(at: indexPath, animated: true)
-        } else {
-            selectedAudioTrackIndexPath = indexPath
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                self.selectedAudioTrackIndexPath = nil
-                tableView.deselectRow(at: indexPath, animated: true)
+        if let audioTrackRow = tableView.cellForRow(at: indexPath) as? AudioTableRowView {
+            if audioTrackRow.isHighlighted {
+                dispatcher?.playAudioTrack(with: indexPath.row)
+            } else {
+                audioTrackRow.setHighlighting(true)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    audioTrackRow.setHighlighting(false)
+                    tableView.deselectRow(at: indexPath, animated: true)
+                }
             }
         }
         return indexPath
@@ -308,11 +306,7 @@ extension AudioComponentContentView: UITableViewDelegate {
         _ tableView: UITableView,
         didEndDisplaying cell: UITableViewCell,
         forRowAt indexPath: IndexPath
-    ) {
-        if let row = cell as? AudioTableRowView {
-            row.audioVisualizer.removeVisuzlization()
-        }
-    }
+    ) { (cell as? AudioTableRowView)?.audioVisualizer.removeVisuzlization() }
 }
 
 extension AudioComponentContentView: UITableViewDragDelegate {
@@ -337,10 +331,7 @@ extension AudioComponentContentView: UITableViewDropDelegate {
 
             dispatcher?.moveAudioTrackOrder(src: fromIndex, des: toIndex)
 
-            tableView.performBatchUpdates(
-                {
-                    tableView.moveRow(at: sourceIndexPath, to: destinationIndexPath)
-                }, completion: nil)
+            tableView.performBatchUpdates { tableView.moveRow(at: sourceIndexPath, to: destinationIndexPath) }
 
             coordinator.drop(
                 item.dragItem,

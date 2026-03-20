@@ -51,19 +51,19 @@ class AudioComponentActionDispatcher: AudioComponentActionDispatcherType {
         }
     }
 
-    func setEventHandler(thinAudioControlBarEventHandler: ThinAudioControlBarEventHandler) {
+    func setEventHandler(continuousPlaybackControlBarEventHandler: ContinuousPlaybackControlBarEventHandler) {
         subscriptions.removeAll()
         viewModel?.clearSubscriptions()
 
         viewModel?
             .bindToView(input: dispatcher.eraseToAnyPublisher())
-            .sink { thinAudioControlBarEventHandler.UIupdateEventHandler($0) }
+            .sink { continuousPlaybackControlBarEventHandler.UIupdateEventHandler($0) }
             .store(in: &subscriptions)
     }
-	
-	func changeAudioControlBarStateAsThin(){
-		dispatcher.send(.willChangeAudioSessionStateAsThin)
-	}
+
+    func changeAudioControlBarStateAsThin() {
+        dispatcher.send(.willChangeAudioSessionStateAsThin)
+    }
 
     func dissmissAudioControlBar() {
         dispatcher.send(.willDismissAudioControlBar)

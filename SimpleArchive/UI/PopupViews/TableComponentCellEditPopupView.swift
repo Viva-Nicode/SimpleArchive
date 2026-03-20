@@ -115,7 +115,6 @@ final class TableComponentCellEditPopupView: PopupView {
         return cancelButton
     }()
 
-    // MARK: - Random Text Generating Views
     private(set) var randomTextGenerateTitleLabel: UILabel = {
         let randomTextGenerateTitleLabel = UILabel()
         randomTextGenerateTitleLabel.text = "Random Text Generate"

@@ -103,7 +103,7 @@ final class SingleTablePageViewController:
             tableComponentContentView.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 10),
             tableComponentContentView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableComponentContentView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            tableComponentContentView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            tableComponentContentView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
     }
 

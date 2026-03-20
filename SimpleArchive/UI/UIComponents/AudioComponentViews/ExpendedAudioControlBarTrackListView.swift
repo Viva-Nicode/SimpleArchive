@@ -1,7 +1,7 @@
 import UIKit
 
 final class ExpendedAudioControlBarTrackListView: UIView {
-    private(set) var tableView: UITableView = {
+    private(set) var audioTrackTableView: UITableView = {
         let tableView = UITableView(frame: .zero, style: .plain)
         tableView.backgroundColor = .clear
         tableView.separatorStyle = .none
@@ -15,8 +15,8 @@ final class ExpendedAudioControlBarTrackListView: UIView {
     }()
 
     private var audioComponentDataSource: AudioComponentDataSource?
-    private var thin: [NSLayoutConstraint] = []
-    private var expended: [NSLayoutConstraint] = []
+    private var thinConstraints: [NSLayoutConstraint] = []
+    private var expendedConstraints: [NSLayoutConstraint] = []
 
     init() {
         super.init(frame: .zero)
@@ -37,45 +37,45 @@ final class ExpendedAudioControlBarTrackListView: UIView {
         backgroundColor = .clear
         clipsToBounds = true
         alpha = 0
-        addSubview(tableView)
+        addSubview(audioTrackTableView)
     }
 
     private func setupConstraints() {
-        thin = [
-            tableView.heightAnchor.constraint(equalToConstant: 350),
-            tableView.widthAnchor.constraint(equalToConstant: UIView.screenWidth - 60),
-            tableView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            tableView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: 350),
+		thinConstraints = [
+			audioTrackTableView.heightAnchor.constraint(equalToConstant: 350),
+			audioTrackTableView.widthAnchor.constraint(equalToConstant: UIView.screenWidth - 60),
+			audioTrackTableView.leadingAnchor.constraint(equalTo: leadingAnchor),
+			audioTrackTableView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: 350),
         ]
 
-        expended = [
-            tableView.topAnchor.constraint(equalTo: topAnchor),
-            tableView.widthAnchor.constraint(equalToConstant: UIView.screenWidth - 60),
-            tableView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            tableView.bottomAnchor.constraint(equalTo: bottomAnchor),
+		expendedConstraints = [
+			audioTrackTableView.topAnchor.constraint(equalTo: topAnchor),
+			audioTrackTableView.widthAnchor.constraint(equalToConstant: UIView.screenWidth - 60),
+			audioTrackTableView.leadingAnchor.constraint(equalTo: leadingAnchor),
+			audioTrackTableView.bottomAnchor.constraint(equalTo: bottomAnchor),
         ]
 
-        NSLayoutConstraint.activate(thin)
+        NSLayoutConstraint.activate(thinConstraints)
     }
 
     func configure(audioComponent: AudioComponent) {
         let dataSource = AudioComponentDataSource(audioPageComponent: audioComponent)
         audioComponentDataSource = dataSource
-        tableView.dataSource = dataSource
-        tableView.reloadData()
+		audioTrackTableView.dataSource = dataSource
+		audioTrackTableView.reloadData()
     }
 
     func updateLayoytToExpended() {
-        NSLayoutConstraint.deactivate(thin)
-        NSLayoutConstraint.activate(expended)
+        NSLayoutConstraint.deactivate(thinConstraints)
+        NSLayoutConstraint.activate(expendedConstraints)
         alpha = 1
-        tableView.alpha = 1
+		audioTrackTableView.alpha = 1
     }
 
     func updateLayoutToThin() {
-        NSLayoutConstraint.deactivate(expended)
-        NSLayoutConstraint.activate(thin)
+        NSLayoutConstraint.deactivate(expendedConstraints)
+        NSLayoutConstraint.activate(thinConstraints)
         alpha = 0
-        tableView.alpha = 0
+		audioTrackTableView.alpha = 0
     }
 }

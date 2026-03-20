@@ -51,7 +51,9 @@ final class SingleTextEditorPageViewController:
         textEditorView.autocorrectionType = .no
         textEditorView.spellCheckingType = .no
         textEditorView.autocapitalizationType = .none
+        textEditorView.alwaysBounceVertical = true
         textEditorView.keyboardDismissMode = .onDrag
+        textEditorView.contentInset.bottom = 100
         textEditorView.textColor = .label
         textEditorView.font = .systemFont(ofSize: 15)
         textEditorView.translatesAutoresizingMaskIntoConstraints = false
@@ -81,7 +83,6 @@ final class SingleTextEditorPageViewController:
         snapshotButton.translatesAutoresizingMaskIntoConstraints = false
         return snapshotButton
     }()
-
     private var actionDispatcher: TextEditorComponentActionDispatcher?
 
     var subscriptions = Set<AnyCancellable>()
@@ -89,7 +90,7 @@ final class SingleTextEditorPageViewController:
 
     init() {
         super.init(nibName: nil, bundle: nil)
-        //		UIImage(systemName: "keyboard.chevron.compact.down")
+
         setupUI()
         setupConstraint()
         setupAction()
@@ -97,9 +98,14 @@ final class SingleTextEditorPageViewController:
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(keyboardWillChangeFrame),
-            name: UIResponder.keyboardWillChangeFrameNotification,
-            object: nil
-        )
+            name: UIResponder.keyboardWillShowNotification,
+            object: nil)
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(keyboardDidHide),
+            name: UIResponder.keyboardWillHideNotification,
+            object: nil)
     }
 
     func configure(dispatcher: TextEditorComponentActionDispatcher, component: TextEditorComponent) {
@@ -184,23 +190,23 @@ final class SingleTextEditorPageViewController:
             }
             .store(in: &subscriptions)
     }
-	
-	func reloadUsingRestoredContents(contents: any Codable) {
-		if let textContents = contents as? String {
-			UIView.animateKeyframes(withDuration: 0.4, delay: 0, options: []) {
-				UIView.addKeyframe(withRelativeStartTime: 0.2, relativeDuration: 0.4) {
-					self.textEditorView.alpha = 0
-				}
-			} completion: { _ in
-				DispatchQueue.main.async {
-					self.textEditorView.text = textContents
-					UIView.animate(withDuration: 0.2) {
-						self.textEditorView.alpha = 1
-					}
-				}
-			}
-		}
-	}
+
+    func reloadUsingRestoredContents(contents: any Codable) {
+        if let textContents = contents as? String {
+            UIView.animateKeyframes(withDuration: 0.4, delay: 0, options: []) {
+                UIView.addKeyframe(withRelativeStartTime: 0.2, relativeDuration: 0.4) {
+                    self.textEditorView.alpha = 0
+                }
+            } completion: { _ in
+                DispatchQueue.main.async {
+                    self.textEditorView.text = textContents
+                    UIView.animate(withDuration: 0.2) {
+                        self.textEditorView.alpha = 1
+                    }
+                }
+            }
+        }
+    }
 
     func textViewDidChange(_ textView: UITextView) {
         actionDispatcher?.saveTextEditorComponentContentsChanged(contents: textView.text)
@@ -217,6 +223,11 @@ final class SingleTextEditorPageViewController:
 
         textEditorView.contentInset.bottom = keyboardHeight
         textEditorView.verticalScrollIndicatorInsets.bottom = keyboardHeight
+    }
+
+    @objc private func keyboardDidHide(_ notification: Notification) {
+        textEditorView.contentInset.bottom = 100
+        textEditorView.verticalScrollIndicatorInsets.bottom = 0
     }
 
     override func viewDidDisappear(_ animated: Bool) {

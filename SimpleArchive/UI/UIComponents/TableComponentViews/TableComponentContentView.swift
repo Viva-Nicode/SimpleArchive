@@ -2,7 +2,6 @@ import Combine
 import UIKit
 
 final class TableComponentContentView: UIView, UIScrollViewDelegate {
-
     private(set) var tableComponentToolBarStackView: UIStackView = {
         let tableComponentToolBarStackView = UIStackView()
         tableComponentToolBarStackView.axis = .horizontal
@@ -74,6 +73,7 @@ final class TableComponentContentView: UIView, UIScrollViewDelegate {
     }()
     private(set) var rowScrollView: UIScrollView = {
         let rowScrollView = UIScrollView()
+		rowScrollView.contentInset.bottom = 170
         rowScrollView.translatesAutoresizingMaskIntoConstraints = false
         rowScrollView.showsHorizontalScrollIndicator = false
         rowScrollView.showsVerticalScrollIndicator = false
@@ -102,7 +102,6 @@ final class TableComponentContentView: UIView, UIScrollViewDelegate {
     private(set) var actionDispatcher: TableComponentActionDispatcher?
     private var subscriptions = Set<AnyCancellable>()
 
-    // MARK: - Minimization
     private var heightConstraints: [(NSLayoutConstraint, CGFloat)] = []
     private var stackViewConstraints: [NSLayoutConstraint] = []
 
@@ -217,7 +216,6 @@ final class TableComponentContentView: UIView, UIScrollViewDelegate {
         subscriptions.removeAll()
     }
 
-    // 싱글 & 멀티 페이지 전용
     func configure(
         columns: [TableComponentColumn],
         rows: [(rowID: UUID, cells: [String])],
