@@ -1,14 +1,8 @@
 import UIKit
 
-enum AudioControlBarLayoutState {
-    case `default`
-    case thin
-    case expended
-}
-
 final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
     private(set) var audioControlBar: AudioControlBarView
-    private var audioControlBarLayoutState: AudioControlBarLayoutState = .default
+    private(set) var audioControlBarLayoutState: AudioControlBarLayoutState = .default
 
     private var defaultAudioControlBarConstraints: [NSLayoutConstraint] = []
     private var thinAudioControlBarConstraints: [NSLayoutConstraint] = []
@@ -27,6 +21,14 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
     private let expendedBottonConstant = (UIView.screenHeight - 500) * -0.5 + 50
     private let expendedContentsWidth = UIView.screenWidth - 50
     private let expendedContentHeight: CGFloat = 500
+
+    private let interactionBlockWindow: UIView = {
+        let blockWindow = UIView()
+        blockWindow.isUserInteractionEnabled = true
+        blockWindow.backgroundColor = .clear
+        blockWindow.translatesAutoresizingMaskIntoConstraints = false
+        return blockWindow
+    }()
 
     private var invisibleControlBarVC: UIViewController?
     private let invisibleControlBarViewTypes = [
@@ -49,6 +51,15 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
         audioControlBar.audioProgressBar.setGesture(panGesture: panGesture)
 
         addSubview(audioControlBar)
+        addSubview(interactionBlockWindow)
+        sendSubviewToBack(interactionBlockWindow)
+
+        NSLayoutConstraint.activate([
+            interactionBlockWindow.topAnchor.constraint(equalTo: topAnchor),
+            interactionBlockWindow.leadingAnchor.constraint(equalTo: leadingAnchor),
+            interactionBlockWindow.trailingAnchor.constraint(equalTo: trailingAnchor),
+            interactionBlockWindow.bottomAnchor.constraint(equalTo: bottomAnchor),
+        ])
 
         defaultAudioControlBarConstraints = [
             audioControlBar.widthAnchor.constraint(equalToConstant: UIConstants.audioControlBarViewWidth),
@@ -61,14 +72,14 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
 
         thinAudioControlBarConstraints = [
             audioControlBar.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 5),
-            audioControlBar.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -80),
+            audioControlBar.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -73),
             audioControlBar.heightAnchor.constraint(equalToConstant: 70),
             audioControlBar.bottomAnchor.constraint(equalTo: bottomAnchor, constant: thinBottonConstant),
         ]
 
         dismissAudioControlBarConstraints = [
             audioControlBar.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 5),
-            audioControlBar.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -80),
+            audioControlBar.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -73),
             audioControlBar.heightAnchor.constraint(equalToConstant: 70),
             audioControlBar.bottomAnchor.constraint(equalTo: bottomAnchor, constant: 50),
         ]
@@ -90,9 +101,10 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
         bringSubviewToFront(audioControlBar)
     }
 
-    // layoutSubviews와 didAddSubview로 audioControlBar가 숨겨져야하는 뷰가 present될때를 감지하여 가시성을 토클한다.
+    // layoutSubviews와 didAddSubview로 audioControlBar가 숨겨져야하는 뷰가 present될때를 감지하여 가시성을 전환한다
     override func layoutSubviews() {
         super.layoutSubviews()
+
         if invisibleControlBarVC != nil && invisibleControlBarVC?.view.window == nil {
             audioControlBar.isHidden = false
             UIView.animate(
@@ -123,6 +135,23 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
         }
     }
 
+	// 홈화면에서 이벤트 발생 시 플러스버튼을 접는다
+    override func sendEvent(_ event: UIEvent) {
+        super.sendEvent(event)
+		
+        guard
+            let rootVC = rootViewController as? UINavigationController,
+            let topVC = rootVC.topViewController,
+            let homeVC = topVC as? MemoHomeViewController,
+            homeVC.isActiveFileCreatePlusButton,
+            let touchPoint = event.allTouches?.first?.location(in: self),
+            let eventGenerateView = hitTest(touchPoint, with: event),
+            eventGenerateView.accessibilityIdentifier != "MemoHomeVC.fileCreatePlusButton"
+        else { return }
+
+        homeVC.toggleCreateNewItemButtonVisibility()
+    }
+
     func setAudioControlBarLayoutAsDefault() {
         if let navigationController = rootViewController as? UINavigationController,
             let coordinator = navigationController.transitionCoordinator
@@ -145,6 +174,20 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
                     )
                 }
 
+            case .expended:
+                audioControlBar.blockTouch()
+                audioControlBar.audioProgressBar.isProgressUpdateEnable = false
+                toggleBlockedInteractionOnWindow(true)
+                panGesture.isEnabled = false
+
+                if thinExpandedTransitionAnimator != nil {
+                    thinExpandedTransitionAnimator?.isReversed = true
+                    thinExpandedTransitionAnimator?.continueAnimation(withTimingParameters: nil, durationFactor: 1.5)
+                } else {
+                    setExpandedToThinAnimation()
+                    thinExpandedTransitionAnimator?.continueAnimation(withTimingParameters: nil, durationFactor: 0)
+                }
+
             default:
                 break
         }
@@ -163,7 +206,6 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
     func getSingleAudioViewControllerContinuousPlaybackSession(
         audioComponent: AudioComponent, pageName: String
     ) -> SingleAudioPageViewController? {
-
         if audioControlBar.dispatcher?.viewModel?.audioComponentID == audioComponent.id {
             let singleAudioViewController = SingleAudioPageViewController(audioControlBarHost: self)
             let dispatcher = audioControlBar.dispatcher!
@@ -318,6 +360,7 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
         panGesture.isEnabled = true
         audioControlBar.audioProgressBar.isProgressUpdateEnable = true
         audioControlBar.unblockTouch()
+        toggleBlockedInteractionOnWindow(false)
     }
 
     private func setThinToDismissAnimation() {
@@ -410,6 +453,15 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
         layoutIfNeeded()
     }
 
+    private func toggleBlockedInteractionOnWindow(_ isBlock: Bool) {
+        if isBlock {
+            bringSubviewToFront(interactionBlockWindow)
+            bringSubviewToFront(audioControlBar)
+        } else {
+            sendSubviewToBack(interactionBlockWindow)
+        }
+    }
+
     @objc func panGestureAction(_ sender: UIPanGestureRecognizer) {
         let currentPoint = sender.location(in: self)
         let velocity = sender.velocity(in: self)
@@ -420,6 +472,7 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
             case .began:
                 audioControlBar.blockTouch()
                 audioControlBar.audioProgressBar.isProgressUpdateEnable = false
+                toggleBlockedInteractionOnWindow(true)
 
                 panStartPointInWindow = currentPoint
                 panStartOriginY = audioControlBar.frame.origin.y
@@ -582,6 +635,8 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
 }
 
 @MainActor protocol AudioControlBarHostType: AnyObject {
+    var audioControlBarLayoutState: AudioControlBarLayoutState { get }
+
     func activeAudioControlBar(audioMetadata: AudioTrackMetadata, dispatcher: AudioComponentActionDispatcher?)
     func toggleAudioControlBarPlayBackState(playbackState: Bool)
     func applyMetadataChangeToAudioControlBar(audioMetadata: AudioTrackMetadata)
@@ -599,3 +654,10 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
         pageData: MemoPageModel,
         collectionView: UICollectionView)
 }
+
+enum AudioControlBarLayoutState {
+	case `default`
+	case thin
+	case expended
+}
+

@@ -1,14 +1,14 @@
 import Combine
 import UIKit
 
-class MemoHomeViewController: UIViewController, ViewControllerType {
-
+final class MemoHomeViewController: UIViewController, ViewControllerType {
     typealias Input = MemoHomeViewInput
     typealias ViewModel = MemoHomeViewModel
 
     var input = PassthroughSubject<MemoHomeViewInput, Never>()
     var viewModel: MemoHomeViewModel
     var subscriptions = Set<AnyCancellable>()
+
     private(set) var isActiveFileCreatePlusButton: Bool = false
     private(set) var directoryFileCount: Int = 0 {
         didSet {
@@ -143,72 +143,56 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
         collectionView.isScrollEnabled = false
         return collectionView
     }()
-    private(set) var fileCreatePlusButton: UIView = {
-        let image = UIImage(systemName: "plus")
+    private(set) var createPageButton: UIView = {
+        let image = UIImage(named: "file-plus")?.withTintColor(.label, renderingMode: .alwaysOriginal)
         let buttonImageView = UIImageView(image: image)
-
-        buttonImageView.translatesAutoresizingMaskIntoConstraints = false
-        buttonImageView.tintColor = .white
+        buttonImageView.tintColor = .label
+        buttonImageView.contentMode = .scaleAspectFit
+        buttonImageView.frame = CGRect(x: 15.5, y: 15.5, width: 24, height: 24)
         $0.addSubview(buttonImageView)
 
-        buttonImageView.widthAnchor.constraint(equalToConstant: 20).isActive = true
-        buttonImageView.heightAnchor.constraint(equalToConstant: 20).isActive = true
-        buttonImageView.centerYAnchor.constraint(equalTo: $0.centerYAnchor).isActive = true
-        buttonImageView.centerXAnchor.constraint(equalTo: $0.centerXAnchor).isActive = true
-
+        $0.alpha = 0
         $0.layer.cornerRadius = 27.5
-        $0.backgroundColor = .systemBlue
+        $0.backgroundColor = .secondarySystemBackground
         $0.layer.masksToBounds = false
         $0.translatesAutoresizingMaskIntoConstraints = false
 
         $0.layer.shadowColor = UIColor.black.cgColor
-        $0.layer.shadowOffset = .init(width: -1.5, height: 1.5)
-        $0.layer.shadowOpacity = 0.2
+        $0.layer.shadowOffset = .init(width: 0.8, height: 1.2)
+        $0.layer.shadowOpacity = 0.3
         $0.layer.shadowRadius = 4
-
         return $0
     }(UIView())
     private(set) var createFolderButton: UIView = {
-        let image = UIImage(named: "folder-plus")?.withTintColor(.systemBlue, renderingMode: .alwaysOriginal)
+        let image = UIImage(named: "folder-plus")?.withTintColor(.label, renderingMode: .alwaysOriginal)
         let buttonImageView = UIImageView(image: image)
-
-        buttonImageView.translatesAutoresizingMaskIntoConstraints = false
-        buttonImageView.tintColor = .systemBlue
+        buttonImageView.tintColor = .label
+        buttonImageView.contentMode = .scaleAspectFit
+        buttonImageView.frame = CGRect(x: 15.5, y: 15.5, width: 24, height: 24)
         $0.addSubview(buttonImageView)
-
-        buttonImageView.widthAnchor.constraint(equalToConstant: 20).isActive = true
-        buttonImageView.heightAnchor.constraint(equalToConstant: 20).isActive = true
-        buttonImageView.centerYAnchor.constraint(equalTo: $0.centerYAnchor).isActive = true
-        buttonImageView.centerXAnchor.constraint(equalTo: $0.centerXAnchor).isActive = true
 
         $0.alpha = 0
         $0.layer.cornerRadius = 27.5
-        $0.backgroundColor = UIColor(red: 0.94, green: 0.96, blue: 0.98, alpha: 1)
+        $0.backgroundColor = .secondarySystemBackground
         $0.layer.masksToBounds = false
         $0.translatesAutoresizingMaskIntoConstraints = false
 
         $0.layer.shadowColor = UIColor.black.cgColor
-        $0.layer.shadowOffset = .init(width: -1.5, height: 1.5)
-        $0.layer.shadowOpacity = 0.2
+        $0.layer.shadowOffset = .init(width: 0.8, height: 1.2)
+        $0.layer.shadowOpacity = 0.3
         $0.layer.shadowRadius = 4
-
         return $0
     }(UIView())
-    private(set) var createPageButton: UIView = {
-        let image = UIImage(named: "file-plus")?.withTintColor(.systemBlue, renderingMode: .alwaysOriginal)
-        let buttonImageView = UIImageView(image: image)
-        buttonImageView.translatesAutoresizingMaskIntoConstraints = false
-        buttonImageView.tintColor = .systemBlue
+    private(set) var fileCreatePlusButton: UIView = {
+        let config = UIImage.SymbolConfiguration(pointSize: 22, weight: .medium)
+        let buttonImageView = UIImageView(image: UIImage(systemName: "plus", withConfiguration: config))
+        buttonImageView.tintColor = .label
+        buttonImageView.contentMode = .scaleAspectFit
+        buttonImageView.frame = CGRect(x: 13, y: 13, width: 29, height: 29)
         $0.addSubview(buttonImageView)
 
-        buttonImageView.widthAnchor.constraint(equalToConstant: 20).isActive = true
-        buttonImageView.heightAnchor.constraint(equalToConstant: 20).isActive = true
-        buttonImageView.centerYAnchor.constraint(equalTo: $0.centerYAnchor).isActive = true
-        buttonImageView.centerXAnchor.constraint(equalTo: $0.centerXAnchor).isActive = true
-
-        $0.alpha = 0
         $0.layer.cornerRadius = 27.5
-        $0.backgroundColor = UIColor(red: 0.94, green: 0.96, blue: 0.98, alpha: 1)
+        $0.backgroundColor = .clear
         $0.layer.masksToBounds = false
         $0.translatesAutoresizingMaskIntoConstraints = false
 
@@ -216,6 +200,31 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
         $0.layer.shadowOffset = .init(width: -1.5, height: 1.5)
         $0.layer.shadowOpacity = 0.2
         $0.layer.shadowRadius = 4
+        $0.accessibilityIdentifier = "MemoHomeVC.fileCreatePlusButton"
+
+        let blurBackgroundView: UIVisualEffectView = {
+            let blurEffect = UIBlurEffect(style: .systemUltraThinMaterial)
+            let blurView = UIVisualEffectView(effect: blurEffect)
+
+            blurView.layer.cornerRadius = 27.5
+            blurView.isUserInteractionEnabled = false
+            blurView.clipsToBounds = true
+            blurView.layer.borderWidth = 1
+
+            let borderColor = UIColor {
+                $0.userInterfaceStyle == .dark ? .white.withAlphaComponent(0.3) : .gray.withAlphaComponent(0.4)
+            }
+            blurView.layer.borderColor = borderColor.cgColor
+
+            return blurView
+        }()
+
+        blurBackgroundView.frame = $0.bounds
+        blurBackgroundView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+
+        $0.addSubview(blurBackgroundView)
+        $0.sendSubviewToBack(blurBackgroundView)
+
         return $0
     }(UIView())
 
@@ -374,6 +383,43 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
             .store(in: &subscriptions)
     }
 
+    func toggleCreateNewItemButtonVisibility() {
+        isActiveFileCreatePlusButton.toggle()
+
+        if isActiveFileCreatePlusButton {
+            if audioControlBarHost.audioControlBarLayoutState == .expended {
+                audioControlBarHost.setAudioControlBarLayoutAsThin()
+            }
+        }
+
+        let deltaAngle = CGFloat.pi + CGFloat.pi / 4
+        let targetAngle = isActiveFileCreatePlusButton ? deltaAngle : deltaAngle + CGFloat.pi / 4
+
+        fileCreatePlusButton.layer.removeAnimation(forKey: "fileCreatePlusButton.spin")
+
+        let springAnimation = CASpringAnimation(keyPath: "transform.rotation.z")
+        springAnimation.fromValue = 0
+        springAnimation.toValue = targetAngle
+        springAnimation.mass = isActiveFileCreatePlusButton ? 0.5 : 0.1
+        springAnimation.stiffness = isActiveFileCreatePlusButton ? 100 : 250
+        springAnimation.damping = isActiveFileCreatePlusButton ? 7 : 30
+        springAnimation.initialVelocity = 0
+        springAnimation.duration = springAnimation.settlingDuration
+
+        fileCreatePlusButton.layer.add(springAnimation, forKey: "fileCreatePlusButton.spin")
+        fileCreatePlusButton.transform = CGAffineTransform(rotationAngle: targetAngle)
+
+        UIView.springAnimation(0.6) { [weak self] in
+            guard let self else { return }
+
+            createFolderButton.alpha = isActiveFileCreatePlusButton ? 1 : 0
+            createPageButton.alpha = isActiveFileCreatePlusButton ? 1 : 0
+
+            createFolderButton.frame.origin.y += isActiveFileCreatePlusButton ? -70 : 70
+            createPageButton.frame.origin.y += isActiveFileCreatePlusButton ? -140 : 140
+        }
+    }
+
     private func setupUI(fixedFileCollectionViewDataSource: FixedFileCollectionViewDataSource?) {
         view.backgroundColor = .systemBackground
         view.addSubview(backgroundView)
@@ -433,19 +479,19 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
             directoryPathStackView.leadingAnchor.constraint(equalTo: directoryPathView.leadingAnchor),
             directoryPathStackView.trailingAnchor.constraint(equalTo: directoryPathView.trailingAnchor),
 
-            fileCreatePlusButton.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor, constant: -15),
+            fileCreatePlusButton.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor, constant: -10),
             fileCreatePlusButton.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor, constant: -60),
             fileCreatePlusButton.widthAnchor.constraint(equalToConstant: 55),
             fileCreatePlusButton.heightAnchor.constraint(equalToConstant: 55),
 
             createFolderButton.widthAnchor.constraint(equalToConstant: 55),
             createFolderButton.heightAnchor.constraint(equalToConstant: 55),
-            createFolderButton.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor, constant: -15),
+            createFolderButton.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor, constant: -10),
             createFolderButton.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor, constant: -60),
 
             createPageButton.widthAnchor.constraint(equalToConstant: 55),
             createPageButton.heightAnchor.constraint(equalToConstant: 55),
-            createPageButton.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor, constant: -15),
+            createPageButton.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor, constant: -10),
             createPageButton.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor, constant: -60),
         ])
     }
@@ -454,7 +500,7 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
         fileCreatePlusButton.throttleUIViewTapGesturePublisher(interval: 0)
             .sink { [weak self] _ in
                 guard let self else { return }
-                tappedFileCreatePlusButton()
+                toggleCreateNewItemButtonVisibility()
             }
             .store(in: &subscriptions)
 
@@ -465,7 +511,7 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
         createFolderButton.throttleUIViewTapGesturePublisher()
             .sink { [weak self] _ in
                 guard let self else { return }
-                tappedFileCreatePlusButton()
+                toggleCreateNewItemButtonVisibility()
 
                 let subject = PassthroughSubject<MemoHomeSubViewInput, Never>()
                 viewModel.subscribe(input: subject.eraseToAnyPublisher())
@@ -478,7 +524,7 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
         createPageButton.throttleUIViewTapGesturePublisher()
             .sink { [weak self] _ in
                 guard let self else { return }
-                tappedFileCreatePlusButton()
+                toggleCreateNewItemButtonVisibility()
 
                 let subject = PassthroughSubject<MemoHomeSubViewInput, Never>()
                 viewModel.subscribe(input: subject.eraseToAnyPublisher())
@@ -707,34 +753,6 @@ class MemoHomeViewController: UIViewController, ViewControllerType {
         cell.directoryContentTableView.performBatchUpdates {
             for (before, after) in sortingReulst {
                 cell.directoryContentTableView.moveSection(before, toSection: after)
-            }
-        }
-    }
-
-    private func tappedFileCreatePlusButton() {
-        isActiveFileCreatePlusButton.toggle()
-
-        let angle: CGFloat = isActiveFileCreatePlusButton ? .pi / 4 : 0
-
-        UIView.animate(
-            withDuration: 0.3,
-            delay: 0,
-            usingSpringWithDamping: 0.6,
-            initialSpringVelocity: 0.8,
-            options: [.curveEaseInOut]
-        ) { [weak self] in
-            guard let self else { return }
-
-            fileCreatePlusButton.transform = CGAffineTransform(rotationAngle: angle)
-            createFolderButton.alpha = isActiveFileCreatePlusButton ? 1 : 0
-            createPageButton.alpha = isActiveFileCreatePlusButton ? 1 : 0
-
-            if isActiveFileCreatePlusButton {
-                createFolderButton.frame.origin.y -= 70
-                createPageButton.frame.origin.y -= 140
-            } else {
-                createFolderButton.frame.origin.y += 70
-                createPageButton.frame.origin.y += 140
             }
         }
     }

@@ -106,4 +106,12 @@ extension UIView {
         UITapGestureRecognizer.UIViewTapPublisher(recognizer: .init(), view: self)
             .throttle(for: .seconds(interval), scheduler: RunLoop.main, latest: false)
     }
+	
+	func debounceUIViewTapGesturePublisher(interval: Double = 0.1)
+		-> Publishers.Debounce<UITapGestureRecognizer.UIViewTapPublisher<UITapGestureRecognizer>, RunLoop>
+	{
+		UITapGestureRecognizer.UIViewTapPublisher(recognizer: .init(), view: self)
+			.debounce(for: .seconds(interval), scheduler: RunLoop.main)
+			
+	}
 }

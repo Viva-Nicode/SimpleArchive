@@ -103,10 +103,8 @@ final class AudioControlBarView: UIView, UITableViewDelegate {
         let blurEffect = UIBlurEffect(style: .systemUltraThinMaterial)
         let blurView = UIVisualEffectView(effect: blurEffect)
         blurView.translatesAutoresizingMaskIntoConstraints = false
-
         blurView.layer.cornerRadius = 20
         blurView.clipsToBounds = true
-
         blurView.layer.borderWidth = 1
 
         let borderColor = UIColor { traitCollection in
@@ -199,6 +197,7 @@ final class AudioControlBarView: UIView, UITableViewDelegate {
 
         layer.cornerRadius = 12
         backgroundColor = .clear
+		clipsToBounds = true
         translatesAutoresizingMaskIntoConstraints = false
     }
 
@@ -473,9 +472,8 @@ final class AudioControlBarView: UIView, UITableViewDelegate {
 
         thumbnailImageView.layer.cornerRadius = defaultThumbnailSize / 2
 
-        layer.cornerRadius = 12
-        blurView.layer.cornerRadius = 13
-
+        layer.cornerRadius = 19
+        blurView.layer.cornerRadius = 20
         audioTrackListView.alpha = 0
     }
 
@@ -545,8 +543,8 @@ final class AudioControlBarView: UIView, UITableViewDelegate {
 
         thumbnailImageView.layer.cornerRadius = defaultThumbnailSize / 2
 
-        layer.cornerRadius = 12
-        blurView.layer.cornerRadius = 13
+        layer.cornerRadius = 28
+        blurView.layer.cornerRadius = 28
 
         audioTrackListView.updateLayoytToExpended()
     }
