@@ -9,7 +9,7 @@ final class ExpendedAudioControlBarTrackListView: UIView {
         tableView.isPrefetchingEnabled = false
         tableView.alpha = 0
         tableView.layer.cornerRadius = 22
-		tableView.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
+        tableView.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
         tableView.rowHeight = 65
         tableView.translatesAutoresizingMaskIntoConstraints = false
         tableView.register(AudioTableRowView.self, forCellReuseIdentifier: AudioTableRowView.reuseIdentifier)

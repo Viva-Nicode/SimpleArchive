@@ -224,14 +224,14 @@ final class AudioControlBarView: UIView, UITableViewDelegate {
             audioTrackListView.topAnchor.constraint(equalTo: thumbnailImageView.bottomAnchor, constant: 20),
             audioTrackListView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 5),
             audioTrackListView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -5),
-            audioTrackListView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -5),
+            audioTrackListView.bottomAnchor.constraint(equalTo: bottomAnchor),
         ]
 
         thinContentConstraints = [
             audioTrackListView.heightAnchor.constraint(equalToConstant: 0),
             audioTrackListView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 5),
             audioTrackListView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -5),
-            audioTrackListView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -5),
+            audioTrackListView.bottomAnchor.constraint(equalTo: bottomAnchor),
         ]
 
         thinTitleCenterYConstraint = titleLabel.centerYAnchor.constraint(equalTo: controlView.centerYAnchor)
