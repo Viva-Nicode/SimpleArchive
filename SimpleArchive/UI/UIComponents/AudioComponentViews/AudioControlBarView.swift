@@ -197,7 +197,7 @@ final class AudioControlBarView: UIView, UITableViewDelegate {
 
         layer.cornerRadius = 12
         backgroundColor = .clear
-		clipsToBounds = true
+        clipsToBounds = true
         translatesAutoresizingMaskIntoConstraints = false
     }
 
@@ -224,14 +224,14 @@ final class AudioControlBarView: UIView, UITableViewDelegate {
             audioTrackListView.topAnchor.constraint(equalTo: thumbnailImageView.bottomAnchor, constant: 20),
             audioTrackListView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 5),
             audioTrackListView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -5),
-            audioTrackListView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            audioTrackListView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -5),
         ]
 
         thinContentConstraints = [
             audioTrackListView.heightAnchor.constraint(equalToConstant: 0),
             audioTrackListView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 5),
             audioTrackListView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -5),
-            audioTrackListView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            audioTrackListView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -5),
         ]
 
         thinTitleCenterYConstraint = titleLabel.centerYAnchor.constraint(equalTo: controlView.centerYAnchor)
@@ -454,6 +454,7 @@ final class AudioControlBarView: UIView, UITableViewDelegate {
                 + expendedThumbnailConstraints
                 + expendedContentConstraints
         )
+
         controlViewBottomConstraint.isActive = true
 
         NSLayoutConstraint.activate(
@@ -543,8 +544,8 @@ final class AudioControlBarView: UIView, UITableViewDelegate {
 
         thumbnailImageView.layer.cornerRadius = defaultThumbnailSize / 2
 
-        layer.cornerRadius = 28
-        blurView.layer.cornerRadius = 28
+        layer.cornerRadius = 25
+        blurView.layer.cornerRadius = 25
 
         audioTrackListView.updateLayoytToExpended()
     }

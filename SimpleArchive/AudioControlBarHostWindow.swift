@@ -18,9 +18,9 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
     private var thinToDismissAnimator: UIViewPropertyAnimator?
 
     private var thinBottonConstant: CGFloat = -52.5
-    private let expendedBottonConstant = (UIView.screenHeight - 500) * -0.5 + 50
+	private let expendedBottonConstant:CGFloat = -(60 + 55 + 10)
     private let expendedContentsWidth = UIView.screenWidth - 50
-    private let expendedContentHeight: CGFloat = 500
+    private let expendedContentHeight: CGFloat = 400
 
     private let interactionBlockWindow: UIView = {
         let blockWindow = UIView()
@@ -135,10 +135,10 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
         }
     }
 
-	// 홈화면에서 이벤트 발생 시 플러스버튼을 접는다
+    // 홈화면에서 이벤트 발생 시 플러스버튼을 접는다
     override func sendEvent(_ event: UIEvent) {
         super.sendEvent(event)
-		
+
         guard
             let rootVC = rootViewController as? UINavigationController,
             let topVC = rootVC.topViewController,
@@ -656,8 +656,7 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
 }
 
 enum AudioControlBarLayoutState {
-	case `default`
-	case thin
-	case expended
+    case `default`
+    case thin
+    case expended
 }
-
