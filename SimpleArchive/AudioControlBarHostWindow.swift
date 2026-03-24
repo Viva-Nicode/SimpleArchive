@@ -18,7 +18,7 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
     private var thinToDismissAnimator: UIViewPropertyAnimator?
 
     private var thinBottonConstant: CGFloat = -52.5
-	private let expendedBottonConstant:CGFloat = -(60 + 55 + 12)
+    private let expendedBottonConstant: CGFloat = -(60 + 55 + 12)
     private let expendedContentsWidth = UIView.screenWidth - 50
     private let expendedContentHeight: CGFloat = 420
 

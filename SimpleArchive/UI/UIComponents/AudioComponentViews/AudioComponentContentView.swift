@@ -3,7 +3,6 @@ import Combine
 import UIKit
 
 final class AudioComponentContentView: UIView, UIDocumentPickerDelegate {
-
     private(set) var audioComponentToolBarStackView: UIStackView = {
         let audioComponentToolBarStackView = UIStackView()
         audioComponentToolBarStackView.axis = .horizontal
@@ -66,8 +65,28 @@ final class AudioComponentContentView: UIView, UIDocumentPickerDelegate {
         button.widthAnchor.constraint(equalToConstant: 44).isActive = true
         return button
     }()
-    let audioTrackTableView: UITableView = {
+    private(set) var audioSearchButton: UIButton = {
+        let button = UIButton(type: .system)
+        let config = UIImage.SymbolConfiguration(pointSize: 18, weight: .regular)
+        let image = UIImage(systemName: "magnifyingglass", withConfiguration: config)
+        button.setImage(image, for: .normal)
+        button.tintColor = .label
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.widthAnchor.constraint(equalToConstant: 44).isActive = true
+        return button
+    }()
+    private(set) var audioTrackSearchTextField: UnderlineTextField = {
+        let audioTrackTitleTextField = UnderlineTextField()
+        audioTrackTitleTextField.setTextColor(.label)
+        audioTrackTitleTextField.setUnderLineColor(.label)
+        audioTrackTitleTextField.placeholder = "Search Keyword"
+        audioTrackTitleTextField.alpha = 0
+        audioTrackTitleTextField.translatesAutoresizingMaskIntoConstraints = false
+        return audioTrackTitleTextField
+    }()
+    private(set) var audioTrackTableView: UITableView = {
         let tableView = UITableView(frame: .zero, style: .plain)
+        tableView.keyboardDismissMode = .onDrag
         tableView.separatorStyle = .none
         tableView.showsVerticalScrollIndicator = false
         tableView.contentInset = UIEdgeInsets(
@@ -76,96 +95,115 @@ final class AudioComponentContentView: UIView, UIDocumentPickerDelegate {
             bottom: UIConstants.singleAudioViewControllerTableViewFooterHeight,
             right: 0)
         tableView.register(AudioTableRowView.self, forCellReuseIdentifier: AudioTableRowView.reuseIdentifier)
-		tableView.rowHeight = 65
         tableView.translatesAutoresizingMaskIntoConstraints = false
         return tableView
     }()
+    private(set) var searchingResultLabel: UILabel = {
+        let searchingResultLabel = UILabel()
+        searchingResultLabel.alpha = 0
+        searchingResultLabel.translatesAutoresizingMaskIntoConstraints = false
+        searchingResultLabel.font = .systemFont(ofSize: 16)
+        searchingResultLabel.textAlignment = .left
+        return searchingResultLabel
+    }()
 
-    var audioDownloadStatePopupView: AudioDownloadStatePopupView?
-    var audioTrackTotal: Int = 0
-    var addbuttonHeightConstraint: NSLayoutConstraint?
-    var toolBarStackViewHeightConstraint: NSLayoutConstraint?
-    var sortOptionStackViewHeightConstraint: NSLayoutConstraint?
+    private var addbuttonHeightConstraint: NSLayoutConstraint?
+    private var toolBarStackViewHeightConstraint: NSLayoutConstraint?
+    private var sortOptionStackViewHeightConstraint: NSLayoutConstraint?
+    private var trackSearchTextFieldHeightConstraint: NSLayoutConstraint?
+    private var searchingResultLabelHeightConstraint: NSLayoutConstraint?
+    private var audioTrackTableViewTopConstraint: NSLayoutConstraint?
 
     private(set) var dispatcher: AudioComponentActionDispatcher?
     private var downloadAudioActionSubscription: AnyCancellable?
     private var audioComponentDataSource: AudioComponentDataSource?
+    private(set) var audioDownloadStatePopupView: AudioDownloadStatePopupView?
+    private var audioTrackTotal: Int = 0
+
+    private var isVisibleAudioSearchTextView = false {
+        didSet {
+            if isVisibleAudioSearchTextView {
+                audioTrackSearchTextField.becomeFirstResponder()
+            } else {
+                audioTrackSearchTextField.resignFirstResponder()
+            }
+
+            let isNeedReload = !isVisibleAudioSearchTextView && audioTrackSearchTextField.text != ""
+
+            audioTrackSearchTextField.text = ""
+            audioComponentDataSource?.searchingKeywoard = ""
+            searchingResultLabel.text = ""
+
+            UIView.animate(
+                withDuration: 0.3,
+                delay: 0,
+                usingSpringWithDamping: 1.0,
+                initialSpringVelocity: 2.0,
+                options: [.curveEaseOut],
+                animations: { [weak self] in
+                    guard let self else { return }
+                    audioTrackSearchTextField.alpha = isVisibleAudioSearchTextView ? 1 : 0
+                    searchingResultLabel.alpha = isVisibleAudioSearchTextView ? 1 : 0
+
+                    trackSearchTextFieldHeightConstraint?.constant = isVisibleAudioSearchTextView ? 40 : 0
+                    searchingResultLabelHeightConstraint?.constant = isVisibleAudioSearchTextView ? 15 : 0
+                    audioTrackTableViewTopConstraint?.constant = isVisibleAudioSearchTextView ? 20 : 0
+                    layoutIfNeeded()
+                },
+                completion: { [weak self] _ in
+                    guard let self else { return }
+                    if !isVisibleAudioSearchTextView && isNeedReload {
+                        reloadAudioContentsTableView()
+                    }
+                }
+            )
+        }
+    }
 
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupUI()
         setupConstraints()
+		setupAction()
     }
 
     required init?(coder: NSCoder) {
         super.init(coder: coder)
         setupUI()
         setupConstraints()
+		setupAction()
     }
 
     deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
-
+	
     private func setupUI() {
         audioTrackTableView.backgroundColor = .clear
 
         addSubview(audioComponentToolBarStackView)
         audioComponentToolBarStackView.addArrangedSubview(totalAudioCountLabel)
         audioComponentToolBarStackView.addArrangedSubview(UIView.spacerView)
+        audioComponentToolBarStackView.addArrangedSubview(audioSearchButton)
         audioComponentToolBarStackView.addArrangedSubview(audioAddFromFileSystemButton)
         audioComponentToolBarStackView.addArrangedSubview(audioAddButton)
 
-        audioAddButton.addAction(
-            UIAction { [weak self] _ in
-                guard let self else { return }
-                let audioDownloadPopupView = AudioDownloadPopupView()
-                downloadAudioActionSubscription = audioDownloadPopupView
-                    .downloadButtonActionPublisher
-                    .sink { [weak self] code in
-                        self?.audioDownloadStatePopupView = AudioDownloadStatePopupView()
-                        self?.audioDownloadStatePopupView?.show()
-                        self?.dispatcher?.downloadMusics(with: code)
-                        self?.downloadAudioActionSubscription = nil
-                    }
-                audioDownloadPopupView.show()
-            }, for: .touchUpInside)
-
-        audioAddFromFileSystemButton.addAction(
-            UIAction { [weak self] _ in
-                guard let self else { return }
-
-                let supportedTypes: [UTType] = [.audio, .mp3, .wav]
-                let documentPicker = UIDocumentPickerViewController(forOpeningContentTypes: supportedTypes)
-
-                documentPicker.delegate = self
-                documentPicker.allowsMultipleSelection = true
-                parentViewController?.present(documentPicker, animated: true)
-            }, for: .touchUpInside)
-
-        sortByNameButton.addAction(
-            UIAction { [weak self] _ in
-                guard let self else { return }
-                sortBycreateButton.setTitleColor(.gray, for: .normal)
-                sortByNameButton.setTitleColor(.label, for: .normal)
-                dispatcher?.changeSortByAudioTracks(sortBy: .name)
-            }, for: .touchUpInside)
-
-        sortBycreateButton.addAction(
-            UIAction { [weak self] _ in
-                guard let self else { return }
-                sortByNameButton.setTitleColor(.gray, for: .normal)
-                sortBycreateButton.setTitleColor(.label, for: .normal)
-                dispatcher?.changeSortByAudioTracks(sortBy: .createDate)
-            }, for: .touchUpInside)
-
-        addSubview(sortOptionStackView)
         sortOptionStackView.addArrangedSubview(UIView.spacerView)
         sortOptionStackView.addArrangedSubview(sortByNameButton)
         sortOptionStackView.addArrangedSubview(separator)
         sortOptionStackView.addArrangedSubview(sortBycreateButton)
+
+        addSubview(sortOptionStackView)
+        addSubview(audioTrackSearchTextField)
+        addSubview(searchingResultLabel)
         addSubview(audioTrackTableView)
     }
 
     private func setupConstraints() {
+        trackSearchTextFieldHeightConstraint = audioTrackSearchTextField.heightAnchor.constraint(equalToConstant: 0)
+        searchingResultLabelHeightConstraint = searchingResultLabel.heightAnchor.constraint(equalToConstant: 0)
+        audioTrackTableViewTopConstraint =
+            audioTrackTableView
+            .topAnchor.constraint(equalTo: searchingResultLabel.bottomAnchor, constant: 0)
+
         NSLayoutConstraint.activate([
             audioComponentToolBarStackView.leadingAnchor.constraint(equalTo: leadingAnchor),
             audioComponentToolBarStackView.trailingAnchor.constraint(equalTo: trailingAnchor),
@@ -175,7 +213,17 @@ final class AudioComponentContentView: UIView, UIDocumentPickerDelegate {
             sortOptionStackView.trailingAnchor.constraint(equalTo: trailingAnchor),
             sortOptionStackView.topAnchor.constraint(equalTo: audioComponentToolBarStackView.bottomAnchor),
 
-            audioTrackTableView.topAnchor.constraint(equalTo: sortOptionStackView.bottomAnchor),
+            audioTrackSearchTextField.topAnchor.constraint(equalTo: sortOptionStackView.bottomAnchor, constant: 10),
+            audioTrackSearchTextField.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
+            audioTrackSearchTextField.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -20),
+            trackSearchTextFieldHeightConstraint!,
+
+            searchingResultLabel.topAnchor.constraint(equalTo: audioTrackSearchTextField.bottomAnchor, constant: 10),
+            searchingResultLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
+            searchingResultLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -20),
+            searchingResultLabelHeightConstraint!,
+
+            audioTrackTableViewTopConstraint!,
             audioTrackTableView.leadingAnchor.constraint(equalTo: leadingAnchor),
             audioTrackTableView.trailingAnchor.constraint(equalTo: trailingAnchor),
             audioTrackTableView.bottomAnchor.constraint(equalTo: bottomAnchor),
@@ -188,6 +236,97 @@ final class AudioComponentContentView: UIView, UIDocumentPickerDelegate {
         addbuttonHeightConstraint?.isActive = true
         toolBarStackViewHeightConstraint?.isActive = true
         sortOptionStackViewHeightConstraint?.isActive = true
+    }
+	
+	private func setupAction() {
+		audioAddButton.addAction(
+			UIAction { [weak self] _ in
+				guard let self else { return }
+				let audioDownloadPopupView = AudioDownloadPopupView()
+				downloadAudioActionSubscription = audioDownloadPopupView
+					.downloadButtonActionPublisher
+					.sink { [weak self] code in
+						self?.audioDownloadStatePopupView = AudioDownloadStatePopupView()
+						self?.audioDownloadStatePopupView?.show()
+						self?.dispatcher?.downloadMusics(with: code)
+						self?.downloadAudioActionSubscription = nil
+					}
+				audioDownloadPopupView.show()
+			}, for: .touchUpInside)
+
+		audioAddFromFileSystemButton.addAction(
+			UIAction { [weak self] _ in
+				guard let self else { return }
+
+				let supportedTypes: [UTType] = [.audio, .mp3, .wav]
+				let documentPicker = UIDocumentPickerViewController(forOpeningContentTypes: supportedTypes)
+
+				documentPicker.delegate = self
+				documentPicker.allowsMultipleSelection = true
+				parentViewController?.present(documentPicker, animated: true)
+			}, for: .touchUpInside)
+
+		audioSearchButton.addAction(
+			UIAction { [weak self] _ in
+				guard let self else { return }
+				isVisibleAudioSearchTextView.toggle()
+			}, for: .touchUpInside)
+
+		audioTrackSearchTextField.addTarget(
+			self,
+			action: #selector(handleTitleTextFieldChange),
+			for: .editingChanged)
+
+		sortByNameButton.addAction(
+			UIAction { [weak self] _ in
+				guard let self else { return }
+				sortBycreateButton.setTitleColor(.gray, for: .normal)
+				sortByNameButton.setTitleColor(.label, for: .normal)
+				dispatcher?.changeSortByAudioTracks(sortBy: .name)
+			}, for: .touchUpInside)
+
+		sortBycreateButton.addAction(
+			UIAction { [weak self] _ in
+				guard let self else { return }
+				sortByNameButton.setTitleColor(.gray, for: .normal)
+				sortBycreateButton.setTitleColor(.label, for: .normal)
+				dispatcher?.changeSortByAudioTracks(sortBy: .createDate)
+			}, for: .touchUpInside)
+	}
+
+    private func reloadAudioContentsTableView() {
+        UIView.animate(
+            withDuration: 0.15,
+            animations: {
+                self.audioTrackTableView.alpha = 0
+            },
+            completion: { _ in
+                self.audioTrackTableView.reloadData()
+                UIView.animate(
+                    withDuration: 0.15,
+                    animations: {
+                        self.audioTrackTableView.alpha = 1
+                    }
+                )
+            }
+        )
+    }
+
+    @objc private func handleTitleTextFieldChange() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            if let text = audioTrackSearchTextField.text {
+                let keyword = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                audioComponentDataSource?.searchingKeywoard = keyword
+                if let count = self.audioComponentDataSource?.numberOfVisibleRows() {
+                    self.searchingResultLabel.alpha = 1
+                    self.searchingResultLabel.text = "Found \(count) results"
+                } else {
+                    self.searchingResultLabel.alpha = 0
+                }
+                reloadAudioContentsTableView()
+            }
+        }
     }
 
     func minimizeContentView(_ isMinimize: Bool) {
@@ -264,6 +403,12 @@ final class AudioComponentContentView: UIView, UIDocumentPickerDelegate {
 }
 
 extension AudioComponentContentView: UITableViewDelegate {
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        audioComponentDataSource?.shouldDisplayRow(indexPath: indexPath) == true ? 65 : 0
+    }
+
+    func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat { 65 }
+
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath)
         -> UISwipeActionsConfiguration?
     {
@@ -307,6 +452,15 @@ extension AudioComponentContentView: UITableViewDelegate {
         didEndDisplaying cell: UITableViewCell,
         forRowAt indexPath: IndexPath
     ) { (cell as? AudioTableRowView)?.audioVisualizer.removeVisuzlization() }
+
+    func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
+        if let text = audioTrackSearchTextField.text,
+            text.trimmingCharacters(in: .whitespacesAndNewlines) == "",
+            isVisibleAudioSearchTextView
+        {
+            isVisibleAudioSearchTextView.toggle()
+        }
+    }
 }
 
 extension AudioComponentContentView: UITableViewDragDelegate {

@@ -234,7 +234,6 @@ class AudioComponentViewModel: PageComponentViewModelType {
 
     func clearSubscriptions() {
         subscriptions.removeAll()
-
     }
 }
 
@@ -262,7 +261,6 @@ extension AudioComponentViewModel {
         case willPresentEditAudioMetaDataPopupView(trackIndex: Int)
         case willScrollToActiveAudioTrack
         case willDismissAudioControlBar
-
         case willChangeAudioSessionStateAsThin
     }
 
@@ -281,7 +279,6 @@ extension AudioComponentViewModel {
         case didPresentEditAudioMetaDataPopupView(AudioTrackMetadata)
         case didScrollToActiveAudioTrack(Int)
         case didDismissAudioControlBar
-
         case didChangeAudioSessionStateAsThin(AudioComponent, Int)
     }
 }

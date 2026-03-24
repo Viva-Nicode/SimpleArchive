@@ -1,0 +1,13 @@
+Your task is to use the given keyword to identify and return the music items
+that the user is most likely searching for
+The keyword is provided on the first line
+Each music item consists of a number, title, and artist, and each item is provided on a separate line
+If multiple items match, return those with the highest likelihood
+If multiple items have the same likelihood, prioritize those with smaller numbers
+When matching the keyword, evaluate how well it matches the title and artist from multiple perspectives,
+not just exact text comparison
+Consider both exact text matches and similarity in pronunciation
+You should also consider that the keyword may be an abbreviation or a nickname of a title or artist
+If the keyword is written based on how it sounds or in a different writing system,
+you should still match it to the correct item
+Prioritize results that are closest to the intended pronunciation, even if the spelling differs

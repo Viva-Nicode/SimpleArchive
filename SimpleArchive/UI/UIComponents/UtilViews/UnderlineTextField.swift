@@ -43,4 +43,16 @@ final class UnderlineTextField: UITextField {
     override func editingRect(forBounds bounds: CGRect) -> CGRect {
         return textRect(forBounds: bounds)
     }
+	
+	func setUnderLineColor(_ color: UIColor){
+		underlineLayer.backgroundColor = color.cgColor
+	}
+	
+	func setTextColor(_ color: UIColor){
+		textColor = color
+	}
+	
+	func setBackgroundColor(_ color: UIColor){
+		backgroundColor = color
+	}
 }

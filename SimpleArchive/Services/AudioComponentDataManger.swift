@@ -32,10 +32,10 @@ final class AudioComponentDataManger {
         audioFileManager
             .writeCachedAudioMetaDataOnFile(audioTracks: pageComponent.componentContents.tracks)
     }
-	
-	subscript(_ trackID: UUID) -> Int? {
-		get { pageComponent.componentContents.tracks.firstIndex { $0.id == trackID } }
-	}
+
+    subscript(_ trackID: UUID) -> Int? {
+        get { pageComponent.componentContents.tracks.firstIndex { $0.id == trackID } }
+    }
 
     func removeAudioTrack(trackIndex: Int) -> (AudioTrack, UUID?) {
         let willPlayNextAudioID: UUID? =
@@ -191,84 +191,84 @@ final class AudioComponentDataManger {
             return nil
         }
     }
-	
-	private func makeAudioTrackFromFileURL(audioFileUrl: URL) -> AudioTrack {
-		let audioID = UUID()
-		let audioFileName = "\(audioID).\(audioFileUrl.pathExtension)"
-		let storedFileURL = audioFileManager.copyFilesToAppDirectory(src: audioFileUrl, des: audioFileName)
-		let audioMetadata = audioFileManager.readAudioMetadata(audioURL: storedFileURL)
 
-		var fileTitle = audioFileUrl.deletingPathExtension().lastPathComponent
-		if fileTitle.isEmpty { fileTitle = .emptyAudioTitle }
-		if let metadataTitle = audioMetadata.title, !metadataTitle.isEmpty { fileTitle = metadataTitle }
+    private func makeAudioTrackFromFileURL(audioFileUrl: URL) -> AudioTrack {
+        let audioID = UUID()
+        let audioFileName = "\(audioID).\(audioFileUrl.pathExtension)"
+        let storedFileURL = audioFileManager.copyFilesToAppDirectory(src: audioFileUrl, des: audioFileName)
+        let audioMetadata = audioFileManager.readAudioMetadata(audioURL: storedFileURL)
 
-		let artist = audioMetadata.artist ?? .emptyAudioArtist
-		let lyrics = audioMetadata.lyrics ?? ""
-		let thumnnailImageData = audioMetadata.thumbnail ?? Data.defaultAudioThumbnailData
+        var fileTitle = audioFileUrl.deletingPathExtension().lastPathComponent
+        if fileTitle.isEmpty { fileTitle = .emptyAudioTitle }
+        if let metadataTitle = audioMetadata.title, !metadataTitle.isEmpty { fileTitle = metadataTitle }
 
-		let track = AudioTrack(
-			id: audioID, title: fileTitle, artist: artist, thumbnail: thumnnailImageData,
-			lyrics: lyrics, fileExtension: .init(rawValue: storedFileURL.pathExtension)!)
+        let artist = audioMetadata.artist ?? .emptyAudioArtist
+        let lyrics = audioMetadata.lyrics ?? ""
+        let thumnnailImageData = audioMetadata.thumbnail ?? Data.defaultAudioThumbnailData
 
-		audioFileManager.writeAudioMetadataWhenAppendNewAudio(audioTrack: track)
-		return track
-	}
+        let track = AudioTrack(
+            id: audioID, title: fileTitle, artist: artist, thumbnail: thumnnailImageData,
+            lyrics: lyrics, fileExtension: .init(rawValue: storedFileURL.pathExtension)!)
 
-	private func appendAudioTracks(audioTracks: [AudioTrack]) -> [Int] {
-		pageComponent.componentContents.tracks.append(contentsOf: audioTracks)
+        audioFileManager.writeAudioMetadataWhenAppendNewAudio(audioTrack: track)
+        return track
+    }
 
-		switch pageComponent.componentContents.sortBy {
-			case .name:
-				pageComponent.componentContents.tracks.sort(by: { $0.title < $1.title })
+    private func appendAudioTracks(audioTracks: [AudioTrack]) -> [Int] {
+        pageComponent.componentContents.tracks.append(contentsOf: audioTracks)
 
-			case .createDate:
-				pageComponent.componentContents.tracks.sort(by: { $0.createData > $1.createData })
+        switch pageComponent.componentContents.sortBy {
+            case .name:
+                pageComponent.componentContents.tracks.sort(by: { $0.title < $1.title })
 
-			case .manual:
-				break
-		}
+            case .createDate:
+                pageComponent.componentContents.tracks.sort(by: { $0.createData > $1.createData })
 
-		var appendedIndices: [Int] = []
+            case .manual:
+                break
+        }
 
-		for track in audioTracks {
-			if let idx = pageComponent.componentContents.tracks.firstIndex(where: { $0.id == track.id }) {
-				appendedIndices.append(idx)
-			}
-		}
+        var appendedIndices: [Int] = []
 
-		pageComponent.actions.append(.appendAudio(appendedIndices: appendedIndices, tracks: audioTracks))
-		memoComponentCoredataReposotory.updateComponentContentChanges(modifiedComponent: pageComponent)
+        for track in audioTracks {
+            if let idx = pageComponent.componentContents.tracks.firstIndex(where: { $0.id == track.id }) {
+                appendedIndices.append(idx)
+            }
+        }
 
-		return appendedIndices
-	}
+        pageComponent.actions.append(.appendAudio(appendedIndices: appendedIndices, tracks: audioTracks))
+        memoComponentCoredataReposotory.updateComponentContentChanges(modifiedComponent: pageComponent)
 
-	private func scalingPCMDataToWaveformData(pcmData: AudioPCMData?) -> AudioWaveformData? {
-		guard let pcmData else { return nil }
-		let visualizerBarCount = 7
-		let timerIntervalDivisor = 6.0
-		let samplesPerBar = Int(pcmData.sampleRate / timerIntervalDivisor)
-		var averagedPCMData: [Float] = []
+        return appendedIndices
+    }
 
-		for i in 0..<(pcmData.PCMData.count / samplesPerBar) {
-			let PCMDataSegment = pcmData.PCMData[i * samplesPerBar..<(i + 1) * samplesPerBar]
-			let avg = PCMDataSegment.map { abs($0) }.reduce(0, +) / Float(PCMDataSegment.count)
-			averagedPCMData.append(avg)
-		}
+    private func scalingPCMDataToWaveformData(pcmData: AudioPCMData?) -> AudioWaveformData? {
+        guard let pcmData else { return nil }
+        let visualizerBarCount = 7
+        let timerIntervalDivisor = 6.0
+        let samplesPerBar = Int(pcmData.sampleRate / timerIntervalDivisor)
+        var averagedPCMData: [Float] = []
 
-		let maximumData = averagedPCMData.max()!
-		let scaledPCMData =
-			averagedPCMData
-			.map { ($0 / maximumData) }
-			.map { baseBarHeight in
-				(0..<visualizerBarCount)
-					.map { _ in
-						max(0.1, min(1.0, baseBarHeight + Float.random(in: -0.25...0.25)))
-					}
-			}
+        for i in 0..<(pcmData.PCMData.count / samplesPerBar) {
+            let PCMDataSegment = pcmData.PCMData[i * samplesPerBar..<(i + 1) * samplesPerBar]
+            let avg = PCMDataSegment.map { abs($0) }.reduce(0, +) / Float(PCMDataSegment.count)
+            averagedPCMData.append(avg)
+        }
 
-		return AudioWaveformData(
-			sampleDataCount: pcmData.PCMData.count,
-			sampleRate: pcmData.sampleRate,
-			waveformData: scaledPCMData)
-	}
+        let maximumData = averagedPCMData.max()!
+        let scaledPCMData =
+            averagedPCMData
+            .map { ($0 / maximumData) }
+            .map { baseBarHeight in
+                (0..<visualizerBarCount)
+                    .map { _ in
+                        max(0.1, min(1.0, baseBarHeight + Float.random(in: -0.25...0.25)))
+                    }
+            }
+
+        return AudioWaveformData(
+            sampleDataCount: pcmData.PCMData.count,
+            sampleRate: pcmData.sampleRate,
+            waveformData: scaledPCMData)
+    }
 }

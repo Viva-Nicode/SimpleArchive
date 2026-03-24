@@ -42,11 +42,25 @@ final class AudioTableRowView: UITableViewCell {
         return imageView
     }()
 
+    private var thumbnailHeightConstraint: NSLayoutConstraint?
+    private var titleHeightConstraint: NSLayoutConstraint?
+    private var artistHeightConstraint: NSLayoutConstraint?
+    private var visualizerHeightConstraint: NSLayoutConstraint?
+    private var visualizerTopConstraint: NSLayoutConstraint?
+
     static let reuseIdentifier = "AudioTableRowViewReuseIdentifier"
     var isNeedSetupShadow: Bool = true
 
     override func prepareForReuse() {
         super.prepareForReuse()
+
+        isHidden = false
+
+		thumbnailHeightConstraint?.constant = 45
+		titleHeightConstraint?.constant = 30
+		artistHeightConstraint?.constant = 15
+        visualizerHeightConstraint?.constant = 45
+        visualizerTopConstraint?.constant = 10
 
         titleLabel.text = nil
         artistLabel.text = nil
@@ -54,8 +68,8 @@ final class AudioTableRowView: UITableViewCell {
 
         audioVisualizer.removeVisuzlization()
     }
-	
-	override func setHighlighted(_ highlighted: Bool, animated: Bool) { return }
+
+    override func setHighlighted(_ highlighted: Bool, animated: Bool) { return }
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -67,13 +81,18 @@ final class AudioTableRowView: UITableViewCell {
         fatalError("init(coder:) has not been implemented")
     }
 
-    deinit {
-        audioVisualizer.removeVisuzlization()
-    }
+    deinit { audioVisualizer.removeVisuzlization() }
 
     func setupUI() {
+		thumbnailHeightConstraint = thumbnailImageView.heightAnchor.constraint(equalToConstant: 45)
+		titleHeightConstraint = titleLabel.heightAnchor.constraint(equalToConstant: 30)
+        artistHeightConstraint = artistLabel.heightAnchor.constraint(equalToConstant: 15)
+        visualizerHeightConstraint = audioVisualizer.heightAnchor.constraint(equalToConstant: 45)
+        visualizerTopConstraint = audioVisualizer.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 10)
+
         contentView.backgroundColor = .clear
         backgroundColor = .clear
+
         contentView.addSubview(containerView)
 
         containerView.addSubview(thumbnailImageView)
@@ -89,40 +108,54 @@ final class AudioTableRowView: UITableViewCell {
             containerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             containerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
 
-            thumbnailImageView.widthAnchor.constraint(equalToConstant: 45),
-            thumbnailImageView.heightAnchor.constraint(equalToConstant: 45),
-            thumbnailImageView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 10),
             thumbnailImageView.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 10),
+            thumbnailImageView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 10),
+            thumbnailImageView.widthAnchor.constraint(equalToConstant: 45),
+			thumbnailHeightConstraint!,
 
             titleLabel.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 10),
             titleLabel.leadingAnchor.constraint(equalTo: thumbnailImageView.trailingAnchor, constant: 10),
-            titleLabel.heightAnchor.constraint(equalToConstant: 30),
-            titleLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -60),
+            titleLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -70),
+			titleHeightConstraint!,
 
             artistLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor),
-            artistLabel.heightAnchor.constraint(equalToConstant: 15),
             artistLabel.leadingAnchor.constraint(equalTo: thumbnailImageView.trailingAnchor, constant: 10),
             artistLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -60),
+            artistHeightConstraint!,
 
-            audioVisualizer.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 17),
-            audioVisualizer.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -17),
-            audioVisualizer.widthAnchor.constraint(equalToConstant: 30),
+            visualizerTopConstraint!,
+            visualizerHeightConstraint!,
+            audioVisualizer.widthAnchor.constraint(equalToConstant: 40),
             audioVisualizer.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -15),
         ])
     }
 
-    func configure(audioTrack: AudioTrack) {
+    func configure(audioTrack: AudioTrack, isSearchingResult: Bool) {
+        isHidden = !isSearchingResult
+
         titleLabel.text = audioTrack.title
         artistLabel.text = audioTrack.artist
         thumbnailImageView.image = UIImage(data: audioTrack.thumbnail)
+
+        if !isSearchingResult {
+            audioVisualizer.removeVisuzlization()
+
+			thumbnailHeightConstraint?.constant = 0
+			titleHeightConstraint?.constant = 0
+            artistHeightConstraint?.constant = 0
+            visualizerTopConstraint?.constant = 0
+            visualizerHeightConstraint?.constant = 0
+        }
+
+        layoutIfNeeded()
     }
-	
-	func setHighlighting(_ highlighted: Bool) {
-		UIView.animate(withDuration: highlighted ? 0 : 0.3) {
-			super.setHighlighted(highlighted, animated: false)
-			self.contentView.backgroundColor = highlighted ? .systemGreen.withAlphaComponent(0.25) : .clear
-		}
-	}
+
+    func setHighlighting(_ highlighted: Bool) {
+        UIView.animate(withDuration: highlighted ? 0 : 0.3) {
+            super.setHighlighted(highlighted, animated: false)
+            self.contentView.backgroundColor = highlighted ? .systemGreen.withAlphaComponent(0.25) : .clear
+        }
+    }
 
     func updateAudioMetadata(_ data: AudioTrackMetadata) {
         if let title = data.title {

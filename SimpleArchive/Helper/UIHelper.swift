@@ -172,8 +172,11 @@ extension UIResponder {
 extension UIView {	
 	static func springAnimation(_ duration: Double = 0.3, _ with: @escaping () -> Void, comp: (() -> Void)? = nil) {
 		UIView.animate(
-			withDuration: duration, delay: 0, usingSpringWithDamping: 0.45,
-			initialSpringVelocity: 0.7, options: [.curveEaseInOut],
+			withDuration: duration,
+			delay: 0,
+			usingSpringWithDamping: 0.45,
+			initialSpringVelocity: 0.7,
+			options: [.curveEaseInOut],
 			animations: { with() }, completion: { _ in comp?() })
 	}
 
