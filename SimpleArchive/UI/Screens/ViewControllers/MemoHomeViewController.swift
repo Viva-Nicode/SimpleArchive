@@ -29,7 +29,7 @@ final class MemoHomeViewController: UIViewController, ViewControllerType {
         let headerStackView = UIStackView()
         headerStackView.axis = .horizontal
         headerStackView.alignment = .center
-        headerStackView.spacing = 21
+        headerStackView.spacing = 16
         headerStackView.distribution = .fill
         headerStackView.isLayoutMarginsRelativeArrangement = true
         headerStackView.layoutMargins = .init(top: 10, left: 15, bottom: 10, right: 15)
@@ -42,13 +42,34 @@ final class MemoHomeViewController: UIViewController, ViewControllerType {
         titleLabel.textColor = .label
         return titleLabel
     }()
-    private(set) var trashBoxButton: UIButton = {
+	private(set) var trashBoxButton: UIButton = {
+		var config = UIButton.Configuration.plain()
+		config.image = UIImage(systemName: "trash")
+		config.baseForegroundColor = .systemBlue
+		config.preferredSymbolConfigurationForImage = .init(pointSize: 20, weight: .regular)
+		
+		let button = UIButton(configuration: config)
+		
+		button.backgroundColor = .white
+		button.layer.cornerRadius = 4
+		button.layer.masksToBounds = true
+		button.translatesAutoresizingMaskIntoConstraints = false
+		
+		return button
+	}()
+    private(set) var dataButton: UIButton = {
         var config = UIButton.Configuration.plain()
-        config.image = UIImage(systemName: "trash")
+        config.image = UIImage(systemName: "tray.full")
         config.baseForegroundColor = .systemBlue
         config.preferredSymbolConfigurationForImage = .init(pointSize: 20, weight: .regular)
 
         let button = UIButton(configuration: config)
+		
+		button.backgroundColor = .white
+		button.layer.cornerRadius = 4
+		button.layer.masksToBounds = true
+		button.translatesAutoresizingMaskIntoConstraints = false
+		
         return button
     }()
     private(set) var fixedFilesLable: BasePaddingLabel = {
@@ -434,6 +455,8 @@ final class MemoHomeViewController: UIViewController, ViewControllerType {
         backgroundView.addArrangedSubview(directoryCollectionView)
 
         headerStackView.addArrangedSubview(titleLabel)
+        headerStackView.addArrangedSubview(UIView.spacerView)
+        headerStackView.addArrangedSubview(dataButton)
         headerStackView.addArrangedSubview(trashBoxButton)
 
         sortingButtonView.addArrangedSubview(totalFileCountLabel)
@@ -493,6 +516,12 @@ final class MemoHomeViewController: UIViewController, ViewControllerType {
             createPageButton.heightAnchor.constraint(equalToConstant: 55),
             createPageButton.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor, constant: -10),
             createPageButton.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor, constant: -60),
+			
+			trashBoxButton.widthAnchor.constraint(equalToConstant: 50),
+			trashBoxButton.heightAnchor.constraint(equalToConstant: 50),
+			
+			dataButton.widthAnchor.constraint(equalToConstant: 50),
+			dataButton.heightAnchor.constraint(equalToConstant: 50),
         ])
     }
 
@@ -506,6 +535,13 @@ final class MemoHomeViewController: UIViewController, ViewControllerType {
 
         trashBoxButton.throttleTapPublisher()
             .sink { _ in self.input.send(.willNavigateDormantBoxView) }
+            .store(in: &subscriptions)
+
+        dataButton.throttleTapPublisher()
+            .sink { _ in
+                let vc = AppSandBoxDataManagingViewController(viewModel: AppSandBoxDataManagingViewModel())
+                self.navigationController?.pushViewController(vc, animated: true)
+            }
             .store(in: &subscriptions)
 
         createFolderButton.throttleUIViewTapGesturePublisher()

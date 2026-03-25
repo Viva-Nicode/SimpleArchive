@@ -1,11 +1,7 @@
 import Combine
 import UIKit
 
-final class MemoPageViewController:
-    UIViewController,
-    UICollectionViewDelegateFlowLayout,
-    ManualCaptureHost
-{
+final class MemoPageViewController: UIViewController, UICollectionViewDelegateFlowLayout, ManualCaptureHost {
     var pageViewModel: MemoPageViewModel
     var pageActionDispatcher = PassthroughSubject<MemoPageViewInput, Never>()
 

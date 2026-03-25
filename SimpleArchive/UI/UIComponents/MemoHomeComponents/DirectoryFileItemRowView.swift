@@ -1,31 +1,30 @@
 import Combine
 import UIKit
 
-class DirectoryFileItemRowView: UITableViewCell {
-
+final class DirectoryFileItemRowView: UITableViewCell {
     private let innerShadowLayer = CALayer()
     private let innerShadowOffset: CGSize = .init(width: -7, height: 7)
     private let innerShadowOpacity: Float = 0.43
-    private let innerShadowRadius: CGFloat = 12
+    private let innerShadowRadius: CGFloat = 20
     private let cornerRadius: CGFloat = 12
+	
+	private var first = true
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        innerShadowLayer.frame = bounds
-        applyInnerShadow()
+		if first {
+			configureStyle()
+			first = false
+		}
     }
 
     private func configureStyle() {
-        containerStackView.backgroundColor = UIColor(named: "FixedFileItemBackgroundColor")
-        containerStackView.layer.cornerRadius = cornerRadius
         contentView.layer.cornerRadius = cornerRadius
         layer.cornerRadius = cornerRadius
-        containerStackView.layer.masksToBounds = false
 
         innerShadowLayer.frame = bounds
         innerShadowLayer.cornerRadius = layer.cornerRadius
         innerShadowLayer.backgroundColor = backgroundColor?.cgColor
-        innerShadowLayer.masksToBounds = true
         containerStackView.layer.addSublayer(innerShadowLayer)
 
         applyInnerShadow()
@@ -76,12 +75,12 @@ class DirectoryFileItemRowView: UITableViewCell {
 
     private let containerStackView: UIStackView = {
         let containerStackView = UIStackView()
-        containerStackView.backgroundColor = .systemGray6
+        containerStackView.backgroundColor = .tertiarySystemBackground
         containerStackView.axis = .horizontal
         containerStackView.layer.cornerRadius = 12
-        containerStackView.layer.masksToBounds = false
-        containerStackView.clipsToBounds = false
-        containerStackView.spacing = 17
+        containerStackView.layer.masksToBounds = true
+        containerStackView.clipsToBounds = true
+        containerStackView.spacing = 15
         containerStackView.alignment = .center
         containerStackView.distribution = .fill
         containerStackView.isLayoutMarginsRelativeArrangement = true
@@ -133,10 +132,12 @@ class DirectoryFileItemRowView: UITableViewCell {
     }
 
     private func setupConstraints() {
-        containerStackView.topAnchor.constraint(equalTo: contentView.topAnchor).isActive = true
-        containerStackView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor).isActive = true
-        containerStackView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor).isActive = true
-        containerStackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor).isActive = true
+        NSLayoutConstraint.activate([
+            containerStackView.topAnchor.constraint(equalTo: contentView.topAnchor),
+            containerStackView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+            containerStackView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            containerStackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+        ])
     }
 
     func configure(with fileItem: some StorageItem) {
