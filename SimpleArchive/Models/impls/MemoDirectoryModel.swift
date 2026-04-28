@@ -10,19 +10,6 @@ final class MemoDirectoryModel: NSObject, StorageItem {
     var items: [any StorageItem]
     weak var parentDirectory: MemoDirectoryModel?
 
-    func sortItems() {
-        switch sortBy {
-            case .name:
-                self.items.sort(by: { $0.name < $1.name })
-
-            case .creationDate:
-                self.items.sort(by: { $0.creationDate < $1.creationDate })
-
-            case .manual:
-                break
-        }
-    }
-
     init(
         id: UUID = UUID(),
         name: String,
@@ -64,6 +51,19 @@ final class MemoDirectoryModel: NSObject, StorageItem {
 
     func getItemSize() -> Int64 {
         items.map { $0.getItemSize() }.reduce(0, +)
+    }
+
+    func sortItems() {
+        switch sortBy {
+            case .name:
+                self.items.sort(by: { $0.name < $1.name })
+
+            case .creationDate:
+                self.items.sort(by: { $0.creationDate < $1.creationDate })
+
+            case .manual:
+                break
+        }
     }
 
     subscript(_ ID: UUID) -> OperationResultItem<any StorageItem>? {

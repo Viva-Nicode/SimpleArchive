@@ -116,4 +116,18 @@ final class MemoDirectoryCoreDataRepository: MemoDirectoryCoreDataRepositoryType
             try? UserDefaultStack.shared.store(keyTypes: .FileItemManualOrder, v: infos)
         }
     }
+
+    func moveItemLocation(targetDir: MemoDirectoryModel, item: any StorageItem, infos: DirectoryContentsRenderInfo) {
+        coredataStack.update { ctx in
+            let targetDirectoryFetchRequest = MemoDirectoryEntity.findDirectoryEntityById(id: targetDir.id)
+            let movedItemFetchRequest = StorageItemEntity.findById(id: item.id)
+
+            let targetDirectory = try ctx.fetch(targetDirectoryFetchRequest).first!
+            let movedItem = try ctx.fetch(movedItemFetchRequest).first!
+
+            movedItem.moveToAnyDirectory(directory: targetDirectory)
+
+            try? UserDefaultStack.shared.store(keyTypes: .FileItemManualOrder, v: infos)
+        }
+    }
 }

@@ -25,6 +25,11 @@ public class MemoPageEntity: StorageItemEntity {
         self.containingDirectory.removeFromPages(self)
         dormantBox.addToPages(self)
     }
+	
+	override func moveToAnyDirectory(directory: MemoDirectoryEntity){
+		self.containingDirectory.removeFromPages(self)
+		directory.addToPages(self)
+	}
 }
 
 extension MemoPageEntity {

@@ -11,6 +11,10 @@ public class StorageItemEntity: NSManagedObject {
     func moveToDormantBox(dormantBox: MemoDirectoryEntity) {
         fatalError("Method is not overridden.")
     }
+	
+	func moveToAnyDirectory(directory: MemoDirectoryEntity){
+		fatalError("Method is not overridden.")
+	}
 }
 
 extension StorageItemEntity {

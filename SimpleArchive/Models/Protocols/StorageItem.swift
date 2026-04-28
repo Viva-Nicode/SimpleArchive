@@ -19,6 +19,7 @@ protocol StorageItem: AnyObject, Hashable, Identifiable {
 
     func persistToPersistentStorage(using persistence: StorageItemPersistenceCreatorType)
     func removeStorageItem()
+	func moveToAnyDirectory(direcotry:MemoDirectoryModel)
 }
 
 extension StorageItem {
@@ -29,6 +30,14 @@ extension StorageItem {
             name
         }
     }
+	
+	func moveToAnyDirectory(direcotry: MemoDirectoryModel) {
+		if let idx = parentDirectory?.items.firstIndex(where: { $0.id == id }) {
+			parentDirectory?.items.remove(at: idx)
+			parentDirectory = direcotry
+			direcotry.items.append(self)
+		}
+	}
 }
 
 protocol StorageItemInformationType {}

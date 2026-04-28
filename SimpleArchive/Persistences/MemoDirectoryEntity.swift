@@ -36,6 +36,11 @@ public class MemoDirectoryEntity: StorageItemEntity {
         parentDirectory?.removeFromChildDirectories(self)
         context.delete(self)
     }
+	
+	override func moveToAnyDirectory(directory: MemoDirectoryEntity){
+		self.parentDirectory?.removeFromChildDirectories(self)
+		directory.addToChildDirectories(self)
+	}
 }
 
 extension MemoDirectoryEntity {

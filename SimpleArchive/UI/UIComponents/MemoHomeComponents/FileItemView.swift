@@ -274,6 +274,30 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
         blockView.alpha = 1
         return blockView
     }()
+    private(set) lazy var selectedStateOverlayView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .black.withAlphaComponent(0.5)
+        view.isHidden = true
+        view.alpha = 0
+        view.translatesAutoresizingMaskIntoConstraints = false
+
+        let imageView = UIImageView()
+        imageView.image = UIImage(systemName: "checkmark.circle")
+        imageView.tintColor = .systemYellow
+        imageView.contentMode = .scaleAspectFit
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(imageView)
+
+        NSLayoutConstraint.activate([
+            imageView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            imageView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            imageView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.5),
+            imageView.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 0.5),
+        ])
+
+        return view
+
+    }()
 
     private lazy var panGesture: UIPanGestureRecognizer = {
         let gr = UIPanGestureRecognizer(target: self, action: #selector(handlePanGesture))
@@ -283,7 +307,8 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
     private(set) var longTapGesture = UILongPressGestureRecognizer()
 
     static let reuseIdentifier = "FileItemView"
-    static var z: CGFloat = 2
+    private static var z: CGFloat = 2
+    static var isSelectedSet: Set<UUID> = []
     private var scaledBeganPoint: CGPoint?
     private var beganPointInWindow: CGPoint?
     private var itemID: UUID?
@@ -305,7 +330,7 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
     private var scaleX: Double!
     private var scaleY: Double!
     private weak var collectionViewRef: UICollectionView?
-    private let duration: Double = 0.6
+    private let duration: Double = 0.55
     private var fileItemColor: FileItemColor = .white
 
     private var originBlockPoint: CGPoint!
@@ -366,6 +391,9 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
 
     private func setupUI() {
         clipsToBounds = true
+        addSubview(selectedStateOverlayView)
+        sendSubviewToBack(selectedStateOverlayView)
+
         contentView.addSubview(containerView)
         contentView.backgroundColor = .clear
         contentView.layer.cornerRadius = cornerRadius
@@ -584,6 +612,11 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
                 textComponentSummaryLabel.widthAnchor.constraint(equalTo: fileInformationScrollView.widthAnchor),
                 filePathLabel.widthAnchor.constraint(equalTo: fileInformationScrollView.widthAnchor),
                 columnsLabel.widthAnchor.constraint(equalTo: fileInformationScrollView.widthAnchor),
+
+                selectedStateOverlayView.topAnchor.constraint(equalTo: topAnchor),
+                selectedStateOverlayView.leadingAnchor.constraint(equalTo: leadingAnchor),
+                selectedStateOverlayView.trailingAnchor.constraint(equalTo: trailingAnchor),
+                selectedStateOverlayView.bottomAnchor.constraint(equalTo: bottomAnchor),
             ]
         )
     }
@@ -603,6 +636,14 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
             UIAction { _ in
                 self.setOriginAnimator {
                     self.dispatcher?.send(.willMoveFileToDormantBox(self.itemID!))
+                }
+            }, for: .touchUpInside)
+
+        moveButton.addAction(
+            UIAction { _ in
+                self.setOriginAnimator {
+                    self.dispatcher?.send(.willSelectFileItem(self.itemID!))
+                    self.setSelectedState(true)
                 }
             }, for: .touchUpInside)
 
@@ -667,6 +708,28 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
                 titleLabelDefaultConstraints.forEach { $0.isActive = true }
             }
             layoutIfNeeded()
+        }
+    }
+
+    func setSelectedState(_ isSelected: Bool) {
+        if isSelected {
+            Self.isSelectedSet.insert(itemID!)
+            isUserInteractionEnabled = false
+            bringSubviewToFront(selectedStateOverlayView)
+            selectedStateOverlayView.isHidden = false
+            UIView.animate(withDuration: 0.3) {
+                self.selectedStateOverlayView.alpha = 1
+            }
+        } else {
+            Self.isSelectedSet.remove(itemID!)
+
+            UIView.animate(withDuration: 0.3) {
+                self.selectedStateOverlayView.alpha = 0
+            } completion: { _ in
+                self.selectedStateOverlayView.isHidden = true
+                self.sendSubviewToBack(self.selectedStateOverlayView)
+                self.isUserInteractionEnabled = true
+            }
         }
     }
 
@@ -1234,6 +1297,8 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
         }
         setFileItemSizeState()
         setInnerShadowLayer()
+
+        setSelectedState(Self.isSelectedSet.contains(fileItem.id))
     }
 }
 

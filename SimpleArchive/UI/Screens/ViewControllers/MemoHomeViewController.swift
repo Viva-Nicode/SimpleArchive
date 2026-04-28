@@ -531,6 +531,46 @@ final class MemoHomeViewController: UIViewController {
         blockViewTitle.translatesAutoresizingMaskIntoConstraints = false
         return blockViewTitle
     }()
+    private(set) var selectedItemListScrollView: UIScrollView = {
+        let selectedItemListScrollView = UIScrollView()
+        selectedItemListScrollView.isHidden = true
+        selectedItemListScrollView.alwaysBounceHorizontal = true
+        selectedItemListScrollView.alpha = 0
+        selectedItemListScrollView.contentInset = .init(top: 0, left: 0, bottom: 0, right: 10)
+        selectedItemListScrollView.showsHorizontalScrollIndicator = false
+        selectedItemListScrollView.translatesAutoresizingMaskIntoConstraints = false
+        return selectedItemListScrollView
+    }()
+    private(set) var selectedItemListView: UIStackView = {
+        let selectedItemListView = UIStackView()
+        selectedItemListView.alignment = .center
+        selectedItemListView.axis = .horizontal
+        selectedItemListView.backgroundColor = UIColor(named: "FixedFileItemBackgroundColor")
+        selectedItemListView.spacing = 8
+        selectedItemListView.translatesAutoresizingMaskIntoConstraints = false
+        return selectedItemListView
+    }()
+    private(set) var moveSelectedItemsToFolderButton: UIButton = {
+        var config = UIButton.Configuration.plain()
+        var titleAttr = AttributedString("move here")
+        config.imagePlacement = .leading
+        config.imagePadding = 8
+        config.titleAlignment = .leading
+        config.image = UIImage(systemName: "checkmark.circle")
+        config.baseForegroundColor = .systemGreen
+        config.cornerStyle = .capsule
+        config.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 20)
+        config.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 4, bottom: 0, trailing: 4)
+
+        titleAttr.font = .systemFont(ofSize: 15)
+        config.attributedTitle = titleAttr
+
+        let button = UIButton(configuration: config)
+        button.backgroundColor = .systemGreen.withAlphaComponent(0.15)
+        button.contentHorizontalAlignment = .leading
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
+    }()
 
     var dispatcher = PassthroughSubject<MemoHomeViewInput, Never>()
     var viewModel: MemoHomeViewModel
@@ -544,6 +584,7 @@ final class MemoHomeViewController: UIViewController {
     private var sortByCreatedateLabelWidth = CGFloat.zero
     private var directoryCollectionViewTopConstraint: NSLayoutConstraint?
     private var directoryCollectionViewBottomConstraint: NSLayoutConstraint?
+    private var selectedItemListHeightConstraint: NSLayoutConstraint?
 
     private(set) var isActiveFileCreatePlusButton: Bool = false
     private var audioControlBarHost: AudioControlBarHostType
@@ -749,6 +790,106 @@ final class MemoHomeViewController: UIViewController {
                     {
                         itemView.setTableInfoLabel(columns: columns.joined(separator: ", "), rowCount: "\(rowCount)")
                     }
+
+                case .didSelectFileItem(let name, let id):
+                    selectedItemListHeightConstraint?.constant = 50
+                    selectedItemListScrollView.isHidden = false
+                    UIView.animate(withDuration: 0.3) {
+                        self.selectedItemListScrollView.alpha = 1
+                        let item = SelectedItemView(name: name) {
+                            self.dispatcher.send(.willRemoveFromSelectedItems(id))
+                        }
+
+                        self.selectedItemListView.insertArrangedSubview(
+                            item, at: self.selectedItemListView.arrangedSubviews.count - 1)
+
+                        self.directoryCollectionView.collectionViewLayout.invalidateLayout()
+                        self.view.layoutIfNeeded()
+                        self.selectedItemListScrollView.scrollToTrailing(animated: true)
+                    }
+
+                case .didMoveSelectedItems(let indices):
+                    for sv in selectedItemListView.arrangedSubviews {
+                        if sv is SelectedItemView {
+                            selectedItemListView.removeArrangedSubview(sv)
+                            sv.removeFromSuperview()
+                        }
+                    }
+
+                    selectedItemListHeightConstraint?.constant = 0
+                    FileItemView.isSelectedSet.removeAll()
+
+                    if let c = self.directoryCollectionView.visibleCells.first as? MemoHomeDirectoryContentCell {
+                        for vc in c.directoryContentTableView.visibleCells {
+                            (vc as! FileItemView).setSelectedState(false)
+                        }
+
+                        c.directoryContentTableView.insertItems(at: indices.map { IndexPath(item: $0, section: 0) })
+                    }
+
+                    UIView.animate(withDuration: 0.3) {
+                        self.selectedItemListScrollView.alpha = 0
+                        self.directoryCollectionView.collectionViewLayout.invalidateLayout()
+                        self.view.layoutIfNeeded()
+                    } completion: { _ in
+                        self.selectedItemListScrollView.isHidden = true
+						self.dispatcher.send(.willManualAutoGrid)
+                    }
+
+                case .didRemoveFromSelectedItems(let index, let idx, let itemID):
+                    let selectedItem = selectedItemListView.arrangedSubviews[index]
+
+                    UIView.animate(withDuration: 0.3) {
+                        selectedItem.alpha = 0
+                        selectedItem.isHidden = true
+                        if let idx,
+                            let c = self.directoryCollectionView.visibleCells.first as? MemoHomeDirectoryContentCell,
+                            let fc = c.directoryContentTableView.cellForItem(at: .init(item: idx, section: 0))
+                                as? FileItemView
+                        {
+                            fc.setSelectedState(false)
+                        } else {
+                            FileItemView.isSelectedSet.remove(itemID)
+                        }
+                    } completion: { _ in
+                        self.selectedItemListView.removeArrangedSubview(selectedItem)
+                        selectedItem.removeFromSuperview()
+                        if self.selectedItemListView.arrangedSubviews.count == 1 {
+                            self.selectedItemListHeightConstraint?.constant = 0
+                            UIView.animate(withDuration: 0.3) {
+                                self.selectedItemListScrollView.alpha = 0
+                                self.directoryCollectionView.collectionViewLayout.invalidateLayout()
+                                self.view.layoutIfNeeded()
+                            } completion: { _ in
+                                self.selectedItemListScrollView.isHidden = true
+                            }
+                        }
+                    }
+
+                case .didCancelAllSelection:
+                    for sv in selectedItemListView.arrangedSubviews {
+                        if sv is SelectedItemView {
+                            selectedItemListView.removeArrangedSubview(sv)
+                            sv.removeFromSuperview()
+                        }
+                    }
+
+                    selectedItemListHeightConstraint?.constant = 0
+                    FileItemView.isSelectedSet.removeAll()
+
+                    if let c = self.directoryCollectionView.visibleCells.first as? MemoHomeDirectoryContentCell {
+                        for vc in c.directoryContentTableView.visibleCells {
+                            (vc as! FileItemView).setSelectedState(false)
+                        }
+                    }
+
+                    UIView.animate(withDuration: 0.3) {
+                        self.selectedItemListScrollView.alpha = 0
+                        self.directoryCollectionView.collectionViewLayout.invalidateLayout()
+                        self.view.layoutIfNeeded()
+                    } completion: { _ in
+                        self.selectedItemListScrollView.isHidden = true
+                    }
             }
         }
         .store(in: &subscriptions)
@@ -844,7 +985,12 @@ final class MemoHomeViewController: UIViewController {
 
         view.addSubview(directoryPathView)
 
+        selectedItemListScrollView.addSubview(selectedItemListView)
+        selectedItemListView.addArrangedSubview(moveSelectedItemsToFolderButton)
+        view.addSubview(selectedItemListScrollView)
+
         view.addSubview(directoryCollectionView)
+
         directoryCollectionView.dataSource = directoryStackDataSource
         directoryCollectionView.delegate = self
         directoryCollectionView.reloadData()
@@ -859,9 +1005,11 @@ final class MemoHomeViewController: UIViewController {
 
     private func setupConstraints() {
         directoryCollectionViewTopConstraint =
-            directoryCollectionView.topAnchor.constraint(equalTo: sortingOptionsView.bottomAnchor, constant: 20)
+            directoryCollectionView.topAnchor.constraint(equalTo: selectedItemListScrollView.bottomAnchor, constant: 5)
         directoryCollectionViewBottomConstraint =
             directoryCollectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        selectedItemListHeightConstraint =
+            selectedItemListScrollView.heightAnchor.constraint(equalToConstant: 0)
 
         NSLayoutConstraint.activate([
             titleLabelView.heightAnchor.constraint(equalToConstant: 140),
@@ -902,6 +1050,19 @@ final class MemoHomeViewController: UIViewController {
 
             sortByNameLabel.centerYAnchor.constraint(equalTo: sortingOptionsView.centerYAnchor),
             sortByNameLabel.leadingAnchor.constraint(equalTo: sortByCreatedateLabel.trailingAnchor),
+
+            selectedItemListView.topAnchor.constraint(equalTo: selectedItemListScrollView.topAnchor),
+            selectedItemListView.leadingAnchor.constraint(equalTo: selectedItemListScrollView.leadingAnchor),
+            selectedItemListView.trailingAnchor.constraint(equalTo: selectedItemListScrollView.trailingAnchor),
+            selectedItemListView.bottomAnchor.constraint(equalTo: selectedItemListScrollView.bottomAnchor),
+
+            selectedItemListScrollView.topAnchor.constraint(equalTo: sortingOptionsView.bottomAnchor, constant: 15),
+            selectedItemListHeightConstraint!,
+            selectedItemListScrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            selectedItemListScrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+
+            moveSelectedItemsToFolderButton.heightAnchor.constraint(equalToConstant: 35),
+            moveSelectedItemsToFolderButton.widthAnchor.constraint(equalToConstant: 125),
 
             blockViewTitle.topAnchor.constraint(equalTo: blockViewTitleView.topAnchor, constant: 5),
             blockViewTitle.leadingAnchor.constraint(equalTo: blockViewTitleView.leadingAnchor, constant: 10),
@@ -1022,6 +1183,7 @@ final class MemoHomeViewController: UIViewController {
         sortByManumalLabel.throttleUIViewTapGesturePublisher()
             .sink { [weak self] _ in
                 guard let self else { return }
+                dispatcher.send(.willCancelAllSelection)
                 adjustItemForManualView.isHidden = false
 
                 view.bringSubviewToFront(adjustItemForManualView)
@@ -1081,7 +1243,8 @@ final class MemoHomeViewController: UIViewController {
                 view.addSubview(directoryCollectionView)
 
                 directoryCollectionViewTopConstraint =
-                    directoryCollectionView.topAnchor.constraint(equalTo: sortingOptionsView.bottomAnchor, constant: 20)
+                    directoryCollectionView.topAnchor
+                    .constraint(equalTo: selectedItemListScrollView.bottomAnchor, constant: 5)
                 directoryCollectionViewBottomConstraint =
                     directoryCollectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
 
@@ -1112,6 +1275,11 @@ final class MemoHomeViewController: UIViewController {
             }, for: .touchUpInside)
 
         gridButton.addAction(UIAction { _ in self.dispatcher.send(.willManualAutoGrid) }, for: .touchUpInside)
+
+        moveSelectedItemsToFolderButton.addAction(
+            UIAction { _ in
+                self.dispatcher.send(.willMoveSelectedItems)
+            }, for: .touchUpInside)
 
         tabbar.homeButton.addAction(
             UIAction { _ in

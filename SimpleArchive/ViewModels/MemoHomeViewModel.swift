@@ -27,6 +27,8 @@ import UIKit
     private let spacing = UIConstants.fileItemSpacing
     private var info = DirectoryContentsRenderInfo()
 
+    private var selectedItem: [any StorageItem] = []
+
     init(
         memoDirectoryCoredataReposotory: MemoDirectoryCoreDataRepositoryType,
         memoPageCoredataReposotory: MemoPageCoreDataRepositoryType,
@@ -61,7 +63,25 @@ import UIKit
                 case .willChangeFileItemColor(let id, let color): changeFileItemColor(id, color)
                 case .willPresentFileItemInfoView(let id): getFileItemInfo(itemID: id)
                 case .willCalcTotalInfo: calcHomeDirectoryInfo()
+                case .willMoveSelectedItems: moveSelectedItems()
+                case .willSelectFileItem(let itemID):
+                    if let idx = directoryStack.stack.last?.items.firstIndex(where: { $0.id == itemID }) {
+                        selectedItem.append(directoryStack.stack.last!.items[idx])
+                        output.send(.didSelectFileItem(directoryStack.stack.last!.items[idx].name, itemID))
+                    }
 
+                case .willRemoveFromSelectedItems(let itemId):
+                    if let index = selectedItem.firstIndex(where: { $0.id == itemId }) {
+                        let idx = directoryStack.stack.last?.items.firstIndex(where: { $0.id == itemId })
+                        selectedItem.remove(at: index)
+                        output.send(.didRemoveFromSelectedItems(index, idx, itemId))
+                    }
+
+                case .willCancelAllSelection:
+                    if !selectedItem.isEmpty {
+                        selectedItem = []
+                        output.send(.didCancelAllSelection)
+                    }
             }
         }
         .store(in: &subscriptions)
@@ -234,7 +254,7 @@ import UIKit
     }
 
     private func getSizeDirectory(directory: MemoDirectoryModel) -> Int64 {
-        var q: [MemoDirectoryModel] = []
+        var q: [MemoDirectoryModel] = [directory]
         var size: Int64 = directory.getItemSize()
 
         while !q.isEmpty {
@@ -386,10 +406,6 @@ import UIKit
 
     private func gridSortItems() {
         if let cd = directoryStack.stack.last, cd.sortBy == .manual {
-            var currentInfos = info[cd.id]
-            var dp = Array(repeating: Array(repeating: -1, count: 12), count: currentInfos.count * 6)
-            var dp2: [(UUID, Double, Double, Double)] = []
-
             func checkIsEmptyDP(baseX: Int, baseY: Int, c: Int, r: Int) -> Bool {
                 guard 12 > baseX + r - 1 else { return false }
                 for y in baseY..<baseY + c {
@@ -407,6 +423,11 @@ import UIKit
                     }
                 }
             }
+
+            var currentInfos = info[cd.id]
+            var dp = Array(repeating: Array(repeating: -1, count: 12), count: currentInfos.count * 6)
+            var dp2: [(UUID, Double, Double, Double)] = []
+            var dp3: [(Int, Int, Int, Int)] = []
 
             for i in 0..<currentInfos.count {
                 if case .manual(let frame) = currentInfos[i].frame {
@@ -430,8 +451,6 @@ import UIKit
             currentInfos.sort { l, r in
                 dp2.firstIndex(where: { $0.0 == l.id })! < dp2.firstIndex(where: { $0.0 == r.id })!
             }
-
-            var dp3: [(Int, Int, Int, Int)] = []
 
             for i in 0..<currentInfos.count {
                 if case .manual(let frame) = currentInfos[i].frame {
@@ -465,9 +484,7 @@ import UIKit
             for i in 0..<dp.count {
                 if dp[i].allSatisfy({ $0 == -1 }) { break }
                 for ii in 0..<dp[i].count {
-                    if dp[i][ii] == -1 {
-                        dp[i][ii] = -2
-                    }
+                    if dp[i][ii] == -1 { dp[i][ii] = -2 }
                 }
             }
 
@@ -479,7 +496,7 @@ import UIKit
                 if let mx = dp[c..<c + h].map({ $0[0..<r].filter { $0 != -1 }.count }).max() {
                     xOffset = Double(mx * 30)
                 }
-                if let msx = dp[c..<c + h].map({ Set($0[0...r].filter { $0 != -1 || $0 != -2 }).count }).max() {
+                if let msx = dp[0..<c + h].map({ Set($0[0...r].filter { $0 != -1 && $0 != -2 }).count }).max() {
                     xOffset += Double(msx) * spacing
                 }
 
@@ -488,12 +505,12 @@ import UIKit
                 for ii in r..<r + w {
                     var temp = 0
                     var temps: [Int] = []
-                    for iiiii in 0..<c {
-                        if dp[iiiii][ii] != -1 {
+                    for iii in 0..<c {
+                        if dp[iii][ii] != -1 {
                             temp += 1
                         }
-                        if dp[iiiii][ii] != -1 && dp[iiiii][ii] != -2 {
-                            temps.append(dp[iiiii][ii])
+                        if dp[iii][ii] != -1 && dp[iii][ii] != -2 {
+                            temps.append(dp[iii][ii])
                         }
                     }
 
@@ -504,11 +521,7 @@ import UIKit
                 yOffset = Double(my * 30)
                 yOffset += Double(mys) * spacing
 
-                let rect = CodableCGRect(
-                    x: xOffset, y: yOffset, z: 1,
-                    w: Double(w * 30),
-                    h: Double(h * 30)
-                )
+                let rect = CodableCGRect(x: xOffset, y: yOffset, z: 1, w: Double(w * 30), h: Double(h * 30))
                 currentInfos[i].frame = .manual(rect)
             }
 
@@ -517,6 +530,35 @@ import UIKit
             output.send(.didManualAutoGrid)
         }
     }
+	
+	private func moveSelectedItems() {
+		if let movingTargetDir = directoryStack.stack.last {
+			let movingTargetItems =
+				selectedItem.filter { !movingTargetDir.items.map { $0.id }.contains($0.id) }
+
+			for item in movingTargetItems {
+				if let idx = info[item.parentDirectory!.id].firstIndex(where: { $0.id == item.id }) {
+					info[item.parentDirectory!.id].remove(at: idx)
+					let i = info[movingTargetDir.id].count
+					let z = Double((info[movingTargetDir.id].map { $0.frame.z }.max() ?? 0) + 1)
+					let ro = makeItemRenderInfo(item.id, i, z, movingTargetDir.sortBy)
+					info[movingTargetDir.id].append(ro)
+				}
+
+				item.moveToAnyDirectory(direcotry: movingTargetDir)
+
+				memoDirectoryCoredataReposotory
+					.moveItemLocation(targetDir: movingTargetDir, item: item, infos: info)
+			}
+
+			let insertIndices =
+				movingTargetItems
+				.map { item in movingTargetDir.items.firstIndex(where: { $0.id == item.id })! }
+
+			selectedItem = []
+			output.send(.didMoveSelectedItems(insertIndices))
+		}
+	}
 
     private func moveFileToDormantBox(itemID: UUID) {
         if let itemIndex = directoryStack.stack.last?.items.firstIndex(where: { $0.id == itemID }) {
@@ -606,18 +648,18 @@ import UIKit
 
         output.send(.didSortDirectoryItems(sortingResult))
     }
-	
-	private func makeItemRenderInfo(
-		_ id: UUID, _ i: Int, _ z: Double, _ sortBy: DirectoryContentsSortCriterias
-	) -> ItemRenderInfo {
-		let xOffset = Double((UIConstants.ItemSize.small.size.width + spacing) * Double(i % 4))
-		let yOffset = Double((UIConstants.ItemSize.small.size.width + spacing) * Double(i / 4))
-		let r = CodableCGRect(
-			x: xOffset, y: yOffset, z: z,
-			w: UIConstants.ItemSize.small.size.width, h: UIConstants.ItemSize.small.size.height)
 
-		return ItemRenderInfo(id: id, frame: sortBy == .manual ? .manual(r) : .origin)
-	}
+    private func makeItemRenderInfo(
+        _ id: UUID, _ i: Int, _ z: Double, _ sortBy: DirectoryContentsSortCriterias
+    ) -> ItemRenderInfo {
+        let xOffset = Double((UIConstants.ItemSize.small.size.width + spacing) * Double(i % 4))
+        let yOffset = Double((UIConstants.ItemSize.small.size.width + spacing) * Double(i / 4))
+        let r = CodableCGRect(
+            x: xOffset, y: yOffset, z: z,
+            w: UIConstants.ItemSize.small.size.width, h: UIConstants.ItemSize.small.size.height)
+
+        return ItemRenderInfo(id: id, frame: sortBy == .manual ? .manual(r) : .origin)
+    }
 }
 
 final class DirectoryStack: AnyObject {
@@ -653,6 +695,10 @@ enum MemoHomeViewInput {
     case willManualAutoGrid
     case willChangeFileItemColor(UUID, FileItemColor)
     case willPresentFileItemInfoView(UUID)
+    case willSelectFileItem(UUID)
+    case willMoveSelectedItems
+    case willRemoveFromSelectedItems(UUID)
+    case willCancelAllSelection
 }
 
 enum MemoHomeViewOutput {
@@ -677,6 +723,10 @@ enum MemoHomeViewOutput {
     case didGenertingTextComponentSummary(Int, String)
     case didGetMostRecentSnapshotDate(Int, String)
     case didPresentTableInfo(Int, [String], Int)
+    case didSelectFileItem(String, UUID)
+    case didMoveSelectedItems([Int])
+    case didRemoveFromSelectedItems(Int, Int?, UUID)
+    case didCancelAllSelection
 }
 
 protocol MessageErrorType: Error {
