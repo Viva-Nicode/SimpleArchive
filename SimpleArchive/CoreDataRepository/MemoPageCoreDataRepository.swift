@@ -12,7 +12,7 @@ final class MemoPageCoreDataRepository: MemoPageCoreDataRepositoryType {
     func fixPages(pageIds: [UUID]) -> AnyPublisher<Void, Error> {
         coredataStack.update { ctx in
 
-            guard let fixedDirectoryID = SystemDirectories.fixedFileDirectory.getId() else { return }
+            guard let fixedDirectoryID = SystemDirectories.hideFileDirectory.getId() else { return }
 
             let fetchFixedDirectoryEntityRequest = MemoDirectoryEntity.findDirectoryEntityById(id: fixedDirectoryID)
             let fetchFixedDirectoryEntityResult = try ctx.fetch(fetchFixedDirectoryEntityRequest)

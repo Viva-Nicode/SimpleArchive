@@ -639,6 +639,13 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
                 }
             }, for: .touchUpInside)
 
+        hideButton.addAction(
+            UIAction { _ in
+                self.setOriginAnimator {
+                    
+                }
+            }, for: .touchUpInside)
+
         moveButton.addAction(
             UIAction { _ in
                 self.setOriginAnimator {

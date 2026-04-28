@@ -2,15 +2,15 @@ import Foundation
 
 enum SystemDirectories: String, CaseIterable {
     case mainDirectory = "Home"
-    case fixedFileDirectory = "FixedFile"
+    case hideFileDirectory = "Hide"
     case dormantBoxDirectory = "DormantBox"
 
     public var DirectoryName: String {
         switch self {
             case .mainDirectory:
                 "Home"
-            case .fixedFileDirectory:
-                "FixedFile"
+            case .hideFileDirectory:
+                "Hide"
             case .dormantBoxDirectory:
                 "DormantBox"
         }

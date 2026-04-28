@@ -833,7 +833,7 @@ final class MemoHomeViewController: UIViewController {
                         self.view.layoutIfNeeded()
                     } completion: { _ in
                         self.selectedItemListScrollView.isHidden = true
-						self.dispatcher.send(.willManualAutoGrid)
+                        self.dispatcher.send(.willManualAutoGrid)
                     }
 
                 case .didRemoveFromSelectedItems(let index, let idx, let itemID):
@@ -1283,9 +1283,12 @@ final class MemoHomeViewController: UIViewController {
 
         tabbar.homeButton.addAction(
             UIAction { _ in
-                UIView.animate(withDuration: 0.3) {
+				UIView.transition(with: self.view, duration: 0.8, options: .transitionCurlDown) { [self] in
+                    self.hideItemView.isHidden = true
+                    self.appSettingView.isHidden = true
                     self.appSettingView.alpha = 0
                     self.hideItemView.alpha = 0
+                    self.tabbar.changeHome()
                 } completion: { _ in
                     self.hideItemView.isHidden = true
                     self.appSettingView.isHidden = true
@@ -1294,12 +1297,13 @@ final class MemoHomeViewController: UIViewController {
 
         tabbar.hideButton.addAction(
             UIAction { _ in
-                self.view.bringSubviewToFront(self.hideItemView)
-                self.view.bringSubviewToFront(self.tabbar)
                 self.hideItemView.isHidden = false
+                self.hideItemView.alpha = 1
 
-                UIView.animate(withDuration: 0.3) {
-                    self.hideItemView.alpha = 1
+				UIView.transition(with: self.view, duration: 0.8, options: .transitionCurlDown) { [self] in
+                    self.view.bringSubviewToFront(self.hideItemView)
+                    self.view.bringSubviewToFront(self.tabbar)
+                    self.tabbar.changeHide()
                 } completion: { _ in
                     self.appSettingView.isHidden = true
                     self.appSettingView.alpha = 0
@@ -1309,12 +1313,13 @@ final class MemoHomeViewController: UIViewController {
 
         tabbar.settingButton.addAction(
             UIAction { _ in
-                self.view.bringSubviewToFront(self.appSettingView)
-                self.view.bringSubviewToFront(self.tabbar)
                 self.appSettingView.isHidden = false
+                self.appSettingView.alpha = 1
 
-                UIView.animate(withDuration: 0.3) {
-                    self.appSettingView.alpha = 1
+				UIView.transition(with: self.view, duration: 0.8, options: .transitionCurlDown) { [self] in
+                    self.view.bringSubviewToFront(self.appSettingView)
+                    self.view.bringSubviewToFront(self.tabbar)
+                    self.tabbar.changeSetting()
                 } completion: { _ in
                     self.hideItemView.isHidden = true
                     self.hideItemView.alpha = 0
