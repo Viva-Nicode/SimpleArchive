@@ -3,11 +3,7 @@ import Foundation
 import SFBAudioEngine
 import ZIPFoundation
 
-protocol AudioFileRemover {
-    func removeAudio(with audio: AudioTrack)
-}
-
-protocol AudioFileManagerType: AudioFileRemover {
+protocol AudioFileManagerType {
     func makeAudioTrackAppSandBoxURL(audioTrack: AudioTrack) -> URL
 
     func copyFilesToAppDirectory(src: URL, des: String) -> URL
@@ -15,21 +11,22 @@ protocol AudioFileManagerType: AudioFileRemover {
 
     func readAudioMetadata(audioURL: URL) -> AudioTrackMetadata
     func readAudioPCMData(audioURL: URL?) -> AudioPCMData?
+    func readAudioFileSize(audioURL: URL) -> Int64
 
     func writeAudioMetadataWhenAppendNewAudio(audioTrack: AudioTrack)
     func writeCachedAudioMetaDataOnFile(audioTracks: [AudioTrack])
 
     func saveAudioMetaDataEditingTask(audioTrack: AudioTrack)
+    func removeAudio(with audio: AudioTrack)
 }
 
 final class AudioFileManager: NSObject, AudioFileManagerType {
+
     private var fileManager = FileManager.default
     private var audioMetaDataWriter: AudioMetadataWriterType = AudioMetadataWriter()
     private let musicArchiveDirectoryURL: URL
 
-    private static let shared = AudioFileManager()
-
-    private override init() {
+    override init() {
         let fileManager = FileManager.default
         let documentsDir = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
 
@@ -41,19 +38,6 @@ final class AudioFileManager: NSObject, AudioFileManagerType {
     }
 
     deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
-
-    static func getShared<UIT>(_ callerType: Any.Type) -> UIT? {
-        let AudioComponentInteractorDependency =
-            callerType == AudioComponentDataManger.self && UIT.self == AudioFileManagerType.self
-        let DormantBoxViewModelDependency =
-            callerType == DormantBoxViewModel.self && UIT.self == AudioFileRemover.self
-
-        if AudioComponentInteractorDependency || DormantBoxViewModelDependency {
-            return self.shared as? UIT
-        } else {
-            return nil
-        }
-    }
 
     func makeAudioTrackAppSandBoxURL(audioTrack: AudioTrack) -> URL {
         let fileName = "\(audioTrack.id).\(audioTrack.fileExtension)"
@@ -165,6 +149,11 @@ final class AudioFileManager: NSObject, AudioFileManagerType {
             .appendingPathExtension(audio.fileExtension.rawValue)
         audioMetaDataWriter.removeMetaDataWritingTask(trackID: audio.id)
         try? fileManager.removeItem(at: trackURL)
+    }
+
+    func readAudioFileSize(audioURL: URL) -> Int64 {
+        let values = try? audioURL.resourceValues(forKeys: [.fileSizeKey])
+        return Int64(values?.fileSize ?? 0)
     }
 
     private func isNeedPermision(_ url: URL) -> Bool {

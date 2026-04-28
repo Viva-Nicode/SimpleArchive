@@ -55,29 +55,7 @@ final class RemovedFileInformationPopupView: PopupView {
         pageNameLabel.textColor = .black
         return pageNameLabel
     }()
-    private let filePathView: UIStackView = {
-        let filePathView = UIStackView()
-        filePathView.axis = .vertical
-        filePathView.spacing = 0
-        filePathView.alignment = .leading
 
-        let location: UILabel = {
-            let location = UILabel()
-            location.text = "location"
-            location.font = .systemFont(ofSize: 15, weight: .regular)
-            location.textColor = .systemGray2
-            return location
-        }()
-
-        filePathView.addArrangedSubview(location)
-        return filePathView
-    }()
-    private let filePathLabel: UILabel = {
-        let filePathLabel = UILabel()
-        filePathLabel.font = .systemFont(ofSize: 16, weight: .regular)
-        filePathLabel.textColor = .black
-        return filePathLabel
-    }()
     private let createDateView: UIStackView = {
         let createDateView = UIStackView()
         createDateView.axis = .vertical
@@ -101,13 +79,7 @@ final class RemovedFileInformationPopupView: PopupView {
         createDateLabel.textColor = .black
         return createDateLabel
     }()
-    private let containedFileCountLabel: UILabel = {
-        let containedFileCountLabel = UILabel()
-        containedFileCountLabel.font = .systemFont(ofSize: 15, weight: .thin)
-        containedFileCountLabel.textColor = .black
-        containedFileCountLabel.alpha = 0.8
-        return containedFileCountLabel
-    }()
+
     private let removeButton: UIButton = {
         var buttonConfiguration = UIButton.Configuration.filled()
         buttonConfiguration.contentInsets = NSDirectionalEdgeInsets(top: 18, leading: 0, bottom: 18, trailing: 0)
@@ -120,20 +92,32 @@ final class RemovedFileInformationPopupView: PopupView {
 
         return UIButton(configuration: buttonConfiguration)
     }()
+    private var informationString: UILabel = {
+        let informationString = UILabel()
+        informationString.numberOfLines = 0
+		informationString.textColor = .black
+        return informationString
+    }()
 
-    private let pageInformation: PageInformation
+    private var itemID: UUID!
+    private var itemName: String!
+    private var itemCreationDate: Date!
 
     var removeButtonPublisher: AnyPublisher<UUID?, Never> {
         removeButton.throttleTapPublisher()
             .map { [weak self] _ in
                 self?.dismiss()
-                return self?.pageInformation.id
+                return self?.itemID
             }
             .eraseToAnyPublisher()
     }
 
-    init(pageInformation: PageInformation) {
-        self.pageInformation = pageInformation
+    var attrString = NSMutableAttributedString()
+
+    init(itemID: UUID, itemName: String, itemCreationDate: Date) {
+        self.itemID = itemID
+        self.itemName = itemName
+        self.itemCreationDate = itemCreationDate
         super.init()
     }
 
@@ -142,10 +126,8 @@ final class RemovedFileInformationPopupView: PopupView {
     }
 
     override func popupViewDetailConfigure() {
-        pageNameLabel.text = pageInformation.name
-        filePathLabel.text = pageInformation.filePath
-        createDateLabel.text = pageInformation.created.formattedDate
-        containedFileCountLabel.text = "Contains \(pageInformation.containedComponentCount) notes"
+        pageNameLabel.text = itemName
+        createDateLabel.text = itemCreationDate.formattedDate
 
         titleView.addArrangedSubview(titleIconView)
         titleView.addArrangedSubview(informationTitleLabel)
@@ -156,13 +138,26 @@ final class RemovedFileInformationPopupView: PopupView {
         pageNameView.addArrangedSubview(pageNameStackView)
         alertContainer.addArrangedSubview(pageNameView)
 
-        filePathView.addArrangedSubview(filePathLabel)
-        alertContainer.addArrangedSubview(filePathView)
-
         createDateView.addArrangedSubview(createDateLabel)
         alertContainer.addArrangedSubview(createDateView)
 
-        alertContainer.addArrangedSubview(containedFileCountLabel)
+		alertContainer.addArrangedSubview(informationString)
+		
         alertContainer.addArrangedSubview(removeButton)
+    }
+
+    func setInfoAttrString() {
+		let paragraphStyle = NSMutableParagraphStyle()
+		paragraphStyle.lineSpacing = 0
+		paragraphStyle.lineBreakMode = .byWordWrapping
+		paragraphStyle.alignment = .left
+
+		attrString.addAttribute(
+			.paragraphStyle,
+			value: paragraphStyle,
+			range: NSRange(location: 0, length: attrString.length)
+		)
+		
+        informationString.attributedText = attrString
     }
 }

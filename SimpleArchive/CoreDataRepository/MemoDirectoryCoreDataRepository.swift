@@ -48,7 +48,9 @@ final class MemoDirectoryCoreDataRepository: MemoDirectoryCoreDataRepositoryType
             .eraseToAnyPublisher()
     }
 
-    func createStorageItem(storageItem: any StorageItem) -> AnyPublisher<Void, Error> {
+    func createStorageItem(storageItem: any StorageItem, infos: DirectoryContentsRenderInfo) -> AnyPublisher<
+        Void, Error
+    > {
         coredataStack.update { ctx in
             let fetchRequest = MemoDirectoryEntity.findDirectoryEntityById(id: storageItem.parentDirectory!.id)
             let parentDirectoryEntity = try ctx.fetch(fetchRequest).first
@@ -56,6 +58,18 @@ final class MemoDirectoryCoreDataRepository: MemoDirectoryCoreDataRepositoryType
 
             persistence.parentDirectoryEntity = parentDirectoryEntity
             storageItem.persistToPersistentStorage(using: persistence)
+
+            try? UserDefaultStack.shared.store(keyTypes: .FileItemManualOrder, v: infos)
+        }
+    }
+
+    func moveItemOrder(directoryID: UUID, infos: DirectoryContentsRenderInfo) {
+        coredataStack.update { ctx in
+            let fetchRequest = MemoDirectoryEntity.findDirectoryEntityById(id: directoryID)
+            let fetchResult = try ctx.fetch(fetchRequest).first!
+
+            fetchResult.sortBy = DirectoryContentsSortCriterias.manual.rawValue
+            try? UserDefaultStack.shared.store(keyTypes: .FileItemManualOrder, v: infos)
         }
     }
 
@@ -82,12 +96,24 @@ final class MemoDirectoryCoreDataRepository: MemoDirectoryCoreDataRepositoryType
         }
     }
 
-    func saveFileSortCriteria(fileID: UUID, newSortCriteria: DirectoryContentsSortCriterias) {
+    func saveFileItemColor(fileID: UUID, color: FileItemColor) {
+        coredataStack.update { ctx in
+            let fetchRequest = StorageItemEntity.findById(id: fileID)
+            let fetchResult = try ctx.fetch(fetchRequest).first!
+
+            fetchResult.itemColor = color.rawValue
+        }
+    }
+
+    func saveFileSortCriteria(
+        fileID: UUID, newSortCriteria: DirectoryContentsSortCriterias, infos: DirectoryContentsRenderInfo
+    ) {
         coredataStack.update { ctx in
             let fetchRequest = MemoDirectoryEntity.findDirectoryEntityById(id: fileID)
             let fetchResult = try ctx.fetch(fetchRequest).first!
 
             fetchResult.sortBy = newSortCriteria.rawValue
+            try? UserDefaultStack.shared.store(keyTypes: .FileItemManualOrder, v: infos)
         }
     }
 }

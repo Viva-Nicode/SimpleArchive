@@ -7,25 +7,15 @@ import UIKit
 final class AudioControlBarView: UIView, UITableViewDelegate {
     private let titleLabel: UILabel = {
         let titleLabel = UILabel()
-        titleLabel.numberOfLines = 2
+        titleLabel.numberOfLines = 3
         titleLabel.textAlignment = .center
-        titleLabel.font = .systemFont(ofSize: 16)
+        titleLabel.font = .systemFont(ofSize: 16, weight: .semibold)
         titleLabel.textColor = .label
         titleLabel.adjustsFontSizeToFitWidth = true
         titleLabel.minimumScaleFactor = 0.7
+        titleLabel.lineBreakMode = .byCharWrapping
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         return titleLabel
-    }()
-    private let artistLabel: UILabel = {
-        let artistLabel = UILabel()
-        artistLabel.font = .systemFont(ofSize: 14)
-        artistLabel.textColor = UIColor { traitCollection in
-            traitCollection.userInterfaceStyle == .dark ? .lightGray : .darkGray
-        }
-        artistLabel.textAlignment = .center
-        artistLabel.numberOfLines = 1
-        artistLabel.translatesAutoresizingMaskIntoConstraints = false
-        return artistLabel
     }()
     private let buttonStackView: UIView = {
         let buttonStackView = UIView()
@@ -37,7 +27,7 @@ final class AudioControlBarView: UIView, UITableViewDelegate {
         thumbnailImageView.isUserInteractionEnabled = true
         thumbnailImageView.contentMode = .scaleAspectFill
         thumbnailImageView.clipsToBounds = true
-        thumbnailImageView.layer.cornerRadius = UIConstants.audioControlBarViewThumbnailWidth / 2
+        thumbnailImageView.layer.cornerRadius = UIConstants.audioControlBarViewThumbnailWidth * 0.5
         thumbnailImageView.translatesAutoresizingMaskIntoConstraints = false
         return thumbnailImageView
     }()
@@ -103,15 +93,8 @@ final class AudioControlBarView: UIView, UITableViewDelegate {
         let blurEffect = UIBlurEffect(style: .systemUltraThinMaterial)
         let blurView = UIVisualEffectView(effect: blurEffect)
         blurView.translatesAutoresizingMaskIntoConstraints = false
-        blurView.layer.cornerRadius = 20
+        blurView.layer.cornerRadius = 15
         blurView.clipsToBounds = true
-        blurView.layer.borderWidth = 1
-
-        let borderColor = UIColor { traitCollection in
-            traitCollection.userInterfaceStyle == .dark
-                ? .white.withAlphaComponent(0.3) : .gray.withAlphaComponent(0.4)
-        }
-        blurView.layer.borderColor = borderColor.cgColor
 
         return blurView
     }()
@@ -133,7 +116,6 @@ final class AudioControlBarView: UIView, UITableViewDelegate {
     private let defaultThumbnailSize = UIConstants.audioControlBarViewThumbnailWidth
     private let thinThumbnailSize = UIConstants.audioControlBarViewThumbnailWidth / 2
 
-    private var thinTitleCenterYConstraint: NSLayoutConstraint!
     private var thinButtonStackCenterYConstraint: NSLayoutConstraint!
     private var controlViewBottomConstraint: NSLayoutConstraint!
 
@@ -153,7 +135,7 @@ final class AudioControlBarView: UIView, UITableViewDelegate {
     private var expendedThumbnailConstraints: [NSLayoutConstraint] = []
     private var thinContentConstraints: [NSLayoutConstraint] = []
 
-    private var thinFadeViews: [UIView] { [artistLabel, currentTimeLabel, totalTimeLabel, audioProgressBar] }
+    private var thinFadeViews: [UIView] { [currentTimeLabel, totalTimeLabel, audioProgressBar] }
     private var thinButtonFadeViews: [UIView] { [previousButton, nextButton] }
 
     private(set) var audioTrackListView = ExpendedAudioControlBarTrackListView()
@@ -172,6 +154,13 @@ final class AudioControlBarView: UIView, UITableViewDelegate {
     deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
 
     private func setupUI() {
+        layer.shadowColor = UIColor.black.cgColor
+        layer.shadowOpacity = 0.2
+        layer.shadowRadius = 2
+        layer.shadowOffset = .init(width: 0, height: 0.5)
+        layer.masksToBounds = false
+        layer.cornerRadius = 15
+
         addSubview(blurView)
         addSubview(blockerView)
 
@@ -183,7 +172,7 @@ final class AudioControlBarView: UIView, UITableViewDelegate {
         addSubview(controlView)
 
         controlView.addSubview(titleLabel)
-        controlView.addSubview(artistLabel)
+        //        controlView.addSubview(artistLabel)
         controlView.addSubview(audioProgressBar)
         controlView.addSubview(currentTimeLabel)
         controlView.addSubview(totalTimeLabel)
@@ -194,10 +183,7 @@ final class AudioControlBarView: UIView, UITableViewDelegate {
         audioTrackListView.audioTrackTableView.delegate = self
 
         sendSubviewToBack(blurView)
-
-        layer.cornerRadius = 12
         backgroundColor = .clear
-        clipsToBounds = true
         translatesAutoresizingMaskIntoConstraints = false
     }
 
@@ -205,18 +191,21 @@ final class AudioControlBarView: UIView, UITableViewDelegate {
         defaultThumnbnailConstraints = [
             thumbnailImageView.heightAnchor.constraint(equalToConstant: defaultThumbnailSize),
             thumbnailImageView.widthAnchor.constraint(equalToConstant: defaultThumbnailSize),
-            thumbnailImageView.centerYAnchor.constraint(equalTo: controlView.centerYAnchor),
+            thumbnailImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
+            thumbnailImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
         ]
 
         thinThumbnailConstraints = [
-            thumbnailImageView.heightAnchor.constraint(equalToConstant: thinThumbnailSize),
-            thumbnailImageView.widthAnchor.constraint(equalToConstant: thinThumbnailSize),
-            thumbnailImageView.centerYAnchor.constraint(equalTo: controlView.centerYAnchor),
+            thumbnailImageView.heightAnchor.constraint(equalToConstant: 50),
+            thumbnailImageView.widthAnchor.constraint(equalToConstant: 50),
+            thumbnailImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 5),
+            thumbnailImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
         ]
 
         expendedThumbnailConstraints = [
             thumbnailImageView.heightAnchor.constraint(equalToConstant: defaultThumbnailSize),
             thumbnailImageView.widthAnchor.constraint(equalToConstant: defaultThumbnailSize),
+            thumbnailImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
             thumbnailImageView.topAnchor.constraint(equalTo: topAnchor, constant: 20),
         ]
 
@@ -234,7 +223,6 @@ final class AudioControlBarView: UIView, UITableViewDelegate {
             audioTrackListView.bottomAnchor.constraint(equalTo: bottomAnchor),
         ]
 
-        thinTitleCenterYConstraint = titleLabel.centerYAnchor.constraint(equalTo: controlView.centerYAnchor)
         thinButtonStackCenterYConstraint = buttonStackView.centerYAnchor.constraint(equalTo: controlView.centerYAnchor)
         controlViewBottomConstraint = controlView.bottomAnchor.constraint(equalTo: bottomAnchor)
 
@@ -250,8 +238,6 @@ final class AudioControlBarView: UIView, UITableViewDelegate {
                 blockerView.trailingAnchor.constraint(equalTo: trailingAnchor),
                 blockerView.bottomAnchor.constraint(equalTo: bottomAnchor),
 
-                thumbnailImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
-
                 controlView.topAnchor.constraint(equalTo: topAnchor),
                 controlViewBottomConstraint!,
                 controlView.leadingAnchor.constraint(equalTo: thumbnailImageView.trailingAnchor, constant: 10),
@@ -264,42 +250,37 @@ final class AudioControlBarView: UIView, UITableViewDelegate {
             ] + defaultThumnbnailConstraints + thinContentConstraints
 
         defaultTitleConstraints = [
-            titleLabel.topAnchor.constraint(equalTo: controlView.topAnchor, constant: 12),
+            titleLabel.topAnchor.constraint(equalTo: controlView.topAnchor, constant: 5),
+            titleLabel.widthAnchor.constraint(equalToConstant: UIView.screenWidth - 210),
             titleLabel.centerXAnchor.constraint(equalTo: controlView.centerXAnchor),
-            titleLabel.widthAnchor.constraint(equalToConstant: 180),
-            titleLabel.heightAnchor.constraint(equalToConstant: 30),
+            titleLabel.heightAnchor.constraint(equalToConstant: 60),
         ]
 
         dafaultDetailConstraints = [
-            artistLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 5),
-            artistLabel.centerXAnchor.constraint(equalTo: controlView.centerXAnchor),
-            artistLabel.widthAnchor.constraint(equalToConstant: 180),
-            artistLabel.heightAnchor.constraint(equalToConstant: 20),
-
             currentTimeLabel.leadingAnchor.constraint(equalTo: controlView.leadingAnchor, constant: 10),
             currentTimeLabel.bottomAnchor.constraint(equalTo: audioProgressBar.topAnchor),
 
             totalTimeLabel.trailingAnchor.constraint(equalTo: controlView.trailingAnchor, constant: -10),
             totalTimeLabel.bottomAnchor.constraint(equalTo: audioProgressBar.topAnchor),
 
-            audioProgressBar.topAnchor.constraint(equalTo: artistLabel.bottomAnchor, constant: 20),
+            audioProgressBar.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 20),
             audioProgressBar.widthAnchor.constraint(equalToConstant: 180),
             audioProgressBar.heightAnchor.constraint(equalToConstant: 5),
             audioProgressBar.centerXAnchor.constraint(equalTo: controlView.centerXAnchor),
         ]
 
         defaultButtonStackConstraints = [
-            buttonStackView.topAnchor.constraint(equalTo: audioProgressBar.bottomAnchor, constant: 10),
+            buttonStackView.topAnchor.constraint(equalTo: audioProgressBar.bottomAnchor, constant: 5),
             buttonStackView.heightAnchor.constraint(equalToConstant: 40),
             buttonStackView.widthAnchor.constraint(equalToConstant: 170),
             buttonStackView.centerXAnchor.constraint(equalTo: controlView.centerXAnchor),
         ]
 
         thinTitleConstraints = [
-            titleLabel.leadingAnchor.constraint(equalTo: controlView.leadingAnchor, constant: 0),
-            titleLabel.widthAnchor.constraint(equalToConstant: 180),
-            titleLabel.heightAnchor.constraint(equalToConstant: 30),
-            thinTitleCenterYConstraint!,
+            titleLabel.leadingAnchor.constraint(equalTo: thumbnailImageView.trailingAnchor, constant: 5),
+            titleLabel.widthAnchor.constraint(equalToConstant: UIView.screenWidth - 210),
+            titleLabel.heightAnchor.constraint(equalToConstant: 60),
+            titleLabel.centerYAnchor.constraint(equalTo: controlView.centerYAnchor),
         ]
 
         thinButtonStackConstraints = [
@@ -364,8 +345,7 @@ final class AudioControlBarView: UIView, UITableViewDelegate {
     }
 
     func applyUpdatedMetadata(with data: AudioTrackMetadata) {
-        titleLabel.text = data.title
-        artistLabel.text = data.artist
+        setTitleAttrLabel(title: data.title!, artist: data.artist!)
         let thumbnailImage = UIImage(data: data.thumbnail ?? Data())
         thumbnailImageView.image = thumbnailImage
     }
@@ -391,6 +371,54 @@ final class AudioControlBarView: UIView, UITableViewDelegate {
         }
     }
 
+    private func setTitleAttrLabel(title: String, artist: String) {
+        let size = (title as NSString)
+            .size(withAttributes: [.font: UIFont.systemFont(ofSize: 16, weight: .semibold)])
+
+        let attributedString = NSMutableAttributedString()
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.lineSpacing = 0
+        paragraphStyle.lineBreakMode = .byCharWrapping
+        paragraphStyle.alignment = .center
+
+        let line = size.width / (UIView.screenWidth - 210)
+        let title =
+            line >= 1.9
+            ? {
+                let char = line / CGFloat(title.count)
+                let cut = title.count - Int(abs(1.6 - line) / char)
+                return title.map { String($0) }[0..<cut].joined() + "..."
+            }() : title
+
+        attributedString.append(
+            NSAttributedString(
+                string: title,
+                attributes: [
+                    .font: UIFont.systemFont(ofSize: 16, weight: .semibold),
+                    .foregroundColor: UIColor.black,
+                ]
+            )
+        )
+
+        attributedString.append(
+            NSAttributedString(
+                string: "\n" + artist,
+                attributes: [
+                    .font: UIFont.systemFont(ofSize: 14),
+                    .foregroundColor: UIColor.black,
+                ]
+            )
+        )
+
+        attributedString.addAttribute(
+            .paragraphStyle,
+            value: paragraphStyle,
+            range: NSRange(location: 0, length: attributedString.length)
+        )
+
+        titleLabel.attributedText = attributedString
+    }
+	
     private func configureControlBarForPlayback(
         metadata: AudioTrackMetadata,
         dispatcher: AudioComponentActionDispatcher?
@@ -412,8 +440,8 @@ final class AudioControlBarView: UIView, UITableViewDelegate {
 
         audioProgressBar.updateCurrentTimeLabel = { self.currentTime = $0 }
 
-        titleLabel.text = metadata.title
-        artistLabel.text = metadata.artist
+        setTitleAttrLabel(title: metadata.title!, artist: metadata.artist!)
+
         let thumbnailImage = UIImage(data: metadata.thumbnail ?? Data())
         thumbnailImageView.image = thumbnailImage
         totalTimeLabel.text = metadata.duration?.asMinuteSecond
@@ -432,8 +460,7 @@ final class AudioControlBarView: UIView, UITableViewDelegate {
 
         dispatcher = nil
 
-        titleLabel.text = "Not Playing"
-        artistLabel.text = "unknown"
+		titleLabel.attributedText = nil
         thumbnailImageView.image = UIImage(named: "defaultMusicThumbnail")
         playPauseButton.isEnabled = false
         previousButton.isEnabled = false
@@ -471,10 +498,8 @@ final class AudioControlBarView: UIView, UITableViewDelegate {
         thinFadeViews.forEach { $0.isHidden = false }
         thinFadeViews.forEach { $0.alpha = 1 }
 
-        thumbnailImageView.layer.cornerRadius = defaultThumbnailSize / 2
-
-        layer.cornerRadius = 19
-        blurView.layer.cornerRadius = 20
+        titleLabel.transform = .identity
+        thumbnailImageView.layer.cornerRadius = UIConstants.audioControlBarViewThumbnailWidth * 0.5
         audioTrackListView.alpha = 0
     }
 
@@ -492,27 +517,24 @@ final class AudioControlBarView: UIView, UITableViewDelegate {
         controlViewBottomConstraint = controlView.bottomAnchor.constraint(equalTo: bottomAnchor)
         controlViewBottomConstraint.isActive = true
 
-        thumbnailImageView.layer.cornerRadius = thinThumbnailSize / 2
+        thumbnailImageView.layer.cornerRadius = 15 - 5 + 0.5
+        titleLabel.transform = .init(scaleX: 0.85, y: 0.85)
+
         NSLayoutConstraint.activate(
-            thinTitleConstraints
-                + thinButtonStackConstraints
-                + thinThumbnailConstraints
-                + thinContentConstraints
+            thinTitleConstraints + thinButtonStackConstraints + thinThumbnailConstraints + thinContentConstraints
         )
 
         thinButtonFadeViews.forEach {
             $0.isHidden = false
             $0.alpha = 0
         }
+
         thinFadeViews.forEach {
             $0.isHidden = false
             $0.alpha = 0
         }
 
         audioTrackListView.updateLayoutToThin()
-
-        layer.cornerRadius = 35
-        blurView.layer.cornerRadius = 35
     }
 
     func setAudioControlBarLayoutAsExpanded() {
@@ -541,12 +563,9 @@ final class AudioControlBarView: UIView, UITableViewDelegate {
         thinButtonFadeViews.forEach { $0.alpha = 1 }
         thinFadeViews.forEach { $0.isHidden = false }
         thinFadeViews.forEach { $0.alpha = 1 }
+        titleLabel.transform = .identity
 
         thumbnailImageView.layer.cornerRadius = defaultThumbnailSize / 2
-
-        layer.cornerRadius = 25
-        blurView.layer.cornerRadius = 25
-
         audioTrackListView.updateLayoytToExpended()
     }
 

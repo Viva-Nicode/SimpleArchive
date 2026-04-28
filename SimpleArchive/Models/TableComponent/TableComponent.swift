@@ -14,6 +14,10 @@ final class TableComponent: NSObject, Codable, SnapshotRestorablePageComponent {
     var captureState: CaptureState
     var snapshots: [TableComponentSnapshot] = []
     var actions: [TableComponentAction] = []
+    var getSize: Int64 {
+        Int64(componentContents.columns.map { $0.title }.joined().utf8.count)
+            + Int64(componentContents.cellValues.map { $0.cells.joined() }.joined().utf8.count)
+    }
 
     init(
         id: UUID = UUID(),

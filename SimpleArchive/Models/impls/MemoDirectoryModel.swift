@@ -5,93 +5,77 @@ final class MemoDirectoryModel: NSObject, StorageItem {
     var id: UUID
     var name: String
     var creationDate: Date
+    var sortBy: DirectoryContentsSortCriterias
+    var itemColor: FileItemColor
+    var items: [any StorageItem]
     weak var parentDirectory: MemoDirectoryModel?
 
-    private var childItems: StorageItemContainer
+    func sortItems() {
+        switch sortBy {
+            case .name:
+                self.items.sort(by: { $0.name < $1.name })
+
+            case .creationDate:
+                self.items.sort(by: { $0.creationDate < $1.creationDate })
+
+            case .manual:
+                break
+        }
+    }
 
     init(
         id: UUID = UUID(),
-        creationDate: Date = Date(),
         name: String,
-        sortBy: DirectoryContentsSortCriterias = .name,
+        creationDate: Date = Date(),
+        sortBy: DirectoryContentsSortCriterias = .creationDate,
+        itemColor: FileItemColor = .white,
+        items: [any StorageItem] = [],
         parentDirectory: MemoDirectoryModel? = nil
     ) {
         self.id = id
         self.name = name
         self.creationDate = creationDate
+        self.sortBy = sortBy
+        self.itemColor = itemColor
+        self.items = items
         self.parentDirectory = parentDirectory
-        self.childItems = StorageItemContainer(items: [], sortCriteriable: sortBy.getSortCriteriaObject())
         super.init()
-        parentDirectory?.insertChildItem(item: self)
+        parentDirectory?.items.append(self)
     }
 
-    deinit { myLog(String(describing: type(of: self)), "\(name)", c: .purple) }
-
     func removeStorageItem() {
-        for storageItem in childItems.getItems() {
+        for storageItem in items {
             storageItem.removeStorageItem()
         }
 
-        parentDirectory?.childItems.removeItemByID(with: id)
-        parentDirectory = nil
+        if let idx = parentDirectory?.items.firstIndex(where: { $0.id == id }) {
+            parentDirectory?.items.remove(at: idx)
+            parentDirectory = nil
+        }
     }
 
     func getFileInformation() -> StorageItemInformationType {
         let containedFileCount = getContainedDirectoryCount()
 
         return DirectoryInformation(
-            id: id,
-            name: name,
-            filePath: getFilePath(),
-            created: creationDate,
             containedDirectoryCount: containedFileCount.dirCount - 1,
             containedPageCount: containedFileCount.pageCount)
     }
 
+    func getItemSize() -> Int64 {
+        items.map { $0.getItemSize() }.reduce(0, +)
+    }
+
     subscript(_ ID: UUID) -> OperationResultItem<any StorageItem>? {
-        childItems.findItemByID(with: ID)
-    }
-
-    subscript(_ index: Int) -> (any StorageItem)? {
-        childItems.findItemByIndex(with: index)
-    }
-
-    func getChildItemSize() -> Int { childItems.getSize() }
-
-    @discardableResult
-    func insertChildItem(item: any StorageItem) -> Int {
-        childItems.insertItem(item: item)
-    }
-
-    @discardableResult
-    func removeChildItemByID(with id: UUID) -> (any StorageItem)? {
-        childItems.removeItemByID(with: id)
-    }
-
-    func getSortBy() -> DirectoryContentsSortCriterias {
-        childItems.getSortBy()
-    }
-
-    func getChildItems() -> [any StorageItem] {
-        childItems.getItems()
-    }
-
-    func setSortCriteria(_ sortCriterias: DirectoryContentsSortCriterias) -> [(Int, Int)] {
-        childItems.setSortCriteria(newSortCriterias: sortCriterias)
-    }
-
-    func renameChildFile(fileID: UUID, newName: String) -> Int? {
-        childItems.renameFileByID(fileID: fileID, newName: newName)
-    }
-
-    func toggleAscending() -> [(Int, Int)] {
-        childItems.toggleAscending()
+        if let index = items.firstIndex(where: { $0.id == ID }) {
+            return OperationResultItem(index: index, item: items[index])
+        }
+        return nil
     }
 
     private func getContainedDirectoryCount() -> (dirCount: Int, pageCount: Int) {
-
-        var result = (dirCount: 1, pageCount: childItems.getItems().filter { $0 is MemoPageModel }.count)
-        let childDirectories = childItems.getItems().compactMap { $0 as? MemoDirectoryModel }
+        var result = (dirCount: 1, pageCount: items.filter { $0 is MemoPageModel }.count)
+        let childDirectories = items.compactMap { $0 as? MemoDirectoryModel }
 
         for childDirectory in childDirectories {
             let temp = childDirectory.getContainedDirectoryCount()

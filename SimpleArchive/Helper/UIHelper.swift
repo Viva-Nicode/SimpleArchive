@@ -75,9 +75,26 @@ extension UIImage {
         guard let outputImage = filter?.outputImage else { return nil }
 
         let context = CIContext()
-        let rect = CGRect(origin: .zero, size: size)
-        if let cgImage = context.createCGImage(outputImage, from: rect) {
-            return UIImage(cgImage: cgImage)
+        let renderRect = ciImage.extent.integral
+        if let cgImage = context.createCGImage(outputImage, from: renderRect) {
+            return UIImage(cgImage: cgImage, scale: scale, orientation: imageOrientation)
+        }
+
+        return nil
+    }
+
+    func blurredByPixcelSize(radius: CGFloat) -> UIImage? {
+        guard let ciImage = CIImage(image: self) else { return nil }
+
+        let filter = CIFilter(name: "CIGaussianBlur")
+        filter?.setValue(ciImage, forKey: kCIInputImageKey)
+        filter?.setValue(radius, forKey: kCIInputRadiusKey)
+
+        guard let outputImage = filter?.outputImage else { return nil }
+
+        let context = CIContext()
+        if let cgImage = context.createCGImage(outputImage, from: ciImage.extent) {
+            return UIImage(cgImage: cgImage, scale: self.scale, orientation: self.imageOrientation)
         }
 
         return nil
@@ -132,7 +149,6 @@ extension UIScrollView {
     }
 
     func scrollToBottom(animated: Bool) {
-
         let maxOffsetY = max(0, contentSize.height - bounds.height + contentInset.bottom)
 
         guard maxOffsetY > 0 else { return }
@@ -169,16 +185,16 @@ extension UIResponder {
     }
 }
 
-extension UIView {	
-	static func springAnimation(_ duration: Double = 0.3, _ with: @escaping () -> Void, comp: (() -> Void)? = nil) {
-		UIView.animate(
-			withDuration: duration,
-			delay: 0,
-			usingSpringWithDamping: 0.45,
-			initialSpringVelocity: 0.7,
-			options: [.curveEaseInOut],
-			animations: { with() }, completion: { _ in comp?() })
-	}
+extension UIView {
+    static func springAnimation(_ duration: Double = 0.3, _ with: @escaping () -> Void, comp: (() -> Void)? = nil) {
+        UIView.animate(
+            withDuration: duration,
+            delay: 0,
+            usingSpringWithDamping: 0.45,
+            initialSpringVelocity: 0.7,
+            options: [.curveEaseInOut],
+            animations: { with() }, completion: { _ in comp?() })
+    }
 
     public static var spacerView: UIView {
         let view = UIView()
@@ -189,7 +205,7 @@ extension UIView {
     }
 
     public static let screenHeight = UIScreen.main.bounds.height
-    public static let screenWidth = UIScreen.main.bounds.width
+	public static let screenWidth = UIScreen.main.bounds.width
 
     func showMeBorder(_ anyColor: BorderColor) {
         self.layer.borderWidth = 1
@@ -241,6 +257,14 @@ extension UIView {
         return top
     }
 }
+extension UIView {
+    func fullSnapshotImage() -> UIImage? {
+        let renderer = UIGraphicsImageRenderer(size: bounds.size)
+        return renderer.image { context in
+            self.drawHierarchy(in: CGRect(origin: .zero, size: bounds.size), afterScreenUpdates: true)
+        }
+    }
+}
 
 extension Date {
     var formattedDate: String {
@@ -267,11 +291,33 @@ enum UIConstants {
     static let memoPageViewControllerCollectionViewFooterHeight = 200.0
     static let memoPageViewControllerCollectionViewHeaderHeight = 80.0
     static let memoPageViewControllerCollectionViewCellSpacing = 25.0
+    static let fileItemSpacing: CGFloat = (UIView.screenWidth - 4 * 90) / 5
 
     enum TableComponentCellEditPopupViewConstants {
         static let rowElementWidth: CGFloat = ((UIView.screenWidth * 0.8) - 40) / 3
         static let editingSeparatorLineHeight: CGFloat = 25
     }
+
+    enum ItemSize: String, Codable {
+        case small = "SMALL"
+        case medium = "MEDIUM"
+        case large = "LARGE"
+        case bar = "BAR"
+
+        var smallLength: CGFloat { 90 }
+        var mediumLength: CGFloat { 120 }
+        var largeLength: CGFloat { 150 }
+
+        var size: CGSize {
+            switch self {
+                case .small: CGSize(width: smallLength, height: smallLength)
+                case .medium: CGSize(width: mediumLength, height: mediumLength)
+                case .large: CGSize(width: largeLength, height: largeLength)
+                case .bar: CGSize(width: largeLength, height: smallLength)
+            }
+        }
+    }
+
 }
 
 extension UICollectionViewCell {

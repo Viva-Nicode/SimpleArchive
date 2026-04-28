@@ -6,15 +6,16 @@ final class MemoPageModel: NSObject, Codable, StorageItem {
     var name: String
     var creationDate: Date
     var isSingleComponentPage: Bool
+    var itemColor: FileItemColor
+    var components: [any PageComponent]
     weak var parentDirectory: MemoDirectoryModel?
-
-    private var components: [any PageComponent]
 
     init(
         id: UUID = UUID(),
         name: String,
         creationDate: Date = Date(),
         isSingleComponentPage: Bool = false,
+        itemColor: FileItemColor = .white,
         parentDirectory: MemoDirectoryModel? = nil,
         components: [any PageComponent] = []
     ) {
@@ -22,10 +23,11 @@ final class MemoPageModel: NSObject, Codable, StorageItem {
         self.name = name
         self.creationDate = creationDate
         self.components = components
+        self.itemColor = itemColor
         self.parentDirectory = parentDirectory
         self.isSingleComponentPage = isSingleComponentPage
         super.init()
-        self.parentDirectory?.insertChildItem(item: self)
+        self.parentDirectory?.items.append(self)
     }
 
     deinit { myLog(String(describing: type(of: self)), "\(name)", c: .purple) }
@@ -35,6 +37,7 @@ final class MemoPageModel: NSObject, Codable, StorageItem {
         try container.encode(id, forKey: .id)
         try container.encode(name, forKey: .name)
         try container.encode(creationDate, forKey: .creationDate)
+        try container.encode(itemColor, forKey: .itemColor)
         try container.encode(isSingleComponentPage, forKey: .isSingleComponentPage)
         try container.encode(components.compactMap { $0 as? TextEditorComponent }, forKey: .textComponents)
         try container.encode(components.compactMap { $0 as? TableComponent }, forKey: .tableComponents)
@@ -45,6 +48,7 @@ final class MemoPageModel: NSObject, Codable, StorageItem {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.id = try container.decode(UUID.self, forKey: .id)
         self.name = try container.decode(String.self, forKey: .name)
+        self.itemColor = try container.decode(FileItemColor.self, forKey: .itemColor)
         self.isSingleComponentPage = try container.decode(Bool.self, forKey: .isSingleComponentPage)
         self.creationDate = try container.decode(Date.self, forKey: .creationDate)
         self.components = []
@@ -55,26 +59,27 @@ final class MemoPageModel: NSObject, Codable, StorageItem {
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, creationDate, name, textComponents, audioComponents, tableComponents, isSingleComponentPage
+        case id, creationDate, name, textComponents, itemColor, audioComponents, tableComponents, isSingleComponentPage
     }
 
     func removeStorageItem() {
-        parentDirectory?.removeChildItemByID(with: self.id)
-        parentDirectory = nil
+        if let idx = parentDirectory?.items.firstIndex(where: { $0.id == id }) {
+            parentDirectory?.items.remove(at: idx)
+            parentDirectory = nil
+        }
     }
 
     func getFileInformation() -> StorageItemInformationType {
-        PageInformation(
-            id: id,
-            name: name,
-            filePath: getFilePath(),
-            created: creationDate,
-            containedComponentCount: components.count
-        )
+        var pageComponentCounts: [ComponentType: Int] = [:]
+        for component in components {
+            pageComponentCounts[component.type, default: 0] += 1
+        }
+        return PageInformation(pageComponentCounts: pageComponentCounts)
     }
 
-    var compnentSize: Int { components.count }
-    var getComponents: [any PageComponent] { components }
+    func getItemSize() -> Int64 {
+        components.map { $0.getSize }.reduce(0, +)
+    }
 
     subscript(_ ID: UUID?) -> OperationResultItem<any PageComponent>? {
         if let index = components.firstIndex(where: { $0.id == ID }) {

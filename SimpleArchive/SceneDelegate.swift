@@ -12,22 +12,53 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate, UINavigationControllerD
         guard let windowScene = (scene as? UIWindowScene) else { return }
 
         let window = AudioControlBarHostWindow(windowScene: windowScene)
-
+        window.overrideUserInterfaceStyle = .light
         DependencyConfigurator.configureDependencies()
+
+        // MARK: -===================== tab bar =====================-
+
+        //        let appearance = UITabBarAppearance()
+        //        appearance.configureWithDefaultBackground()
+        //        appearance.backgroundEffect = nil
+        //        appearance.shadowColor = .clear
+        //
+        //        let tabBarController = UITabBarController()
+        //        tabBarController.tabBar.isTranslucent = false
+        //        tabBarController.tabBar.shadowImage = nil
+        //        tabBarController.tabBar.backgroundColor = UIColor(named: "FixedFileItemBackgroundColor")
+        //        tabBarController.tabBar.barTintColor = UIColor(named: "FixedFileItemBackgroundColor")
+        //        tabBarController.tabBar.standardAppearance = appearance
+        //        tabBarController.tabBar.scrollEdgeAppearance = appearance
+        //        tabBarController.tabBar.layer.shadowOpacity = 0
+
+        // MARK: -===================== tool bar =====================-
+        //        let toolbarAppearance = UIToolbarAppearance()
+        //        toolbarAppearance.configureWithDefaultBackground()
+        //        toolbarAppearance.backgroundEffect = nil
+        //        toolbarAppearance.backgroundColor = UIColor(named: "FixedFileItemBackgroundColor")
+        //        toolbarAppearance.shadowColor = .clear
+        //        toolbarAppearance.shadowImage = nil
+        //
+        //        UIToolbar.appearance().standardAppearance = toolbarAppearance
+        //        UIToolbar.appearance().isTranslucent = false
+        //        UIToolbar.appearance().hoverStyle = nil
+        //        UIToolbar.appearance().setShadowImage(nil, forToolbarPosition: .any)
+
+        // MARK: -===================== navigation controller =====================-
 
         let memoHomeViewModel = DIContainer.shared.resolve(MemoHomeViewModel.self)
         let memoHomeViewController = MemoHomeViewController(
-            memoHomeViewModel: memoHomeViewModel,
-            audioControlBarHost: window)
-        let indexViewController = UINavigationController(rootViewController: memoHomeViewController)
-        indexViewController.delegate = self
+            memoHomeViewModel: memoHomeViewModel, audioControlBarHost: window)
 
-        indexViewController.navigationBar.isHidden = true
+        let navigationController = UINavigationController(rootViewController: memoHomeViewController)
+        navigationController.delegate = self
+        navigationController.navigationBar.isHidden = true
+
         if #available(iOS 26.0, *) {
-            indexViewController.interactiveContentPopGestureRecognizer?.isEnabled = false
+            navigationController.interactiveContentPopGestureRecognizer?.isEnabled = false
         }
 
-        window.rootViewController = indexViewController
+        window.rootViewController = navigationController
         window.makeKeyAndVisible()
 
         self.window = window
@@ -54,6 +85,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate, UINavigationControllerD
 
         let visibleControlBarVCTypes: [UIViewController.Type] = [
             MemoHomeViewController.self,
+            UITabBarController.self,
             MemoPageViewController.self,
             SingleAudioPageViewController.self,
             SingleTablePageViewController.self,

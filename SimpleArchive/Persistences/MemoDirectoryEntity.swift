@@ -8,13 +8,16 @@ public class MemoDirectoryEntity: StorageItemEntity {
     override func convertToModel(parentDirectory: MemoDirectoryModel? = nil) -> any StorageItem {
         let directory = MemoDirectoryModel(
             id: self.id,
-            creationDate: self.creationDate,
             name: self.name,
+            creationDate: self.creationDate,
             sortBy: .init(rawValue: self.sortBy) ?? .name,
+            itemColor: .init(rawValue: self.itemColor) ?? .white,
             parentDirectory: parentDirectory)
 
         self.childDirectories.forEach { $0.convertToModel(parentDirectory: directory) }
         self.pages.forEach { $0.convertToModel(parentDirectory: directory) }
+
+        directory.sortItems()
 
         return directory
     }

@@ -7,12 +7,19 @@ protocol MemoDirectoryCoreDataRepositoryType: AnyObject {
         -> AnyPublisher<[SystemDirectories: MemoDirectoryModel], Error>
 
     @discardableResult
-    func createStorageItem(storageItem: any StorageItem) -> AnyPublisher<Void, Error>
+    func createStorageItem(storageItem: any StorageItem, infos: DirectoryContentsRenderInfo) -> AnyPublisher<
+        Void, Error
+    >
 
     @discardableResult
     func moveFileToDormantBox(fileID: UUID) -> AnyPublisher<Void, Error>
 
     func saveFileNameChange(fileID: UUID, newName: String)
+	
+    func saveFileItemColor(fileID: UUID, color: FileItemColor)
 
-    func saveFileSortCriteria(fileID: UUID, newSortCriteria: DirectoryContentsSortCriterias)
+    func saveFileSortCriteria(
+        fileID: UUID, newSortCriteria: DirectoryContentsSortCriterias, infos: DirectoryContentsRenderInfo)
+
+    func moveItemOrder(directoryID: UUID, infos: DirectoryContentsRenderInfo)
 }

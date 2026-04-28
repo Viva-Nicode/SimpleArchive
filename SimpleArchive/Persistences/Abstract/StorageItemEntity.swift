@@ -30,6 +30,7 @@ extension StorageItemEntity {
     @NSManaged public var creationDate: Date
     @NSManaged public var id: UUID
     @NSManaged public var name: String
+	@NSManaged public var itemColor: String
 }
 
 extension StorageItemEntity: Identifiable {

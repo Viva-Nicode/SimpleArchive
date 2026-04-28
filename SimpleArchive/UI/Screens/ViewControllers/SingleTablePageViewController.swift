@@ -71,7 +71,7 @@ final class SingleTablePageViewController:
     deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
 
     private func setupUI() {
-        view.backgroundColor = .systemBackground
+        view.backgroundColor = UIColor(named: "FixedFileItemBackgroundColor")
         view.addSubview(headerView)
         headerView.addSubview(titleLable)
         headerView.addSubview(createDateLabel)

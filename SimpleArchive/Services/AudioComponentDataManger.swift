@@ -23,11 +23,12 @@ final class AudioComponentDataManger {
         audioComponent: AudioComponent,
         memoComponentCoredataReposotory: MemoComponentCoreDataRepositoryType,
         audioDownloader: AudioDownloaderType,
+		audioFileManger:AudioFileManagerType
     ) {
         self.pageComponent = audioComponent
         self.audioDownloader = audioDownloader
         self.memoComponentCoredataReposotory = memoComponentCoredataReposotory
-        self.audioFileManager = AudioFileManager.getShared(Self.self)!
+        self.audioFileManager = audioFileManger
 
         audioFileManager
             .writeCachedAudioMetaDataOnFile(audioTracks: pageComponent.componentContents.tracks)

@@ -13,6 +13,7 @@ final class TextEditorComponent: NSObject, Codable, SnapshotRestorablePageCompon
     var captureState: CaptureState
     var snapshots: [TextEditorComponentSnapshot] = []
     var actions: [TextEditorComponentAction] = []
+    var getSize: Int64 { Int64(componentContents.utf8.count) }
 
     init(
         id: UUID = UUID(),

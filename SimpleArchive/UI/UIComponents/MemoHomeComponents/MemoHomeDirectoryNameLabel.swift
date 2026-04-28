@@ -2,26 +2,26 @@ import UIKit
 
 final class MemoHomeDirectoryNameLabel: UIStackView {
 
-    private let homePathLabelBackgroundColor = UIColor(hex: "#DEEFFE")
-    private let homePathLabelTextColor = UIColor(hex: "#1470F0")
-    private let middlePathLabelBackgroundColor = UIColor(hex: "#FAF3D5")
-    private let middlePathLabelTextColor = UIColor(hex: "#D6802E")
-    private let currentPathLabelBackgroundColor = UIColor(hex: "#DBF8DF")
-    private let currentPathLabelTextColor = UIColor(hex: "#44BA5E")
+    private let homePathLabelBackgroundColor = UIColor(hex: "#1470F0")
+    private let homePathLabelTextColor = UIColor(hex: "#DEEFFE")
+    private let middlePathLabelBackgroundColor = UIColor(hex: "#D6802E")
+    private let middlePathLabelTextColor = UIColor(hex: "#FAF3D5")
+    private let currentPathLabelBackgroundColor = UIColor(hex: "#44BA5E")
+    private let currentPathLabelTextColor = UIColor(hex: "#DBF8DF")
     private var isHomePathLabel = false
     private let chevronImageView: UIImageView = {
         let chevronImageView = UIImageView(image: UIImage(systemName: "chevron.forward"))
         chevronImageView.tintColor = .systemGray2
         chevronImageView.contentMode = .center
-        chevronImageView.frame = CGRect(x: 0, y: 0, width: 14, height: 14)
+        chevronImageView.frame = CGRect(x: 0, y: 0, width: 15, height: 15)
         return chevronImageView
     }()
     private let nameLabel: UILabel = {
-        let label = BasePaddingLabel()
+		let label = BasePaddingLabel(padding: .init(top: 5, left: 13, bottom: 5, right: 13))
         label.clipsToBounds = true
-        label.layer.cornerRadius = 12
+		label.layer.cornerRadius = 16
         label.numberOfLines = 1
-        label.font = .systemFont(ofSize: 14, weight: .medium)
+        label.font = .systemFont(ofSize: 18, weight: .medium)
         label.isUserInteractionEnabled = true
         return label
     }()

@@ -11,7 +11,7 @@ protocol PageComponentPersistenceCreatorType {
 
 @MainActor protocol PageComponentViewFactoryType {
     associatedtype ViewType
-	func makeComponentView(from component: any PageComponent) -> ViewType
+    func makeComponentView(from component: any PageComponent) -> ViewType
 }
 
 protocol PageComponent: AnyObject, Identifiable, Codable {
@@ -25,14 +25,16 @@ protocol PageComponent: AnyObject, Identifiable, Codable {
     var componentContents: ContentType { get set }
     var renderingOrder: Int { get set }
     var isMinimumHeight: Bool { get set }
+	var getSize: Int64 { get }
 
     func persistToPersistentStorage(using persistence: PageComponentPersistenceCreatorType)
-	@MainActor
+    @MainActor
     func makeComponentView<Factory: PageComponentViewFactoryType>(using factory: Factory) -> Factory.ViewType
 }
 
 extension PageComponent {
-	@MainActor func makeComponentView<Factory: PageComponentViewFactoryType>(using factory: Factory) -> Factory.ViewType {
+    @MainActor func makeComponentView<Factory: PageComponentViewFactoryType>(using factory: Factory) -> Factory.ViewType
+    {
         factory.makeComponentView(from: self)
     }
 }

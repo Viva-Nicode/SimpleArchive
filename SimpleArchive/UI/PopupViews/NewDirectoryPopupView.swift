@@ -3,7 +3,7 @@ import Combine
 
 class NewDirectoryPopupView: PopupView {
     
-    private let subject: PassthroughSubject<MemoHomeSubViewInput, Never>
+    private let subject: PassthroughSubject<MemoHomeViewInput, Never>
 
     private let titleLabel: UILabel = {
         let titleLabel = UILabel()
@@ -38,7 +38,7 @@ class NewDirectoryPopupView: PopupView {
         return confirmButton
     }()
 
-    init(subject: PassthroughSubject<MemoHomeSubViewInput, Never>) {
+    init(subject: PassthroughSubject<MemoHomeViewInput, Never>) {
         self.subject = subject
         super.init()
     }

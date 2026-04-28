@@ -11,6 +11,7 @@ public class MemoPageEntity: StorageItemEntity {
             name: self.name,
             creationDate: self.creationDate,
             isSingleComponentPage: self.isSingleComponentPage,
+			itemColor: .init(rawValue: self.itemColor) ?? .white,
             parentDirectory: parentDirectory,
             components: self.components
                 .compactMap { $0.convertToModel() }

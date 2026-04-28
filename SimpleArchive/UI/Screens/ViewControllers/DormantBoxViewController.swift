@@ -1,66 +1,94 @@
 import Combine
 import UIKit
 
-class DormantBoxViewController: UIViewController, ViewControllerType {
+final class DormantBoxViewController: UIViewController, ViewControllerType {
+    private(set) var titleLabelView: UIView = {
+        let titleLabelView = UIView()
 
-    typealias Input = DormantBoxViewInput
-    typealias ViewModelType = DormantBoxViewModel
+        titleLabelView.layer.shadowColor = UIColor.black.cgColor
+        titleLabelView.layer.shadowOffset = .init(width: -4, height: 4)
+        titleLabelView.layer.shadowOpacity = 0.1
+        titleLabelView.layer.shadowRadius = 4
+        titleLabelView.layer.cornerRadius = 10
+        titleLabelView.translatesAutoresizingMaskIntoConstraints = false
+
+        let innerShadowLayer = CAShapeLayer()
+        let size = CGRect(x: 0, y: 0, width: 200, height: 100)
+        innerShadowLayer.frame = size
+        titleLabelView.layer.addSublayer(innerShadowLayer)
+
+        let path = UIBezierPath(roundedRect: size.insetBy(dx: -15, dy: -15), cornerRadius: 10)
+        let cutout = UIBezierPath(roundedRect: size, cornerRadius: 10).reversing()
+        path.append(cutout)
+
+        innerShadowLayer.cornerRadius = 10
+        innerShadowLayer.shadowPath = path.cgPath
+        innerShadowLayer.masksToBounds = true
+        innerShadowLayer.shadowColor = UIColor.black.cgColor
+        innerShadowLayer.shadowOffset = .init(width: -3, height: 3)
+        innerShadowLayer.shadowOpacity = 0.07
+        innerShadowLayer.shadowRadius = 4
+        innerShadowLayer.fillRule = .evenOdd
+
+        titleLabelView.backgroundColor = UIColor(named: "FixedFileItemBackgroundColor")
+
+        return titleLabelView
+    }()
+    private(set) lazy var titleLabel: UILabel = {
+        let titleLabel = UILabel()
+        titleLabel.numberOfLines = 0
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.lineSpacing = 0
+        paragraphStyle.lineBreakMode = .byWordWrapping
+        paragraphStyle.alignment = .left
+
+        titleAttributedString.append(
+            NSAttributedString(
+                string: "Dormant Box\n",
+                attributes: [
+                    .font: UIFont.systemFont(ofSize: 28, weight: .bold),
+                    .foregroundColor: UIColor.black,
+                ]
+            )
+        )
+
+        let w = ("-" as NSString).size(withAttributes: [.font: UIFont.systemFont(ofSize: 18)]).width
+        let c = Int(180 / w)
+
+        titleAttributedString.append(
+            NSAttributedString(
+                string: String(repeating: "-", count: c) + "\n",
+                attributes: [.font: UIFont.systemFont(ofSize: 18), .foregroundColor: UIColor.systemGray3]
+            )
+        )
+
+        titleAttributedString.addAttribute(
+            .paragraphStyle,
+            value: paragraphStyle,
+            range: NSRange(location: 0, length: titleAttributedString.length)
+        )
+
+        titleLabel.attributedText = titleAttributedString
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        return titleLabel
+    }()
+    private(set) var removedItemTableView: UITableView = {
+        let removedItemTableView = UITableView(frame: .zero, style: .plain)
+        removedItemTableView.translatesAutoresizingMaskIntoConstraints = false
+        removedItemTableView.separatorStyle = .none
+        removedItemTableView.backgroundColor = .clear
+        removedItemTableView.register(
+            RemovedItemView.self,
+            forCellReuseIdentifier: RemovedItemView.reuseIdentifier)
+        return removedItemTableView
+    }()
 
     var input = PassthroughSubject<DormantBoxViewInput, Never>()
     var viewModel: DormantBoxViewModel
     var subscriptions = Set<AnyCancellable>()
-    var removedItemCount: Int = 0 {
-        didSet {
-            self.totalFileCountLabel.text = "\(self.removedItemCount) files in total"
-        }
-    }
-
-    private let backgroundView: UIStackView = {
-        let bg = UIStackView()
-        bg.axis = .vertical
-        bg.backgroundColor = .systemBackground
-        bg.translatesAutoresizingMaskIntoConstraints = false
-        return bg
-    }()
-    private let headerStackView: UIStackView = {
-        let headerStackView = UIStackView()
-        headerStackView.axis = .horizontal
-        headerStackView.alignment = .center
-        headerStackView.spacing = 10
-        headerStackView.distribution = .fill
-        headerStackView.isLayoutMarginsRelativeArrangement = true
-        headerStackView.layoutMargins = .init(top: 10, left: 15, bottom: 10, right: 15)
-        return headerStackView
-    }()
-    private let titleLabel: UILabel = {
-        let titleLabel = UILabel()
-        titleLabel.text = "Dormant Box"
-        titleLabel.font = .boldSystemFont(ofSize: 26)
-        titleLabel.textColor = .label
-        return titleLabel
-    }()
-    private(set) var totalFileCountLabel: UILabel = {
-        let totalFileCountLabel = BasePaddingLabel(padding: .init(top: 10, left: 15, bottom: 20, right: 0))
-        return totalFileCountLabel
-    }()
-
-    private let backButton: UIButton = {
-        let backButton = UIButton(type: .system)
-        let config = UIImage.SymbolConfiguration(pointSize: 20)
-        let buttonImage = UIImage(systemName: "chevron.left", withConfiguration: config)
-        backButton.setImage(buttonImage, for: .normal)
-        backButton.tintColor = .label
-        return backButton
-    }()
-    private let tableView: UITableView = {
-        let tableView = UITableView(frame: .zero, style: .insetGrouped)
-        tableView.backgroundColor = .systemBackground
-        tableView.register(
-            DirectoryFileItemRowView.self,
-            forCellReuseIdentifier: DirectoryFileItemRowView.reuseIdentifier)
-        return tableView
-
-    }()
+    private var ds: DormantBoxTableViewDataSource?
+    private let titleAttributedString = NSMutableAttributedString()
+    private var fileInformationView: RemovedFileInformationPopupView?
 
     init(viewModel: DormantBoxViewModel) {
         self.viewModel = viewModel
@@ -86,64 +114,224 @@ class DormantBoxViewController: UIViewController, ViewControllerType {
             guard let self else { return }
 
             switch result {
-
-                case .didfetchMemoData(let itemCount):
-                    setupUI(itemCount: itemCount)
+                case .didfetchMemoData(let dormantBox):
+                    ds = DormantBoxTableViewDataSource(dormantBox: dormantBox)
+                    removedItemTableView.dataSource = ds
+                    removedItemTableView.reloadData()
+                    setupUI()
                     setupConstraints()
 
-                case .showFileInformation(let pageInfo):
-                    showFileInformation(pageInfo: pageInfo)
+                case .didCalcDormantBoxDirectoryInfo(let size):
+                    let formatter = ByteCountFormatter()
+                    formatter.countStyle = .file
+                    let totalSize = formatter.string(fromByteCount: size)
+                    let totalSizeString = "total size : \(totalSize)"
+                    let insertIndex = titleAttributedString.length
 
-                case .didRemovePageFromDormantBox(let index):
-                    removedItemCount -= 1
-                    tableView.deleteSections(.init(integer: index), with: .fade)
+                    titleAttributedString.insert(
+                        NSAttributedString(
+                            string: totalSizeString,
+                            attributes: [
+                                .font: UIFont.systemFont(ofSize: 16),
+                                .foregroundColor: UIColor.black,
+                            ]
+                        ), at: insertIndex)
+
+                    titleLabel.attributedText = titleAttributedString
+					
+				case .didRemovePageFromDormantBox(let index):
+					removedItemTableView.deleteRows(at: [IndexPath(row: index, section: 0)], with: .fade)
+
+                case .showFileInformation(let itemID, let itemName, let itemCreationDate, let c, let s):
+                    makePopupView(itemID: itemID, itemName: itemName, itemCreationDate: itemCreationDate, s: s)
+                    appendPageInfo(comps: c)
+                    presentPopupView()
+
+
+                case .showSingleAudioPageInformation(let itemID, let itemName, let itemCreationDate, let s, let c):
+                    makePopupView(itemID: itemID, itemName: itemName, itemCreationDate: itemCreationDate, s: s)
+                    appendAudioComponentInfo(c: c)
+                    presentPopupView()
+
+                case .showSingleTextPageInformation(let itemID, let itemName, let itemCreationDate, let s):
+                    makePopupView(itemID: itemID, itemName: itemName, itemCreationDate: itemCreationDate, s: s)
+                    presentPopupView()
+
+                case .showSingleTablePageInformation(
+                    let itemID, let itemName, let itemCreationDate, let s, let columns, let rows):
+                    makePopupView(itemID: itemID, itemName: itemName, itemCreationDate: itemCreationDate, s: s)
+                    appendTableComponentInfo(columns: columns, rows: rows)
+                    presentPopupView()
             }
         }
         .store(in: &subscriptions)
     }
 
-    private func setupUI(itemCount: Int) {
-        removedItemCount = itemCount
-        view.backgroundColor = .systemBackground
-        view.addSubview(backgroundView)
-
-        backButton.throttleTapPublisher()
-            .sink { _ in self.navigationController?.popViewController(animated: true) }
-            .store(in: &subscriptions)
-
-        headerStackView.addArrangedSubview(backButton)
-        headerStackView.addArrangedSubview(titleLabel)
-        headerStackView.addArrangedSubview(UIView.spacerView)
-
-        backgroundView.addArrangedSubview(headerStackView)
-        backgroundView.addArrangedSubview(totalFileCountLabel)
-        totalFileCountLabel.text = "\(itemCount) files in total"
-        totalFileCountLabel.textAlignment = .left
-
-        tableView.dataSource = viewModel
-        tableView.delegate = self
-
-        backgroundView.addArrangedSubview(tableView)
+    private func setupUI() {
+        view.backgroundColor = UIColor(named: "FixedFileItemBackgroundColor")
+        titleLabelView.addSubview(titleLabel)
+        view.addSubview(titleLabelView)
+        view.addSubview(removedItemTableView)
+        removedItemTableView.delegate = self
     }
 
     private func setupConstraints() {
-        backgroundView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor).isActive = true
-        backgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
-        backgroundView.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
-        backgroundView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor).isActive = true
+        NSLayoutConstraint.activate([
+            titleLabelView.heightAnchor.constraint(equalToConstant: 100),
+            titleLabelView.widthAnchor.constraint(equalToConstant: 200),
+            titleLabelView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
+            titleLabelView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+
+            titleLabel.topAnchor.constraint(equalTo: titleLabelView.topAnchor, constant: 5),
+            titleLabel.leadingAnchor.constraint(equalTo: titleLabelView.leadingAnchor, constant: 10),
+            titleLabel.trailingAnchor.constraint(equalTo: titleLabelView.trailingAnchor, constant: -10),
+            titleLabel.bottomAnchor.constraint(equalTo: titleLabelView.bottomAnchor, constant: -5),
+
+            removedItemTableView.topAnchor.constraint(equalTo: titleLabelView.bottomAnchor, constant: 30),
+            removedItemTableView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            removedItemTableView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            removedItemTableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+        ])
     }
 
-    private func showFileInformation(pageInfo: PageInformation) {
-        let fileInformationView = RemovedFileInformationPopupView(pageInformation: pageInfo)
-        fileInformationView.removeButtonPublisher
-            .sink { [weak self] id in
-                guard let id else { return }
-                self?.input.send(.willRemovePageFromDormantBox(id))
-            }
-            .store(in: &subscriptions)
-        fileInformationView.show()
+    private func makePopupView(itemID: UUID, itemName: String, itemCreationDate: Date, s: Int64) {
+        fileInformationView = RemovedFileInformationPopupView(
+            itemID: itemID, itemName: itemName, itemCreationDate: itemCreationDate)
+
+        let formatter = ByteCountFormatter()
+        formatter.countStyle = .file
+        let totalSize = formatter.string(fromByteCount: s)
+
+        fileInformationView?.attrString
+            .append(
+                NSAttributedString(
+                    string: "size",
+                    attributes: [
+                        .font: UIFont.systemFont(ofSize: 15, weight: .regular),
+                        .foregroundColor: UIColor.systemGray2,
+                    ]
+                )
+            )
+
+        fileInformationView?.attrString
+            .append(
+                NSAttributedString(
+                    string: "\n\(totalSize)",
+                    attributes: [
+                        .font: UIFont.systemFont(ofSize: 16, weight: .regular),
+                        .foregroundColor: UIColor.black,
+                    ]
+                )
+            )
     }
-    
+
+    private func appendTableComponentInfo(columns: [String], rows: Int) {
+        fileInformationView?.attrString
+            .append(
+                NSAttributedString(
+                    string: "\n\ncolumns",
+                    attributes: [
+                        .font: UIFont.systemFont(ofSize: 15, weight: .regular),
+                        .foregroundColor: UIColor.systemGray2,
+                    ]
+                )
+            )
+
+        fileInformationView?.attrString
+            .append(
+                NSAttributedString(
+                    string: "\n" + columns.joined(separator: ", "),
+                    attributes: [
+                        .font: UIFont.systemFont(ofSize: 16, weight: .regular),
+                        .foregroundColor: UIColor.black,
+                    ]
+                )
+            )
+
+        fileInformationView?.attrString
+            .append(
+                NSAttributedString(
+                    string: "\n\nrow",
+                    attributes: [
+                        .font: UIFont.systemFont(ofSize: 15, weight: .regular),
+                        .foregroundColor: UIColor.systemGray2,
+                    ]
+                )
+            )
+
+        fileInformationView?.attrString
+            .append(
+                NSAttributedString(
+                    string: "\n\(rows)",
+                    attributes: [
+                        .font: UIFont.systemFont(ofSize: 16, weight: .regular),
+                        .foregroundColor: UIColor.black,
+                    ]
+                )
+            )
+    }
+
+    private func appendAudioComponentInfo(c: Int) {
+        fileInformationView?.attrString
+            .append(
+                NSAttributedString(
+                    string: "\n\ntracks",
+                    attributes: [
+                        .font: UIFont.systemFont(ofSize: 15, weight: .regular),
+                        .foregroundColor: UIColor.systemGray2,
+                    ]
+                )
+            )
+
+        fileInformationView?.attrString
+            .append(
+                NSAttributedString(
+                    string: "\n\(c)",
+                    attributes: [
+                        .font: UIFont.systemFont(ofSize: 16, weight: .regular),
+                        .foregroundColor: UIColor.black,
+                    ]
+                )
+            )
+    }
+
+	private func appendPageInfo(comps: [ComponentType: Int]) {
+		fileInformationView?.attrString
+			.append(
+				NSAttributedString(
+					string: "\n\ncomponent",
+					attributes: [
+						.font: UIFont.systemFont(ofSize: 15, weight: .regular),
+						.foregroundColor: UIColor.systemGray2,
+					]
+				)
+			)
+		
+		fileInformationView?.attrString
+			.append(
+				NSAttributedString(
+					string: "\n" + "\(comps.map { k, v in "\(k.rawValue) : \(v)" }.joined(separator: "\n"))",
+                    attributes: [
+                        .font: UIFont.systemFont(ofSize: 16, weight: .regular),
+                        .foregroundColor: UIColor.black,
+                    ]
+                )
+            )
+    }
+	
+	private func presentPopupView() {
+		fileInformationView?.setInfoAttrString()
+
+		fileInformationView?.removeButtonPublisher
+			.sink { [weak self] id in
+				guard let id else { return }
+				self?.input.send(.willRemovePageFromDormantBox(id))
+			}
+			.store(in: &subscriptions)
+
+		fileInformationView?.show()
+	}
+
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
         if isMovingFromParent || isBeingDismissed {
@@ -153,17 +341,14 @@ class DormantBoxViewController: UIViewController, ViewControllerType {
 }
 
 extension DormantBoxViewController: UITableViewDelegate {
-
     func tableView(
         _ tableView: UITableView,
         trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath
     ) -> UISwipeActionsConfiguration? {
-
         let restoreFileButton =
-            UIContextualAction(style: .normal, title: "restore") { (_, _, success: @escaping (Bool) -> Void) in
-                self.input.send(.restoreFile(indexPath.section))
-                self.removedItemCount -= 1
-                tableView.deleteSections(.init(integer: indexPath.section), with: .fade)
+            UIContextualAction(style: .destructive, title: "restore") { (_, _, success: @escaping (Bool) -> Void) in
+                self.input.send(.restoreFile(indexPath.row))
+                tableView.deleteRows(at: [indexPath], with: .fade)
                 success(true)
             }
 
@@ -175,24 +360,8 @@ extension DormantBoxViewController: UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        input.send(.showFileInformation(indexPath.section))
+        input.send(.showFileInformation(indexPath.row))
     }
 
-    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat { 70 }
-
-    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat { 0 }
-
-    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
-        let view = UIView()
-        view.backgroundColor = .clear
-        return view
-    }
-
-    func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat { 13 }
-
-    func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
-        let view = UIView()
-        view.backgroundColor = .clear
-        return view
-    }
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat { 50 }
 }

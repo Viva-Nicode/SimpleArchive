@@ -11,8 +11,10 @@ protocol StorageItem: AnyObject, Hashable, Identifiable {
     var name: String { get set }
     var creationDate: Date { get }
     var parentDirectory: MemoDirectoryModel? { get set }
+    var itemColor: FileItemColor { get set }
 
     func getFileInformation() -> StorageItemInformationType
+    func getItemSize() -> Int64
     func getFilePath() -> String
 
     func persistToPersistentStorage(using persistence: StorageItemPersistenceCreatorType)
@@ -22,9 +24,25 @@ protocol StorageItem: AnyObject, Hashable, Identifiable {
 extension StorageItem {
     func getFilePath() -> String {
         if let parentDirectory {
-            parentDirectory.getFilePath() + ">" + name
+            parentDirectory.getFilePath() + " > " + name
         } else {
             name
         }
     }
+}
+
+protocol StorageItemInformationType {}
+
+struct DirectoryInformation: StorageItemInformationType {
+    var containedDirectoryCount: Int
+    var containedPageCount: Int
+}
+
+struct PageInformation: StorageItemInformationType {
+    var pageComponentCounts: [ComponentType: Int]
+}
+
+struct OperationResultItem<T> {
+    var index: Int
+    var item: T
 }

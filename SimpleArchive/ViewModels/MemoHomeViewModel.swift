@@ -1,9 +1,7 @@
 import Combine
 import UIKit
 
-@MainActor
-final class MemoHomeViewModel: NSObject, ViewModelType {
-
+@MainActor final class MemoHomeViewModel: NSObject {
     typealias Input = MemoHomeViewInput
     typealias Output = MemoHomeViewOutput
 
@@ -11,8 +9,7 @@ final class MemoHomeViewModel: NSObject, ViewModelType {
     private var errorOutput = PassthroughSubject<MemoHomeViewModelError, Never>()
     private var subscriptions = Set<AnyCancellable>()
 
-    private(set) var directoryStack: [MemoDirectoryModel] = []
-    private(set) var fixedFileDirectory: MemoDirectoryModel!
+    private var directoryStack = DirectoryStack()
 
     private var memoDirectoryCoredataReposotory: MemoDirectoryCoreDataRepositoryType
     private var memoPageCoredataReposotory: MemoPageCoreDataRepositoryType
@@ -23,88 +20,62 @@ final class MemoHomeViewModel: NSObject, ViewModelType {
     private var restoredPageListSubject = PassthroughSubject<[MemoPageModel], Never>()
     private var restoredPageListSubjectSubscription: AnyCancellable?
 
-    private var selectedTableindexToCheckFileInformation: Int?
-    private var fixedFileCollectionViewDataSource: FixedFileCollectionViewDataSource!
-    private var memoHomeDirectoryContentCellDataSources: [UUID: MemoHomeDirectoryContentCellDataSource] = [:]
+    private var memoHomeDirectoryContentCellDataSources: [UUID: DirectoryContentDataSource] = [:]
+    private var audioFileManager: AudioFileManagerType
+
+    private let uds = UserDefaultStack.shared
+    private let spacing = UIConstants.fileItemSpacing
+    private var info = DirectoryContentsRenderInfo()
 
     init(
         memoDirectoryCoredataReposotory: MemoDirectoryCoreDataRepositoryType,
         memoPageCoredataReposotory: MemoPageCoreDataRepositoryType,
         directoryCreator: any FileCreatorType,
-        pageCreator: any PageCreatorType
+        pageCreator: any PageCreatorType,
+        audioFileManager: AudioFileManagerType
     ) {
         self.memoDirectoryCoredataReposotory = memoDirectoryCoredataReposotory
         self.memoPageCoredataReposotory = memoPageCoredataReposotory
         self.directoryCreator = directoryCreator
         self.pageCreator = pageCreator
+        self.audioFileManager = audioFileManager
         super.init()
     }
 
     func subscribe(input: AnyPublisher<Input, Never>) -> AnyPublisher<Output, Never> {
         input.sink { [weak self] event in
             guard let self else { return }
-
             switch event {
-                case .viewDidLoad:
-                    fetchMemoData()
+                case .viewDidLoad: fetchMemoData()
+                case .willNavigateDormantBoxView: getDormantBoxViewModel()
+                case .willChangeFileName(let fileID, let newName): changeFileName(fileID: fileID, newName: newName)
+                case .willSortDirectoryItems(let sortBy): changeSortCriteria(sortBy: sortBy)
+                case .willCreatedNewDirectory(let newDirectoryName): createdNewDirectory(newDirectoryName)
+                case .willMoveToFollowingDirectory(let index): moveToFollowingDirectory(index: index)
+                case .willNavigatePageView(let pageIndex): moveToPage(followingPageIndex: pageIndex)
+                case .willMoveFileToDormantBox(let itemID): moveFileToDormantBox(itemID: itemID)
+                case .willManualAutoGrid: gridSortItems()
+                case .willSortManualOrder(let id, let frame): manualOrder(id, frame)
+                case .willCreatedNewPage(let newPageName, let type): createdNewPage(newPageName, type)
+                case .willMovePreviousDirectoryPath(let targetDirId): moveToPreviousDirectory(targetDirId)
+                case .willChangeFileItemColor(let id, let color): changeFileItemColor(id, color)
+                case .willPresentFileItemInfoView(let id): getFileItemInfo(itemID: id)
+                case .willCalcTotalInfo: calcHomeDirectoryInfo()
 
-                case .willMovePreviousDirectoryPath(let targetDirId):
-                    moveToPreviousDirectory(destinationDirectoryID: targetDirId)
-
-                case .willNavigateDormantBoxView:
-                    getDormantBoxViewModel()
-
-                case .willAppendPageToFixedTable(let dropedPages):
-                    fixPage(with: dropedPages)
-
-                case .willChangeFileName(let fileID, let newName):
-                    changeFileName(fileID: fileID, newName: newName)
-
-                case .willNavigateFixedPageView(let pageIndex):
-                    let followingPage = fixedFileDirectory[pageIndex] as! MemoPageModel
-                    moveToPage(followingPage: followingPage)
-
-                case .willSortDirectoryItems(let sortBy):
-                    changeSortCriteria(sortBy: sortBy)
-
-                case .willToggleAscendingOrder:
-                    toggleAscendingOrder()
             }
         }
         .store(in: &subscriptions)
-
         return output.eraseToAnyPublisher()
     }
 
-    func subscribe(input: AnyPublisher<MemoHomeSubViewInput, Never>) {
-        input.sink { [weak self] subViewEvent in
-            guard let self else { return }
-
-            switch subViewEvent {
-                case .willCreatedNewDirectory(let newDirectoryName):
-                    createdNewDirectory(newDirectoryName)
-
-                case .willCreatedNewPage(let newPageName, let type):
-                    createdNewPage(newPageName, singleComponentType: type)
-
-                case .willMoveToFollowingDirectory(let index):
-                    moveToFollowingDirectory(index: index)
-
-                case .willNavigatePageView(let pageIndex):
-                    let followingPage = directoryStack.last![pageIndex] as! MemoPageModel
-                    moveToPage(followingPage: followingPage)
-
-                case .willPresentFileInformationPopupView(let fileIndex):
-                    showFileInformation(fileIndexToShowInformation: fileIndex)
-
-                case .willMoveFileToDormantBox(let fileIndexToDelete):
-                    moveFileToDormantBox(idx: fileIndexToDelete)
-
-                case .willAppendPageToHomeTable(let dropedPages):
-                    unfixPage(with: dropedPages)
-            }
-        }
-        .store(in: &subscriptions)
+    func calcHomeDirectoryInfo() {
+        let size = getSizeDirectory(directory: directoryStack.stack.first!)
+        let info = directoryStack.stack.first!.getFileInformation() as! DirectoryInformation
+        output.send(
+            .didCalcMainDirectoryInfo(
+                size, info.containedDirectoryCount, info.containedPageCount
+            )
+        )
     }
 
     func errorSubscribe() -> AnyPublisher<MemoHomeViewModelError, Never> {
@@ -119,99 +90,140 @@ final class MemoHomeViewModel: NSObject, ViewModelType {
                         self.errorOutput.send(.canNotLoadMemoData)
                     }
                 },
-                receiveValue: { systemDirectories in
-                    self.directoryStack = [systemDirectories[.mainDirectory]!]
-                    self.fixedFileDirectory = systemDirectories[.fixedFileDirectory]
-                    self.fixedFileCollectionViewDataSource =
-                        FixedFileCollectionViewDataSource(fixedFileDirectory: self.fixedFileDirectory)
-                    self.output.send(
-                        .didFetchMemoData(
-                            self.directoryStack.first!.id,
-                            self.directoryStack.first!.getSortBy(),
-                            self.fixedFileCollectionViewDataSource,
-                            systemDirectories[.mainDirectory]!.getChildItemSize()
-                        )
-                    )
+                receiveValue: { [self] systemDirectories in
+                    let mainDirectory = systemDirectories[.mainDirectory]!
+                    directoryStack.stack = [mainDirectory]
+
+                    Task.detached {
+                        let size = await self.getSizeDirectory(directory: mainDirectory)
+                        let dirInfo = mainDirectory.getFileInformation() as! DirectoryInformation
+
+                        await MainActor.run { [size, dirInfo] in
+                            self.output.send(
+                                .didCalcMainDirectoryInfo(
+                                    size, dirInfo.containedDirectoryCount, dirInfo.containedPageCount)
+                            )
+                        }
+                    }
+
+                    info = uds.get(keyTypes: .FileItemManualOrder)!
+                    output.send(.didFetchMemoData(directoryStack, info))
                 }
             )
             .store(in: &subscriptions)
     }
 
+    private func syncFileItemAsLocationInfo() {
+        var q: [MemoDirectoryModel] = []
+        q.append(directoryStack.stack.first!)
+
+        while !q.isEmpty {
+            let dir = q.popLast()!
+            for (i, item) in dir.items.enumerated() {
+                if let subDir = item as? MemoDirectoryModel { q.append(subDir) }
+                if !info[dir.id].map({ $0.id }).contains(item.id) {
+                    let z = Double((info[dir.id].map { $0.frame.z }.max() ?? 0) + 1)
+                    let ro = makeItemRenderInfo(item.id, i, z, dir.sortBy)
+                    info[dir.id].append(ro)
+                }
+            }
+        }
+    }
+
     private func createdNewDirectory(_ newDirectoryName: String) {
         let newDirectory = directoryCreator.createFile(
             itemName: newDirectoryName,
-            parentDirectory: directoryStack.last!)
-        let insertedIndex = directoryStack.last![newDirectory.id]!.index
+            parentDirectory: directoryStack.stack.last!)
 
-        memoDirectoryCoredataReposotory.createStorageItem(storageItem: newDirectory)
-        output.send(.didInsertRowToHomeTable(directoryStack.count - 1, [insertedIndex]))
+        let i = info[directoryStack.stack.last!.id].count
+        let z = Double((info[directoryStack.stack.last!.id].map { $0.frame.z }.max() ?? 0) + 1)
+        let ro = makeItemRenderInfo(newDirectory.id, i, z, directoryStack.stack.last!.sortBy)
+
+        info[directoryStack.stack.last!.id].append(ro)
+        info[newDirectory.id] = []
+
+        if let insertedIndex = directoryStack.stack.last!.items.firstIndex(where: { $0.id == newDirectory.id }) {
+            memoDirectoryCoredataReposotory.createStorageItem(storageItem: newDirectory, infos: info)
+            output.send(.didInsertRowToHomeTable(directoryStack.stack.count - 1, [insertedIndex]))
+        }
     }
 
-    private func createdNewPage(_ newPageName: String, singleComponentType: ComponentType? = nil) {
+    private func createdNewPage(_ newPageName: String, _ singleComponentType: ComponentType? = nil) {
         if let singleComponentType {
             pageCreator.setFirstComponentType(type: singleComponentType)
             let newPage = pageCreator.createFile(
                 itemName: newPageName,
-                parentDirectory: directoryStack.last!,
+                parentDirectory: directoryStack.stack.last!,
                 singleComponentType: singleComponentType)
-            let insertedIndex = directoryStack.last![newPage.id]!.index
 
-            memoDirectoryCoredataReposotory.createStorageItem(storageItem: newPage)
-            output.send(.didInsertRowToHomeTable(directoryStack.count - 1, [insertedIndex]))
+            let i = info[directoryStack.stack.last!.id].count
+            let z = Double((info[directoryStack.stack.last!.id].map { $0.frame.z }.max() ?? 0) + 1)
+            let ro = makeItemRenderInfo(newPage.id, i, z, directoryStack.stack.last!.sortBy)
+
+            info[directoryStack.stack.last!.id].append(ro)
+
+            if let insertedIndex = directoryStack.stack.last?[newPage.id]?.index {
+                memoDirectoryCoredataReposotory.createStorageItem(storageItem: newPage, infos: info)
+                output.send(.didInsertRowToHomeTable(directoryStack.stack.count - 1, [insertedIndex]))
+            }
         } else {
             pageCreator.setFirstComponentType(type: .text)
-            let newPage = pageCreator.createFile(itemName: newPageName, parentDirectory: directoryStack.last!)
-            let insertedIndex = directoryStack.last![newPage.id]!.index
+            let newPage = pageCreator.createFile(itemName: newPageName, parentDirectory: directoryStack.stack.last!)
+            let i = info[directoryStack.stack.last!.id].count
+            let z = Double((info[directoryStack.stack.last!.id].map { $0.frame.z }.max() ?? 0) + 1)
+            let ro = makeItemRenderInfo(newPage.id, i, z, directoryStack.stack.last!.sortBy)
 
-            memoDirectoryCoredataReposotory.createStorageItem(storageItem: newPage)
-            output.send(.didInsertRowToHomeTable(directoryStack.count - 1, [insertedIndex]))
+            info[directoryStack.stack.last!.id].append(ro)
+
+            if let insertedIndex = directoryStack.stack.last?[newPage.id]?.index {
+                memoDirectoryCoredataReposotory.createStorageItem(storageItem: newPage, infos: info)
+                output.send(.didInsertRowToHomeTable(directoryStack.stack.count - 1, [insertedIndex]))
+            }
         }
     }
 
     private func moveToFollowingDirectory(index: Int) {
-        let followingDirectory = directoryStack.last![index] as! MemoDirectoryModel
-        directoryStack.append(followingDirectory)
+        let followingDirectory = directoryStack.stack.last!.items[index] as! MemoDirectoryModel
+        directoryStack.stack.append(followingDirectory)
         output.send(
             .didMoveToFollowingDirectory(
                 followingDirectory.name,
                 followingDirectory.id,
-                followingDirectory.getSortBy(),
-                followingDirectory.getChildItemSize()
+                followingDirectory.sortBy,
             )
         )
     }
 
-    private func moveToPreviousDirectory(destinationDirectoryID: UUID) {
-        let destinationDirectoryIndex = directoryStack.firstIndex(where: { $0.id == destinationDirectoryID })!
-        guard destinationDirectoryIndex < directoryStack.count - 1 else { return }
+    private func moveToPreviousDirectory(_ destinationDirectoryID: UUID) {
+        let destinationDirectoryIndex = directoryStack.stack.firstIndex(where: { $0.id == destinationDirectoryID })!
+        guard destinationDirectoryIndex < directoryStack.stack.count - 1 else { return }
 
-        let directoryStackLastIndex = directoryStack.count - 1
-        directoryStack.removeLast(directoryStackLastIndex - destinationDirectoryIndex)
+        let directoryStackLastIndex = directoryStack.stack.count - 1
+        directoryStack.stack.removeLast(directoryStackLastIndex - destinationDirectoryIndex)
 
         output.send(
             .didMovePreviousDirectoryPath(
                 Array(((destinationDirectoryIndex + 1)...directoryStackLastIndex)),
-                directoryStack.last!.getSortBy(),
-                directoryStack.last!.getChildItemSize()
+                directoryStack.stack.last!.sortBy
             )
         )
     }
 
-    private func moveToPage(followingPage: MemoPageModel) {
+    private func moveToPage(followingPageIndex: Int) {
+        let followingPage = directoryStack.stack.last!.items[followingPageIndex] as! MemoPageModel
         if followingPage.isSingleComponentPage {
-            if let textEditorComponent = followingPage.getComponents.first as? TextEditorComponent {
+            let pageName = followingPage.name
+            if let textEditorComponent = followingPage.components.first as? TextEditorComponent {
                 DIContainer.shared.setArgument(TextEditorComponentViewModel.self, textEditorComponent)
                 let viewModel = DIContainer.shared.resolve(TextEditorComponentViewModel.self)
-                output.send(.didNavigateSingleTextEditorComponentPageView(viewModel, textEditorComponent))
-            } else if let tableComponent = followingPage.getComponents.first as? TableComponent {
+                output.send(.didNavigateSingleTextEditorComponentPageView(viewModel, textEditorComponent, pageName))
+            } else if let tableComponent = followingPage.components.first as? TableComponent {
                 DIContainer.shared.setArgument(TableComponentViewModel.self, tableComponent)
                 let viewModel = DIContainer.shared.resolve(TableComponentViewModel.self)
-                let pageName = followingPage.name
                 output.send(.didNavigateSingleTableComponentPageView(viewModel, tableComponent, pageName))
-            } else if let audioComponent = followingPage.getComponents.first as? AudioComponent {
+            } else if let audioComponent = followingPage.components.first as? AudioComponent {
                 DIContainer.shared.setArgument(AudioComponentViewModel.self, audioComponent)
                 let viewModel = DIContainer.shared.resolve(AudioComponentViewModel.self)
-                let pageName = followingPage.name
                 output.send(.didNavigateSingleAudioComponentPageView(viewModel, audioComponent, pageName))
             }
         } else {
@@ -221,17 +233,303 @@ final class MemoHomeViewModel: NSObject, ViewModelType {
         }
     }
 
-    private func showFileInformation(fileIndexToShowInformation: Int) {
-        let file = directoryStack.last![fileIndexToShowInformation]!
-        selectedTableindexToCheckFileInformation = fileIndexToShowInformation
-        output.send(.didPresentFileInformationPopupView(file.getFileInformation()))
+    private func getSizeDirectory(directory: MemoDirectoryModel) -> Int64 {
+        var q: [MemoDirectoryModel] = []
+        var size: Int64 = directory.getItemSize()
+
+        while !q.isEmpty {
+            let dir = q.popLast()!
+            for item in dir.items {
+                if let subDir = item as? MemoDirectoryModel {
+                    q.append(subDir)
+                    continue
+                } else if let page = item as? MemoPageModel {
+                    size += getAudioComponentSize(page: page)
+                }
+            }
+        }
+        return size
     }
 
-    private func moveFileToDormantBox(idx fileIndexToDelete: Int) {
-        let targetItem = directoryStack.last![fileIndexToDelete]!
-        targetItem.removeStorageItem()
-        memoDirectoryCoredataReposotory.moveFileToDormantBox(fileID: targetItem.id)
-        output.send(.didMoveFileToDormantBox(fileIndexToDelete))
+    private func getAudioComponentSize(page: MemoPageModel) -> Int64 {
+        page.components.compactMap { $0 as? AudioComponent }
+            .map {
+                $0.componentContents.tracks
+                    .map { audioFileManager.makeAudioTrackAppSandBoxURL(audioTrack: $0) }
+                    .map { audioFileManager.readAudioFileSize(audioURL: $0) }
+                    .reduce(0, +)
+            }
+            .reduce(0, +)
+    }
+
+    private func getFileItemSize(itemID: UUID) -> (Int, Int64)? {
+        guard let directory = directoryStack.stack.last else { return nil }
+
+        if let itemIndex = directory.items.firstIndex(where: { $0.id == itemID }) {
+            if let page = directory.items[itemIndex] as? MemoPageModel {
+                let size: Int64 = page.getItemSize() + getAudioComponentSize(page: page)
+                return (itemIndex, size)
+            } else if let directory = directory.items[itemIndex] as? MemoDirectoryModel {
+                return (itemIndex, getSizeDirectory(directory: directory))
+            }
+        }
+        return nil
+    }
+
+    private func getAudioTotalDuration(itemID: UUID) -> Double {
+        guard let directory = directoryStack.stack.last else { return 0 }
+        if let itemIndex = directory.items.firstIndex(where: { $0.id == itemID }) {
+            if let page = directory.items[itemIndex] as? MemoPageModel {
+                if let ac = page.components.first as? AudioComponent {
+                    return ac.componentContents.tracks
+                        .map { audioFileManager.makeAudioTrackAppSandBoxURL(audioTrack: $0) }
+                        .compactMap { audioFileManager.readAudioMetadata(audioURL: $0).duration }
+                        .reduce(0, +)
+                }
+            }
+        }
+        return 0
+    }
+
+    private func getFileItemInfo(itemID: UUID) {
+        guard let directory = directoryStack.stack.last else { return }
+
+        Task.detached {
+            if let (index, size) = await self.getFileItemSize(itemID: itemID) {
+                await MainActor.run {
+                    self.output.send(.didCalcFileItemSize(index, size))
+                }
+            }
+        }
+
+        if let itemIndex = directory.items.firstIndex(where: { $0.id == itemID }) {
+            if let page = directory.items[itemIndex] as? MemoPageModel {
+                if page.isSingleComponentPage == true {
+                    if let ac = page.components.first as? AudioComponent {
+                        let totalAudioCount = ac.componentContents.tracks.count
+                        output.send(
+                            .didPresentSingleAudioPageInfoView(
+                                itemIndex, totalAudioCount, getAudioTotalDuration(itemID: page.id)
+                            )
+                        )
+                    } else if let tec = page.components.first as? TextEditorComponent {
+                        if #available(iOS 26.0, *) {
+                            let m = TextMemoContentsSummaryGeneratingModel()
+                            Task.detached {
+                                let summary = await m.summation(input: tec.componentContents)
+                                await MainActor.run {
+                                    self.output.send(.didGenertingTextComponentSummary(itemIndex, summary))
+                                }
+                            }
+                        }
+                        if let mrsd = tec.snapshots.sorted(by: { $0.makingDate > $1.makingDate }).first?.makingDate {
+                            output.send(.didGetMostRecentSnapshotDate(itemIndex, mrsd.formattedDate))
+                        }
+                    } else if let tc = page.components.first as? TableComponent {
+                        output.send(
+                            .didPresentTableInfo(
+                                itemIndex,
+                                tc.componentContents.columns.map { $0.title },
+                                tc.componentContents.cellValues.count
+                            )
+                        )
+                        if let mrsd = tc.snapshots.sorted(by: { $0.makingDate > $1.makingDate }).first?.makingDate {
+                            output.send(.didGetMostRecentSnapshotDate(itemIndex, mrsd.formattedDate))
+                        }
+                    }
+                } else {
+                    let info = page.getFileInformation() as! PageInformation
+                    output.send(.didPresentPageInfoView(itemIndex, info.pageComponentCounts))
+                }
+            } else if let directory = directory.items[itemIndex] as? MemoDirectoryModel {
+                let info = directory.getFileInformation() as! DirectoryInformation
+                output.send(
+                    .didPresentDirectoryInfoView(
+                        itemIndex, info.containedDirectoryCount, info.containedPageCount
+                    )
+                )
+            }
+        }
+    }
+
+    private func manualOrder(_ id: UUID, _ frame: CGRect) {
+        if let currentDirectory = directoryStack.stack.last,
+            let ii = info[currentDirectory.id].firstIndex(where: { $0.id == id })
+        {
+            currentDirectory.sortBy = .manual
+
+            for (i, v) in info[currentDirectory.id].enumerated() {
+                if v.frame == .origin {
+                    if let index = currentDirectory.items.firstIndex(where: { $0.id == v.id }) {
+                        let size = UIConstants.ItemSize.small.size
+                        let xOffset = size.width * CGFloat(index % 4) + spacing * Double(index % 4 + 1)
+                        let yOffset = size.height * CGFloat(index / 4) + spacing * Double(index / 4 + 1)
+                        let r = CodableCGRect(
+                            x: xOffset, y: yOffset, z: Double(index),
+                            w: UIConstants.ItemSize.small.size.width,
+                            h: UIConstants.ItemSize.small.size.height)
+                        info[currentDirectory.id][i].frame = .manual(r)
+                    }
+                }
+            }
+
+            info[currentDirectory.id][ii].frame = .manual(
+                CodableCGRect(
+                    x: frame.minX, y: frame.minY, z: info[currentDirectory.id].map { $0.frame.z }.max()! + 1,
+                    w: frame.width, h: frame.height)
+            )
+
+            memoDirectoryCoredataReposotory.moveItemOrder(directoryID: currentDirectory.id, infos: info)
+            output.send(.didSortManualOrder)
+        }
+    }
+
+    private func gridSortItems() {
+        if let cd = directoryStack.stack.last, cd.sortBy == .manual {
+            var currentInfos = info[cd.id]
+            var dp = Array(repeating: Array(repeating: -1, count: 12), count: currentInfos.count * 6)
+            var dp2: [(UUID, Double, Double, Double)] = []
+
+            func checkIsEmptyDP(baseX: Int, baseY: Int, c: Int, r: Int) -> Bool {
+                guard 12 > baseX + r - 1 else { return false }
+                for y in baseY..<baseY + c {
+                    for x in baseX..<baseX + r {
+                        if dp[y][x] != -1 { return false }
+                    }
+                }
+                return true
+            }
+
+            func markDP(baseX: Int, baseY: Int, c: Int, r: Int, markNum: Int) {
+                for y in baseY..<baseY + c {
+                    for x in baseX..<baseX + r {
+                        dp[y][x] = markNum
+                    }
+                }
+            }
+
+            for i in 0..<currentInfos.count {
+                if case .manual(let frame) = currentInfos[i].frame {
+                    let x = frame.x
+                    let nearX = Double(Int(x / 30)) * 30
+                    let nearX2 = Double(Int(x / 30 + 1)) * 30
+                    let expectedX = abs(x - nearX) > abs(x - nearX2) ? nearX2 : nearX
+
+                    let y = frame.y
+                    let nearY = Double(Int(y / 30)) * 30
+                    let nearY2 = Double(Int(y / 30) + 1) * 30
+                    let expectedY = abs(y - nearY) > abs(y - nearY2) ? nearY2 : nearY
+
+                    let distance = abs(expectedX - x) + abs(expectedY - y)
+                    dp2.append((currentInfos[i].id, expectedX, expectedY, distance))
+                }
+            }
+
+            dp2.sort { $0.2 != $1.2 ? $0.2 < $1.2 : $0.1 != $1.1 ? $0.1 < $1.1 : $0.3 < $1.3 }
+
+            currentInfos.sort { l, r in
+                dp2.firstIndex(where: { $0.0 == l.id })! < dp2.firstIndex(where: { $0.0 == r.id })!
+            }
+
+            var dp3: [(Int, Int, Int, Int)] = []
+
+            for i in 0..<currentInfos.count {
+                if case .manual(let frame) = currentInfos[i].frame {
+                    let sizes: [UIConstants.ItemSize] = [.small, .medium, .large, .bar]
+                    let difs = sizes.map { abs($0.size.width - frame.w) + abs($0.size.height - frame.h) }
+                    let closestSize = sizes[difs.indices.min(by: { difs[$0] < difs[$1] })!]
+
+                    loop: for ii in 0..<dp.count {
+                        for iii in 0..<dp[ii].count {
+                            if closestSize == .small, checkIsEmptyDP(baseX: iii, baseY: ii, c: 3, r: 3) {
+                                markDP(baseX: iii, baseY: ii, c: 3, r: 3, markNum: i)
+                                dp3.append((ii, iii, 3, 3))
+                            } else if closestSize == .medium, checkIsEmptyDP(baseX: iii, baseY: ii, c: 4, r: 4) {
+                                markDP(baseX: iii, baseY: ii, c: 4, r: 4, markNum: i)
+                                dp3.append((ii, iii, 4, 4))
+                            } else if closestSize == .bar, checkIsEmptyDP(baseX: iii, baseY: ii, c: 3, r: 5) {
+                                markDP(baseX: iii, baseY: ii, c: 3, r: 5, markNum: i)
+                                dp3.append((ii, iii, 5, 3))
+                            } else if closestSize == .large, checkIsEmptyDP(baseX: iii, baseY: ii, c: 5, r: 5) {
+                                markDP(baseX: iii, baseY: ii, c: 5, r: 5, markNum: i)
+                                dp3.append((ii, iii, 5, 5))
+                            } else {
+                                continue
+                            }
+                            break loop
+                        }
+                    }
+                }
+            }
+
+            for i in 0..<dp.count {
+                if dp[i].allSatisfy({ $0 == -1 }) { break }
+                for ii in 0..<dp[i].count {
+                    if dp[i][ii] == -1 {
+                        dp[i][ii] = -2
+                    }
+                }
+            }
+
+            for i in 0..<currentInfos.count {
+                let (c, r, w, h) = dp3[i]
+                var xOffset: Double = 0
+                var yOffset: Double = 0
+
+                if let mx = dp[c..<c + h].map({ $0[0..<r].filter { $0 != -1 }.count }).max() {
+                    xOffset = Double(mx * 30)
+                }
+                if let msx = dp[c..<c + h].map({ Set($0[0...r].filter { $0 != -1 || $0 != -2 }).count }).max() {
+                    xOffset += Double(msx) * spacing
+                }
+
+                var mys = 0
+                var my = 0
+                for ii in r..<r + w {
+                    var temp = 0
+                    var temps: [Int] = []
+                    for iiiii in 0..<c {
+                        if dp[iiiii][ii] != -1 {
+                            temp += 1
+                        }
+                        if dp[iiiii][ii] != -1 && dp[iiiii][ii] != -2 {
+                            temps.append(dp[iiiii][ii])
+                        }
+                    }
+
+                    my = max(my, temp)
+                    mys = max(mys, Set(temps).count + 1)
+                }
+
+                yOffset = Double(my * 30)
+                yOffset += Double(mys) * spacing
+
+                let rect = CodableCGRect(
+                    x: xOffset, y: yOffset, z: 1,
+                    w: Double(w * 30),
+                    h: Double(h * 30)
+                )
+                currentInfos[i].frame = .manual(rect)
+            }
+
+            info[cd.id] = currentInfos
+            memoDirectoryCoredataReposotory.moveItemOrder(directoryID: cd.id, infos: info)
+            output.send(.didManualAutoGrid)
+        }
+    }
+
+    private func moveFileToDormantBox(itemID: UUID) {
+        if let itemIndex = directoryStack.stack.last?.items.firstIndex(where: { $0.id == itemID }) {
+            let item = directoryStack.stack.last!.items[itemIndex]
+            item.removeStorageItem()
+            memoDirectoryCoredataReposotory.moveFileToDormantBox(fileID: item.id)
+            if let idx = info[directoryStack.stack.last!.id].firstIndex(where: { $0.id == item.id }) {
+                var newInfo = info[directoryStack.stack.last!.id]
+                newInfo.remove(at: idx)
+                info[directoryStack.stack.last!.id] = newInfo
+            }
+            output.send(.didMoveFileToDormantBox(itemIndex))
+        }
     }
 
     private func getDormantBoxViewModel() {
@@ -241,11 +539,20 @@ final class MemoHomeViewModel: NSObject, ViewModelType {
                 guard let self else { return }
 
                 for page in restoredPageList {
-                    page.parentDirectory = directoryStack.first!
-                    page.parentDirectory?.insertChildItem(item: page)
+                    page.parentDirectory = directoryStack.stack.first!
+                    page.parentDirectory?.items.append(page)
+
+                    let i = info[directoryStack.stack.first!.id].count
+                    let z = Double((info[directoryStack.stack.first!.id].map { $0.frame.z }.max() ?? 0) + 1)
+                    let ro = makeItemRenderInfo(page.id, i, z, directoryStack.stack.last!.sortBy)
+
+                    info[directoryStack.stack.last!.id].append(ro)
                 }
 
-                let insertedIndices = restoredPageList.map { self.directoryStack.first![$0.id]!.index }
+                let insertedIndices = restoredPageList.map { restoredPage in
+                    self.directoryStack.stack.first!.items.firstIndex(where: { $0.id == restoredPage.id })!
+                }
+
                 output.send(.didInsertRowToHomeTable(.zero, insertedIndices))
             }
 
@@ -255,130 +562,134 @@ final class MemoHomeViewModel: NSObject, ViewModelType {
         output.send(.didNavigateDormantBoxView(dormantBoxViewModel))
     }
 
-    private func fixPage(with dropedPageIdsInFixedTable: [UUID]) {
-        memoPageCoredataReposotory.fixPages(pageIds: dropedPageIdsInFixedTable)
-
-        var insertRowIndexPaths = [IndexPath]()
-        var deleteRowIndexPaths = [IndexPath]()
-
-        for pageId in dropedPageIdsInFixedTable {
-            if let page = directoryStack.last![pageId] {
-
-                deleteRowIndexPaths.append(IndexPath(row: 0, section: page.index))
-                let deletedPage = directoryStack.last!.removeChildItemByID(with: pageId)
-
-                if let deletedPage {
-                    deletedPage.parentDirectory = nil
-                    deletedPage.parentDirectory = fixedFileDirectory
-                    deletedPage.parentDirectory?.insertChildItem(item: deletedPage)
-                }
-            }
-
-            if let item = fixedFileDirectory[pageId] {
-                insertRowIndexPaths.append(IndexPath(item: item.index, section: 0))
-            }
-        }
-        output.send(
-            .didAppendPageToFixedTable(
-                directoryStack.count - 1,
-                insertRowIndexPaths,
-                deleteRowIndexPaths
-            )
-        )
-    }
-
-    private func unfixPage(with dropedpagesInHomeTable: [UUID]) {
-        memoPageCoredataReposotory.unfixPages(
-            parentDirectoryId: directoryStack.last!.id,
-            pageIds: dropedpagesInHomeTable)
-
-        var insertRowIndexPaths = [IndexPath]()
-        var deleteRowIndexPaths = [IndexPath]()
-
-        for pageId in dropedpagesInHomeTable {
-            if let item = fixedFileDirectory[pageId] {
-                deleteRowIndexPaths.append(IndexPath(item: item.index, section: .zero))
-                let removedPage = fixedFileDirectory.removeChildItemByID(with: item.item.id)
-
-                if let removedPage {
-                    removedPage.parentDirectory = nil
-                    removedPage.parentDirectory = directoryStack.last!
-                    removedPage.parentDirectory?.insertChildItem(item: removedPage)
-                }
-            }
-
-            if let item = directoryStack.last?[pageId] {
-                insertRowIndexPaths.append(IndexPath(row: 0, section: item.index))
-            }
-        }
-        output.send(
-            .didAppendPageToHomeTable(
-                directoryStack.count - 1,
-                insertRowIndexPaths,
-                deleteRowIndexPaths
-            )
-        )
-    }
-
     private func changeFileName(fileID: UUID, newName: String) {
-        guard
-            let directory = directoryStack.last,
-            let fileIndexBeforeRename = selectedTableindexToCheckFileInformation
-        else { return }
+        guard let directory = directoryStack.stack.last else { return }
 
-        memoDirectoryCoredataReposotory.saveFileNameChange(fileID: fileID, newName: newName)
-        let fileIndexAfterRename = directory.renameChildFile(fileID: fileID, newName: newName)!
-        output.send(.didChangedFileName(newName, fileIndexBeforeRename, fileIndexAfterRename))
+        if let index = directory.items.firstIndex(where: { $0.id == fileID }) {
+            directory.items[index].name = newName
+            memoDirectoryCoredataReposotory.saveFileNameChange(fileID: fileID, newName: newName)
+        }
+    }
+
+    private func changeFileItemColor(_ id: UUID, _ color: FileItemColor) {
+        guard let directory = directoryStack.stack.last else { return }
+        if let index = directory.items.firstIndex(where: { $0.id == id }) {
+            directory.items[index].itemColor = color
+            memoDirectoryCoredataReposotory.saveFileItemColor(fileID: id, color: color)
+        }
     }
 
     private func changeSortCriteria(sortBy: DirectoryContentsSortCriterias) {
-        let sortingResult = directoryStack.last!.setSortCriteria(sortBy)
+        let before = directoryStack.stack.last!.items.map { $0.id }
+
+        directoryStack.stack.last!.sortBy = sortBy
+        directoryStack.stack.last!.sortItems()
+
+        var sortedInfos: [ItemRenderInfo] = []
+
+        for item in directoryStack.stack.last!.items {
+            if var first = info[directoryStack.stack.last!.id].first(where: { $0.id == item.id }) {
+                first.frame = .origin
+                sortedInfos.append(first)
+            }
+        }
+
+        info[directoryStack.stack.last!.id] = sortedInfos
+
+        let aftre = directoryStack.stack.last!.items.map { $0.id }
+        let sortingResult = before.map { aftre.firstIndex(of: $0)! }.map { Int($0) }
 
         memoDirectoryCoredataReposotory.saveFileSortCriteria(
-            fileID: directoryStack.last!.id, newSortCriteria: sortBy)
+            fileID: directoryStack.stack.last!.id,
+            newSortCriteria: sortBy,
+            infos: info)
+
         output.send(.didSortDirectoryItems(sortingResult))
     }
+	
+	private func makeItemRenderInfo(
+		_ id: UUID, _ i: Int, _ z: Double, _ sortBy: DirectoryContentsSortCriterias
+	) -> ItemRenderInfo {
+		let xOffset = Double((UIConstants.ItemSize.small.size.width + spacing) * Double(i % 4))
+		let yOffset = Double((UIConstants.ItemSize.small.size.width + spacing) * Double(i / 4))
+		let r = CodableCGRect(
+			x: xOffset, y: yOffset, z: z,
+			w: UIConstants.ItemSize.small.size.width, h: UIConstants.ItemSize.small.size.height)
 
-    private func toggleAscendingOrder() {
-        let sortingResult = directoryStack.last!.toggleAscending()
-        output.send(.didSortDirectoryItems(sortingResult))
+		return ItemRenderInfo(id: id, frame: sortBy == .manual ? .manual(r) : .origin)
+	}
+}
+
+final class DirectoryStack: AnyObject {
+    var stack: [MemoDirectoryModel] = []
+}
+
+final class DirectoryContentsRenderInfo: AnyObject, Codable {
+    private var info: [UUID: [ItemRenderInfo]] = [:]
+
+    init(info: [UUID: [ItemRenderInfo]] = [:]) {
+        self.info = info
+    }
+
+    subscript(_ id: UUID) -> [ItemRenderInfo] {
+        get { info[id, default: []] }
+        set(newValue) { info[id] = newValue }
     }
 }
 
-extension MemoHomeViewModel: UICollectionViewDataSource {
-
-    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        directoryStack.count
-    }
-
-    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell
-    {
-        let cell =
-            collectionView.dequeueReusableCell(
-                withReuseIdentifier: MemoHomeDirectoryContentCell.reuseIdentifier,
-                for: indexPath) as! MemoHomeDirectoryContentCell
-        let subject = PassthroughSubject<MemoHomeSubViewInput, Never>()
-
-        subscribe(input: subject.eraseToAnyPublisher())
-
-        let datasourceContent = directoryStack[indexPath.item]
-        let datasource = MemoHomeDirectoryContentCellDataSource(
-            directoryContents: datasourceContent,
-            input: subject)
-        memoHomeDirectoryContentCellDataSources[datasourceContent.id] = datasource
-        cell.configure(datasource: datasource)
-        return cell
-    }
+enum MemoHomeViewInput {
+    case viewDidLoad
+    case willCalcTotalInfo
+    case willMovePreviousDirectoryPath(UUID)
+    case willNavigateDormantBoxView
+    case willChangeFileName(UUID, String)
+    case willSortDirectoryItems(DirectoryContentsSortCriterias)
+    case willCreatedNewDirectory(String)
+    case willCreatedNewPage(String, ComponentType?)
+    case willMoveToFollowingDirectory(Int)
+    case willNavigatePageView(Int)
+    case willMoveFileToDormantBox(UUID)
+    case willSortManualOrder(UUID, CGRect)
+    case willManualAutoGrid
+    case willChangeFileItemColor(UUID, FileItemColor)
+    case willPresentFileItemInfoView(UUID)
 }
 
-#if DEBUG
-    extension MemoHomeViewModel {
-        func setDirectoryStack(with directoryStack: [MemoDirectoryModel]) {
-            self.directoryStack = directoryStack
-        }
+enum MemoHomeViewOutput {
+    case didFetchMemoData(DirectoryStack, DirectoryContentsRenderInfo)
+    case didCalcMainDirectoryInfo(Int64, Int, Int)
+    case didInsertRowToHomeTable(Int, [Int])
+    case didMovePreviousDirectoryPath([Int], DirectoryContentsSortCriterias)
+    case didMoveToFollowingDirectory(String, UUID, DirectoryContentsSortCriterias)
+    case didMoveFileToDormantBox(Int)
+    case didNavigateDormantBoxView(DormantBoxViewModel)
+    case didNavigatePageView(MemoPageViewModel)
+    case didNavigateSingleTextEditorComponentPageView(TextEditorComponentViewModel, TextEditorComponent, String)
+    case didNavigateSingleTableComponentPageView(TableComponentViewModel, TableComponent, String)
+    case didNavigateSingleAudioComponentPageView(AudioComponentViewModel, AudioComponent, String)
+    case didSortDirectoryItems([Int])
+    case didSortManualOrder
+    case didManualAutoGrid
+    case didPresentSingleAudioPageInfoView(Int, Int, Double)
+    case didPresentDirectoryInfoView(Int, Int, Int)
+    case didPresentPageInfoView(Int, [ComponentType: Int])
+    case didCalcFileItemSize(Int, Int64)
+    case didGenertingTextComponentSummary(Int, String)
+    case didGetMostRecentSnapshotDate(Int, String)
+    case didPresentTableInfo(Int, [String], Int)
+}
 
-        func setFixedFileDirectory(with fixedDirectory: MemoDirectoryModel) {
-            self.fixedFileDirectory = fixedDirectory
+protocol MessageErrorType: Error {
+    var errorMessage: String { get }
+}
+
+enum MemoHomeViewModelError: MessageErrorType {
+    case canNotLoadMemoData
+
+    var errorMessage: String {
+        switch self {
+            case .canNotLoadMemoData:
+                "An error occurred while loading the memo data."
         }
     }
-#endif
+}

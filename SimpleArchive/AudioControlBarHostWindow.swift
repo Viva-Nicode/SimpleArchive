@@ -1,6 +1,7 @@
 import UIKit
 
 final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
+
     private(set) var audioControlBar: AudioControlBarView
     private(set) var audioControlBarLayoutState: AudioControlBarLayoutState = .default
 
@@ -17,10 +18,10 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
     private var thinExpandedTransitionAnimator: UIViewPropertyAnimator?
     private var thinToDismissAnimator: UIViewPropertyAnimator?
 
-    private var thinBottonConstant: CGFloat = -52.5
+    private var thinBottonConstant: CGFloat = -88
     private let expendedBottonConstant: CGFloat = -(60 + 55 + 12)
     private let expendedContentsWidth = UIView.screenWidth - 50
-    private let expendedContentHeight: CGFloat = 420
+    private let expendedContentHeight: CGFloat = 435
 
     private let interactionBlockWindow: UIView = {
         let blockWindow = UIView()
@@ -71,16 +72,16 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
         NSLayoutConstraint.activate(defaultAudioControlBarConstraints)
 
         thinAudioControlBarConstraints = [
-            audioControlBar.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 5),
-            audioControlBar.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -73),
-            audioControlBar.heightAnchor.constraint(equalToConstant: 70),
+            audioControlBar.widthAnchor.constraint(equalToConstant: UIView.screenWidth - 85),
+            audioControlBar.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
+            audioControlBar.heightAnchor.constraint(equalToConstant: 60),
             audioControlBar.bottomAnchor.constraint(equalTo: bottomAnchor, constant: thinBottonConstant),
         ]
 
         dismissAudioControlBarConstraints = [
             audioControlBar.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 5),
             audioControlBar.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -73),
-            audioControlBar.heightAnchor.constraint(equalToConstant: 70),
+            audioControlBar.heightAnchor.constraint(equalToConstant: 60),
             audioControlBar.bottomAnchor.constraint(equalTo: bottomAnchor, constant: 50),
         ]
 
@@ -88,7 +89,8 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
             audioControlBar.centerXAnchor.constraint(equalTo: centerXAnchor),
             audioControlBar.widthAnchor.constraint(equalToConstant: expendedContentsWidth),
             audioControlBar.heightAnchor.constraint(equalToConstant: expendedContentHeight),
-            audioControlBar.bottomAnchor.constraint(equalTo: bottomAnchor, constant: expendedBottonConstant),
+            audioControlBar.bottomAnchor.constraint(
+                equalTo: safeAreaLayoutGuide.bottomAnchor, constant: expendedBottonConstant),
         ]
     }
 
@@ -242,10 +244,10 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
     ) {
         if let dispatcher = audioControlBar.dispatcher, let vm = dispatcher.viewModel {
             let audioComponentID = vm.audioComponentID
-            let audioComponentIDList = pageData.getComponents.compactMap { $0 as? AudioComponent }.map { $0.id }
+            let audioComponentIDList = pageData.components.compactMap { $0 as? AudioComponent }.map { $0.id }
 
             if Set(audioComponentIDList).contains(audioComponentID) {
-                let audioComponentOrder = pageData.getComponents.firstIndex(where: { $0.id == audioComponentID })!
+                let audioComponentOrder = pageData.components.firstIndex(where: { $0.id == audioComponentID })!
                 let indexPath = IndexPath(item: audioComponentOrder, section: 0)
 
                 factory.injectContineiousPlaybackDispatcher(
@@ -288,6 +290,22 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
     func stopAudioControlBar() {
         audioControlBar.state = .stop
         audioControlBar.isHidden = true
+    }
+
+    func setAudioControlBarVisiblityIfActive() {
+        let isActive = audioControlBarState != .initial && audioControlBarState != .stop
+        if isActive != audioControlBar.isHidden {
+            UIView.animate(withDuration: 0.4) {
+                self.audioControlBar.alpha = 0
+            } completion: { _ in
+                self.audioControlBar.isHidden = true
+            }
+        } else {
+            audioControlBar.isHidden = false
+            UIView.animate(withDuration: 0.4) {
+                self.audioControlBar.alpha = 1
+            }
+        }
     }
 
     private func setThinToExpandedAnimation() {
@@ -406,6 +424,7 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
 
     private func dismissAudioControlBar() {
         audioControlBar.audioProgressBar.pauseProgress()
+
         UIView.animate(withDuration: 0.3) {
             self.audioControlBar.alpha = 0
             self.audioControlBar.frame.origin.y += 200
@@ -416,6 +435,7 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
 
             self.thinExpandedTransitionAnimator = nil
             self.thinToDismissAnimator = nil
+            self.enableAudioControlBarUserInteracting()
 
             self.layoutIfNeeded()
         }
@@ -642,6 +662,7 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
     func applyMetadataChangeToAudioControlBar(audioMetadata: AudioTrackMetadata)
     func seekAudioControlBarPlayProgress(seek: TimeInterval)
     func stopAudioControlBar()
+    func setAudioControlBarVisiblityIfActive()
 
     func setAudioControlBarLayoutAsDefault()
     func setAudioControlBarLayoutAsThin()

@@ -18,13 +18,14 @@ final class CoreDataStorageItemPersistenceCreator: StorageItemPersistenceCreator
 
         directoryEntity.id = directory.id
         directoryEntity.name = directory.name
-        directoryEntity.sortBy = directory.getSortBy().rawValue
+        directoryEntity.sortBy = directory.sortBy.rawValue
+        directoryEntity.itemColor = directory.itemColor.rawValue
         directoryEntity.creationDate = directory.creationDate
         directoryEntity.childDirectories = []
         directoryEntity.pages = []
         parentDirectoryEntity?.addToChildDirectories(directoryEntity)
 
-        directory.getChildItems()
+        directory.items
             .forEach { childStorageItem in
                 self.parentDirectoryEntity = directoryEntity
                 childStorageItem.persistToPersistentStorage(using: self)
@@ -36,15 +37,14 @@ final class CoreDataStorageItemPersistenceCreator: StorageItemPersistenceCreator
         let memoPageEntity = MemoPageEntity(context: context)
         memoPageEntity.id = page.id
         memoPageEntity.name = page.name
+        memoPageEntity.itemColor = page.itemColor.rawValue
         memoPageEntity.creationDate = page.creationDate
         memoPageEntity.isSingleComponentPage = page.isSingleComponentPage
         memoPageEntity.components = []
 
         let persistence = CoreDataPageComponentPersistenceCreator(parentPage: memoPageEntity)
 
-        page.getComponents.forEach {
-            $0.persistToPersistentStorage(using: persistence)
-        }
+        page.components.forEach { $0.persistToPersistentStorage(using: persistence) }
         parentDirectoryEntity?.addToPages(memoPageEntity)
     }
 }

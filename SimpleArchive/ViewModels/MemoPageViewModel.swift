@@ -29,32 +29,17 @@ import UIKit
     func subscribe(input: AnyPublisher<Input, Never>) -> AnyPublisher<Output, Never> {
         input.sink { [weak self] event in
             guard let self else { return }
-
             switch event {
-                case .viewDidLoad:
-                    output.send(.viewDidLoad(memoPage))
-
-                case .willCreateNewComponent(let componentType):
-                    createNewComponent(with: componentType)
-
-                case .willRemovePageComponent(let componentIndex):
-                    removeComponent(componentID: componentIndex)
-
-                case .willChangeComponentOrder(let sourceIndex, let destinationIndex):
-                    changeComponentOrder(sourceIndex: sourceIndex, destinationIndex: destinationIndex)
-
-                case .willRenameComponent(let componentID, let newName):
-                    renamePageComponent(componentID, newName)
-
-                case .willToggleFoldingComponent(let componentID):
-                    togglePageComponentFolding(componentID: componentID)
-
-                case .willMaximizePageComponent(let componentID):
-                    maximizeComponent(componentID: componentID)
+                case .viewDidLoad: output.send(.viewDidLoad(memoPage))
+                case .willCreateNewComponent(let componentType): createNewComponent(with: componentType)
+                case .willRemovePageComponent(let componentIndex): removeComponent(componentID: componentIndex)
+                case .willChangeComponentOrder(let src, let des): changeComponentOrder(src: src, des: des)
+                case .willRenameComponent(let componentID, let newName): renamePageComponent(componentID, newName)
+                case .willToggleFoldingComponent(let componentID): togglePageComponentFolding(componentID: componentID)
+                case .willMaximizePageComponent(let componentID): maximizeComponent(componentID: componentID)
             }
         }
         .store(in: &subscriptions)
-
         return output.eraseToAnyPublisher()
     }
 
@@ -64,7 +49,7 @@ import UIKit
 
         memoPage.appendChildComponent(component: newComponent)
         memoComponentCoredataReposotory.createComponentEntity(parentPageID: memoPage.id, component: newComponent)
-        output.send(.didAppendComponentAt(memoPage.compnentSize - 1))
+		output.send(.didAppendComponentAt(memoPage.components.count - 1))
     }
 
     private func renamePageComponent(_ componentID: UUID, _ newName: String) {
@@ -116,11 +101,11 @@ import UIKit
         }
     }
 
-    private func changeComponentOrder(sourceIndex: Int, destinationIndex: Int) {
+    private func changeComponentOrder(src sourceIndex: Int, des destinationIndex: Int) {
         let componentID = memoPage.changeComponentRenderingOrder(src: sourceIndex, des: destinationIndex)
         memoComponentCoredataReposotory.updateComponentOrdered(
             componentID: componentID,
-            renderingOrdered: memoPage.getComponents.map { $0.id })
+            renderingOrdered: memoPage.components.map { $0.id })
     }
 
     private func performWithComponentAt(_ componentID: UUID, task: (Int, any PageComponent) -> Void) {

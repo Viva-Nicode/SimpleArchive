@@ -11,7 +11,6 @@ enum AudioComponentAction: Codable {
 }
 
 final class AudioComponent: NSObject, Codable, PageComponent {
-
     var id: UUID
     var creationDate: Date
     var title: String
@@ -20,6 +19,7 @@ final class AudioComponent: NSObject, Codable, PageComponent {
     var isMinimumHeight: Bool
     var componentContents: AudioComponentContents
     var actions: [AudioComponentAction] = []
+    var getSize: Int64 { 0 }
 
     init(
         id: UUID = UUID(),

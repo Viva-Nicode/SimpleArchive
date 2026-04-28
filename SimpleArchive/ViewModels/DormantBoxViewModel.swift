@@ -14,15 +14,16 @@ import UIKit
 
     private var restoredPageListSubject: PassthroughSubject<[MemoPageModel], Never>
     private var restoredPageList: [MemoPageModel] = []
-    private var audioFileRemover: AudioFileRemover
+    private var audioFileManager: AudioFileManagerType
 
     init(
         dormantBoxCoredataRepository: DormantBoxCoreDataRepositoryType,
         restoredPageListSubject: PassthroughSubject<[MemoPageModel], Never>,
+        audioFileManger: AudioFileManagerType
     ) {
         self.dormantBoxCoredataRepository = dormantBoxCoredataRepository
         self.restoredPageListSubject = restoredPageListSubject
-        self.audioFileRemover = AudioFileManager.getShared(Self.self)!
+        self.audioFileManager = audioFileManger
     }
 
     deinit {
@@ -43,7 +44,7 @@ import UIKit
                     showFileInformation(index: index)
 
                 case .restoreFile(let index):
-                    restoreFile(file: dormantBoxDirectory[index]!)
+                    restoreFile(file: dormantBoxDirectory.items[index])
 
                 case .willRemovePageFromDormantBox(let id):
                     dormantBoxCoredataRepository.permanentRemoveFile(pageID: id)
@@ -51,14 +52,17 @@ import UIKit
                     if let item = dormantBoxDirectory[id],
                         let page = item.item as? MemoPageModel
                     {
-                        page.parentDirectory?.removeChildItemByID(with: page.id)
+                        if let idx = page.parentDirectory?.items.firstIndex(where: { $0.id == id }) {
+                            page.parentDirectory?.items.remove(at: idx)
+                        }
+
                         page.parentDirectory = nil
 
-                        let audioComponents = page.getComponents.compactMap { $0 as? AudioComponent }
+                        let audioComponents = page.components.compactMap { $0 as? AudioComponent }
 
                         for audioComponent in audioComponents {
                             for audioTrack in audioComponent.componentContents.tracks {
-                                audioFileRemover.removeAudio(with: audioTrack)
+                                audioFileManager.removeAudio(with: audioTrack)
                             }
                         }
                         output.send(.didRemovePageFromDormantBox(item.index))
@@ -77,45 +81,93 @@ import UIKit
                 receiveValue: { [weak self] dormantBoxDirectory in
                     guard let self else { return }
                     self.dormantBoxDirectory = dormantBoxDirectory
-                    output.send(.didfetchMemoData(dormantBoxDirectory.getChildItemSize()))
+                    Task.detached {
+                        var size: Int64 = dormantBoxDirectory.getItemSize()
+
+                        for page in dormantBoxDirectory.items.compactMap({ $0 as? MemoPageModel }) {
+                            for ac in page.components.compactMap({ $0 as? AudioComponent }) {
+                                for track in ac.componentContents.tracks {
+                                    let url = await self.audioFileManager.makeAudioTrackAppSandBoxURL(audioTrack: track)
+                                    let s = await self.audioFileManager.readAudioFileSize(audioURL: url)
+                                    size += s
+                                }
+                            }
+                        }
+                        await MainActor.run { [size] in
+                            self.output.send(.didCalcDormantBoxDirectoryInfo(size))
+                        }
+                    }
+                    output.send(.didfetchMemoData(dormantBox: dormantBoxDirectory))
                 }
             )
             .store(in: &subscriptions)
     }
 
     private func showFileInformation(index: Int) {
-        if let page = dormantBoxDirectory[index],
-            let pageInfo = page.getFileInformation() as? PageInformation
-        {
-            output.send(.showFileInformation(pageInfo))
+        if let page = dormantBoxDirectory.items[index] as? MemoPageModel {
+            if page.isSingleComponentPage {
+                if page.components.first as? TextEditorComponent != nil {
+                    output.send(
+                        .showSingleTextPageInformation(page.id, page.name, page.creationDate, page.getItemSize()))
+                } else if let tc = page.components.first as? TableComponent {
+                    output.send(
+                        .showSingleTablePageInformation(
+                            page.id, page.name, page.creationDate, page.getItemSize(),
+                            tc.componentContents.columns.map { $0.title }, tc.componentContents.cellValues.count)
+                    )
+                } else if let ac = page.components.first as? AudioComponent {
+                    let totalSize = ac.componentContents.tracks
+                        .map { audioFileManager.makeAudioTrackAppSandBoxURL(audioTrack: $0) }
+                        .map { audioFileManager.readAudioFileSize(audioURL: $0) }
+                        .reduce(0, +)
+                    output.send(
+                        .showSingleAudioPageInformation(
+                            page.id, page.name, page.creationDate, totalSize, ac.componentContents.tracks.count)
+                    )
+                }
+            } else {
+                let info = page.getFileInformation() as! PageInformation
+                var size: Int64 = 0
+                for ac in page.components.compactMap({ $0 as? AudioComponent }) {
+                    let totalSize = ac.componentContents.tracks
+                        .map { audioFileManager.makeAudioTrackAppSandBoxURL(audioTrack: $0) }
+                        .map { audioFileManager.readAudioFileSize(audioURL: $0) }
+                        .reduce(0, +)
+                    size += totalSize
+                }
+                output.send(
+                    .showFileInformation(
+                        page.id, page.name, page.creationDate,
+                        info.pageComponentCounts, page.getItemSize() + size)
+                )
+            }
         }
     }
 
     private func restoreFile(file: any StorageItem) {
         dormantBoxCoredataRepository.restoreFile(restoredFileID: file.id)
         let page = file as! MemoPageModel
-        page.parentDirectory?.removeChildItemByID(with: page.id)
+        if let idx = page.parentDirectory?.items.firstIndex(where: { $0.id == page.id }) {
+            page.parentDirectory?.items.remove(at: idx)
+        }
         page.parentDirectory = nil
         restoredPageList.append(page)
     }
 }
 
-extension DormantBoxViewModel: UITableViewDataSource {
+enum DormantBoxViewInput {
+    case viewDidLoad
+    case showFileInformation(Int)
+    case restoreFile(Int)
+    case willRemovePageFromDormantBox(UUID)
+}
 
-    func numberOfSections(in tableView: UITableView) -> Int {
-        dormantBoxDirectory.getChildItemSize()
-    }
-
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int { 1 }
-
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let storageItem = dormantBoxDirectory[indexPath.section]!
-        let cell =
-            tableView.dequeueReusableCell(
-                withIdentifier: DirectoryFileItemRowView.reuseIdentifier,
-                for: indexPath) as! DirectoryFileItemRowView
-
-        cell.configure(with: storageItem)
-        return cell
-    }
+enum DormantBoxViewOutput {
+    case didfetchMemoData(dormantBox: MemoDirectoryModel)
+    case showFileInformation(UUID, String, Date, [ComponentType: Int], Int64)
+    case showSingleAudioPageInformation(UUID, String, Date, Int64, Int)
+    case showSingleTextPageInformation(UUID, String, Date, Int64)
+    case showSingleTablePageInformation(UUID, String, Date, Int64, [String], Int)
+    case didRemovePageFromDormantBox(Int)
+    case didCalcDormantBoxDirectoryInfo(Int64)
 }

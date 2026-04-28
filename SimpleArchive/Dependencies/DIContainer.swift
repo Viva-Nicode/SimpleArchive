@@ -138,6 +138,10 @@ final class DependencyConfigurator {
             ComponentFactory(creator: TextEditorComponentCreator())
         }
 
+        container.register(AudioFileManagerType.self) {
+            AudioFileManager()
+        }
+
         #if os(iOS)
             if let LockScreenAudioController = AudioComponentSoundPlayer.shared as? LockScreenAudioControllable {
                 LockScreenAudioController.setLockScreenAudioContoller(with: NowPlayingInfoCenterController())
@@ -154,13 +158,15 @@ final class DependencyConfigurator {
             let factory = container.resolve(ComponentFactoryType.self)
             return PageCreator(componentFactory: factory)
         }
+        let audioFileManger = container.resolve(AudioFileManagerType.self)
 
         container.register(MemoHomeViewModel.self) {
             MemoHomeViewModel(
                 memoDirectoryCoredataReposotory: container.resolve(MemoDirectoryCoreDataRepository.self),
                 memoPageCoredataReposotory: container.resolve(MemoPageCoreDataRepository.self),
                 directoryCreator: container.resolve(DirectoryCreator.self),
-                pageCreator: container.resolve(PageCreator.self)
+                pageCreator: container.resolve(PageCreator.self),
+                audioFileManager: audioFileManger
             )
         }
     }
@@ -213,10 +219,12 @@ final class DependencyConfigurator {
             requiredArgs: [Subject.self].self
         ) {
             let subject = DIContainer.shared.getArgument(DormantBoxViewModel.self) as Subject
+            let audioFileManger = container.resolve(AudioFileManagerType.self)
 
             return DormantBoxViewModel(
                 dormantBoxCoredataRepository: container.resolve(DormantBoxCoreDataRepository.self),
-                restoredPageListSubject: subject
+                restoredPageListSubject: subject,
+                audioFileManger: audioFileManger
             )
         }
     }
@@ -255,10 +263,13 @@ final class DependencyConfigurator {
             let audioComponent =
                 container.getArgument(AudioComponentViewModel.self) as AudioComponent
             let memoComponentCoreDataRepository = container.resolve(MemoComponentCoreDataRepository.self)
+            let audioFileManger = container.resolve(AudioFileManagerType.self)
+
             let audioComponentDataManger = AudioComponentDataManger(
                 audioComponent: audioComponent,
                 memoComponentCoredataReposotory: memoComponentCoreDataRepository,
-                audioDownloader: container.resolve(AudioDownloaderType.self))
+                audioDownloader: container.resolve(AudioDownloaderType.self),
+                audioFileManger: audioFileManger)
 
             return AudioComponentViewModel(
                 audioDataManager: audioComponentDataManger,

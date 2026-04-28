@@ -11,7 +11,7 @@ final class MemoPageComponentCollectionViewDataSource: NSObject, UICollectionVie
     }
 
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        memoPage.compnentSize
+		memoPage.components.count
     }
 
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath)

@@ -2,7 +2,6 @@ import Combine
 import UIKit
 
 final class MemoHomeDirectoryContentCell: UICollectionViewCell {
-
     private(set) var emptyFolderView: UIView = {
         let dropView = UIView()
         dropView.translatesAutoresizingMaskIntoConstraints = false
@@ -26,22 +25,21 @@ final class MemoHomeDirectoryContentCell: UICollectionViewCell {
         emptyFolderStackView.translatesAutoresizingMaskIntoConstraints = false
         return emptyFolderStackView
     }()
-    private(set) var directoryContentTableView: UITableView = {
-		let tableView = UITableView(frame: .zero, style: .plain)
-        tableView.layer.masksToBounds = false
-        tableView.clipsToBounds = false
-        tableView.contentInset = UIEdgeInsets(top: 10, left: 0, bottom: 100, right: 0)
-        tableView.accessibilityIdentifier = "MemoHomeDirectoryContentCellTableView"
-        tableView.backgroundColor = .clear
-        tableView.separatorStyle = .none
-        tableView.showsVerticalScrollIndicator = false
-        tableView.showsHorizontalScrollIndicator = false
-        tableView.dragInteractionEnabled = true
-        tableView.translatesAutoresizingMaskIntoConstraints = false
-        tableView.register(
-            DirectoryFileItemRowView.self,
-            forCellReuseIdentifier: DirectoryFileItemRowView.reuseIdentifier)
-        return tableView
+    private(set) var directoryContentTableView: UICollectionView = {
+        let spacing = UIConstants.fileItemSpacing
+        let layout = DirectoryContentsLayout()
+        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        collectionView.alwaysBounceVertical = true
+        collectionView.register(FileItemView.self, forCellWithReuseIdentifier: FileItemView.reuseIdentifier)
+        collectionView.isPrefetchingEnabled = true
+        collectionView.showsHorizontalScrollIndicator = false
+        collectionView.showsVerticalScrollIndicator = true
+        collectionView.contentInset = .init(top: 0, left: 0, bottom: 100, right: 0)
+        collectionView.accessibilityIdentifier = "MemoHomeDirectoryContentCellTableView"
+        collectionView.backgroundColor = .clear
+        collectionView.dragInteractionEnabled = false
+        collectionView.translatesAutoresizingMaskIntoConstraints = false
+        return collectionView
     }()
 
     static let reuseIdentifier = "MemoHomeDirectoryContentCell"
@@ -57,6 +55,8 @@ final class MemoHomeDirectoryContentCell: UICollectionViewCell {
     }
 
     private func setupUI() {
+        backgroundColor = .clear
+        contentView.backgroundColor = .clear
         contentView.addSubview(directoryContentTableView)
 
         emptyFolderStackView.addArrangedSubview(emptyFolderImageView)
@@ -97,19 +97,20 @@ final class MemoHomeDirectoryContentCell: UICollectionViewCell {
         }
     }
 
-    func configure(datasource: MemoHomeDirectoryContentCellDataSource) {
-        self.directoryContentTableView.dataSource = datasource
-        self.directoryContentTableView.delegate = datasource
-        self.directoryContentTableView.dragDelegate = datasource
-        self.directoryContentTableView.dropDelegate = datasource
-        self.emptyFolderView.addInteraction(UIDropInteraction(delegate: datasource))
-        self.directoryContentTableView.reloadData()
-        self.showEmptyFolderView()
+    private(set) var directoryContentDataSource: DirectoryContentDataSource?
+
+    func configure(datasource: DirectoryContentDataSource) {
+        directoryContentDataSource = datasource
+        directoryContentTableView.dataSource = datasource
+        directoryContentTableView.delegate = datasource
+        directoryContentTableView.reloadData()
+        directoryContentTableView.collectionViewLayout.invalidateLayout()
+        showEmptyFolderView()
     }
 
     func deleteItem(with index: Int) {
         directoryContentTableView.performBatchUpdates {
-            directoryContentTableView.deleteSections(IndexSet(integer: index), with: .fade)
+            directoryContentTableView.deleteItems(at: [IndexPath(item: index, section: 0)])
         }
         showEmptyFolderView()
     }
@@ -117,10 +118,8 @@ final class MemoHomeDirectoryContentCell: UICollectionViewCell {
     func insertItem(indices: [Int]) {
         directoryContentTableView.performBatchUpdates {
             for idx in indices {
-                directoryContentTableView
-                    .insertSections(IndexSet(integer: idx), with: .automatic)
-                directoryContentTableView
-                    .insertRows(at: [IndexPath(row: 0, section: idx)], with: .automatic)
+                let paths = [IndexPath(item: idx, section: 0)]
+                directoryContentTableView.insertItems(at: paths)
             }
         }
         removeEmptyFolderView()

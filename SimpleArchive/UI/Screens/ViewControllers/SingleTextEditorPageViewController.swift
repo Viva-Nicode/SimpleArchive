@@ -25,6 +25,7 @@ final class SingleTextEditorPageViewController:
 {
     private(set) var headerView: UIView = {
         let headerView = UIView()
+		
         headerView.translatesAutoresizingMaskIntoConstraints = false
         return headerView
     }()
@@ -48,6 +49,7 @@ final class SingleTextEditorPageViewController:
     }()
     private(set) var textEditorView: UITextView = {
         let textEditorView = UITextView()
+		textEditorView.backgroundColor = UIColor(named: "FixedFileItemBackgroundColor")
         textEditorView.autocorrectionType = .no
         textEditorView.spellCheckingType = .no
         textEditorView.autocapitalizationType = .none
@@ -108,9 +110,9 @@ final class SingleTextEditorPageViewController:
             object: nil)
     }
 
-    func configure(dispatcher: TextEditorComponentActionDispatcher, component: TextEditorComponent) {
+	func configure(dispatcher: TextEditorComponentActionDispatcher, title:String, component: TextEditorComponent) {
         self.actionDispatcher = dispatcher
-        titleLable.text = component.title
+        titleLable.text = title
         createDateLabel.text = component.creationDate.formattedDate
         textEditorView.text = component.componentContents
     }
@@ -122,7 +124,7 @@ final class SingleTextEditorPageViewController:
     deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
 
     private func setupUI() {
-        view.backgroundColor = .systemBackground
+        view.backgroundColor = UIColor(named: "FixedFileItemBackgroundColor")
         view.addSubview(headerView)
 
         headerView.addSubview(titleLable)
@@ -130,6 +132,18 @@ final class SingleTextEditorPageViewController:
         headerView.addSubview(undoButton)
         headerView.addSubview(snapshotButton)
         headerView.addSubview(captureButton)
+		
+		let line = CAShapeLayer()
+		line.frame = .init(x: 0, y: 70, width: UIView.screenWidth, height: 2)
+		line.strokeColor = UIColor.systemGray3.cgColor
+		line.lineWidth = 2
+		line.lineDashPattern = [4, 4]
+		let path = UIBezierPath()
+		path.move(to: .init(x: 0, y: 0))
+		path.addLine(to: .init(x: line.frame.width, y: 0))
+		line.path = path.cgPath
+
+		headerView.layer.addSublayer(line)
 
         view.addSubview(textEditorView)
         textEditorView.delegate = self

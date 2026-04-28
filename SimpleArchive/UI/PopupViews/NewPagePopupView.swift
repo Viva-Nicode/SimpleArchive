@@ -3,7 +3,7 @@ import UIKit
 
 final class NewPagePopupView: PopupView {
 
-    private let subject: PassthroughSubject<MemoHomeSubViewInput, Never>
+    private let subject: PassthroughSubject<MemoHomeViewInput, Never>
     private var singleComponentCheckBox = CheckboxButton(title: "Single Note Page")
     private let checkBoxContainerView: UIStackView = {
         $0.axis = .horizontal
@@ -60,7 +60,7 @@ final class NewPagePopupView: PopupView {
         return collectionView
     }()
 
-    init(subject: PassthroughSubject<MemoHomeSubViewInput, Never>) {
+    init(subject: PassthroughSubject<MemoHomeViewInput, Never>) {
         self.subject = subject
         super.init()
     }
