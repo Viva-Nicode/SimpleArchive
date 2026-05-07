@@ -15,7 +15,7 @@ final class TextMemoContentsSummaryGeneratingModel {
         )
         let summaryResult = try? await session.respond(to: input, generating: String.self, options: opt)
         if let content = summaryResult?.content {
-            if content.filter({ $0.isLetter }).count <= 60 { return cannotAssistText }
+            if content.filter({ $0.isLetter }).count <= 50 { return cannotAssistText }
             return await LanguageTranslator.translate(input: content)
         } else {
             return cannotAssistText

@@ -150,27 +150,41 @@ extension UIScrollView {
 
     func scrollToBottom(animated: Bool) {
         let maxOffsetY = max(0, contentSize.height - bounds.height + contentInset.bottom)
-
         guard maxOffsetY > 0 else { return }
-
-        setContentOffset(
-            CGPoint(x: contentOffset.x, y: maxOffsetY),
-            animated: animated
-        )
+        setContentOffset(CGPoint(x: contentOffset.x, y: maxOffsetY), animated: animated)
     }
 
     func scrollToTrailing(animated: Bool) {
         let maxOffsetX = max(0, contentSize.width - bounds.width + contentInset.right)
-
         guard maxOffsetX > 0 else { return }
-
-        setContentOffset(
-            CGPoint(x: maxOffsetX, y: contentOffset.y),
-            animated: animated
-        )
+        setContentOffset(CGPoint(x: maxOffsetX, y: contentOffset.y), animated: animated)
     }
 }
 
+extension UIColor {
+	static var appBaseColorBrightness: Double = 1.0
+	static var appTintColorBrightness: Double = 0.0
+	static var fileItemBackgroundBrightness: Double = 1.0
+
+    static let appTintColor = UIColor(named: "AppBaseForegroundColor")!
+        .adjustBrightness(by: appTintColorBrightness)
+    static let appBaseColor = UIColor(named: "FixedFileItemBackgroundColor")!
+        .adjustBrightness(by: appBaseColorBrightness)
+
+    func adjustBrightness(by factor: CGFloat) -> UIColor {
+        var h: CGFloat = 0
+        var s: CGFloat = 0
+        var b: CGFloat = 0
+        var a: CGFloat = 0
+
+        guard self.getHue(&h, saturation: &s, brightness: &b, alpha: &a) else {
+            return self
+        }
+
+        let newBrightness = min(max(b * factor, 0), 1)
+        return UIColor(hue: h, saturation: s, brightness: newBrightness, alpha: a)
+    }
+}
 extension UIResponder {
     private weak static var _currentFirstResponder: UIResponder? = nil
 
@@ -205,7 +219,7 @@ extension UIView {
     }
 
     public static let screenHeight = UIScreen.main.bounds.height
-	public static let screenWidth = UIScreen.main.bounds.width
+    public static let screenWidth = UIScreen.main.bounds.width
 
     func showMeBorder(_ anyColor: BorderColor) {
         self.layer.borderWidth = 1

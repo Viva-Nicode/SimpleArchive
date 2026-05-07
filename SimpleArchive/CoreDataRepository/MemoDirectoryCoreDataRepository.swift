@@ -4,46 +4,49 @@ import CoreData
 final class MemoDirectoryCoreDataRepository: MemoDirectoryCoreDataRepositoryType {
 
     private let coredataStack: PersistentStore
+    private let uds = UserDefaultStack.shared
 
     init(coredataStack: PersistentStore) {
         self.coredataStack = coredataStack
     }
 
     func fetchSystemDirectoryEntities(fileCreator: any FileCreatorType)
-        -> AnyPublisher<[SystemDirectories: MemoDirectoryModel], Error>
+        -> AnyPublisher<([SystemDirectories: MemoDirectoryModel], DirectoryContentsRenderInfo), Error>
     {
         let fetchAllDirectoriesRequest = MemoDirectoryEntity.fetchAllRootDirectoriesRequest()
 
         return coredataStack.fetch(fetchAllDirectoriesRequest) { $0.convertToModel() }
             .map { systemDirectories in
+                (
+                    SystemDirectories.allCases
+                        .map {
+                            systemDirectoryCase -> [SystemDirectories: MemoDirectoryModel] in
 
-                SystemDirectories.allCases
-                    .map {
-                        systemDirectoryCase -> [SystemDirectories: MemoDirectoryModel] in
+                            if let systemDirectoryID = systemDirectoryCase.getId(),
+                                let systemDirectory = systemDirectories.first(where: { $0.id == systemDirectoryID })
+                            {
+                                return [systemDirectoryCase: systemDirectory as! MemoDirectoryModel]
+                            }
 
-                        if let systemDirectoryID = systemDirectoryCase.getId(),
-                            let systemDirectory = systemDirectories.first(where: { $0.id == systemDirectoryID })
-                        {
+                            let systemDirectory = fileCreator.createFile(
+                                itemName: systemDirectoryCase.DirectoryName,
+                                parentDirectory: nil)
+
+                            systemDirectoryCase.setId(systemDirectory.id)
+
+                            self.coredataStack.update { ctx in
+                                let persistence = CoreDataStorageItemPersistenceCreator(context: ctx)
+                                systemDirectory.persistToPersistentStorage(using: persistence)
+                            }
+
                             return [systemDirectoryCase: systemDirectory as! MemoDirectoryModel]
                         }
-
-                        let systemDirectory = fileCreator.createFile(
-                            itemName: systemDirectoryCase.DirectoryName,
-                            parentDirectory: nil)
-
-                        systemDirectoryCase.setId(systemDirectory.id)
-                        self.coredataStack.update { ctx in
-                            let persistence = CoreDataStorageItemPersistenceCreator(context: ctx)
-                            systemDirectory.persistToPersistentStorage(using: persistence)
-                        }
-
-                        return [systemDirectoryCase: systemDirectory as! MemoDirectoryModel]
-                    }
-                    .reduce(into: [SystemDirectories: MemoDirectoryModel]()) { result, dict in
-                        for (key, value) in dict {
-                            result[key] = value
-                        }
-                    }
+                        .reduce(into: [SystemDirectories: MemoDirectoryModel]()) { result, dict in
+                            for (key, value) in dict {
+                                result[key] = value
+                            }
+                        }, self.uds.get(keyTypes: .FileItemManualOrder)!
+                )
             }
             .eraseToAnyPublisher()
     }
@@ -126,6 +129,38 @@ final class MemoDirectoryCoreDataRepository: MemoDirectoryCoreDataRepositoryType
             let movedItem = try ctx.fetch(movedItemFetchRequest).first!
 
             movedItem.moveToAnyDirectory(directory: targetDirectory)
+
+            try? UserDefaultStack.shared.store(keyTypes: .FileItemManualOrder, v: infos)
+        }
+    }
+
+    func hideItem(item: any StorageItem, infos: DirectoryContentsRenderInfo) {
+        coredataStack.update { ctx in
+            guard let privateDirectoryID = SystemDirectories.privateDirectory.getId() else { return }
+
+            let privateDirectoryFetchRequest = MemoDirectoryEntity.findDirectoryEntityById(id: privateDirectoryID)
+            let privateDirectory = try ctx.fetch(privateDirectoryFetchRequest).first!
+
+            let fetchRequest = StorageItemEntity.findById(id: item.id)
+            let fetchResult = try ctx.fetch(fetchRequest).first!
+
+            fetchResult.moveToAnyDirectory(directory: privateDirectory)
+
+            try? UserDefaultStack.shared.store(keyTypes: .FileItemManualOrder, v: infos)
+        }
+    }
+
+    func unhideItem(item: any StorageItem, infos: DirectoryContentsRenderInfo) {
+        coredataStack.update { ctx in
+            guard let mainDirectoryID = SystemDirectories.mainDirectory.getId() else { return }
+
+            let mainDirectoryFetchRequest = MemoDirectoryEntity.findDirectoryEntityById(id: mainDirectoryID)
+            let mainDirectory = try ctx.fetch(mainDirectoryFetchRequest).first!
+
+            let fetchRequest = StorageItemEntity.findById(id: item.id)
+            let fetchResult = try ctx.fetch(fetchRequest).first!
+
+            fetchResult.moveToAnyDirectory(directory: mainDirectory)
 
             try? UserDefaultStack.shared.store(keyTypes: .FileItemManualOrder, v: infos)
         }

@@ -2,29 +2,6 @@ import Combine
 import UIKit
 
 final class MemoHomeDirectoryContentCell: UICollectionViewCell {
-    private(set) var emptyFolderView: UIView = {
-        let dropView = UIView()
-        dropView.translatesAutoresizingMaskIntoConstraints = false
-        return dropView
-    }()
-    private(set) var emptyFolderImageView: UIImageView = {
-        let image = UIImage(named: "emptyFolderImage")?.resized(to: .init(width: 200, height: 200))
-        let imageView = UIImageView(image: image)
-        return imageView
-    }()
-    private(set) var emptyFolderLabel: UILabel = {
-        $0.text = "Empty Folder"
-        $0.font = .systemFont(ofSize: 26, weight: .regular)
-        return $0
-    }(UILabel())
-    private(set) var emptyFolderStackView: UIStackView = {
-        let emptyFolderStackView = UIStackView()
-        emptyFolderStackView.axis = .vertical
-        emptyFolderStackView.alignment = .center
-        emptyFolderStackView.spacing = 8
-        emptyFolderStackView.translatesAutoresizingMaskIntoConstraints = false
-        return emptyFolderStackView
-    }()
     private(set) var directoryContentTableView: UICollectionView = {
         let spacing = UIConstants.fileItemSpacing
         let layout = DirectoryContentsLayout()
@@ -58,11 +35,6 @@ final class MemoHomeDirectoryContentCell: UICollectionViewCell {
         backgroundColor = .clear
         contentView.backgroundColor = .clear
         contentView.addSubview(directoryContentTableView)
-
-        emptyFolderStackView.addArrangedSubview(emptyFolderImageView)
-        emptyFolderStackView.addArrangedSubview(emptyFolderLabel)
-
-        emptyFolderView.addSubview(emptyFolderStackView)
     }
 
     private func setupConstraints() {
@@ -74,29 +46,6 @@ final class MemoHomeDirectoryContentCell: UICollectionViewCell {
         ])
     }
 
-    override func prepareForReuse() {
-        super.prepareForReuse()
-        removeEmptyFolderView()
-    }
-
-    func removeEmptyFolderView() {
-        emptyFolderView.removeFromSuperview()
-        emptyFolderView.removeConstraints(emptyFolderView.constraints)
-    }
-
-    func showEmptyFolderView() {
-        if directoryContentTableView.dataSource?.numberOfSections?(in: directoryContentTableView) == .zero {
-            contentView.addSubview(emptyFolderView)
-            emptyFolderView.topAnchor.constraint(equalTo: contentView.topAnchor).isActive = true
-            emptyFolderView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor).isActive = true
-            emptyFolderView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor).isActive = true
-            emptyFolderView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor).isActive = true
-
-            emptyFolderStackView.centerXAnchor.constraint(equalTo: emptyFolderView.centerXAnchor).isActive = true
-            emptyFolderStackView.centerYAnchor.constraint(equalTo: emptyFolderView.centerYAnchor).isActive = true
-        }
-    }
-
     private(set) var directoryContentDataSource: DirectoryContentDataSource?
 
     func configure(datasource: DirectoryContentDataSource) {
@@ -105,14 +54,12 @@ final class MemoHomeDirectoryContentCell: UICollectionViewCell {
         directoryContentTableView.delegate = datasource
         directoryContentTableView.reloadData()
         directoryContentTableView.collectionViewLayout.invalidateLayout()
-        showEmptyFolderView()
     }
 
     func deleteItem(with index: Int) {
         directoryContentTableView.performBatchUpdates {
             directoryContentTableView.deleteItems(at: [IndexPath(item: index, section: 0)])
         }
-        showEmptyFolderView()
     }
 
     func insertItem(indices: [Int]) {
@@ -122,6 +69,5 @@ final class MemoHomeDirectoryContentCell: UICollectionViewCell {
                 directoryContentTableView.insertItems(at: paths)
             }
         }
-        removeEmptyFolderView()
     }
 }

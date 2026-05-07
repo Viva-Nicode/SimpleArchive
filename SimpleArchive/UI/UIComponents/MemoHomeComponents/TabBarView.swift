@@ -1,49 +1,62 @@
 import UIKit
 
 final class TabBarView: UIView {
-    private(set) var homeButton: UIButton = {
+    private(set) lazy var homeButton: UIButton = {
         var config = UIButton.Configuration.plain()
-        config.image = UIImage(systemName: "house")
+        config.image = UIImage(systemName: "house.circle")
         config.titleAlignment = .center
         config.imagePlacement = .leading
         config.imagePadding = 4
         config.cornerStyle = .capsule
         config.baseForegroundColor = .systemBlue
-        config.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 18)
+        config.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 25)
         var titleAttr = AttributedString("Home")
-        titleAttr.font = .systemFont(ofSize: 13)
+        titleAttr.font = tabTitleFont
         config.attributedTitle = titleAttr
         let button = UIButton(configuration: config)
+        button.isUserInteractionEnabled = false
+		button.layer.cornerRadius = 25
         button.backgroundColor = .systemBlue.withAlphaComponent(0.1)
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
     private(set) var hideButton: UIButton = {
         var config = UIButton.Configuration.plain()
-        config.image = UIImage(systemName: "eye.slash")
+        config.image = UIImage(systemName: "lock.circle")
         config.titleAlignment = .center
         config.imagePlacement = .leading
         config.imagePadding = 4
         config.cornerStyle = .capsule
-        config.baseForegroundColor = .black
-        config.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 18)
+        config.baseForegroundColor = .systemGray2
+        config.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 25)
         let button = UIButton(configuration: config)
+		button.layer.cornerRadius = 25
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
     private(set) var settingButton: UIButton = {
         var config = UIButton.Configuration.plain()
-        config.image = UIImage(systemName: "gearshape")
+        config.image = UIImage(systemName: "gearshape.circle")
         config.titleAlignment = .center
         config.imagePlacement = .leading
         config.imagePadding = 4
         config.cornerStyle = .capsule
-        config.baseForegroundColor = .black
-        config.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 18)
+        config.baseForegroundColor = .systemGray2
+        config.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 25)
         let button = UIButton(configuration: config)
+		button.layer.cornerRadius = 25
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
+
+    private let tabTitleFont = UIFont.systemFont(ofSize: 15, weight: .semibold)
+    private var currentTap: CurrentTap = .mainDirectory
+    private let duration: Double = 0.4
+
+    private var homeButtonWidthConstraint: NSLayoutConstraint?
+    private var hideButtonWidthConstraint: NSLayoutConstraint?
+    private var settingButtonWidthConstraint: NSLayoutConstraint?
+
     override init(frame: CGRect) {
         super.init(frame: .zero)
         setupUI()
@@ -52,54 +65,6 @@ final class TabBarView: UIView {
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
-    }
-
-    func changeHome() {
-        homeButton.backgroundColor = .systemBlue.withAlphaComponent(0.1)
-        homeButton.configuration?.baseForegroundColor = .systemBlue
-        var titleAttr = AttributedString("Home")
-        titleAttr.font = .systemFont(ofSize: 13)
-        homeButton.configuration?.attributedTitle = titleAttr
-
-        hideButton.backgroundColor = .clear
-        hideButton.configuration?.baseForegroundColor = .black
-        hideButton.configuration?.attributedTitle = nil
-
-        settingButton.backgroundColor = .clear
-        settingButton.configuration?.baseForegroundColor = .black
-        settingButton.configuration?.attributedTitle = nil
-    }
-	
-    func changeHide() {
-        homeButton.backgroundColor = .clear
-        homeButton.configuration?.baseForegroundColor = .black
-        homeButton.configuration?.attributedTitle = nil
-
-        hideButton.backgroundColor = .systemOrange.withAlphaComponent(0.1)
-        hideButton.configuration?.baseForegroundColor = .systemOrange
-        var titleAttr = AttributedString("Hide")
-        titleAttr.font = .systemFont(ofSize: 13)
-        hideButton.configuration?.attributedTitle = titleAttr
-
-        settingButton.backgroundColor = .clear
-        settingButton.configuration?.baseForegroundColor = .black
-        settingButton.configuration?.attributedTitle = nil
-    }
-
-    func changeSetting() {
-        homeButton.backgroundColor = .clear
-        homeButton.configuration?.baseForegroundColor = .black
-        homeButton.configuration?.attributedTitle = nil
-
-        hideButton.backgroundColor = .clear
-        hideButton.configuration?.baseForegroundColor = .black
-        hideButton.configuration?.attributedTitle = nil
-
-        settingButton.backgroundColor = .systemPurple.withAlphaComponent(0.1)
-        settingButton.configuration?.baseForegroundColor = .systemPurple
-        var titleAttr = AttributedString("Setting")
-        titleAttr.font = .systemFont(ofSize: 13)
-        settingButton.configuration?.attributedTitle = titleAttr
     }
 
     private func setupUI() {
@@ -120,21 +85,148 @@ final class TabBarView: UIView {
     }
 
     private func setupConstraints() {
+        homeButtonWidthConstraint = homeButton.widthAnchor.constraint(equalToConstant: 120)
+        hideButtonWidthConstraint = hideButton.widthAnchor.constraint(equalToConstant: 50)
+        settingButtonWidthConstraint = settingButton.widthAnchor.constraint(equalToConstant: 50)
+
         NSLayoutConstraint.activate([
-            homeButton.widthAnchor.constraint(equalToConstant: 100),
+            homeButtonWidthConstraint!,
             homeButton.heightAnchor.constraint(equalToConstant: 50),
-            homeButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: (UIView.screenWidth - 300) / 2),
+            homeButton.centerXAnchor.constraint(
+                equalTo: leadingAnchor, constant: (UIView.screenWidth / 6) + 30),
             homeButton.centerYAnchor.constraint(equalTo: centerYAnchor, constant: -7),
 
-            hideButton.widthAnchor.constraint(equalToConstant: 100),
+            hideButtonWidthConstraint!,
             hideButton.heightAnchor.constraint(equalToConstant: 50),
-            hideButton.leadingAnchor.constraint(equalTo: homeButton.trailingAnchor),
+            hideButton.centerXAnchor.constraint(equalTo: centerXAnchor),
             hideButton.centerYAnchor.constraint(equalTo: centerYAnchor, constant: -7),
 
-            settingButton.widthAnchor.constraint(equalToConstant: 100),
+            settingButtonWidthConstraint!,
             settingButton.heightAnchor.constraint(equalToConstant: 50),
-            settingButton.leadingAnchor.constraint(equalTo: hideButton.trailingAnchor),
+            settingButton.centerXAnchor.constraint(
+                equalTo: leadingAnchor, constant: (UIView.screenWidth * 5 / 6) - 30),
             settingButton.centerYAnchor.constraint(equalTo: centerYAnchor, constant: -7),
         ])
+    }
+
+    func changeHome() {
+        homeButtonWidthConstraint?.constant = 120
+
+        UIView.transition(with: homeButton, duration: duration, options: .transitionFlipFromTop) { [self] in
+            homeButton.backgroundColor = .systemBlue.withAlphaComponent(0.1)
+            homeButton.configuration?.baseForegroundColor = .systemBlue
+            var titleAttr = AttributedString("Home")
+            titleAttr.font = tabTitleFont
+            homeButton.configuration?.attributedTitle = titleAttr
+            homeButton.layoutIfNeeded()
+        }
+
+        switch currentTap {
+            case .privateDirectory:
+                hideButtonWidthConstraint?.constant = 50
+                UIView.transition(
+                    with: hideButton, duration: duration, options: .transitionFlipFromBottom
+                ) { [self] in
+                    hideButton.backgroundColor = .clear
+                    hideButton.configuration?.baseForegroundColor = .systemGray2
+                    hideButton.configuration?.attributedTitle = nil
+                    hideButton.layoutIfNeeded()
+                }
+
+            case .setting:
+                settingButtonWidthConstraint?.constant = 50
+                UIView.transition(
+                    with: settingButton, duration: duration, options: .transitionFlipFromBottom
+                ) {
+                    [self] in
+                    settingButton.backgroundColor = .clear
+                    settingButton.configuration?.baseForegroundColor = .systemGray2
+                    settingButton.configuration?.attributedTitle = nil
+                    settingButton.layoutIfNeeded()
+                }
+
+            default: break
+        }
+        currentTap = .mainDirectory
+    }
+
+    func changeHide() {
+        hideButtonWidthConstraint?.constant = 130
+
+        UIView.transition(with: hideButton, duration: duration, options: .transitionFlipFromTop) { [self] in
+            hideButton.backgroundColor = .systemOrange.withAlphaComponent(0.1)
+            hideButton.configuration?.baseForegroundColor = .systemOrange
+            var titleAttr = AttributedString("Private")
+            titleAttr.font = tabTitleFont
+            hideButton.configuration?.attributedTitle = titleAttr
+            hideButton.layoutIfNeeded()
+        }
+
+        switch currentTap {
+            case .mainDirectory:
+                homeButtonWidthConstraint?.constant = 50
+                UIView.transition(
+                    with: homeButton, duration: duration, options: .transitionFlipFromBottom
+                ) { [self] in
+                    homeButton.backgroundColor = .clear
+                    homeButton.configuration?.baseForegroundColor = .systemGray2
+                    homeButton.configuration?.attributedTitle = nil
+                    homeButton.layoutIfNeeded()
+                }
+
+            case .setting:
+                settingButtonWidthConstraint?.constant = 50
+                UIView.transition(
+                    with: settingButton, duration: duration, options: .transitionFlipFromBottom
+                ) {
+                    [self] in
+                    settingButton.backgroundColor = .clear
+                    settingButton.configuration?.baseForegroundColor = .systemGray2
+                    settingButton.configuration?.attributedTitle = nil
+                    settingButton.layoutIfNeeded()
+                }
+
+            default: break
+        }
+        currentTap = .privateDirectory
+    }
+
+    func changeSetting() {
+        settingButtonWidthConstraint?.constant = 130
+
+        UIView.transition(with: settingButton, duration: duration, options: .transitionFlipFromTop) { [self] in
+            settingButton.backgroundColor = .systemPurple.withAlphaComponent(0.1)
+            settingButton.configuration?.baseForegroundColor = .systemPurple
+            var titleAttr = AttributedString("Setting")
+            titleAttr.font = tabTitleFont
+            settingButton.configuration?.attributedTitle = titleAttr
+            settingButton.layoutIfNeeded()
+        }
+
+        switch currentTap {
+            case .mainDirectory:
+                homeButtonWidthConstraint?.constant = 50
+                UIView.transition(
+                    with: homeButton, duration: duration, options: .transitionFlipFromBottom
+                ) { [self] in
+                    homeButton.backgroundColor = .clear
+                    homeButton.configuration?.baseForegroundColor = .systemGray2
+                    homeButton.configuration?.attributedTitle = nil
+                    homeButton.layoutIfNeeded()
+                }
+            case .privateDirectory:
+                hideButtonWidthConstraint?.constant = 50
+                UIView.transition(
+                    with: hideButton, duration: duration, options: .transitionFlipFromBottom
+                ) { [self] in
+                    hideButton.backgroundColor = .clear
+                    hideButton.configuration?.baseForegroundColor = .systemGray2
+                    hideButton.configuration?.attributedTitle = nil
+                    hideButton.layoutIfNeeded()
+                }
+
+            default: break
+        }
+        currentTap = .setting
     }
 }

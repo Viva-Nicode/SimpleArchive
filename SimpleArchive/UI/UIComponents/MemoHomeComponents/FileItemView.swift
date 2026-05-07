@@ -296,7 +296,6 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
         ])
 
         return view
-
     }()
 
     private lazy var panGesture: UIPanGestureRecognizer = {
@@ -330,7 +329,7 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
     private var scaleX: Double!
     private var scaleY: Double!
     private weak var collectionViewRef: UICollectionView?
-    private let duration: Double = 0.55
+    private let duration: Double = 0.6
     private var fileItemColor: FileItemColor = .white
 
     private var originBlockPoint: CGPoint!
@@ -385,12 +384,12 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
         titleLabel.text = ""
         itemID = nil
         panGesture.isEnabled = true
+        textComponentSummaryLabel.isHidden = true
     }
 
     // MARK: -===================== set up =====================-
 
     private func setupUI() {
-        clipsToBounds = true
         addSubview(selectedStateOverlayView)
         sendSubviewToBack(selectedStateOverlayView)
 
@@ -399,12 +398,16 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
         contentView.layer.cornerRadius = cornerRadius
         backgroundColor = .clear
 
+        layer.shadowColor = UIColor.black.cgColor
+        layer.shadowOffset = .init(width: -2, height: 2)
+        layer.shadowOpacity = 0.07
+        layer.shadowRadius = 2
+        layer.cornerRadius = cornerRadius
+
         containerView.addSubview(fileIconImageView)
         containerView.addSubview(titleLabel)
 
         fileInformationScrollView.addSubview(fileInformationStackView)
-
-        layer.cornerRadius = cornerRadius
 
         containerView.addSubview(removeButton)
         containerView.addSubview(doneButton)
@@ -537,10 +540,10 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
         lineViewWidthConstraint = lineView.widthAnchor.constraint(equalToConstant: 1)
 
         colorStackViewDefaultConstraints = [
-            colorsView.widthAnchor.constraint(equalToConstant: containerView.frame.width * 0.8),
+            colorsView.widthAnchor.constraint(equalToConstant: 0),
+            colorsView.topAnchor.constraint(equalTo: lineView.bottomAnchor),
             colorsView.heightAnchor.constraint(equalToConstant: 0),
             colorsView.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
-            colorsView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
         ]
 
         colorStackViewInfoConstraints = [
@@ -642,7 +645,7 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
         hideButton.addAction(
             UIAction { _ in
                 self.setOriginAnimator {
-                    
+                    self.dispatcher?.send(.willHidingItem(self.itemID!))
                 }
             }, for: .touchUpInside)
 
@@ -666,7 +669,7 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
                             self.containerView.backgroundColor = color.color.bg?.withAlphaComponent(0.5)
                             self.titleLabel.textColor = color.color.title
                             self.fileItemTitleTextField.textColor = color.color.title
-                            self.setInnerShadowColor()
+                            //                            self.setInnerShadowColor()
                             self.dispatcher?.send(.willChangeFileItemColor(self.itemID!, color))
                         }
                     }
@@ -742,34 +745,6 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
 
     // MARK: -===================== Inner Shadow Configure =====================-
 
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        if removeButton.isHidden {
-            innerShadowLayer.frame = bounds
-            let path = UIBezierPath(roundedRect: bounds.insetBy(dx: -9, dy: -9), cornerRadius: cornerRadius)
-            let cutout = UIBezierPath(roundedRect: bounds, cornerRadius: cornerRadius).reversing()
-            path.append(cutout)
-
-            innerShadowLayer.shadowPath = path.cgPath
-            setInnerShadowColor()
-            innerShadowLayer.shadowOffset = .init(width: -3, height: 3)
-            setFileItemSizeState()
-            layoutIfNeeded()
-        }
-    }
-
-    private func setInnerShadowColor() {
-        if fileItemColor == .white {
-            innerShadowLayer.shadowColor = UIColor.gray.cgColor
-            innerShadowLayer.shadowOpacity = 0.15
-            innerShadowLayer.shadowRadius = 6
-        } else {
-            innerShadowLayer.shadowColor = UIColor.gray.cgColor
-            innerShadowLayer.shadowOpacity = 0.07
-            innerShadowLayer.shadowRadius = 3
-        }
-    }
-
     private func setInnerShadowLayer() {
         innerShadowLayer.frame = bounds
         containerView.layer.addSublayer(innerShadowLayer)
@@ -781,7 +756,9 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
         innerShadowLayer.cornerRadius = cornerRadius
         innerShadowLayer.shadowPath = path.cgPath
         innerShadowLayer.masksToBounds = true
-        setInnerShadowColor()
+        innerShadowLayer.shadowColor = UIColor.black.cgColor
+        innerShadowLayer.shadowOpacity = 0.07
+        innerShadowLayer.shadowRadius = 5
         innerShadowLayer.shadowOffset = .init(width: -3, height: 3)
         innerShadowLayer.fillRule = .evenOdd
     }
@@ -791,6 +768,8 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
     private func setAnimator() {
         let animator = UIViewPropertyAnimator(duration: duration * 1.5, timingParameters: timing)
         dispatcher?.send(.willPresentFileItemInfoView(itemID!))
+        clipsToBounds = true
+        layer.shadowOpacity = 0
 
         [moveButton, doneButton, hideButton, removeButton].forEach { $0.isUserInteractionEnabled = false }
 
@@ -917,9 +896,6 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
 
             innerShadowLayer.cornerRadius = cornerRadius
             innerShadowLayer.shadowPath = path.cgPath
-            innerShadowLayer.shadowOffset = .init(width: -2.6, height: 2.6)
-            innerShadowLayer.shadowOpacity = 0.12
-            innerShadowLayer.shadowRadius = 10
 
             CATransaction.commit()
         }
@@ -982,6 +958,11 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
                 fileItemTitleTextField.textColor = fileItemColor.color.title
 
                 [moveButton, doneButton, hideButton, removeButton].forEach { $0.isUserInteractionEnabled = true }
+
+                clipsToBounds = false
+                UIView.animate(withDuration: 0.3) {
+                    self.layer.shadowOpacity = 0.07
+                }
             }
         }
     }
@@ -991,6 +972,9 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
         containerView.isUserInteractionEnabled = false
         fileItemTitleTextField.isHidden = true
         titleLabel.isHidden = false
+
+        clipsToBounds = true
+        layer.shadowOpacity = 0
 
         animator.addAnimations { [self] in
             let views: [UIView] =
@@ -1071,9 +1055,12 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
             innerShadowLayer.cornerRadius = cornerRadius
             innerShadowLayer.shadowPath = path.cgPath
             innerShadowLayer.masksToBounds = true
-            setInnerShadowColor()
-            innerShadowLayer.shadowOffset = .init(width: -3, height: 3)
-            innerShadowLayer.fillRule = .evenOdd
+
+            //            innerShadowLayer.shadowOffset = .init(width: -3, height: 3)
+            //            innerShadowLayer.fillRule = .evenOdd
+
+            colorStackViewInfoConstraints.forEach { $0.isActive = false }
+            colorStackViewDefaultConstraints.forEach { $0.isActive = true }
 
             CATransaction.commit()
         }
@@ -1083,6 +1070,12 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
             collectionViewRef?.addSubview(self)
             collectionViewRef?.allowsSelection = true
             frame.origin = originPoint
+
+            clipsToBounds = false
+            UIView.animate(withDuration: 0.3) {
+                self.layer.shadowOpacity = 0.07
+
+            }
 
             blockView.removeFromSuperview()
 
@@ -1113,10 +1106,10 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
             blockView.subviews.compactMap { $0 as? UIImageView }.first?.alpha = 0
         }
 
-        UIView.animate(withDuration: duration, delay: 0, options: .curveLinear) { [self] in
-            colorStackViewInfoConstraints.forEach { $0.isActive = false }
-            colorStackViewDefaultConstraints.forEach { $0.isActive = true }
-        }
+        //        UIView.animate(withDuration: duration, delay: 0, options: .curveLinear) { [self] in
+        //            colorStackViewInfoConstraints.forEach { $0.isActive = false }
+        //            colorStackViewDefaultConstraints.forEach { $0.isActive = true }
+        //        }
     }
 
     // MARK: -===================== Set Item Information Label =====================-
@@ -1266,7 +1259,8 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
         self.itemSizeLabel.attributedText =
             makeFileInfoAttrString(subTitle: "size : ", contentsString: "calculating...")
 
-        containerView.backgroundColor = fileItem.itemColor.color.bg
+        containerView.backgroundColor = fileItem.itemColor.color.bg?
+            .adjustBrightness(by: UIColor.fileItemBackgroundBrightness)
         titleLabel.textColor = fileItem.itemColor.color.title
 
         if fileItem as? MemoDirectoryModel != nil {

@@ -23,7 +23,7 @@ final class AppSettingView: UIView {
 		isHidden = true
 		alpha = 0
 		translatesAutoresizingMaskIntoConstraints = false
-        backgroundColor = UIColor(named: "FixedFileItemBackgroundColor")
+		backgroundColor = .appBaseColor
         addSubview(label)
     }
 
@@ -33,5 +33,4 @@ final class AppSettingView: UIView {
             label.centerYAnchor.constraint(equalTo: centerYAnchor),
         ])
     }
-
 }

@@ -4,7 +4,7 @@ import Foundation
 protocol MemoDirectoryCoreDataRepositoryType: AnyObject {
 
     func fetchSystemDirectoryEntities(fileCreator: any FileCreatorType)
-        -> AnyPublisher<[SystemDirectories: MemoDirectoryModel], Error>
+        -> AnyPublisher<([SystemDirectories: MemoDirectoryModel],DirectoryContentsRenderInfo), Error>
 
     @discardableResult
     func createStorageItem(storageItem: any StorageItem, infos: DirectoryContentsRenderInfo) -> AnyPublisher<
@@ -24,4 +24,8 @@ protocol MemoDirectoryCoreDataRepositoryType: AnyObject {
     func moveItemOrder(directoryID: UUID, infos: DirectoryContentsRenderInfo)
 
     func moveItemLocation(targetDir: MemoDirectoryModel, item: any StorageItem, infos: DirectoryContentsRenderInfo)
+
+    func hideItem(item: any StorageItem, infos: DirectoryContentsRenderInfo)
+	
+	func unhideItem(item: any StorageItem, infos: DirectoryContentsRenderInfo)
 }

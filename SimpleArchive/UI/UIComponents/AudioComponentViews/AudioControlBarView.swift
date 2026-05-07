@@ -172,7 +172,6 @@ final class AudioControlBarView: UIView, UITableViewDelegate {
         addSubview(controlView)
 
         controlView.addSubview(titleLabel)
-        //        controlView.addSubview(artistLabel)
         controlView.addSubview(audioProgressBar)
         controlView.addSubview(currentTimeLabel)
         controlView.addSubview(totalTimeLabel)

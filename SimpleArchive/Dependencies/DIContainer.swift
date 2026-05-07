@@ -114,10 +114,6 @@ final class DependencyConfigurator {
             MemoDirectoryCoreDataRepository(coredataStack: coreDataStack)
         }
 
-        container.register(MemoPageCoreDataRepository.self, isSingleton: true) {
-            MemoPageCoreDataRepository(coredataStack: coreDataStack)
-        }
-
         container.register(MemoComponentCoreDataRepository.self, isSingleton: true) {
             MemoComponentCoreDataRepository(coredataStack: coreDataStack)
         }
@@ -142,6 +138,10 @@ final class DependencyConfigurator {
             AudioFileManager()
         }
 
+        container.register(PrivateDirectorySignatureManagerType.self) {
+            PrivateDirectorySignatureManager()
+        }
+
         #if os(iOS)
             if let LockScreenAudioController = AudioComponentSoundPlayer.shared as? LockScreenAudioControllable {
                 LockScreenAudioController.setLockScreenAudioContoller(with: NowPlayingInfoCenterController())
@@ -159,14 +159,15 @@ final class DependencyConfigurator {
             return PageCreator(componentFactory: factory)
         }
         let audioFileManger = container.resolve(AudioFileManagerType.self)
+		let signatureManager = container.resolve(PrivateDirectorySignatureManagerType.self)
 
         container.register(MemoHomeViewModel.self) {
             MemoHomeViewModel(
                 memoDirectoryCoredataReposotory: container.resolve(MemoDirectoryCoreDataRepository.self),
-                memoPageCoredataReposotory: container.resolve(MemoPageCoreDataRepository.self),
                 directoryCreator: container.resolve(DirectoryCreator.self),
                 pageCreator: container.resolve(PageCreator.self),
-                audioFileManager: audioFileManger
+                audioFileManager: audioFileManger,
+                signatureManager: signatureManager
             )
         }
     }

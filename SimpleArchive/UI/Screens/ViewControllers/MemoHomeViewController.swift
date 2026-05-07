@@ -29,8 +29,7 @@ final class MemoHomeViewController: UIViewController {
         innerShadowLayer.shadowOpacity = 0.07
         innerShadowLayer.shadowRadius = 4
         innerShadowLayer.fillRule = .evenOdd
-
-        titleLabelView.backgroundColor = UIColor(named: "FixedFileItemBackgroundColor")
+        titleLabelView.backgroundColor = .appBaseColor
 
         return titleLabelView
     }()
@@ -47,7 +46,7 @@ final class MemoHomeViewController: UIViewController {
                 string: "Home\n",
                 attributes: [
                     .font: UIFont.systemFont(ofSize: 28, weight: .bold),
-                    .foregroundColor: UIColor.black,
+                    .foregroundColor: UIColor.appTintColor,
                 ]
             )
         )
@@ -101,7 +100,8 @@ final class MemoHomeViewController: UIViewController {
         innerShadowLayer.shadowRadius = 4
         innerShadowLayer.fillRule = .evenOdd
 
-        button.backgroundColor = UIColor(named: "FixedFileItemBackgroundColor")
+        button.backgroundColor = .appBaseColor
+		button.layer.cornerRadius = 10
         button.layer.shadowColor = UIColor.black.cgColor
         button.layer.shadowOffset = .init(width: -4, height: 4)
         button.layer.shadowOpacity = 0.1
@@ -111,31 +111,13 @@ final class MemoHomeViewController: UIViewController {
 
         return button
     }()
-    private(set) var rootDirectoryLable: UIStackView = {
-        let directoryPathLabel = MemoHomeDirectoryNameLabel(name: "Home")
-        directoryPathLabel.setHomePathLabel()
-        return directoryPathLabel
-    }()
-    private(set) var directoryPathView: UIScrollView = {
-        let scrollView = UIScrollView()
-        scrollView.showsHorizontalScrollIndicator = false
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
-        return scrollView
-    }()
-    private(set) var directoryPathStackView: UIStackView = {
-        let stackView = UIStackView()
-        stackView.spacing = 5
-        stackView.axis = .horizontal
-        stackView.translatesAutoresizingMaskIntoConstraints = false
-        return stackView
-    }()
     private(set) var sortingOptionsView: UIView = {
         let sortingOptionsView = UIView()
-        sortingOptionsView.backgroundColor = UIColor(named: "FixedFileItemBackgroundColor")
+        sortingOptionsView.backgroundColor = .appBaseColor
         sortingOptionsView.layer.cornerRadius = 20
-        sortingOptionsView.layer.shadowColor = UIColor.gray.cgColor
+        sortingOptionsView.layer.shadowColor = UIColor.black.cgColor
         sortingOptionsView.layer.shadowOffset = .init(width: -2, height: 2)
-        sortingOptionsView.layer.shadowOpacity = 0.2
+        sortingOptionsView.layer.shadowOpacity = 0.1
         sortingOptionsView.layer.shadowRadius = 4
         sortingOptionsView.translatesAutoresizingMaskIntoConstraints = false
         return sortingOptionsView
@@ -147,7 +129,7 @@ final class MemoHomeViewController: UIViewController {
         sortByManumalLabel.isUserInteractionEnabled = true
         sortByManumalLabel.font = .systemFont(ofSize: 16, weight: .regular)
         sortByManumalLabel.translatesAutoresizingMaskIntoConstraints = false
-        sortByManumalLabel.backgroundColor = UIColor(named: "FixedFileItemBackgroundColor")
+        sortByManumalLabel.backgroundColor = .appBaseColor
         sortByManumalLabel.layer.cornerRadius = 15
         sortByManumalLabel.clipsToBounds = true
 
@@ -178,7 +160,7 @@ final class MemoHomeViewController: UIViewController {
         sortByNameLabel.isUserInteractionEnabled = true
         sortByNameLabel.font = .systemFont(ofSize: 16, weight: .regular)
         sortByNameLabel.translatesAutoresizingMaskIntoConstraints = false
-        sortByNameLabel.backgroundColor = UIColor(named: "FixedFileItemBackgroundColor")
+        sortByNameLabel.backgroundColor = .appBaseColor
         sortByNameLabel.layer.cornerRadius = 15
         sortByNameLabel.clipsToBounds = true
 
@@ -209,7 +191,7 @@ final class MemoHomeViewController: UIViewController {
         sortByCreatedateLabel.isUserInteractionEnabled = true
         sortByCreatedateLabel.font = .systemFont(ofSize: 16, weight: .regular)
         sortByCreatedateLabel.translatesAutoresizingMaskIntoConstraints = false
-        sortByCreatedateLabel.backgroundColor = UIColor(named: "FixedFileItemBackgroundColor")
+        sortByCreatedateLabel.backgroundColor = .appBaseColor
         sortByCreatedateLabel.layer.cornerRadius = 15
         sortByCreatedateLabel.clipsToBounds = true
 
@@ -375,7 +357,7 @@ final class MemoHomeViewController: UIViewController {
         let button = UIButton(configuration: config)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.layer.cornerRadius = 15
-        button.backgroundColor = UIColor(named: "FixedFileItemBackgroundColor")
+        button.backgroundColor = .appBaseColor
         button.layer.shadowColor = UIColor.black.cgColor
         button.layer.shadowOffset = .init(width: -4, height: 4)
         button.layer.shadowOpacity = 0.1
@@ -415,7 +397,7 @@ final class MemoHomeViewController: UIViewController {
         let button = UIButton(configuration: config)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.layer.cornerRadius = 15
-        button.backgroundColor = UIColor(named: "FixedFileItemBackgroundColor")
+        button.backgroundColor = .appBaseColor
         button.layer.shadowColor = UIColor.black.cgColor
         button.layer.shadowOffset = .init(width: -4, height: 4)
         button.layer.shadowOpacity = 0.1
@@ -442,7 +424,7 @@ final class MemoHomeViewController: UIViewController {
     }()
     private(set) var adjustItemForManualView: UIView = {
         let adjustItemForManualView = UIView()
-        adjustItemForManualView.backgroundColor = UIColor(named: "FixedFileItemBackgroundColor")
+        adjustItemForManualView.backgroundColor = .appBaseColor
 
         adjustItemForManualView.alpha = 0
         adjustItemForManualView.isHidden = true
@@ -477,7 +459,7 @@ final class MemoHomeViewController: UIViewController {
         innerShadowLayer.shadowRadius = 6
         innerShadowLayer.fillRule = .evenOdd
 
-        blockViewTitleView.backgroundColor = UIColor(named: "FixedFileItemBackgroundColor")
+        blockViewTitleView.backgroundColor = .appBaseColor
 
         return blockViewTitleView
     }()
@@ -545,7 +527,7 @@ final class MemoHomeViewController: UIViewController {
         let selectedItemListView = UIStackView()
         selectedItemListView.alignment = .center
         selectedItemListView.axis = .horizontal
-        selectedItemListView.backgroundColor = UIColor(named: "FixedFileItemBackgroundColor")
+        selectedItemListView.backgroundColor = .appBaseColor
         selectedItemListView.spacing = 8
         selectedItemListView.translatesAutoresizingMaskIntoConstraints = false
         return selectedItemListView
@@ -576,9 +558,10 @@ final class MemoHomeViewController: UIViewController {
     var viewModel: MemoHomeViewModel
     var subscriptions = Set<AnyCancellable>()
     private var directoryStackDataSource: DirectoryStackDataSource?
+    private var privateDirectoryDataSource: DirectoryStackDataSource?
     private let titleAttributedString = NSMutableAttributedString()
 
-    private var optionwid: CGFloat = 0
+    private var sortingOptionwidth: CGFloat = 0
     private var sortByManumalLabelWidth = CGFloat.zero
     private var sortByNameLabelWidth = CGFloat.zero
     private var sortByCreatedateLabelWidth = CGFloat.zero
@@ -588,9 +571,11 @@ final class MemoHomeViewController: UIViewController {
 
     private(set) var isActiveFileCreatePlusButton: Bool = false
     private var audioControlBarHost: AudioControlBarHostType
+    private(set) var directoryPathView = DirectoryPathView()
     private var tabbar = TabBarView()
     private var appSettingView = AppSettingView()
-    private var hideItemView = HideItemView()
+    private(set) var privateDirectoryBlockView = PrivateDirectoryBlockView()
+    private var privateDirectoryVisiblityObserver: NSKeyValueObservation?
 
     init(memoHomeViewModel: MemoHomeViewModel, audioControlBarHost: AudioControlBarHostType) {
         self.viewModel = memoHomeViewModel
@@ -616,11 +601,17 @@ final class MemoHomeViewController: UIViewController {
             guard let self else { return }
 
             switch result {
-                case .didFetchMemoData(let directoryStack, let manualSortingInfo):
+                case .didFetchMemoData(let directoryStack, let privateDirectoryStack, let manualSortingInfo):
                     directoryStackDataSource = DirectoryStackDataSource(
                         directoryStack: directoryStack,
                         dispatcher: dispatcher,
                         manualSortInfo: manualSortingInfo)
+
+                    privateDirectoryDataSource = DirectoryStackDataSource(
+                        directoryStack: privateDirectoryStack,
+                        dispatcher: dispatcher,
+                        manualSortInfo: manualSortingInfo)
+
                     let rootDirectoryID = directoryStack.stack.first!.id
                     let sortCriteria = directoryStack.stack.first!.sortBy
 
@@ -629,7 +620,7 @@ final class MemoHomeViewController: UIViewController {
                     setupConstraints()
                     setupActions(rootDirectoryID)
 
-                case .didCalcMainDirectoryInfo(let mainDirectorySize, let dirCount, let pageCount):
+                case .didUpdateCurrentRootDirectoryInfo(let mainDirectorySize, let dirCount, let pageCount):
                     setMainDirectoryInfo(directoryTotal: dirCount, pageTotal: pageCount, size: mainDirectorySize)
 
                 case .didInsertRowToHomeTable(let collectionCellIndex, let tableCellIndices):
@@ -823,7 +814,6 @@ final class MemoHomeViewController: UIViewController {
                         for vc in c.directoryContentTableView.visibleCells {
                             (vc as! FileItemView).setSelectedState(false)
                         }
-
                         c.directoryContentTableView.insertItems(at: indices.map { IndexPath(item: $0, section: 0) })
                     }
 
@@ -890,6 +880,55 @@ final class MemoHomeViewController: UIViewController {
                     } completion: { _ in
                         self.selectedItemListScrollView.isHidden = true
                     }
+
+                case .didHidingItem(let index):
+                    if let cd = directoryCollectionView.visibleCells.first as? MemoHomeDirectoryContentCell {
+                        cd.deleteItem(with: index)
+                        dispatcher.send(.willManualAutoGrid)
+                        dispatcher.send(.willUpdateCurrentRootDirectoryInfo)
+                    }
+
+                case .didPresentSignatureRegisterView:
+                    privateDirectoryBlockView.registerSignatureGuideView()
+                    privateDirectoryBlockView.dispatcher = dispatcher
+
+                case .didPresentReleaseLockView(let centerPoints):
+                    privateDirectoryBlockView.readyToVerifySignature(centers: centerPoints)
+                    privateDirectoryBlockView.dispatcher = dispatcher
+
+                case .didTryToUnlockPrivateDirectory(let result):
+                    if result {
+                        UIView.animate(withDuration: 0.5) {
+                            self.privateDirectoryBlockView.alpha = 0
+                        } completion: { _ in
+                            self.privateDirectoryVisiblityObserver?.invalidate()
+                            self.privateDirectoryVisiblityObserver = nil
+                            self.audioControlBarHost.setAudioControlBarVisiblityIfActive(nil)
+                            self.privateDirectoryBlockView.isHidden = true
+                        }
+                    } else {
+                        UIView.transition(
+                            with: privateDirectoryBlockView, duration: 0.3, options: .transitionCrossDissolve
+                        ) {
+                            self.privateDirectoryBlockView.clear()
+                            self.privateDirectoryBlockView.fail()
+                        }
+                    }
+
+                case .didRegisterSignature(let center):
+                    privateDirectoryBlockView.addCenterPoint(center: center)
+                    privateDirectoryBlockView.clear()
+                    privateDirectoryBlockView.saveSnapshotHistory()
+
+                case .didSuccessRegisterSignature:
+                    privateDirectoryBlockView.registerSignatureCompleteView()
+
+                case .didUpdateCurrentDirectoryInfo(let direcotry):
+                    setCurrentSortOptionView(sortBy: direcotry.sortBy)
+                    directoryPathView.clear()
+                    directoryPathView.appendPath(name: direcotry.name) {
+                        self.dispatcher.send(.willMovePreviousDirectoryPath(direcotry.id))
+                    }
             }
         }
         .store(in: &subscriptions)
@@ -954,14 +993,14 @@ final class MemoHomeViewController: UIViewController {
     }
 
     private func setupUI() {
-        view.backgroundColor = UIColor(named: "FixedFileItemBackgroundColor")
+        view.backgroundColor = .appBaseColor
         view.addSubview(appSettingView)
-        view.addSubview(hideItemView)
 
         blockViewTitleView.addSubview(blockViewTitle)
         adjustItemForManualView.addSubview(blockViewTitleView)
         view.addSubview(adjustItemForManualView)
         view.addSubview(tabbar)
+        view.addSubview(privateDirectoryBlockView)
 
         adjustItemForManualView.addSubview(gridButton)
         adjustItemForManualView.addSubview(applyButton)
@@ -973,16 +1012,13 @@ final class MemoHomeViewController: UIViewController {
         sortByManumalLabelWidth = sortByManumalLabel.intrinsicContentSize.width
         sortByNameLabelWidth = sortByNameLabel.intrinsicContentSize.width
         sortByCreatedateLabelWidth = sortByCreatedateLabel.intrinsicContentSize.width
-        optionwid = sortByManumalLabelWidth + sortByNameLabelWidth + sortByCreatedateLabelWidth + 10
+        sortingOptionwidth = sortByManumalLabelWidth + sortByNameLabelWidth + sortByCreatedateLabelWidth + 10
 
         sortingOptionsView.addSubview(sortByManumalLabel)
         sortingOptionsView.addSubview(sortByNameLabel)
         sortingOptionsView.addSubview(sortByCreatedateLabel)
 
         view.addSubview(sortingOptionsView)
-        directoryPathView.addSubview(directoryPathStackView)
-        directoryPathStackView.addArrangedSubview(rootDirectoryLable)
-
         view.addSubview(directoryPathView)
 
         selectedItemListScrollView.addSubview(selectedItemListView)
@@ -1027,18 +1063,13 @@ final class MemoHomeViewController: UIViewController {
             trashBoxButton.heightAnchor.constraint(equalToConstant: 55),
             trashBoxButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
 
-            directoryPathView.topAnchor.constraint(equalTo: titleLabelView.bottomAnchor, constant: 15),
+            directoryPathView.topAnchor.constraint(equalTo: titleLabelView.bottomAnchor, constant: 25),
             directoryPathView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             directoryPathView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            directoryPathView.heightAnchor.constraint(equalToConstant: 40),
-
-            directoryPathStackView.topAnchor.constraint(equalTo: directoryPathView.topAnchor),
-            directoryPathStackView.bottomAnchor.constraint(equalTo: directoryPathView.bottomAnchor),
-            directoryPathStackView.leadingAnchor.constraint(equalTo: directoryPathView.leadingAnchor),
-            directoryPathStackView.trailingAnchor.constraint(equalTo: directoryPathView.trailingAnchor),
+            directoryPathView.heightAnchor.constraint(equalToConstant: 60),
 
             sortingOptionsView.topAnchor.constraint(equalTo: directoryPathView.bottomAnchor, constant: 5),
-            sortingOptionsView.widthAnchor.constraint(equalToConstant: optionwid),
+            sortingOptionsView.widthAnchor.constraint(equalToConstant: sortingOptionwidth),
             sortingOptionsView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             sortingOptionsView.heightAnchor.constraint(equalToConstant: 40),
 
@@ -1114,18 +1145,33 @@ final class MemoHomeViewController: UIViewController {
             appSettingView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             appSettingView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
-            hideItemView.topAnchor.constraint(equalTo: view.topAnchor),
-            hideItemView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            hideItemView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            hideItemView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-
             tabbar.heightAnchor.constraint(equalToConstant: 78),
             tabbar.widthAnchor.constraint(equalToConstant: UIView.screenWidth),
             tabbar.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            privateDirectoryBlockView.topAnchor.constraint(equalTo: view.topAnchor),
+            privateDirectoryBlockView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            privateDirectoryBlockView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            privateDirectoryBlockView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
     }
 
     private func setupActions(_ rootDirectoryID: UUID) {
+        privateDirectoryVisiblityObserver =
+            privateDirectoryBlockView.observe(\.isHidden, options: [.new, .old]) { view, change in
+                DispatchQueue.main.async {
+                    if let ov = change.oldValue, let nv = change.newValue {
+                        if ov != nv {
+                            if nv {
+                                self.audioControlBarHost.setAudioControlBarVisiblityIfActive(nil)
+                            } else {
+                                self.audioControlBarHost.setAudioControlBarVisiblityIfActive(!nv)
+                            }
+                        }
+                    }
+                }
+            }
+
         fileCreatePlusButton.throttleUIViewTapGesturePublisher(interval: 0)
             .sink { [weak self] _ in
                 guard let self else { return }
@@ -1157,12 +1203,9 @@ final class MemoHomeViewController: UIViewController {
             }
             .store(in: &subscriptions)
 
-        rootDirectoryLable.throttleUIViewTapGesturePublisher(interval: 0.5)
-            .sink { [weak self] _ in
-                guard let self else { return }
-                dispatcher.send(.willMovePreviousDirectoryPath(rootDirectoryID))
-            }
-            .store(in: &subscriptions)
+        directoryPathView.appendPath(name: "Home") {
+            self.dispatcher.send(.willMovePreviousDirectoryPath(rootDirectoryID))
+        }
 
         sortByNameLabel.throttleUIViewTapGesturePublisher()
             .sink { [weak self] _ in
@@ -1192,7 +1235,7 @@ final class MemoHomeViewController: UIViewController {
                     self.adjustItemForManualView.alpha = 1
                     self.fileCreatePlusButton.alpha = 0
                     self.tabbar.alpha = 0
-                    self.audioControlBarHost.setAudioControlBarVisiblityIfActive()
+                    self.audioControlBarHost.setAudioControlBarVisiblityIfActive(nil)
                     self.directoryCollectionView.alpha = 0
                 } completion: { [weak self] _ in
                     guard let self else { return }
@@ -1260,7 +1303,7 @@ final class MemoHomeViewController: UIViewController {
                     self.adjustItemForManualView.alpha = 0
                     self.fileCreatePlusButton.alpha = 1
                     self.tabbar.alpha = 1
-                    self.audioControlBarHost.setAudioControlBarVisiblityIfActive()
+                    self.audioControlBarHost.setAudioControlBarVisiblityIfActive(nil)
                     self.directoryCollectionView.collectionViewLayout.invalidateLayout()
                     self.view.layoutIfNeeded()
                 } completion: { _ in
@@ -1283,92 +1326,126 @@ final class MemoHomeViewController: UIViewController {
 
         tabbar.homeButton.addAction(
             UIAction { _ in
-				UIView.transition(with: self.view, duration: 0.8, options: .transitionCurlDown) { [self] in
-                    self.hideItemView.isHidden = true
+                self.dispatcher.send(.willMoveTab(.mainDirectory))
+
+                UIView.transition(with: self.view, duration: 0.3, options: .transitionCrossDissolve) { [self] in
                     self.appSettingView.isHidden = true
                     self.appSettingView.alpha = 0
-                    self.hideItemView.alpha = 0
-                    self.tabbar.changeHome()
+                    self.view.sendSubviewToBack(privateDirectoryBlockView)
+                    self.privateDirectoryBlockView.isHidden = true
+
+                    self.directoryCollectionView.dataSource = directoryStackDataSource
+                    self.directoryCollectionView.reloadData()
+                    self.directoryCollectionView.collectionViewLayout.invalidateLayout()
+
+                    let nsString = titleAttributedString.string as NSString
+                    let range = nsString.range(of: "Private")
+
+                    guard range.location != NSNotFound else { return }
+
+                    titleAttributedString.replaceCharacters(
+                        in: range,
+                        with: NSAttributedString(
+                            string: "Home",
+                            attributes: [
+                                .font: UIFont.systemFont(ofSize: 28, weight: .bold),
+                                .foregroundColor: UIColor.black,
+                            ]
+                        )
+                    )
+                    titleLabel.attributedText = titleAttributedString
                 } completion: { _ in
-                    self.hideItemView.isHidden = true
-                    self.appSettingView.isHidden = true
+                    self.tabbar.homeButton.isUserInteractionEnabled = false
+                    self.tabbar.hideButton.isUserInteractionEnabled = true
+                    self.tabbar.settingButton.isUserInteractionEnabled = true
                 }
+
+                self.tabbar.changeHome()
             }, for: .touchUpInside)
 
         tabbar.hideButton.addAction(
             UIAction { _ in
-                self.hideItemView.isHidden = false
-                self.hideItemView.alpha = 1
+                self.privateDirectoryBlockView.subviews.compactMap { $0 as? UIImageView }.first?.removeFromSuperview()
 
-				UIView.transition(with: self.view, duration: 0.8, options: .transitionCurlDown) { [self] in
-                    self.view.bringSubviewToFront(self.hideItemView)
-                    self.view.bringSubviewToFront(self.tabbar)
-                    self.tabbar.changeHide()
-                } completion: { _ in
+                if let blurredImage = self.view.window?.fullSnapshotImage()?.blurredByPixcelSize(radius: 22) {
+                    let imageView = UIImageView(image: blurredImage)
+                    imageView.frame = self.privateDirectoryBlockView.bounds
+                    self.privateDirectoryBlockView.addSubview(imageView)
+                    self.privateDirectoryBlockView.sendSubviewToBack(imageView)
+                }
+
+                self.dispatcher.send(.willMoveTab(.privateDirectory))
+
+                UIView.transition(with: self.view, duration: 0.3, options: .transitionCrossDissolve) { [self] in
                     self.appSettingView.isHidden = true
                     self.appSettingView.alpha = 0
+                    self.privateDirectoryBlockView.isHidden = false
                     self.view.sendSubviewToBack(self.appSettingView)
+                    self.view.bringSubviewToFront(self.privateDirectoryBlockView)
+                    self.view.bringSubviewToFront(self.tabbar)
+
+                    let nsString = self.titleAttributedString.string as NSString
+                    let range = nsString.range(of: "Home")
+
+                    if range.location != NSNotFound {
+                        self.titleAttributedString.replaceCharacters(
+                            in: range,
+                            with: NSAttributedString(
+                                string: "Private",
+                                attributes: [
+                                    .font: UIFont.systemFont(ofSize: 28, weight: .bold),
+                                    .foregroundColor: UIColor.black,
+                                ]
+                            )
+                        )
+                        self.titleLabel.attributedText = self.titleAttributedString
+                    }
+
+                    self.directoryCollectionView.dataSource = self.privateDirectoryDataSource
+                    self.directoryCollectionView.reloadData()
+                    self.directoryCollectionView.collectionViewLayout.invalidateLayout()
+
+                } completion: { _ in
+                    self.tabbar.homeButton.isUserInteractionEnabled = true
+                    self.tabbar.hideButton.isUserInteractionEnabled = false
+                    self.tabbar.settingButton.isUserInteractionEnabled = true
                 }
+                self.tabbar.changeHide()
             }, for: .touchUpInside)
 
         tabbar.settingButton.addAction(
             UIAction { _ in
                 self.appSettingView.isHidden = false
                 self.appSettingView.alpha = 1
-
-				UIView.transition(with: self.view, duration: 0.8, options: .transitionCurlDown) { [self] in
+                self.dispatcher.send(.willMoveTab(.setting))
+                UIView.transition(with: self.view, duration: 0.3, options: .transitionCrossDissolve) { [self] in
+                    self.view.sendSubviewToBack(privateDirectoryBlockView)
+                    self.privateDirectoryBlockView.isHidden = true
                     self.view.bringSubviewToFront(self.appSettingView)
                     self.view.bringSubviewToFront(self.tabbar)
-                    self.tabbar.changeSetting()
                 } completion: { _ in
-                    self.hideItemView.isHidden = true
-                    self.hideItemView.alpha = 0
-                    self.view.sendSubviewToBack(self.hideItemView)
+                    self.tabbar.homeButton.isUserInteractionEnabled = true
+                    self.tabbar.hideButton.isUserInteractionEnabled = true
+                    self.tabbar.settingButton.isUserInteractionEnabled = false
                 }
+
+                self.tabbar.changeSetting()
             }, for: .touchUpInside)
     }
 
     private func moveToNextDirectory(directoryName: String, directoryID: UUID) {
         let lastItemIndex = directoryCollectionView.numberOfItems(inSection: .zero)
         let newIndexPath = IndexPath(item: lastItemIndex, section: .zero)
-        let directoryPathLable = MemoHomeDirectoryNameLabel(name: directoryName)
-        directoryPathLable.setCurrentPathLabel()
 
-        directoryPathLable.throttleUIViewTapGesturePublisher(interval: 0.5)
-            .sink { [weak self] _ in
-                guard let self else { return }
-                dispatcher.send(.willMovePreviousDirectoryPath(directoryID))
-            }
-            .store(in: &subscriptions)
-
-        if let last = directoryPathStackView.arrangedSubviews.last,
-            let directoryPathLabel = last as? MemoHomeDirectoryNameLabel
-        {
-            directoryPathLabel.setmiddlePathLabel()
+        directoryPathView.appendPath(name: directoryName) {
+            self.dispatcher.send(.willMovePreviousDirectoryPath(directoryID))
         }
-
-        directoryPathStackView.addArrangedSubview(directoryPathLable)
 
         directoryCollectionView.insertItems(at: [newIndexPath])
         directoryCollectionView.scrollToItem(at: newIndexPath, at: .right, animated: true)
-        DispatchQueue.main.async {
-            self.directoryPathView.scrollToTrailing(animated: true)
-        }
     }
 
     private func movePreviousDirectoryTappedLabel(removedIndexList: [Int]) {
-        for _ in 0..<removedIndexList.count {
-            if let last = directoryPathStackView.arrangedSubviews.last {
-                directoryPathStackView.removeArrangedSubview(last)
-                last.removeFromSuperview()
-            }
-        }
-        if let last = directoryPathStackView.arrangedSubviews.last,
-            let directoryPathLabel = last as? MemoHomeDirectoryNameLabel
-        {
-            directoryPathLabel.setCurrentPathLabel()
-        }
-
         let removeIndexPathList = removedIndexList.map { IndexPath(item: $0, section: 0) }
         directoryCollectionView.deleteItems(at: removeIndexPathList)
     }
@@ -1380,21 +1457,15 @@ final class MemoHomeViewController: UIViewController {
             collectionViewCell.insertItem(indices: tableCellIndices)
         }
         dispatcher.send(.willManualAutoGrid)
-        dispatcher.send(.willCalcTotalInfo)
+        dispatcher.send(.willUpdateCurrentRootDirectoryInfo)
     }
 
     private func removeRowToTable(removedFileIndex: Int) {
-        let lastItemIndex = directoryCollectionView.numberOfItems(inSection: .zero)
-        let newIndexPath = IndexPath(item: lastItemIndex - 1, section: .zero)
-
-        guard
-            let collectionViewCell = directoryCollectionView.cellForItem(at: newIndexPath),
-            let cell = collectionViewCell as? MemoHomeDirectoryContentCell
-        else { return }
-        cell.deleteItem(with: removedFileIndex)
-
-        dispatcher.send(.willManualAutoGrid)
-        dispatcher.send(.willCalcTotalInfo)
+        if let currentContent = directoryCollectionView.visibleCells.last as? MemoHomeDirectoryContentCell {
+            currentContent.deleteItem(with: removedFileIndex)
+            dispatcher.send(.willManualAutoGrid)
+            dispatcher.send(.willUpdateCurrentRootDirectoryInfo)
+        }
     }
 
     private func sortFileTableRows(sortReulst: [Int]) {

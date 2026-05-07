@@ -1,7 +1,6 @@
 import UIKit
 
 final class RemovedItemView: UITableViewCell {
-
     private(set) var itemTitleLabel: UILabel = {
         let itemTitleLabel = UILabel()
         itemTitleLabel.translatesAutoresizingMaskIntoConstraints = false

@@ -2,9 +2,6 @@ import Combine
 import UIKit
 
 class ErrorMessagePopupView: PopupView {
-
-    private var cancelable: AnyCancellable?
-
     private let popupViewHeaderStackView: UIStackView = {
         let popupViewHeaderStackView = UIStackView()
         popupViewHeaderStackView.axis = .horizontal
@@ -48,6 +45,8 @@ class ErrorMessagePopupView: PopupView {
 
         return confirmButton
     }()
+
+    private var cancelable: AnyCancellable?
 
     init(error: any MessageErrorType, confirmButtomAction: (() -> Void)? = nil) {
         errorMessageLabel.text = error.errorMessage

@@ -13,17 +13,15 @@ extension Array {
     }
 }
 
-
-
 extension TimeInterval {
-	var secondsToTimeString: String {
-		let total = Int(self)
-		let h = total / 3600
-		let m = (total % 3600) / 60
-		let s = total % 60
-		return String(format: "%02d:%02d:%02d", h, m, s)
-	}
-	
+    var secondsToTimeString: String {
+        let total = Int(self)
+        let h = total / 3600
+        let m = (total % 3600) / 60
+        let s = total % 60
+        return String(format: "%02d:%02d:%02d", h, m, s)
+    }
+
     var asMinuteSecond: String {
         let totalSeconds = Int(self)
         let minutes = totalSeconds / 60

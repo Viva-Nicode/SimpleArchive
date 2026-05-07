@@ -292,18 +292,33 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
         audioControlBar.isHidden = true
     }
 
-    func setAudioControlBarVisiblityIfActive() {
-        let isActive = audioControlBarState != .initial && audioControlBarState != .stop
-        if isActive != audioControlBar.isHidden {
-            UIView.animate(withDuration: 0.4) {
-                self.audioControlBar.alpha = 0
-            } completion: { _ in
-                self.audioControlBar.isHidden = true
+    func setAudioControlBarVisiblityIfActive(_ isHidden: Bool? = nil) {
+        if let isHidden {
+            if isHidden {
+                UIView.animate(withDuration: 0.4) {
+                    self.audioControlBar.alpha = 0
+                } completion: { _ in
+                    self.audioControlBar.isHidden = true
+                }
+            } else {
+                audioControlBar.isHidden = false
+                UIView.animate(withDuration: 0.4) {
+                    self.audioControlBar.alpha = 1
+                }
             }
         } else {
-            audioControlBar.isHidden = false
-            UIView.animate(withDuration: 0.4) {
-                self.audioControlBar.alpha = 1
+            let isActive = audioControlBarState != .initial && audioControlBarState != .stop
+            if isActive != audioControlBar.isHidden {
+                UIView.animate(withDuration: 0.4) {
+                    self.audioControlBar.alpha = 0
+                } completion: { _ in
+                    self.audioControlBar.isHidden = true
+                }
+            } else {
+                audioControlBar.isHidden = false
+                UIView.animate(withDuration: 0.4) {
+                    self.audioControlBar.alpha = 1
+                }
             }
         }
     }
@@ -662,7 +677,7 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
     func applyMetadataChangeToAudioControlBar(audioMetadata: AudioTrackMetadata)
     func seekAudioControlBarPlayProgress(seek: TimeInterval)
     func stopAudioControlBar()
-    func setAudioControlBarVisiblityIfActive()
+    func setAudioControlBarVisiblityIfActive(_ isHidden: Bool?)
 
     func setAudioControlBarLayoutAsDefault()
     func setAudioControlBarLayoutAsThin()
