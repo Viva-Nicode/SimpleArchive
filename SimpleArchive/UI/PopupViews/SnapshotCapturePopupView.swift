@@ -35,7 +35,7 @@ final class SnapshotCapturePopupView: PopupView {
     }()
     private let bottomBorder: UIView = {
         let bottomBorder = UIView()
-        bottomBorder.backgroundColor = .blue
+		bottomBorder.backgroundColor = .label
         bottomBorder.translatesAutoresizingMaskIntoConstraints = false
         bottomBorder.heightAnchor.constraint(equalToConstant: 1.2).isActive = true
         return bottomBorder
@@ -136,6 +136,13 @@ final class SnapshotCapturePopupView: PopupView {
             snapshotDesctiptionTextView.resignFirstResponder()
         }
     }
+	
+	override func applyColor(_ colorManager: any AppAppearanceManagerType = AppAppearanceManager.shared) {
+		super.applyColor()
+		titleLabel.textColor = colorManager.appTintColor
+		snapshotDesctiptionTextView.backgroundColor = colorManager.appBaseColor
+		snapshotDesctiptionTextView.textColor = colorManager.appTintColor
+	}
 
     override func popupViewDetailConfigure() {
         let descriptionTextStackView = UIStackView()
@@ -151,6 +158,8 @@ final class SnapshotCapturePopupView: PopupView {
         alertContainer.addArrangedSubview(titleLabel)
         alertContainer.addArrangedSubview(descriptionTextStackView)
         alertContainer.addArrangedSubview(captureButton)
+		
+		applyColor()
     }
 }
 

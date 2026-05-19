@@ -1,19 +1,7 @@
 import Combine
 import UIKit
 
-final class NewPagePopupView: PopupView {
-
-    private let subject: PassthroughSubject<MemoHomeViewInput, Never>
-    private var singleComponentCheckBox = CheckboxButton(title: "Single Note Page")
-    private let checkBoxContainerView: UIStackView = {
-        $0.axis = .horizontal
-        $0.alignment = .center
-        return $0
-    }(UIStackView())
-    private var kindofComponentItems: [ComponentType] = ComponentType.allCases
-    private var selectedComponentType: ComponentType?
-    private var selectedIndexPath: IndexPath?
-
+final class NewPagePopupView: PopupView, UITextFieldDelegate {
     private let titleLabel: UILabel = {
         let titleLabel = UILabel()
         titleLabel.text = "Create New Page"
@@ -48,7 +36,6 @@ final class NewPagePopupView: PopupView {
 
         return confirmButton
     }()
-
     private let collectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .vertical
@@ -56,9 +43,21 @@ final class NewPagePopupView: PopupView {
         layout.minimumInteritemSpacing = 0
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
         collectionView.isHidden = true
-        collectionView.backgroundColor = .white
+        collectionView.backgroundColor = .clear
         return collectionView
     }()
+    private let checkBoxContainerView: UIStackView = {
+        $0.axis = .horizontal
+        $0.alignment = .center
+        return $0
+    }(UIStackView())
+
+    private let subject: PassthroughSubject<MemoHomeViewInput, Never>
+    private var singleComponentCheckBox = CheckboxButton(title: "Single Note Page")
+
+    private var kindofComponentItems: [ComponentType] = ComponentType.allCases
+    private var selectedComponentType: ComponentType?
+    private var selectedIndexPath: IndexPath?
 
     init(subject: PassthroughSubject<MemoHomeViewInput, Never>) {
         self.subject = subject
@@ -124,6 +123,8 @@ final class NewPagePopupView: PopupView {
                 self.dismiss()
             }
             .store(in: &subscriptions)
+
+        applyColor()
     }
 
     private func updateConfirmButton() {
@@ -131,9 +132,17 @@ final class NewPagePopupView: PopupView {
             !(pageNameTextField.text?.isEmpty ?? true)
             && (!singleComponentCheckBox.isChecked || selectedComponentType != nil)
     }
-}
 
-extension NewPagePopupView: UITextFieldDelegate {
+    override func applyColor(_ colorManager: any AppAppearanceManagerType = AppAppearanceManager.shared) {
+        super.applyColor()
+        titleLabel.textColor = colorManager.appTintColor
+        singleComponentCheckBox.tintColor = colorManager.appTintColor
+        singleComponentCheckBox.setTitleColor(colorManager.appTintColor, for: .normal)
+        singleComponentCheckBox.imageView?.tintColor = colorManager.appTintColor
+        pageNameTextField.backgroundColor = colorManager.appBaseColor
+        pageNameTextField.textColor = colorManager.appTintColor
+    }
+
     func textFieldDidChangeSelection(_ textField: UITextField) {
         updateConfirmButton()
     }

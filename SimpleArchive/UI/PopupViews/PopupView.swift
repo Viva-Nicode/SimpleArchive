@@ -5,11 +5,9 @@ protocol PopupViewDetailConfigurable {
     func popupViewDetailConfigure()
 }
 
-class PopupView: UIView, PopupViewDetailConfigurable {
-
+class PopupView: UIView, PopupViewDetailConfigurable, BaseColorUpdatable {
     let backgroundView: UIView = {
         let backgroundView = UIView()
-        backgroundView.backgroundColor = UIColor.black.withAlphaComponent(0.5)
         backgroundView.translatesAutoresizingMaskIntoConstraints = false
         return backgroundView
     }()
@@ -20,8 +18,7 @@ class PopupView: UIView, PopupViewDetailConfigurable {
         alertContainer.layoutMargins = UIEdgeInsets(top: 20, left: 20, bottom: 20, right: 20)
         alertContainer.axis = .vertical
         alertContainer.spacing = 20
-        alertContainer.backgroundColor = .white
-        alertContainer.layer.cornerRadius = 10
+        alertContainer.layer.cornerRadius = 15
         alertContainer.translatesAutoresizingMaskIntoConstraints = false
         return alertContainer
     }()
@@ -39,7 +36,7 @@ class PopupView: UIView, PopupViewDetailConfigurable {
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
+
     deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
 
     func popupViewDetailConfigure() { fatalError("This method must be overridden by subclass") }
@@ -120,5 +117,10 @@ class PopupView: UIView, PopupViewDetailConfigurable {
             self.removeFromSuperview()
             self.subscriptions.removeAll()
         }
+    }
+
+    func applyColor(_ colorManager: any AppAppearanceManagerType = AppAppearanceManager.shared) {
+        backgroundView.backgroundColor = .black.withAlphaComponent(0.4)
+        alertContainer.backgroundColor = colorManager.appBaseColor
     }
 }

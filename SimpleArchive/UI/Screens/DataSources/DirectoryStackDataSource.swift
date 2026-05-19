@@ -33,7 +33,7 @@ final class DirectoryStackDataSource: NSObject, UICollectionViewDataSource {
         let dataSource = DirectoryContentDataSource(
             directoryContents: directoryContents,
             input: dispatcher,
-            manualSortInfo: manualSortInfo)
+			manualSortInfo: manualSortInfo)
 
         if let layout = cell.directoryContentTableView.collectionViewLayout as? DirectoryContentsLayout {
             layout.delegate = dataSource

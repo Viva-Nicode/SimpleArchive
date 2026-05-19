@@ -1,6 +1,6 @@
 import UIKit
 
-final class RemovedItemView: UITableViewCell {
+final class RemovedItemView: UITableViewCell, BaseColorUpdatable {
     private(set) var itemTitleLabel: UILabel = {
         let itemTitleLabel = UILabel()
         itemTitleLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -11,6 +11,7 @@ final class RemovedItemView: UITableViewCell {
         $0.contentMode = .scaleAspectFit
         return $0
     }(UIImageView())
+    let line = CAShapeLayer()
 
     static let reuseIdentifier = "RemovedItemView"
 
@@ -25,12 +26,11 @@ final class RemovedItemView: UITableViewCell {
     }
 
     private func setupUI() {
-        contentView.backgroundColor = UIColor(named: "FixedFileItemBackgroundColor")
         contentView.addSubview(itemTitleLabel)
         contentView.addSubview(fileIconImageView)
-        let line = CAShapeLayer()
-		line.frame = .init(x: 10, y: 46, width: bounds.width + 20, height: 2)
-        line.strokeColor = UIColor.systemGray4.cgColor
+
+        line.frame = .init(x: 10, y: 58, width: bounds.width + 20, height: 2)
+
         line.lineWidth = 2
         line.lineDashPattern = [4, 4]
         let path = UIBezierPath()
@@ -60,13 +60,27 @@ final class RemovedItemView: UITableViewCell {
             switch item.components.first!.type {
                 case .text:
                     fileIconImageView.image = UIImage(named: "text")?.resized(to: .init(width: 40, height: 40))
+                        .withRenderingMode(.alwaysTemplate)
                 case .table:
                     fileIconImageView.image = UIImage(named: "table")?.resized(to: .init(width: 40, height: 40))
+                        .withRenderingMode(.alwaysTemplate)
                 case .audio:
                     fileIconImageView.image = UIImage(named: "audio")?.resized(to: .init(width: 40, height: 40))
+                        .withRenderingMode(.alwaysTemplate)
             }
         } else {
             fileIconImageView.image = UIImage(named: "multi")?.resized(to: .init(width: 40, height: 40))
+                .withRenderingMode(.alwaysTemplate)
         }
+        applyColor()
+    }
+
+    func applyColor(_ colorManager: any AppAppearanceManagerType = AppAppearanceManager.shared) {
+        contentView.backgroundColor = colorManager.appBaseColor
+        itemTitleLabel.textColor = colorManager.appTintColor
+            .setBrightness(1.0 - colorManager.appBaseColorBrightness + 0.1)
+        fileIconImageView.tintColor = colorManager.appTintColor
+            .setBrightness(1.0 - colorManager.appBaseColorBrightness + 0.1)
+        line.strokeColor = colorManager.appTintColor.cgColor
     }
 }

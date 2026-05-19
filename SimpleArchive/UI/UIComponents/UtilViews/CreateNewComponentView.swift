@@ -2,17 +2,17 @@ import Combine
 import UIKit
 
 final class CreateNewComponentView: UIViewController {
-
     private let kindofAddableComponentItems: [ComponentType] = ComponentType.allCases
 
     private(set) var titleLabel: UILabel = {
         $0.text = "Create New Note"
         $0.font = .systemFont(ofSize: 22, weight: .regular)
+		$0.textColor = AppAppearanceManager.shared.appTintColor
         return $0
     }(UILabel())
     private let backgroundView: UIStackView = {
         let bg = UIStackView()
-        bg.backgroundColor = .systemBackground
+		bg.backgroundColor = AppAppearanceManager.shared.appBaseColor
         bg.isLayoutMarginsRelativeArrangement = true
         bg.layoutMargins = .init(top: 20, left: 20, bottom: 0, right: 20)
         bg.axis = .vertical
@@ -27,7 +27,7 @@ final class CreateNewComponentView: UIViewController {
     let componentTypePublisher = PassthroughSubject<ComponentType, Never>()
 
     override func viewDidLoad() {
-        view.backgroundColor = .systemBackground
+        view.backgroundColor = AppAppearanceManager.shared.appBaseColor
         view.addSubview(backgroundView)
 
         backgroundView.topAnchor.constraint(equalTo: view.topAnchor).isActive = true

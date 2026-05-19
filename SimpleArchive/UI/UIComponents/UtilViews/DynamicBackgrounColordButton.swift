@@ -17,12 +17,10 @@ class DynamicBackgrounColordButton: UIButton {
             if isEnabled {
                 if let color = defaultBackgroundColor {
                     self.backgroundColor = color
-                    
                 }
             } else {
                 if let color = disabledBackgroundColor {
                     self.backgroundColor = color
-                    
                 }
             }
         }
@@ -30,11 +28,8 @@ class DynamicBackgrounColordButton: UIButton {
 
     func setBackgroundColor(_ color: UIColor?, for state: ButtonState) {
         switch state {
-        case .disabled:
-            disabledBackgroundColor = color
-
-        case .normal:
-            defaultBackgroundColor = color
+            case .disabled: disabledBackgroundColor = color
+            case .normal: defaultBackgroundColor = color
         }
     }
 }

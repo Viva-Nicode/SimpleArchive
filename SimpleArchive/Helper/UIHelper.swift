@@ -162,29 +162,18 @@ extension UIScrollView {
 }
 
 extension UIColor {
-	static var appBaseColorBrightness: Double = 1.0
-	static var appTintColorBrightness: Double = 0.0
-	static var fileItemBackgroundBrightness: Double = 1.0
-
-    static let appTintColor = UIColor(named: "AppBaseForegroundColor")!
-        .adjustBrightness(by: appTintColorBrightness)
-    static let appBaseColor = UIColor(named: "FixedFileItemBackgroundColor")!
-        .adjustBrightness(by: appBaseColorBrightness)
-
-    func adjustBrightness(by factor: CGFloat) -> UIColor {
+    func setBrightness(_ brightness: CGFloat) -> UIColor {
         var h: CGFloat = 0
         var s: CGFloat = 0
         var b: CGFloat = 0
         var a: CGFloat = 0
 
-        guard self.getHue(&h, saturation: &s, brightness: &b, alpha: &a) else {
-            return self
-        }
+        guard self.getHue(&h, saturation: &s, brightness: &b, alpha: &a) else { return self }
 
-        let newBrightness = min(max(b * factor, 0), 1)
-        return UIColor(hue: h, saturation: s, brightness: newBrightness, alpha: a)
+        return UIColor(hue: h, saturation: s, brightness: brightness, alpha: a)
     }
 }
+
 extension UIResponder {
     private weak static var _currentFirstResponder: UIResponder? = nil
 
@@ -208,6 +197,12 @@ extension UIView {
             initialSpringVelocity: 0.7,
             options: [.curveEaseInOut],
             animations: { with() }, completion: { _ in comp?() })
+    }
+
+    static func curveEaseOut(_ duration: Double = 0.5, _ with: @escaping () -> Void, comp: (() -> Void)? = nil) {
+        UIView.animate(
+            withDuration: duration, delay: 0, usingSpringWithDamping: 0.99, initialSpringVelocity: 0.6,
+            options: [.curveEaseOut], animations: { with() }, completion: { _ in comp?() })
     }
 
     public static var spacerView: UIView {
@@ -271,12 +266,15 @@ extension UIView {
         return top
     }
 }
+
 extension UIView {
     func fullSnapshotImage() -> UIImage? {
         let renderer = UIGraphicsImageRenderer(size: bounds.size)
-        return renderer.image { context in
-            self.drawHierarchy(in: CGRect(origin: .zero, size: bounds.size), afterScreenUpdates: true)
-        }
+        return
+            renderer.image { context in
+                self.drawHierarchy(
+                    in: CGRect(origin: .zero, size: bounds.size), afterScreenUpdates: true)
+            }
     }
 }
 

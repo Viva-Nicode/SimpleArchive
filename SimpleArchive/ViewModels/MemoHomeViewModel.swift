@@ -38,19 +38,23 @@ import UIKit
 
     private var selectedItem: [any StorageItem] = []
     private let signatureManager: PrivateDirectorySignatureManagerType
+    private let contentsConfigurationManager: UserContentsConfigurationManagerType
+    private var isUnlockedPrivateDirectory = false
 
     init(
         memoDirectoryCoredataReposotory: MemoDirectoryCoreDataRepositoryType,
         directoryCreator: any FileCreatorType,
         pageCreator: any PageCreatorType,
         audioFileManager: AudioFileManagerType,
-        signatureManager: PrivateDirectorySignatureManagerType
+        signatureManager: PrivateDirectorySignatureManagerType,
+        userContentConfigurationManager: UserContentsConfigurationManagerType
     ) {
         self.memoDirectoryCoredataReposotory = memoDirectoryCoredataReposotory
         self.directoryCreator = directoryCreator
         self.pageCreator = pageCreator
         self.audioFileManager = audioFileManager
         self.signatureManager = signatureManager
+        self.contentsConfigurationManager = userContentConfigurationManager
         super.init()
     }
 
@@ -115,7 +119,12 @@ import UIKit
                         let ro = makeItemRenderInfo(itemID, i, z, targetDir.sortBy)
 
                         info[targetDir.id].append(ro)
-                        memoDirectoryCoredataReposotory.hideItem(item: item, infos: info)
+
+                        if currentTab == .mainDirectory {
+                            memoDirectoryCoredataReposotory.hideItem(item: item, infos: info)
+                        } else {
+                            memoDirectoryCoredataReposotory.unhideItem(item: item, infos: info)
+                        }
 
                         output.send(.didHidingItem(index))
                     }
@@ -125,24 +134,48 @@ import UIKit
                     selectedItem = []
                     output.send(.didCancelAllSelection)
 
-                    Task.detached { await self.updateCurrentRootDirectoryInfo() }
+                    switch tab {
+                        case .mainDirectory:
+                            directoryStack.stack = Array(directoryStack.stack.prefix(1))
+                            output.send(.didMoveTab(directoryStack.stack.first!))
+                            if !signatureManager.isRegisteredSignature { signatureManager.clearSignature() }
+                            updateCurrentRootDirectoryInfo()
 
-                    if tab == .privateDirectory {
-                        if signatureManager.isRegisteredSignature {
-                            output.send(.didPresentReleaseLockView(signatureManager.centerPoints))
-                        } else {
-                            output.send(.didPresentSignatureRegisterView)
-                        }
-                        privateDirectoryStack.stack = Array(privateDirectoryStack.stack.prefix(1))
-                    } else {
-                        directoryStack.stack = Array(directoryStack.stack.prefix(1))
-                        if !signatureManager.isRegisteredSignature { signatureManager.clearSignature() }
+                        case .privateDirectory:
+                            if signatureManager.isRegisteredSignature {
+                                output.send(
+                                    .didPresentReleaseLockView(
+                                        signatureManager.benchmarkVisibility ? signatureManager.centerPoints : [],
+                                        signatureManager.drawingDisplayOption))
+                            } else {
+                                output.send(.didPresentSignatureRegisterView)
+                            }
+                            privateDirectoryStack.stack = Array(privateDirectoryStack.stack.prefix(1))
+                            if isUnlockedPrivateDirectory {
+                                updateCurrentRootDirectoryInfo()
+                                output.send(.didMoveTab(privateDirectoryStack.stack.first!))
+                            }
+
+                        case .setting:
+                            output.send(
+                                .didLoadSettings(
+                                    signatureManager.coordinateSimilarityPassScore,
+                                    signatureManager.patternSimilarityPassScore,
+                                    signatureManager.benchmarkVisibility,
+                                    signatureManager.drawingDisplayOption,
+                                    signatureManager.isUnlocked,
+                                    contentsConfigurationManager.isEnableTextMemoSummarization
+                                )
+                            )
                     }
-                    output.send(.didUpdateCurrentDirectoryInfo(currentRootDirectory))
 
                 case .willTryToUnlockPrivateDirectoryAccess(let signature):
-                    let result = signatureManager.verifySignature(sign: signature)
-                    output.send(.didTryToUnlockPrivateDirectory(result))
+                    isUnlockedPrivateDirectory = signatureManager.verifySignature(sign: signature)
+                    if isUnlockedPrivateDirectory {
+                        updateCurrentRootDirectoryInfo()
+                        output.send(.didMoveTab(privateDirectoryStack.stack.first!))
+                    }
+                    output.send(.didTryToUnlockPrivateDirectory(isUnlockedPrivateDirectory))
 
                 case .willRegisterSignature(let signature):
                     let centerPoint = signatureManager.registerSignature(sign: signature)
@@ -154,6 +187,22 @@ import UIKit
                 case .willSuccessRegisterSignature:
                     signatureManager.completeRegister()
                     output.send(.didSuccessRegisterSignature)
+
+                case .willAdjustSignaturePassScore(let cs, let ps):
+                    signatureManager.setCoordinateSimilarityPassScore(cs)
+                    signatureManager.setPatternSimilarityPassScore(ps)
+
+                case .willSetBenchmarkVisibility(let visibility):
+                    signatureManager.setBenchMarkVisibility(visibility)
+
+                case .willSetSignatureDrawingDisplay(let opt):
+                    signatureManager.setDrawingDisplayOption(opt)
+
+                case .willResetSignature:
+                    signatureManager.clearSignature()
+
+                case .willSetTextMemoSermmerizationEnable:
+                    contentsConfigurationManager.isEnableTextMemoSummarization.toggle()
             }
         }
         .store(in: &subscriptions)
@@ -180,7 +229,7 @@ import UIKit
                     privateDirectoryStack.stack = [privateDirectory]
                     currentTab = .mainDirectory
 
-                    Task.detached { await self.updateCurrentRootDirectoryInfo() }
+                    updateCurrentRootDirectoryInfo()
 
                     info = itemRenderInfoData
                     output.send(.didFetchMemoData(directoryStack, privateDirectoryStack, info))
@@ -330,9 +379,14 @@ import UIKit
     }
 
     private func updateCurrentRootDirectoryInfo() {
-        let size = getSizeDirectory(directory: currentRootDirectory)
-        let info = currentRootDirectory.getFileInformation() as! DirectoryInformation
-        output.send(.didUpdateCurrentRootDirectoryInfo(size, info.containedDirectoryCount, info.containedPageCount))
+        Task.detached { [self] in
+            let size = await getSizeDirectory(directory: currentRootDirectory)
+            let info = await currentRootDirectory.getFileInformation() as! DirectoryInformation
+            DispatchQueue.main.async {
+                self.output.send(
+                    .didUpdateCurrentRootDirectoryInfo(size, info.containedDirectoryCount, info.containedPageCount))
+            }
+        }
     }
 
     private func getAudioComponentSize(page: MemoPageModel) -> Int64 {
@@ -393,12 +447,16 @@ import UIKit
                         )
                     } else if let tec = page.components.first as? TextEditorComponent {
                         if #available(iOS 26.0, *) {
-                            let m = TextMemoContentsSummaryGeneratingModel()
-                            Task.detached {
-                                let summary = await m.summation(input: tec.componentContents)
-                                await MainActor.run {
-                                    self.output.send(.didGenertingTextComponentSummary(itemIndex, summary))
+                            if contentsConfigurationManager.isEnableTextMemoSummarization {
+                                let m = TextMemoContentsSummaryGeneratingModel()
+                                Task.detached {
+                                    let summary = await m.summation(input: tec.componentContents)
+                                    await MainActor.run {
+                                        self.output.send(.didGenertingTextComponentSummary(itemIndex, summary))
+                                    }
                                 }
+                            } else {
+                                self.output.send(.didGenertingTextComponentSummary(itemIndex, "disabled summerization"))
                             }
                         }
                         if let mrsd = tec.snapshots.sorted(by: { $0.makingDate > $1.makingDate }).first?.makingDate {
@@ -764,6 +822,11 @@ enum MemoHomeViewInput {
     case willRegisterSignature([[Double]])
     case willRemoveSignatureHistory(Int)
     case willSuccessRegisterSignature
+    case willAdjustSignaturePassScore(Double, Double)
+    case willSetBenchmarkVisibility(Bool)
+    case willSetSignatureDrawingDisplay(DrawingDisplayOption)
+    case willResetSignature
+    case willSetTextMemoSermmerizationEnable
 }
 
 enum MemoHomeViewOutput {
@@ -794,11 +857,12 @@ enum MemoHomeViewOutput {
     case didCancelAllSelection
     case didHidingItem(Int)
     case didPresentSignatureRegisterView
-    case didPresentReleaseLockView([[Double]])
+    case didPresentReleaseLockView([[Double]], DrawingDisplayOption)
     case didTryToUnlockPrivateDirectory(Bool)
     case didRegisterSignature([Double])
     case didSuccessRegisterSignature
-    case didUpdateCurrentDirectoryInfo(MemoDirectoryModel)
+    case didMoveTab(MemoDirectoryModel)
+    case didLoadSettings(Double, Double, Bool, DrawingDisplayOption, Bool, Bool)
 }
 
 protocol MessageErrorType: Error {

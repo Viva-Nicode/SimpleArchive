@@ -1,7 +1,6 @@
 import UIKit
 
 final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
-
     private(set) var audioControlBar: AudioControlBarView
     private(set) var audioControlBarLayoutState: AudioControlBarLayoutState = .default
 
@@ -209,7 +208,8 @@ final class AudioControlBarHostWindow: UIWindow, AudioControlBarHostType {
         audioComponent: AudioComponent, pageName: String
     ) -> SingleAudioPageViewController? {
         if audioControlBar.dispatcher?.viewModel?.audioComponentID == audioComponent.id {
-            let singleAudioViewController = SingleAudioPageViewController(audioControlBarHost: self)
+            let singleAudioViewController = SingleAudioPageViewController(
+                audioControlBarHost: self)
             let dispatcher = audioControlBar.dispatcher!
             let vm = dispatcher.viewModel!
             let eventHandler = AudioComponentViewEventHandler(

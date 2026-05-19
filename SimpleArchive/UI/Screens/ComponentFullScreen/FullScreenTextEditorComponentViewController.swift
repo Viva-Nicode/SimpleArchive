@@ -62,4 +62,11 @@ final class FullScreenTextEditorComponentViewController: ComponentFullScreenView
         componentContentView.contentInset.bottom = 170
         componentContentView.verticalScrollIndicatorInsets.bottom = 0
     }
+	
+	override func applyColor(_ colorManager: any AppAppearanceManagerType = AppAppearanceManager.shared) {
+		super.applyColor()
+		toolBarView.backgroundColor = UIColor(named: "TextEditorComponentToolbarColor")?
+			.setBrightness(min(1.0, colorManager.appBaseColorBrightness * 1.4))
+		
+	}
 }

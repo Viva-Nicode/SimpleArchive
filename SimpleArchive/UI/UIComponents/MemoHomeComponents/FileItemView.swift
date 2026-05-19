@@ -16,7 +16,7 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
     }(UIImageView())
     private(set) lazy var titleLabel: UILabel = {
         $0.font = .systemFont(ofSize: 17)
-        $0.numberOfLines = 1
+        $0.numberOfLines = 2
         $0.adjustsFontSizeToFitWidth = true
         $0.minimumScaleFactor = 0.7
         $0.textAlignment = .center
@@ -226,11 +226,13 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
         return totalAudioComponentCountLabel
     }()
 
-    // MARK: -================== Item Information Labels END ==================-
+    // MARK: ================== Item Information Labels END ==================
 
     private(set) lazy var fileItemTitleTextField: UITextField = {
         let fileItemTitleTextField = UITextField()
         fileItemTitleTextField.font = .systemFont(ofSize: 23, weight: .semibold)
+        fileItemTitleTextField.minimumFontSize = 16
+        fileItemTitleTextField.adjustsFontSizeToFitWidth = true
         fileItemTitleTextField.returnKeyType = .done
         fileItemTitleTextField.isHidden = true
         fileItemTitleTextField.textAlignment = .center
@@ -240,7 +242,6 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
     private(set) lazy var lineView: UIView = {
         let lineView = UIView()
         lineView.translatesAutoresizingMaskIntoConstraints = false
-        lineView.backgroundColor = .systemGray4
         lineView.isHidden = true
         lineView.alpha = 0
         lineView.layer.cornerRadius = 1.5
@@ -279,6 +280,7 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
         view.backgroundColor = .black.withAlphaComponent(0.5)
         view.isHidden = true
         view.alpha = 0
+        view.layer.cornerRadius = 15
         view.translatesAutoresizingMaskIntoConstraints = false
 
         let imageView = UIImageView()
@@ -329,7 +331,7 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
     private var scaleX: Double!
     private var scaleY: Double!
     private weak var collectionViewRef: UICollectionView?
-    private let duration: Double = 0.6
+    private var duration: Double { AppAppearanceManager.shared.animaDuration == .normal ? 0.6 : 0.3 }
     private var fileItemColor: FileItemColor = .white
 
     private var originBlockPoint: CGPoint!
@@ -441,9 +443,9 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
     private func setupConstraints() {
         fileIconDefaultConstraints = [
             fileIconImageView.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 10),
-            fileIconImageView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 10),
-            fileIconImageView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -10),
-            fileIconImageView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -40),
+            fileIconImageView.widthAnchor.constraint(equalTo: containerView.widthAnchor, multiplier: 0.55),
+            fileIconImageView.heightAnchor.constraint(equalTo: containerView.widthAnchor, multiplier: 0.55),
+            fileIconImageView.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
         ]
 
         fileIconInfoConstraints = [
@@ -454,15 +456,15 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
         ]
 
         fileIconBarConstraints = [
-            fileIconImageView.widthAnchor.constraint(equalToConstant: 50),
-            fileIconImageView.heightAnchor.constraint(equalToConstant: 50),
+            fileIconImageView.widthAnchor.constraint(equalTo: containerView.heightAnchor, multiplier: 0.55),
+            fileIconImageView.heightAnchor.constraint(equalTo: containerView.heightAnchor, multiplier: 0.55),
             fileIconImageView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
             fileIconImageView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 10),
         ]
 
         titleLabelDefaultConstraints = [
             titleLabel.topAnchor.constraint(equalTo: fileIconImageView.bottomAnchor),
-            titleLabel.heightAnchor.constraint(equalToConstant: 30),
+            titleLabel.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -10),
             titleLabel.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
             titleLabel.widthAnchor.constraint(lessThanOrEqualTo: containerView.widthAnchor, multiplier: 0.8),
         ]
@@ -662,19 +664,17 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
         colorCircles.enumerated()
             .forEach { i, circle in
                 circle.throttleUIViewTapGesturePublisher()
-                    .sink { _ in
-                        UIView.animate(withDuration: 0.3) {
+                    .sink { [self] _ in
+                        UIView.animate(withDuration: 0.3) { [self] in
                             let color = FileItemColor.allCases[i]
                             self.fileItemColor = color
-                            self.containerView.backgroundColor = color.color.bg?.withAlphaComponent(0.5)
-                            self.titleLabel.textColor = color.color.title
-                            self.fileItemTitleTextField.textColor = color.color.title
-                            //                            self.setInnerShadowColor()
-                            self.dispatcher?.send(.willChangeFileItemColor(self.itemID!, color))
+                            applyColor()
+                            dispatcher?.send(.willChangeFileItemColor(itemID!, color))
                         }
                     }
                     .store(in: &colorCircleSubscriptions)
             }
+
     }
 
     private func setFileItemSizeState() {
@@ -688,20 +688,16 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
         let index = diss.indices.min(by: { diss[$0] < diss[$1] })
 
         UIView.animate(withDuration: 0.2) { [self] in
-            if index == 0 {
-                layer.borderColor = UIColor.green.cgColor
-            } else if index == 1 {
-                layer.borderColor = UIColor.orange.cgColor
-            } else if index == 2 {
-                layer.borderColor = UIColor.red.cgColor
-            } else {
-                layer.borderColor = UIColor.blue.cgColor
-            }
-
-            if index == 0 {
-                titleLabel.numberOfLines = 1
-            } else {
-                titleLabel.numberOfLines = 2
+            if panGesture.isEnabled {
+                if index == 0 {
+                    layer.borderColor = UIColor.green.cgColor
+                } else if index == 1 {
+                    layer.borderColor = UIColor.orange.cgColor
+                } else if index == 2 {
+                    layer.borderColor = UIColor.red.cgColor
+                } else {
+                    layer.borderColor = UIColor.blue.cgColor
+                }
             }
 
             if index == 3 {
@@ -744,6 +740,22 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
     }
 
     // MARK: -===================== Inner Shadow Configure =====================-
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        if removeButton.isHidden {
+            innerShadowLayer.frame = bounds
+            let path = UIBezierPath(roundedRect: bounds.insetBy(dx: -9, dy: -9), cornerRadius: cornerRadius)
+            let cutout = UIBezierPath(roundedRect: bounds, cornerRadius: cornerRadius).reversing()
+            path.append(cutout)
+
+            innerShadowLayer.shadowPath = path.cgPath
+            innerShadowLayer.shadowOffset = .init(width: -3, height: 3)
+            setFileItemSizeState()
+
+            layoutIfNeeded()
+        }
+    }
 
     private func setInnerShadowLayer() {
         innerShadowLayer.frame = bounds
@@ -823,7 +835,7 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
         }
 
         animator.addAnimations { [self] in
-            containerView.backgroundColor = containerView.backgroundColor?.withAlphaComponent(0.5)
+            containerView.backgroundColor = containerView.backgroundColor?.withAlphaComponent(0.3)
 
             fileIconBarConstraints.forEach { $0.isActive = false }
             fileIconDefaultConstraints.forEach { $0.isActive = false }
@@ -861,6 +873,7 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
             fileInformationScrollView.alpha = 1
 
             titleLabel.font = .systemFont(ofSize: 23, weight: .semibold)
+
             layoutIfNeeded()
         }
 
@@ -898,6 +911,7 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
             innerShadowLayer.shadowPath = path.cgPath
 
             CATransaction.commit()
+
         }
 
         itemInformationVCPresentAnimator = animator
@@ -955,7 +969,6 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
 
                 fileItemTitleTextField.text = titleLabel.text!
                 fileItemTitleTextField.isHidden = false
-                fileItemTitleTextField.textColor = fileItemColor.color.title
 
                 [moveButton, doneButton, hideButton, removeButton].forEach { $0.isUserInteractionEnabled = true }
 
@@ -992,7 +1005,9 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
 
             fileIconBarConstraints.forEach { $0.isActive = false }
             fileIconInfoConstraints.forEach { $0.isActive = false }
+            fileIconInfoConstraints.forEach { $0.isActive = false }
 
+            titleLabelDefaultConstraints.forEach { $0.isActive = false }
             titleLabelInfoConstraints.forEach { $0.isActive = false }
             titleLabelBarConstraints.forEach { $0.isActive = false }
 
@@ -1002,8 +1017,11 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
             doneButtonInfoConstraints.forEach { $0.isActive = false }
             fileInformationScrollViewInfoConstraints.forEach { $0.isActive = false }
 
-            fileIconDefaultConstraints.forEach { $0.isActive = true }
-            titleLabelDefaultConstraints.forEach { $0.isActive = true }
+            frame.size = originFrame
+            frame.origin = originBlockPoint
+            layer.zPosition = originZ
+
+            setFileItemSizeState()
 
             moveButtonDefaultConstraints.forEach { $0.isActive = true }
             doneButtonDefaultConstraints.forEach { $0.isActive = true }
@@ -1012,15 +1030,11 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
 
             fileInformationScrollViewDefaultConstraints.forEach { $0.isActive = true }
 
-            frame.size = originFrame
-            frame.origin = originBlockPoint
-            layer.zPosition = originZ
-
             lineViewWidthConstraint.constant = 1
 
             titleLabel.font = .systemFont(ofSize: 17)
 
-            setFileItemSizeState()
+            applyColor()
             layoutIfNeeded()
         }
 
@@ -1056,9 +1070,6 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
             innerShadowLayer.shadowPath = path.cgPath
             innerShadowLayer.masksToBounds = true
 
-            //            innerShadowLayer.shadowOffset = .init(width: -3, height: 3)
-            //            innerShadowLayer.fillRule = .evenOdd
-
             colorStackViewInfoConstraints.forEach { $0.isActive = false }
             colorStackViewDefaultConstraints.forEach { $0.isActive = true }
 
@@ -1074,7 +1085,6 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
             clipsToBounds = false
             UIView.animate(withDuration: 0.3) {
                 self.layer.shadowOpacity = 0.07
-
             }
 
             blockView.removeFromSuperview()
@@ -1105,11 +1115,6 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
         UIView.animate(withDuration: duration * 0.5, delay: 0, options: .curveLinear) { [self] in
             blockView.subviews.compactMap { $0 as? UIImageView }.first?.alpha = 0
         }
-
-        //        UIView.animate(withDuration: duration, delay: 0, options: .curveLinear) { [self] in
-        //            colorStackViewInfoConstraints.forEach { $0.isActive = false }
-        //            colorStackViewDefaultConstraints.forEach { $0.isActive = true }
-        //        }
     }
 
     // MARK: -===================== Set Item Information Label =====================-
@@ -1186,7 +1191,7 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
                 string: subTitle,
                 attributes: [
                     .font: UIFont.systemFont(ofSize: 17),
-                    .foregroundColor: UIColor.gray,
+                    .foregroundColor: AppAppearanceManager.shared.appSecondaryTintColor,
                 ]
             )
         )
@@ -1196,7 +1201,7 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
                 string: contentsString,
                 attributes: [
                     .font: UIFont.systemFont(ofSize: contentFontSize, weight: .semibold),
-                    .foregroundColor: UIColor.black,
+                    .foregroundColor: AppAppearanceManager.shared.appTintColor,
                 ]
             )
         )
@@ -1204,7 +1209,10 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
         attributedString.append(
             NSAttributedString(
                 string: infoLabelDivisionDottedLine,
-                attributes: [.font: infoLabelDivisionDottedLineFont, .foregroundColor: UIColor.systemGray3]
+                attributes: [
+                    .font: infoLabelDivisionDottedLineFont,
+                    .foregroundColor: AppAppearanceManager.shared.appSecondaryTintColor,
+                ]
             )
         )
 
@@ -1259,19 +1267,19 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
         self.itemSizeLabel.attributedText =
             makeFileInfoAttrString(subTitle: "size : ", contentsString: "calculating...")
 
-        containerView.backgroundColor = fileItem.itemColor.color.bg?
-            .adjustBrightness(by: UIColor.fileItemBackgroundBrightness)
-        titleLabel.textColor = fileItem.itemColor.color.title
-
         if fileItem as? MemoDirectoryModel != nil {
-            fileIconImageView.image = UIImage(named: "folder")?.resized(to: .init(width: 60, height: 60))
+            fileIconImageView.image = UIImage(named: "folder")?
+                .resized(to: CGSize(width: 60, height: 60))
+                .withRenderingMode(.alwaysTemplate)
             totalDirectoryCountLabel.isHidden = false
             totalPageCountLabel.isHidden = false
         } else if let page = fileItem as? MemoPageModel {
             if page.isSingleComponentPage {
                 switch page.components.first!.type {
                     case .text:
-                        fileIconImageView.image = UIImage(named: "text")?.resized(to: .init(width: 60, height: 60))
+                        fileIconImageView.image = UIImage(named: "text")?
+                            .resized(to: CGSize(width: 60, height: 60))
+                            .withRenderingMode(.alwaysTemplate)
                         textComponentSummaryLabel.isHidden = false
                         mostRecentSnapshotDateLabel.isHidden = false
                         textComponentSummaryLabel.isHidden = false
@@ -1279,18 +1287,24 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
                             makeFileInfoAttrString(subTitle: "summary\n", contentsString: "summarizing...")
 
                     case .table:
-                        fileIconImageView.image = UIImage(named: "table")?.resized(to: .init(width: 60, height: 60))
+                        fileIconImageView.image = UIImage(named: "table")?
+                            .resized(to: CGSize(width: 60, height: 60))
+                            .withRenderingMode(.alwaysTemplate)
                         mostRecentSnapshotDateLabel.isHidden = false
                         columnsLabel.isHidden = false
                         rowCountLabel.isHidden = false
 
                     case .audio:
-                        fileIconImageView.image = UIImage(named: "audio")?.resized(to: .init(width: 60, height: 60))
+                        fileIconImageView.image = UIImage(named: "audio")?
+                            .resized(to: CGSize(width: 60, height: 60))
+                            .withRenderingMode(.alwaysTemplate)
                         totalAudioDurationLabel.isHidden = false
                         totalAudioCountLabel.isHidden = false
                 }
             } else {
-                fileIconImageView.image = UIImage(named: "multi")?.resized(to: .init(width: 60, height: 60))
+                fileIconImageView.image = UIImage(named: "multi")?
+                    .resized(to: CGSize(width: 60, height: 60))
+                    .withRenderingMode(.alwaysTemplate)
                 totalTextCountLabel.isHidden = false
                 totalTableComponentCountLabel.isHidden = false
                 totalAudioComponentCountLabel.isHidden = false
@@ -1298,8 +1312,8 @@ final class FileItemView: UICollectionViewCell, UITextFieldDelegate {
         }
         setFileItemSizeState()
         setInnerShadowLayer()
-
         setSelectedState(Self.isSelectedSet.contains(fileItem.id))
+        applyColor()
     }
 }
 
@@ -1356,9 +1370,10 @@ extension FileItemView: UIGestureRecognizerDelegate {
                 }
 
             case .ended, .cancelled, .failed:
-                UIView.animate(withDuration: 0.3) {
+                UIView.animate(withDuration: 0.3) { [self] in
                     self.alpha = 1
                     self.layer.borderWidth = 0
+                    applyColor()
                 }
 
                 dispatcher?.send(.willSortManualOrder(itemID!, frame))
@@ -1378,22 +1393,25 @@ extension FileItemView: UIGestureRecognizerDelegate {
     }
 }
 
-enum FileItemColor: String, Codable, CaseIterable {
-    case red = "RED"
-    case green = "GREEN"
-    case purple = "PURPLE"
-    case blue = "BLUE"
-    case orange = "ORANGE"
-    case white = "WHITE"
+extension FileItemView: BaseColorUpdatable {
+    func applyColor(_ colorManager: any AppAppearanceManagerType = AppAppearanceManager.shared) {
+        containerView.backgroundColor = fileItemColor.color.bg?
+            .setBrightness(colorManager.appBaseColorBrightness)
 
-    var color: (bg: UIColor?, title: UIColor?) {
-        switch self {
-            case .red: (UIColor(hex: "#FCE8EB"), .systemRed)
-            case .green: (UIColor(hex: "#DAF5DE"), .systemGreen)
-            case .purple: (UIColor(hex: "#E6DFF5"), .systemPurple)
-            case .blue: (UIColor(hex: "#D7E9F5"), .systemBlue)
-            case .orange: (UIColor(hex: "#FCEAB8"), .systemOrange)
-            case .white: (UIColor(named: "FixedFileItemBackgroundColor"), .black)
+        let brightness = 1.1 - colorManager.appBaseColorBrightness + (fileItemColor == .white ? 0.1 : 0.6)
+
+        lineView.backgroundColor = fileItemColor.color.title?.setBrightness(brightness)
+        fileIconImageView.tintColor = fileItemColor.color.title?.setBrightness(brightness)
+        titleLabel.textColor = fileItemColor.color.title?.setBrightness(brightness)
+        fileItemTitleTextField.textColor = fileItemColor.color.title?.setBrightness(brightness)
+
+        if colorManager.appBaseColorBrightness <= 0.4 {
+            layer.borderWidth = 2
+            layer.borderColor =
+                fileItemColor.color.title?.setBrightness(1.3 - colorManager.appBaseColorBrightness + 0.6).cgColor
+        } else {
+            layer.borderWidth = 0
+            layer.borderColor = nil
         }
     }
 }

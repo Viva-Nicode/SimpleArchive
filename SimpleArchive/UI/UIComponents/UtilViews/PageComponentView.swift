@@ -6,9 +6,9 @@ protocol PageComponentViewType: UIView {
 
     func getContentView() -> T
     var toolBarView: UIView { get set }
-    var redCircleView: UIView { get set }
-    var yellowCircleView: UIView { get set }
-    var greenCircleView: UIView { get set }
+    var redCircleView: CircleButton { get set }
+    var yellowCircleView: CircleButton { get set }
+    var greenCircleView: CircleButton { get set }
     var titleLabel: UILabel { get set }
     var creationDateLabel: UILabel { get set }
     var componentInformationView: UIStackView { get set }
@@ -20,9 +20,9 @@ protocol PageComponentViewType: UIView {
     func freedReferences()
 }
 
-class PageComponentView<ComponentContentType, PageComponentType>: UICollectionViewCell, PageComponentViewType
+class PageComponentView<ComponentContentType, PageComponentType>: UICollectionViewCell, PageComponentViewType,
+    BaseColorUpdatable
 where ComponentContentType: UIView, PageComponentType: PageComponent {
-
     func getContentView() -> ComponentContentType { self.componentContentView }
 
     var subscriptions = Set<AnyCancellable>()
@@ -45,7 +45,7 @@ where ComponentContentType: UIView, PageComponentType: PageComponent {
     }()
     var toolBarView: UIView = {
         let toolBarView = UIView()
-        toolBarView.layer.cornerRadius = 10
+        toolBarView.layer.cornerRadius = 20
         toolBarView.layer.masksToBounds = false
         toolBarView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
         toolBarView.translatesAutoresizingMaskIntoConstraints = false
@@ -55,38 +55,15 @@ where ComponentContentType: UIView, PageComponentType: PageComponent {
     var circleStackView: UIStackView = {
         let circleStackView = UIStackView()
         circleStackView.axis = .horizontal
-        circleStackView.spacing = 10
+        circleStackView.spacing = 0
         circleStackView.alignment = .center
         circleStackView.translatesAutoresizingMaskIntoConstraints = false
         return circleStackView
     }()
-    var redCircleView: UIView = {
-        let circleView = UIView()
-        circleView.backgroundColor = UIColor(red: 0.99, green: 0.27, blue: 0.27, alpha: 1)
-        circleView.layer.cornerRadius = 9
-        circleView.translatesAutoresizingMaskIntoConstraints = false
-        circleView.widthAnchor.constraint(equalToConstant: 18).isActive = true
-        circleView.heightAnchor.constraint(equalToConstant: 18).isActive = true
-        return circleView
-    }()
-    var yellowCircleView: UIView = {
-        let circleView = UIView()
-        circleView.backgroundColor = UIColor(red: 1.0, green: 0.69, blue: 0.14, alpha: 1)
-        circleView.layer.cornerRadius = 9
-        circleView.translatesAutoresizingMaskIntoConstraints = false
-        circleView.widthAnchor.constraint(equalToConstant: 18).isActive = true
-        circleView.heightAnchor.constraint(equalToConstant: 18).isActive = true
-        return circleView
-    }()
-    var greenCircleView: UIView = {
-        let circleView = UIView()
-        circleView.backgroundColor = UIColor(red: 0.16, green: 0.79, blue: 0.19, alpha: 1)
-        circleView.layer.cornerRadius = 9
-        circleView.translatesAutoresizingMaskIntoConstraints = false
-        circleView.widthAnchor.constraint(equalToConstant: 18).isActive = true
-        circleView.heightAnchor.constraint(equalToConstant: 18).isActive = true
-        return circleView
-    }()
+
+    var redCircleView = CircleButton(.red)
+    var yellowCircleView = CircleButton(.yellow)
+    var greenCircleView = CircleButton(.green)
     var titleLabel: UILabel = {
         let titleLabel = UILabel()
         titleLabel.font = .systemFont(ofSize: 18, weight: .regular)
@@ -121,11 +98,10 @@ where ComponentContentType: UIView, PageComponentType: PageComponent {
     deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
 
     func setupUI() {
-        contentView.layer.masksToBounds = false
-        contentView.layer.shadowColor = UIColor.gray.cgColor
-        contentView.layer.shadowOffset = CGSize(width: 0, height: 0)
-        contentView.layer.shadowOpacity = 0.7
-        contentView.layer.shadowRadius = 4.0
+        contentView.layer.shadowColor = UIColor.black.cgColor
+        contentView.layer.shadowOffset = .init(width: -1, height: 1)
+        contentView.layer.shadowOpacity = 0.15
+        contentView.layer.shadowRadius = 4
 
         circleStackView.addArrangedSubview(redCircleView)
         circleStackView.addArrangedSubview(yellowCircleView)
@@ -151,7 +127,7 @@ where ComponentContentType: UIView, PageComponentType: PageComponent {
             containerView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
 
             circleStackView.centerYAnchor.constraint(equalTo: toolBarView.centerYAnchor),
-            circleStackView.leadingAnchor.constraint(equalTo: toolBarView.leadingAnchor, constant: 10),
+            circleStackView.leadingAnchor.constraint(equalTo: toolBarView.leadingAnchor, constant: 5),
 
             titleLabel.centerXAnchor.constraint(equalTo: toolBarView.centerXAnchor),
             titleLabel.centerYAnchor.constraint(equalTo: toolBarView.centerYAnchor),
@@ -208,7 +184,6 @@ where ComponentContentType: UIView, PageComponentType: PageComponent {
                 guard let self else { return }
                 contentView.endEditing(true)
                 pageActionDispatcher?.send(.willToggleFoldingComponent(componentID: componentID))
-
             }
             .store(in: &subscriptions)
 
@@ -264,10 +239,78 @@ where ComponentContentType: UIView, PageComponentType: PageComponent {
     }
 
     func setMinimizeState(_ isMinimize: Bool) {
-        fatalError("thie method must override in subclass.")
+        if isMinimize {
+            componentInformationView.layer.cornerRadius = 20
+            componentInformationView.layer.maskedCorners = [.layerMaxXMaxYCorner, .layerMinXMaxYCorner]
+        } else {
+            componentInformationView.layer.cornerRadius = 0
+        }
     }
 
     func presentFullScreenPageComponentView() {
         fatalError("thie method must override in subclass.")
+    }
+	
+	func applyColor(_ colorManager: any AppAppearanceManagerType = AppAppearanceManager.shared) {
+		componentInformationView.backgroundColor = colorManager.appBaseColor
+		creationDateLabel.textColor = colorManager.appTintColor
+		titleLabel.textColor = colorManager.appTintColor
+	}
+}
+
+final class CircleButton: UIControl {
+    private(set) var circleView: UIView = {
+        let view = UIView()
+        view.layer.cornerRadius = 9
+        view.isUserInteractionEnabled = false
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+    enum CircleColor {
+        case red
+        case green
+        case yellow
+        case gray
+
+        var color: UIColor {
+            switch self {
+                case .red: UIColor(red: 0.99, green: 0.27, blue: 0.27, alpha: 1)
+                case .yellow: UIColor(red: 1.0, green: 0.69, blue: 0.14, alpha: 1)
+                case .green: UIColor(red: 0.16, green: 0.79, blue: 0.19, alpha: 1)
+                case .gray: .gray
+            }
+        }
+    }
+
+    func setCircleColor(_ color: CircleColor) {
+        circleView.backgroundColor = color.color
+    }
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+
+        translatesAutoresizingMaskIntoConstraints = false
+        backgroundColor = .clear
+
+        addSubview(circleView)
+
+        NSLayoutConstraint.activate([
+            widthAnchor.constraint(equalToConstant: 30),
+            heightAnchor.constraint(equalToConstant: 35),
+
+            circleView.widthAnchor.constraint(equalToConstant: 18),
+            circleView.heightAnchor.constraint(equalToConstant: 18),
+            circleView.centerXAnchor.constraint(equalTo: centerXAnchor),
+            circleView.centerYAnchor.constraint(equalTo: centerYAnchor),
+        ])
+    }
+
+    convenience init(_ color: CircleColor) {
+        self.init(frame: .zero)
+        circleView.backgroundColor = color.color
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
     }
 }

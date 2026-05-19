@@ -210,7 +210,15 @@ final class AudioTrackEditPopupView: PopupView {
         buttonContainer.addArrangedSubview(cancelButton)
         buttonContainer.addArrangedSubview(confirmButton)
         alertContainer.addArrangedSubview(buttonContainer)
+		
+		applyColor()
     }
+	
+	override func applyColor(_ colorManager: any AppAppearanceManagerType = AppAppearanceManager.shared) {
+		super.applyColor()
+		audioTrackTitleTextField.textColor = colorManager.appTintColor
+		audioTrackArtistTextField.textColor = colorManager.appTintColor
+	}
 }
 
 extension AudioTrackEditPopupView: PHPickerViewControllerDelegate {

@@ -1,7 +1,9 @@
 import Combine
 import UIKit
 
-final class MemoPageViewController: UIViewController, UICollectionViewDelegateFlowLayout, ManualCaptureHost {
+final class MemoPageViewController: UIViewController, UICollectionViewDelegateFlowLayout, ManualCaptureHost,
+    BaseColorUpdatable
+{
     var pageViewModel: MemoPageViewModel
     var pageActionDispatcher = PassthroughSubject<MemoPageViewInput, Never>()
 
@@ -15,14 +17,12 @@ final class MemoPageViewController: UIViewController, UICollectionViewDelegateFl
 
     private let backgroundView: UIStackView = {
         let backgroundView = UIStackView()
-        backgroundView.backgroundColor = .systemBackground
         backgroundView.axis = .vertical
         backgroundView.translatesAutoresizingMaskIntoConstraints = false
         return backgroundView
     }()
     private let headerView: UIView = {
         let headerView = UIView()
-        headerView.backgroundColor = .systemBackground
         headerView.translatesAutoresizingMaskIntoConstraints = false
         return headerView
     }()
@@ -31,7 +31,6 @@ final class MemoPageViewController: UIViewController, UICollectionViewDelegateFl
         let config = UIImage.SymbolConfiguration(pointSize: 20)
         let buttonImage = UIImage(systemName: "chevron.left", withConfiguration: config)
         backButton.setImage(buttonImage, for: .normal)
-        backButton.tintColor = .label
         backButton.translatesAutoresizingMaskIntoConstraints = false
         return backButton
     }()
@@ -39,7 +38,6 @@ final class MemoPageViewController: UIViewController, UICollectionViewDelegateFl
         let titleLabel = UILabel()
         titleLabel.font = .systemFont(ofSize: 23, weight: .bold)
         titleLabel.textAlignment = .center
-        titleLabel.textColor = .label
         titleLabel.numberOfLines = 1
         titleLabel.lineBreakMode = .byTruncatingTail
         titleLabel.adjustsFontSizeToFitWidth = true
@@ -52,7 +50,6 @@ final class MemoPageViewController: UIViewController, UICollectionViewDelegateFl
         let config = UIImage.SymbolConfiguration(pointSize: 20)
         let buttonImage = UIImage(systemName: "plus", withConfiguration: config)
         componentPlusButton.setImage(buttonImage, for: .normal)
-        componentPlusButton.tintColor = .label
         componentPlusButton.translatesAutoresizingMaskIntoConstraints = false
         return componentPlusButton
     }()
@@ -135,7 +132,7 @@ final class MemoPageViewController: UIViewController, UICollectionViewDelegateFl
 
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: flowLayout)
 
-        collectionView.backgroundColor = .clear
+        collectionView.backgroundColor = AppAppearanceManager.shared.appBaseColor
         collectionView.keyboardDismissMode = .onDrag
         collectionView.translatesAutoresizingMaskIntoConstraints = false
 
@@ -185,7 +182,6 @@ final class MemoPageViewController: UIViewController, UICollectionViewDelegateFl
     }
 
     private func setupUI(pageName: String) {
-        view.backgroundColor = .systemBackground
         view.addSubview(backgroundView)
 
         backButton.addAction(
@@ -299,6 +295,15 @@ final class MemoPageViewController: UIViewController, UICollectionViewDelegateFl
         fullscreenTargetComponentView?.attachContentsSnapshotViewDuringPresentingFullScreenAnimation()
         fullscreenTargetComponentView?.presentFullScreenPageComponentView()
     }
+	
+	func applyColor(_ colorManager: any AppAppearanceManagerType = AppAppearanceManager.shared) {
+		view.backgroundColor = colorManager.appBaseColor
+		backgroundView.backgroundColor = colorManager.appBaseColor
+		headerView.backgroundColor = colorManager.appBaseColor
+		backButton.tintColor = colorManager.appTintColor
+		titleLable.textColor = colorManager.appTintColor
+		componentPlusButton.tintColor = colorManager.appTintColor
+	}
 
     @objc private func keyboardWillChangeFrame(_ notification: Notification) {
         guard

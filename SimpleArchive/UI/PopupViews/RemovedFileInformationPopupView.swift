@@ -22,7 +22,6 @@ final class RemovedFileInformationPopupView: PopupView {
         let titleLabel = UILabel()
         titleLabel.text = "Information"
         titleLabel.font = .systemFont(ofSize: 20, weight: .semibold)
-        titleLabel.textColor = .black
         return titleLabel
     }()
     private let pageNameView: UIStackView = {
@@ -35,7 +34,7 @@ final class RemovedFileInformationPopupView: PopupView {
             let name = UILabel()
             name.text = "name"
             name.font = .systemFont(ofSize: 15, weight: .regular)
-            name.textColor = .systemGray2
+            name.textColor = AppAppearanceManager.shared.appSecondaryTintColor
             return name
         }()
 
@@ -52,7 +51,6 @@ final class RemovedFileInformationPopupView: PopupView {
     private let pageNameLabel: UILabel = {
         let pageNameLabel = UILabel()
         pageNameLabel.font = .systemFont(ofSize: 16, weight: .regular)
-        pageNameLabel.textColor = .black
         return pageNameLabel
     }()
 
@@ -66,7 +64,7 @@ final class RemovedFileInformationPopupView: PopupView {
             let createDate = UILabel()
             createDate.text = "create date"
             createDate.font = .systemFont(ofSize: 15, weight: .regular)
-            createDate.textColor = .systemGray2
+            createDate.textColor = AppAppearanceManager.shared.appSecondaryTintColor
             return createDate
         }()
 
@@ -76,7 +74,6 @@ final class RemovedFileInformationPopupView: PopupView {
     private let createDateLabel: UILabel = {
         let createDateLabel = UILabel()
         createDateLabel.font = .systemFont(ofSize: 16, weight: .regular)
-        createDateLabel.textColor = .black
         return createDateLabel
     }()
 
@@ -95,7 +92,7 @@ final class RemovedFileInformationPopupView: PopupView {
     private var informationString: UILabel = {
         let informationString = UILabel()
         informationString.numberOfLines = 0
-		informationString.textColor = .black
+        informationString.textColor = .black
         return informationString
     }()
 
@@ -141,23 +138,31 @@ final class RemovedFileInformationPopupView: PopupView {
         createDateView.addArrangedSubview(createDateLabel)
         alertContainer.addArrangedSubview(createDateView)
 
-		alertContainer.addArrangedSubview(informationString)
-		
+        alertContainer.addArrangedSubview(informationString)
+
         alertContainer.addArrangedSubview(removeButton)
+        applyColor()
     }
 
     func setInfoAttrString() {
-		let paragraphStyle = NSMutableParagraphStyle()
-		paragraphStyle.lineSpacing = 0
-		paragraphStyle.lineBreakMode = .byWordWrapping
-		paragraphStyle.alignment = .left
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.lineSpacing = 0
+        paragraphStyle.lineBreakMode = .byWordWrapping
+        paragraphStyle.alignment = .left
 
-		attrString.addAttribute(
-			.paragraphStyle,
-			value: paragraphStyle,
-			range: NSRange(location: 0, length: attrString.length)
-		)
-		
+        attrString.addAttribute(
+            .paragraphStyle,
+            value: paragraphStyle,
+            range: NSRange(location: 0, length: attrString.length)
+        )
+
         informationString.attributedText = attrString
+    }
+
+    override func applyColor(_ colorManager: any AppAppearanceManagerType = AppAppearanceManager.shared) {
+        super.applyColor()
+        informationString.textColor = colorManager.appTintColor
+        pageNameLabel.textColor = colorManager.appTintColor
+        createDateLabel.textColor = colorManager.appTintColor
     }
 }

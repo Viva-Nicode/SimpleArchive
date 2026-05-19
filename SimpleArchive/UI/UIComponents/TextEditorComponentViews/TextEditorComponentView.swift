@@ -73,14 +73,12 @@ final class TextEditorComponentView: PageComponentView<UITextView, TextEditorCom
         componentContentView.textColor = .label
         componentContentView.font = .systemFont(ofSize: 15)
         componentContentView.translatesAutoresizingMaskIntoConstraints = false
-        componentContentView.layer.cornerRadius = 10
+        componentContentView.layer.cornerRadius = 20
         componentContentView.layer.maskedCorners = [.layerMaxXMaxYCorner, .layerMinXMaxYCorner]
         componentContentView.accessibilityIdentifier = "TextEditorComponentTextView"
         componentContentView.delegate = self
 
         super.setupUI()
-
-        toolBarView.backgroundColor = UIColor(named: "TextEditorComponentToolbarColor")
 
         snapShotView.addArrangedSubview(undoButton)
         snapShotView.addArrangedSubview(captureButton)
@@ -163,6 +161,16 @@ final class TextEditorComponentView: PageComponentView<UITextView, TextEditorCom
                 textEditorActionDispatcher?.undoTextEditorComponentContents()
             }
             .store(in: &subscriptions)
+        setMinimizeState(component.isMinimumHeight)
+        applyColor()
+    }
+
+    override func applyColor(_ colorManager: any AppAppearanceManagerType = AppAppearanceManager.shared) {
+        super.applyColor()
+        componentContentView.backgroundColor = colorManager.appBaseColor
+        componentContentView.textColor = colorManager.appTintColor
+        toolBarView.backgroundColor = UIColor(named: "TextEditorComponentToolbarColor")?
+            .setBrightness(min(1.0, colorManager.appBaseColorBrightness * 1.4))
     }
 
     func configureTextComponentForSnapshotView(
@@ -199,9 +207,11 @@ final class TextEditorComponentView: PageComponentView<UITextView, TextEditorCom
         undoButton.removeFromSuperview()
         captureButton.removeFromSuperview()
         snapshotButton.removeFromSuperview()
+		applyColor()
     }
 
     override func setMinimizeState(_ isMinimize: Bool) {
+        super.setMinimizeState(isMinimize)
         UIView.animate(
             withDuration: 0.3,
             animations: { [weak self] in
@@ -223,6 +233,7 @@ final class TextEditorComponentView: PageComponentView<UITextView, TextEditorCom
             )
             fullscreenComponentViewController.modalPresentationStyle = .fullScreen
             fullscreenComponentViewController.transitioningDelegate = memoPageViewController
+			fullscreenComponentViewController.applyColor()
 
             memoPageViewController.present(fullscreenComponentViewController, animated: true)
         }

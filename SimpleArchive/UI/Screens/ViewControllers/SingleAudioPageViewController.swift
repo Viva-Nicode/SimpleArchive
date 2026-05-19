@@ -5,7 +5,6 @@ final class SingleAudioPageViewController: UIViewController {
         let titleLabel = UILabel()
         titleLabel.font = .systemFont(ofSize: 24, weight: .bold)
         titleLabel.textAlignment = .center
-        titleLabel.textColor = .label
         titleLabel.numberOfLines = 1
         titleLabel.lineBreakMode = .byTruncatingTail
         titleLabel.adjustsFontSizeToFitWidth = true
@@ -71,10 +70,8 @@ final class SingleAudioPageViewController: UIViewController {
     deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
 
     func setupUI() {
-        view.backgroundColor = .systemBackground
         view.addSubview(backgroundImageView)
         backgroundImageView.alpha = 0
-        backgroundImageWindow.backgroundColor = traitCollection.userInterfaceStyle == .dark ? .black : .white
         backgroundImageView.addSubview(backgroundImageWindow)
 
         view.addSubview(titleLable)
@@ -95,7 +92,8 @@ final class SingleAudioPageViewController: UIViewController {
             backgroundImageWindow.trailingAnchor.constraint(equalTo: view.trailingAnchor),
 
             titleLable.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 10),
-            titleLable.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            titleLable.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 25),
+            titleLable.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -25),
 
             audioComponentContentView.topAnchor.constraint(equalTo: titleLable.bottomAnchor, constant: 10),
             audioComponentContentView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -108,22 +106,28 @@ final class SingleAudioPageViewController: UIViewController {
         self.dispatcher = dispatcher
         titleLable.text = pageName
         audioComponentContentView.configure(audioComponent: audioComponent, dispatcher: dispatcher)
+		audioComponentContentView.backgroundColor = .clear
     }
 
     func updateBackgroundImage(with image: UIImage) {
         UIView.transition(
             with: self.backgroundImageView, duration: 1, options: .transitionCrossDissolve,
-            animations: {
-                self.backgroundImageView.image = image.blurred(radius: 7)
-            }, completion: nil)
+            animations: { self.backgroundImageView.image = image.blurred(radius: 8) }, completion: nil)
 
         UIView.animate(
             withDuration: 1,
             animations: {
-                self.backgroundImageWindow.alpha =
-                    self.traitCollection.userInterfaceStyle == .dark ? 0.4 : 0.3
+                self.backgroundImageWindow.alpha = 0.5
                 self.backgroundImageView.alpha = 1
             }
         )
+    }
+}
+
+extension SingleAudioPageViewController: BaseColorUpdatable {
+    func applyColor(_ colorManager: any AppAppearanceManagerType = AppAppearanceManager.shared) {
+        view.backgroundColor = colorManager.appBaseColor
+        backgroundImageWindow.backgroundColor = colorManager.appBaseColor
+        titleLable.textColor = colorManager.appTintColor
     }
 }

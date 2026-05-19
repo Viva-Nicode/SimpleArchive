@@ -5,9 +5,13 @@ final class MemoDirectoryCoreDataRepository: MemoDirectoryCoreDataRepositoryType
 
     private let coredataStack: PersistentStore
     private let uds = UserDefaultStack.shared
+    private let fileItemManualOrderKey = "FileItemManualOrder"
 
     init(coredataStack: PersistentStore) {
         self.coredataStack = coredataStack
+        if !uds.isExistValue(k: fileItemManualOrderKey) {
+            uds.store(k: fileItemManualOrderKey, v: DirectoryContentsRenderInfo())
+        }
     }
 
     func fetchSystemDirectoryEntities(fileCreator: any FileCreatorType)
@@ -45,7 +49,7 @@ final class MemoDirectoryCoreDataRepository: MemoDirectoryCoreDataRepositoryType
                             for (key, value) in dict {
                                 result[key] = value
                             }
-                        }, self.uds.get(keyTypes: .FileItemManualOrder)!
+                        }, self.uds.get(k: self.fileItemManualOrderKey)!
                 )
             }
             .eraseToAnyPublisher()
@@ -62,7 +66,7 @@ final class MemoDirectoryCoreDataRepository: MemoDirectoryCoreDataRepositoryType
             persistence.parentDirectoryEntity = parentDirectoryEntity
             storageItem.persistToPersistentStorage(using: persistence)
 
-            try? UserDefaultStack.shared.store(keyTypes: .FileItemManualOrder, v: infos)
+            UserDefaultStack.shared.store(k: self.fileItemManualOrderKey, v: infos)
         }
     }
 
@@ -72,7 +76,7 @@ final class MemoDirectoryCoreDataRepository: MemoDirectoryCoreDataRepositoryType
             let fetchResult = try ctx.fetch(fetchRequest).first!
 
             fetchResult.sortBy = DirectoryContentsSortCriterias.manual.rawValue
-            try? UserDefaultStack.shared.store(keyTypes: .FileItemManualOrder, v: infos)
+            UserDefaultStack.shared.store(k: self.fileItemManualOrderKey, v: infos)
         }
     }
 
@@ -116,7 +120,7 @@ final class MemoDirectoryCoreDataRepository: MemoDirectoryCoreDataRepositoryType
             let fetchResult = try ctx.fetch(fetchRequest).first!
 
             fetchResult.sortBy = newSortCriteria.rawValue
-            try? UserDefaultStack.shared.store(keyTypes: .FileItemManualOrder, v: infos)
+            UserDefaultStack.shared.store(k: self.fileItemManualOrderKey, v: infos)
         }
     }
 
@@ -130,7 +134,7 @@ final class MemoDirectoryCoreDataRepository: MemoDirectoryCoreDataRepositoryType
 
             movedItem.moveToAnyDirectory(directory: targetDirectory)
 
-            try? UserDefaultStack.shared.store(keyTypes: .FileItemManualOrder, v: infos)
+            UserDefaultStack.shared.store(k: self.fileItemManualOrderKey, v: infos)
         }
     }
 
@@ -146,7 +150,7 @@ final class MemoDirectoryCoreDataRepository: MemoDirectoryCoreDataRepositoryType
 
             fetchResult.moveToAnyDirectory(directory: privateDirectory)
 
-            try? UserDefaultStack.shared.store(keyTypes: .FileItemManualOrder, v: infos)
+            UserDefaultStack.shared.store(k: self.fileItemManualOrderKey, v: infos)
         }
     }
 
@@ -162,7 +166,7 @@ final class MemoDirectoryCoreDataRepository: MemoDirectoryCoreDataRepositoryType
 
             fetchResult.moveToAnyDirectory(directory: mainDirectory)
 
-            try? UserDefaultStack.shared.store(keyTypes: .FileItemManualOrder, v: infos)
+            UserDefaultStack.shared.store(k: self.fileItemManualOrderKey, v: infos)
         }
     }
 }

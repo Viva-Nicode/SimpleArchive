@@ -1,7 +1,6 @@
 import UIKit
 
 final class ComponentItemView: UICollectionViewCell {
-
     private let itemSymbolImageView: UIImageView = {
         let itemSymbolImageView = UIImageView()
         itemSymbolImageView.contentMode = .scaleAspectFill

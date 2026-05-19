@@ -9,7 +9,7 @@ final class MemoHomeViewController: UIViewController {
         titleLabelView.layer.shadowOffset = .init(width: -4, height: 4)
         titleLabelView.layer.shadowOpacity = 0.1
         titleLabelView.layer.shadowRadius = 4
-        titleLabelView.layer.cornerRadius = 10
+        titleLabelView.layer.cornerRadius = 15
         titleLabelView.translatesAutoresizingMaskIntoConstraints = false
 
         let innerShadowLayer = CAShapeLayer()
@@ -17,19 +17,18 @@ final class MemoHomeViewController: UIViewController {
         innerShadowLayer.frame = size
         titleLabelView.layer.addSublayer(innerShadowLayer)
 
-        let path = UIBezierPath(roundedRect: size.insetBy(dx: -15, dy: -15), cornerRadius: 10)
-        let cutout = UIBezierPath(roundedRect: size, cornerRadius: 10).reversing()
+        let path = UIBezierPath(roundedRect: size.insetBy(dx: -15, dy: -15), cornerRadius: 15)
+        let cutout = UIBezierPath(roundedRect: size, cornerRadius: 20).reversing()
         path.append(cutout)
 
-        innerShadowLayer.cornerRadius = 10
+        innerShadowLayer.cornerRadius = 15
         innerShadowLayer.shadowPath = path.cgPath
+        innerShadowLayer.shadowOffset = .init(width: -6, height: 6)
+        innerShadowLayer.shadowRadius = 8
         innerShadowLayer.masksToBounds = true
         innerShadowLayer.shadowColor = UIColor.black.cgColor
-        innerShadowLayer.shadowOffset = .init(width: -3, height: 3)
         innerShadowLayer.shadowOpacity = 0.07
-        innerShadowLayer.shadowRadius = 4
         innerShadowLayer.fillRule = .evenOdd
-        titleLabelView.backgroundColor = .appBaseColor
 
         return titleLabelView
     }()
@@ -46,7 +45,8 @@ final class MemoHomeViewController: UIViewController {
                 string: "Home\n",
                 attributes: [
                     .font: UIFont.systemFont(ofSize: 28, weight: .bold),
-                    .foregroundColor: UIColor.appTintColor,
+                    .foregroundColor: UIColor.black,
+                    NSAttributedString.Key("id"): "title",
                 ]
             )
         )
@@ -57,9 +57,58 @@ final class MemoHomeViewController: UIViewController {
         titleAttributedString.append(
             NSAttributedString(
                 string: String(repeating: "-", count: c) + "\n",
-                attributes: [.font: UIFont.systemFont(ofSize: 18), .foregroundColor: UIColor.systemGray3]
+                attributes: [
+                    .font: UIFont.systemFont(ofSize: 18),
+                    .foregroundColor: UIColor.label,
+                ]
             )
         )
+
+        [
+            NSAttributedString(
+                string: "directory total : ",
+                attributes: [
+                    .font: UIFont.systemFont(ofSize: 17),
+                    .foregroundColor: UIColor.systemGray,
+                ]
+            ),
+            NSAttributedString(
+                string: "...\n",
+                attributes: [
+                    .font: UIFont.systemFont(ofSize: 18),
+                    NSAttributedString.Key("id"): "directoryTotal",
+                ]
+            ),
+            NSAttributedString(
+                string: "page total : ",
+                attributes: [
+                    .font: UIFont.systemFont(ofSize: 17),
+                    .foregroundColor: UIColor.systemGray,
+                ]
+            ),
+            NSAttributedString(
+                string: "...\n",
+                attributes: [
+                    .font: UIFont.systemFont(ofSize: 18),
+                    NSAttributedString.Key("id"): "pageTotal",
+                ]
+            ),
+            NSAttributedString(
+                string: "total size : ",
+                attributes: [
+                    .font: UIFont.systemFont(ofSize: 17),
+                    .foregroundColor: UIColor.systemGray,
+                ]
+            ),
+            NSAttributedString(
+                string: "...",
+                attributes: [
+                    .font: UIFont.systemFont(ofSize: 18),
+                    NSAttributedString.Key("id"): "totalSize",
+                ]
+            ),
+        ]
+        .forEach { titleAttributedString.append($0) }
 
         titleAttributedString.addAttribute(
             .paragraphStyle,
@@ -75,7 +124,7 @@ final class MemoHomeViewController: UIViewController {
     private(set) var trashBoxButton: UIButton = {
         var config = UIButton.Configuration.plain()
         config.image = UIImage(systemName: "trash")
-        config.baseForegroundColor = .black
+
         config.preferredSymbolConfigurationForImage = .init(pointSize: 20, weight: .regular)
         config.cornerStyle = .fixed
         config.background.cornerRadius = 10
@@ -100,8 +149,7 @@ final class MemoHomeViewController: UIViewController {
         innerShadowLayer.shadowRadius = 4
         innerShadowLayer.fillRule = .evenOdd
 
-        button.backgroundColor = .appBaseColor
-		button.layer.cornerRadius = 10
+        button.layer.cornerRadius = 10
         button.layer.shadowColor = UIColor.black.cgColor
         button.layer.shadowOffset = .init(width: -4, height: 4)
         button.layer.shadowOpacity = 0.1
@@ -113,7 +161,6 @@ final class MemoHomeViewController: UIViewController {
     }()
     private(set) var sortingOptionsView: UIView = {
         let sortingOptionsView = UIView()
-        sortingOptionsView.backgroundColor = .appBaseColor
         sortingOptionsView.layer.cornerRadius = 20
         sortingOptionsView.layer.shadowColor = UIColor.black.cgColor
         sortingOptionsView.layer.shadowOffset = .init(width: -2, height: 2)
@@ -129,7 +176,6 @@ final class MemoHomeViewController: UIViewController {
         sortByManumalLabel.isUserInteractionEnabled = true
         sortByManumalLabel.font = .systemFont(ofSize: 16, weight: .regular)
         sortByManumalLabel.translatesAutoresizingMaskIntoConstraints = false
-        sortByManumalLabel.backgroundColor = .appBaseColor
         sortByManumalLabel.layer.cornerRadius = 15
         sortByManumalLabel.clipsToBounds = true
 
@@ -160,7 +206,6 @@ final class MemoHomeViewController: UIViewController {
         sortByNameLabel.isUserInteractionEnabled = true
         sortByNameLabel.font = .systemFont(ofSize: 16, weight: .regular)
         sortByNameLabel.translatesAutoresizingMaskIntoConstraints = false
-        sortByNameLabel.backgroundColor = .appBaseColor
         sortByNameLabel.layer.cornerRadius = 15
         sortByNameLabel.clipsToBounds = true
 
@@ -191,7 +236,6 @@ final class MemoHomeViewController: UIViewController {
         sortByCreatedateLabel.isUserInteractionEnabled = true
         sortByCreatedateLabel.font = .systemFont(ofSize: 16, weight: .regular)
         sortByCreatedateLabel.translatesAutoresizingMaskIntoConstraints = false
-        sortByCreatedateLabel.backgroundColor = .appBaseColor
         sortByCreatedateLabel.layer.cornerRadius = 15
         sortByCreatedateLabel.clipsToBounds = true
 
@@ -254,9 +298,6 @@ final class MemoHomeViewController: UIViewController {
             blurView.layer.cornerRadius = 27.5
             blurView.isUserInteractionEnabled = false
             blurView.clipsToBounds = true
-            blurView.layer.borderWidth = 1
-            blurView.layer.borderColor = UIColor.white.withAlphaComponent(0.3).cgColor
-
             return blurView
         }()
 
@@ -291,9 +332,6 @@ final class MemoHomeViewController: UIViewController {
             blurView.layer.cornerRadius = 27.5
             blurView.isUserInteractionEnabled = false
             blurView.clipsToBounds = true
-            blurView.layer.borderWidth = 1
-            blurView.layer.borderColor = UIColor.white.withAlphaComponent(0.3).cgColor
-
             return blurView
         }()
 
@@ -328,9 +366,6 @@ final class MemoHomeViewController: UIViewController {
             blurView.layer.cornerRadius = 27.5
             blurView.isUserInteractionEnabled = false
             blurView.clipsToBounds = true
-            blurView.layer.borderWidth = 1
-            blurView.layer.borderColor = UIColor.white.withAlphaComponent(0.3).cgColor
-
             return blurView
         }()
 
@@ -357,7 +392,6 @@ final class MemoHomeViewController: UIViewController {
         let button = UIButton(configuration: config)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.layer.cornerRadius = 15
-        button.backgroundColor = .appBaseColor
         button.layer.shadowColor = UIColor.black.cgColor
         button.layer.shadowOffset = .init(width: -4, height: 4)
         button.layer.shadowOpacity = 0.1
@@ -397,7 +431,6 @@ final class MemoHomeViewController: UIViewController {
         let button = UIButton(configuration: config)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.layer.cornerRadius = 15
-        button.backgroundColor = .appBaseColor
         button.layer.shadowColor = UIColor.black.cgColor
         button.layer.shadowOffset = .init(width: -4, height: 4)
         button.layer.shadowOpacity = 0.1
@@ -424,7 +457,6 @@ final class MemoHomeViewController: UIViewController {
     }()
     private(set) var adjustItemForManualView: UIView = {
         let adjustItemForManualView = UIView()
-        adjustItemForManualView.backgroundColor = .appBaseColor
 
         adjustItemForManualView.alpha = 0
         adjustItemForManualView.isHidden = true
@@ -459,26 +491,23 @@ final class MemoHomeViewController: UIViewController {
         innerShadowLayer.shadowRadius = 6
         innerShadowLayer.fillRule = .evenOdd
 
-        blockViewTitleView.backgroundColor = .appBaseColor
-
         return blockViewTitleView
     }()
-    private(set) var blockViewTitle: UILabel = {
+    private(set) lazy var blockViewTitle: UILabel = {
         let blockViewTitle = UILabel()
         blockViewTitle.numberOfLines = 0
 
-        let attributedString = NSMutableAttributedString()
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.lineSpacing = 0
         paragraphStyle.lineBreakMode = .byWordWrapping
         paragraphStyle.alignment = .left
 
-        attributedString.append(
+        adjustAttributedString.append(
             NSAttributedString(
                 string: "Adjust\n",
                 attributes: [
                     .font: UIFont.systemFont(ofSize: 29, weight: .bold),
-                    .foregroundColor: UIColor.black,
+                    NSAttributedString.Key("id"): "adjustTitle",
                 ]
             )
         )
@@ -486,30 +515,30 @@ final class MemoHomeViewController: UIViewController {
         let w = ("-" as NSString).size(withAttributes: [.font: UIFont.systemFont(ofSize: 18)]).width
         let c = Int(((UIView.screenWidth * 0.8) - 20) / w)
 
-        attributedString.append(
+        adjustAttributedString.append(
             NSAttributedString(
                 string: String(repeating: "-", count: c) + "\n",
-                attributes: [.font: UIFont.systemFont(ofSize: 18), .foregroundColor: UIColor.systemGray3]
+                attributes: [.font: UIFont.systemFont(ofSize: 18), .foregroundColor: UIColor.label]
             )
         )
 
-        attributedString.append(
+        adjustAttributedString.append(
             NSAttributedString(
                 string: "You can drag the item to move it, or drag the bottom-right corner to resize it.",
                 attributes: [
                     .font: UIFont.systemFont(ofSize: 18),
-                    .foregroundColor: UIColor.black,
+                    NSAttributedString.Key("id"): "adjustInfo",
                 ]
             )
         )
 
-        attributedString.addAttribute(
+        adjustAttributedString.addAttribute(
             .paragraphStyle,
             value: paragraphStyle,
-            range: NSRange(location: 0, length: attributedString.length)
+            range: NSRange(location: 0, length: adjustAttributedString.length)
         )
 
-        blockViewTitle.attributedText = attributedString
+        blockViewTitle.attributedText = adjustAttributedString
         blockViewTitle.translatesAutoresizingMaskIntoConstraints = false
         return blockViewTitle
     }()
@@ -527,7 +556,6 @@ final class MemoHomeViewController: UIViewController {
         let selectedItemListView = UIStackView()
         selectedItemListView.alignment = .center
         selectedItemListView.axis = .horizontal
-        selectedItemListView.backgroundColor = .appBaseColor
         selectedItemListView.spacing = 8
         selectedItemListView.translatesAutoresizingMaskIntoConstraints = false
         return selectedItemListView
@@ -560,6 +588,7 @@ final class MemoHomeViewController: UIViewController {
     private var directoryStackDataSource: DirectoryStackDataSource?
     private var privateDirectoryDataSource: DirectoryStackDataSource?
     private let titleAttributedString = NSMutableAttributedString()
+    private let adjustAttributedString = NSMutableAttributedString()
 
     private var sortingOptionwidth: CGFloat = 0
     private var sortByManumalLabelWidth = CGFloat.zero
@@ -572,12 +601,15 @@ final class MemoHomeViewController: UIViewController {
     private(set) var isActiveFileCreatePlusButton: Bool = false
     private var audioControlBarHost: AudioControlBarHostType
     private(set) var directoryPathView = DirectoryPathView()
-    private var tabbar = TabBarView()
-    private var appSettingView = AppSettingView()
+    private(set) var tabbar = TabBarView()
+    private lazy var appSettingView = AppSettingView()
     private(set) var privateDirectoryBlockView = PrivateDirectoryBlockView()
     private var privateDirectoryVisiblityObserver: NSKeyValueObservation?
 
-    init(memoHomeViewModel: MemoHomeViewModel, audioControlBarHost: AudioControlBarHostType) {
+    init(
+        memoHomeViewModel: MemoHomeViewModel,
+        audioControlBarHost: AudioControlBarHostType
+    ) {
         self.viewModel = memoHomeViewModel
         self.audioControlBarHost = audioControlBarHost
         super.init(nibName: nil, bundle: nil)
@@ -619,6 +651,7 @@ final class MemoHomeViewController: UIViewController {
                     setCurrentSortOptionView(sortBy: sortCriteria)
                     setupConstraints()
                     setupActions(rootDirectoryID)
+                    applyColor()
 
                 case .didUpdateCurrentRootDirectoryInfo(let mainDirectorySize, let dirCount, let pageCount):
                     setMainDirectoryInfo(directoryTotal: dirCount, pageTotal: pageCount, size: mainDirectorySize)
@@ -638,13 +671,16 @@ final class MemoHomeViewController: UIViewController {
                     moveToNextDirectory(directoryName: directoryName, directoryID: directoryID)
 
                 case .didNavigateDormantBoxView(let vm):
-                    navigationController?.pushViewController(DormantBoxViewController(viewModel: vm), animated: true)
+                    let dormantBoxVC = DormantBoxViewController(viewModel: vm)
+                    dormantBoxVC.applyColor()
+                    navigationController?.pushViewController(dormantBoxVC, animated: true)
 
                 case .didNavigatePageView(let pageViewModel):
-                    let MemoPageViewController = MemoPageViewController(
+                    let memoPageViewController = MemoPageViewController(
                         pageViewModel: pageViewModel,
                         audioControlBarHost: audioControlBarHost)
-                    navigationController?.pushViewController(MemoPageViewController, animated: true)
+                    memoPageViewController.applyColor()
+                    navigationController?.pushViewController(memoPageViewController, animated: true)
 
                 case .didSortDirectoryItems(let sortingResult):
                     sortFileTableRows(sortReulst: sortingResult)
@@ -661,6 +697,9 @@ final class MemoHomeViewController: UIViewController {
 
                     singleTextEditorPageViewController.configure(
                         dispatcher: dispatcher, title: title, component: textComponent)
+
+                    singleTextEditorPageViewController.applyColor()
+
                     navigationController?.pushViewController(singleTextEditorPageViewController, animated: true)
 
                 case .didNavigateSingleTableComponentPageView(let vm, let tableComponent, let pageName):
@@ -673,6 +712,8 @@ final class MemoHomeViewController: UIViewController {
 
                     singleTablePageViewController.configure(
                         dispatcher: dispatcher, component: tableComponent, pageName: pageName)
+
+                    singleTablePageViewController.applyColor()
 
                     navigationController?.pushViewController(singleTablePageViewController, animated: true)
 
@@ -699,6 +740,8 @@ final class MemoHomeViewController: UIViewController {
 
                             return singleAudioPageViewController
                         }()
+
+                    singleAudioViewController.applyColor()
 
                     navigationController?.pushViewController(singleAudioViewController, animated: true)
 
@@ -892,8 +935,8 @@ final class MemoHomeViewController: UIViewController {
                     privateDirectoryBlockView.registerSignatureGuideView()
                     privateDirectoryBlockView.dispatcher = dispatcher
 
-                case .didPresentReleaseLockView(let centerPoints):
-                    privateDirectoryBlockView.readyToVerifySignature(centers: centerPoints)
+                case .didPresentReleaseLockView(let centerPoints, let dopt):
+                    privateDirectoryBlockView.readyToVerifySignature(centers: centerPoints, dopt: dopt)
                     privateDirectoryBlockView.dispatcher = dispatcher
 
                 case .didTryToUnlockPrivateDirectory(let result):
@@ -923,12 +966,24 @@ final class MemoHomeViewController: UIViewController {
                 case .didSuccessRegisterSignature:
                     privateDirectoryBlockView.registerSignatureCompleteView()
 
-                case .didUpdateCurrentDirectoryInfo(let direcotry):
+                case .didMoveTab(let direcotry):
                     setCurrentSortOptionView(sortBy: direcotry.sortBy)
                     directoryPathView.clear()
                     directoryPathView.appendPath(name: direcotry.name) {
                         self.dispatcher.send(.willMovePreviousDirectoryPath(direcotry.id))
                     }
+
+                case .didLoadSettings(
+                    let cs, let ps, let benchmarkVisible, let displayOpt, let isUnlocked, let isEnableSummary):
+                    appSettingView.dispatcher = dispatcher
+                    appSettingView.setEditable(isUnlocked)
+                    appSettingView.toleranceAdjustingView.setYRange(minimum: 0.1, maximum: 0.3, current: cs)
+                    appSettingView.toleranceAdjustingView.setXRange(minimum: 0.6, maximum: 0.8, current: ps)
+                    appSettingView.benchMarkVisibilityToggleView.setVisibility(benchmarkVisible)
+                    appSettingView.displaySegmentedSelectorView.setDrawingDisplayOption(displayOpt)
+                    appSettingView.textMemoSummerizationToggle.setActiveState(isEnableSummary)
+                    appSettingView.fastAnimationToggleView.setActiveState(
+                        AppAppearanceManager.shared.animaDuration == .fast)
             }
         }
         .store(in: &subscriptions)
@@ -993,7 +1048,6 @@ final class MemoHomeViewController: UIViewController {
     }
 
     private func setupUI() {
-        view.backgroundColor = .appBaseColor
         view.addSubview(appSettingView)
 
         blockViewTitleView.addSubview(blockViewTitle)
@@ -1143,7 +1197,7 @@ final class MemoHomeViewController: UIViewController {
             appSettingView.topAnchor.constraint(equalTo: view.topAnchor),
             appSettingView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             appSettingView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            appSettingView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            appSettingView.bottomAnchor.constraint(equalTo: tabbar.topAnchor),
 
             tabbar.heightAnchor.constraint(equalToConstant: 78),
             tabbar.widthAnchor.constraint(equalToConstant: UIView.screenWidth),
@@ -1327,8 +1381,13 @@ final class MemoHomeViewController: UIViewController {
         tabbar.homeButton.addAction(
             UIAction { _ in
                 self.dispatcher.send(.willMoveTab(.mainDirectory))
+                self.applyColor()
 
-                UIView.transition(with: self.view, duration: 0.3, options: .transitionCrossDissolve) { [self] in
+                UIView.transition(
+                    with: self.view,
+                    duration: AppAppearanceManager.shared.animaDuration == .normal ? 0.4 : 0.2,
+                    options: .transitionCrossDissolve
+                ) { [self] in
                     self.appSettingView.isHidden = true
                     self.appSettingView.alpha = 0
                     self.view.sendSubviewToBack(privateDirectoryBlockView)
@@ -1338,28 +1397,23 @@ final class MemoHomeViewController: UIViewController {
                     self.directoryCollectionView.reloadData()
                     self.directoryCollectionView.collectionViewLayout.invalidateLayout()
 
-                    let nsString = titleAttributedString.string as NSString
-                    let range = nsString.range(of: "Private")
+                    let fullRange = NSRange(location: 0, length: self.titleAttributedString.length)
+                    self.titleAttributedString.enumerateAttribute(NSAttributedString.Key("id"), in: fullRange) {
+                        value, range, _ in
 
-                    guard range.location != NSNotFound else { return }
-
-                    titleAttributedString.replaceCharacters(
-                        in: range,
-                        with: NSAttributedString(
-                            string: "Home",
-                            attributes: [
-                                .font: UIFont.systemFont(ofSize: 28, weight: .bold),
-                                .foregroundColor: UIColor.black,
-                            ]
-                        )
-                    )
-                    titleLabel.attributedText = titleAttributedString
+                        guard let value = value as? String else { return }
+                        if value == "title" {
+                            let attrs = self.titleAttributedString.attributes(at: range.location, effectiveRange: nil)
+                            let newString = NSAttributedString(string: "Home\n", attributes: attrs)
+                            self.titleAttributedString.replaceCharacters(in: range, with: newString)
+                        }
+                        titleLabel.attributedText = titleAttributedString
+                    }
                 } completion: { _ in
                     self.tabbar.homeButton.isUserInteractionEnabled = false
                     self.tabbar.hideButton.isUserInteractionEnabled = true
                     self.tabbar.settingButton.isUserInteractionEnabled = true
                 }
-
                 self.tabbar.changeHome()
             }, for: .touchUpInside)
 
@@ -1367,44 +1421,45 @@ final class MemoHomeViewController: UIViewController {
             UIAction { _ in
                 self.privateDirectoryBlockView.subviews.compactMap { $0 as? UIImageView }.first?.removeFromSuperview()
 
-                if let blurredImage = self.view.window?.fullSnapshotImage()?.blurredByPixcelSize(radius: 22) {
+                if let blurredImage = self.view.window?.fullSnapshotImage()?.blurredByPixcelSize(radius: 25) {
                     let imageView = UIImageView(image: blurredImage)
-                    imageView.frame = self.privateDirectoryBlockView.bounds
+                    imageView.frame = self.privateDirectoryBlockView.bounds.insetBy(dx: -10, dy: -10)
                     self.privateDirectoryBlockView.addSubview(imageView)
                     self.privateDirectoryBlockView.sendSubviewToBack(imageView)
                 }
 
                 self.dispatcher.send(.willMoveTab(.privateDirectory))
+                self.applyColor()
 
-                UIView.transition(with: self.view, duration: 0.3, options: .transitionCrossDissolve) { [self] in
+                UIView.transition(
+                    with: self.view,
+                    duration: AppAppearanceManager.shared.animaDuration == .normal ? 0.4 : 0.2,
+                    options: .transitionCrossDissolve
+                ) { [self] in
                     self.appSettingView.isHidden = true
                     self.appSettingView.alpha = 0
+                    self.privateDirectoryBlockView.applyColor()
                     self.privateDirectoryBlockView.isHidden = false
                     self.view.sendSubviewToBack(self.appSettingView)
                     self.view.bringSubviewToFront(self.privateDirectoryBlockView)
                     self.view.bringSubviewToFront(self.tabbar)
 
-                    let nsString = self.titleAttributedString.string as NSString
-                    let range = nsString.range(of: "Home")
+                    let fullRange = NSRange(location: 0, length: self.titleAttributedString.length)
+                    self.titleAttributedString.enumerateAttribute(NSAttributedString.Key("id"), in: fullRange) {
+                        value, range, _ in
 
-                    if range.location != NSNotFound {
-                        self.titleAttributedString.replaceCharacters(
-                            in: range,
-                            with: NSAttributedString(
-                                string: "Private",
-                                attributes: [
-                                    .font: UIFont.systemFont(ofSize: 28, weight: .bold),
-                                    .foregroundColor: UIColor.black,
-                                ]
-                            )
-                        )
-                        self.titleLabel.attributedText = self.titleAttributedString
+                        guard let value = value as? String else { return }
+                        if value == "title" {
+                            let attrs = self.titleAttributedString.attributes(at: range.location, effectiveRange: nil)
+                            let newString = NSAttributedString(string: "Private\n", attributes: attrs)
+                            self.titleAttributedString.replaceCharacters(in: range, with: newString)
+                        }
+                        titleLabel.attributedText = titleAttributedString
                     }
 
                     self.directoryCollectionView.dataSource = self.privateDirectoryDataSource
                     self.directoryCollectionView.reloadData()
                     self.directoryCollectionView.collectionViewLayout.invalidateLayout()
-
                 } completion: { _ in
                     self.tabbar.homeButton.isUserInteractionEnabled = true
                     self.tabbar.hideButton.isUserInteractionEnabled = false
@@ -1418,7 +1473,11 @@ final class MemoHomeViewController: UIViewController {
                 self.appSettingView.isHidden = false
                 self.appSettingView.alpha = 1
                 self.dispatcher.send(.willMoveTab(.setting))
-                UIView.transition(with: self.view, duration: 0.3, options: .transitionCrossDissolve) { [self] in
+                UIView.transition(
+                    with: self.view,
+                    duration: AppAppearanceManager.shared.animaDuration == .normal ? 0.4 : 0.2,
+                    options: .transitionCrossDissolve
+                ) { [self] in
                     self.view.sendSubviewToBack(privateDirectoryBlockView)
                     self.privateDirectoryBlockView.isHidden = true
                     self.view.bringSubviewToFront(self.appSettingView)
@@ -1486,9 +1545,7 @@ final class MemoHomeViewController: UIViewController {
 
     private func setCurrentSortOptionView(sortBy: DirectoryContentsSortCriterias) {
         UIView.animate(withDuration: 0.3, delay: 0, options: [.curveLinear]) { [self] in
-            sortByManumalLabel.textColor = sortBy == .manual ? .label : .systemGray4
-            sortByNameLabel.textColor = sortBy == .name ? .label : .systemGray4
-            sortByCreatedateLabel.textColor = sortBy == .creationDate ? .label : .systemGray4
+            applyColor(sortBy: sortBy)
 
             sortByManumalLabel.layer.sublayers?.first?.opacity = sortBy == .manual ? 1 : 0
             sortByNameLabel.layer.sublayers?.first?.opacity = sortBy == .name ? 1 : 0
@@ -1502,57 +1559,27 @@ final class MemoHomeViewController: UIViewController {
         let totalSize = formatter.string(fromByteCount: size)
 
         UIView.transition(with: self.titleLabel, duration: 0.4, options: .transitionCrossDissolve) {
-            if let li = self.titleAttributedString.string.map({ String($0) }).lastIndex(of: "-") {
-                self.titleAttributedString.deleteCharacters(
-                    in: NSRange(location: li + 1, length: self.titleAttributedString.length - li - 1))
-                [
-                    NSAttributedString(
-                        string: "directory total : ",
-                        attributes: [
-                            .font: UIFont.systemFont(ofSize: 17),
-                            .foregroundColor: UIColor.systemGray,
-                        ]
-                    ),
-                    NSAttributedString(
-                        string: "\(directoryTotal)\n",
-                        attributes: [
-                            .font: UIFont.systemFont(ofSize: 18),
-                            .foregroundColor: UIColor.black,
-                        ]
-                    ),
-                    NSAttributedString(
-                        string: "page total : ",
-                        attributes: [
-                            .font: UIFont.systemFont(ofSize: 17),
-                            .foregroundColor: UIColor.systemGray,
-                        ]
-                    ),
-                    NSAttributedString(
-                        string: "\(pageTotal)\n",
-                        attributes: [
-                            .font: UIFont.systemFont(ofSize: 18),
-                            .foregroundColor: UIColor.black,
-                        ]
-                    ),
-                    NSAttributedString(
-                        string: "total size : ",
-                        attributes: [
-                            .font: UIFont.systemFont(ofSize: 17),
-                            .foregroundColor: UIColor.systemGray,
-                        ]
-                    ),
-                    NSAttributedString(
-                        string: "\(totalSize)",
-                        attributes: [
-                            .font: UIFont.systemFont(ofSize: 18),
-                            .foregroundColor: UIColor.black,
-                        ]
-                    ),
-                ]
-                .forEach { self.titleAttributedString.append($0) }
+            let fullRange = NSRange(location: 0, length: self.titleAttributedString.length)
 
-                self.titleLabel.attributedText = self.titleAttributedString
+            self.titleAttributedString.enumerateAttribute(NSAttributedString.Key("id"), in: fullRange) {
+                value, range, _ in
+
+                guard let value = value as? String else { return }
+                if value == "directoryTotal" {
+                    let attrs = self.titleAttributedString.attributes(at: range.location, effectiveRange: nil)
+                    let newString = NSAttributedString(string: "\(directoryTotal)\n", attributes: attrs)
+                    self.titleAttributedString.replaceCharacters(in: range, with: newString)
+                } else if value == "pageTotal" {
+                    let attrs = self.titleAttributedString.attributes(at: range.location, effectiveRange: nil)
+                    let newString = NSAttributedString(string: "\(pageTotal)\n", attributes: attrs)
+                    self.titleAttributedString.replaceCharacters(in: range, with: newString)
+                } else if value == "totalSize" {
+                    let attrs = self.titleAttributedString.attributes(at: range.location, effectiveRange: nil)
+                    let newString = NSAttributedString(string: "\(totalSize)", attributes: attrs)
+                    self.titleAttributedString.replaceCharacters(in: range, with: newString)
+                }
             }
+            self.titleLabel.attributedText = self.titleAttributedString
         }
     }
 }
@@ -1563,4 +1590,59 @@ extension MemoHomeViewController: UICollectionViewDelegateFlowLayout {
         layout collectionViewLayout: UICollectionViewLayout,
         sizeForItemAt indexPath: IndexPath
     ) -> CGSize { collectionView.bounds.size }
+}
+
+extension MemoHomeViewController: BaseColorUpdatable {
+    func applyColor(_ colorManager: any AppAppearanceManagerType = AppAppearanceManager.shared) {
+        titleLabelView.backgroundColor = colorManager.appBaseColor
+        trashBoxButton.backgroundColor = colorManager.appBaseColor
+        sortingOptionsView.backgroundColor = colorManager.appBaseColor
+        sortByManumalLabel.backgroundColor = colorManager.appBaseColor
+        sortByNameLabel.backgroundColor = colorManager.appBaseColor
+        sortByCreatedateLabel.backgroundColor = colorManager.appBaseColor
+        applyButton.backgroundColor = colorManager.appBaseColor
+        applyButton.configuration?.baseForegroundColor = colorManager.appTintColor
+
+        gridButton.backgroundColor = colorManager.appBaseColor
+        gridButton.configuration?.baseForegroundColor = colorManager.appTintColor
+
+        adjustItemForManualView.backgroundColor = colorManager.appBaseColor
+        blockViewTitleView.backgroundColor = colorManager.appBaseColor
+        selectedItemListView.backgroundColor = colorManager.appBaseColor
+        view.backgroundColor = colorManager.appBaseColor
+        directoryPathView.backgroundColor = colorManager.appBaseColor
+
+        trashBoxButton.configuration?.baseForegroundColor = colorManager.appTintColor
+
+        adjustAttributedString.enumerateAttribute(
+            NSAttributedString.Key("id"),
+            in: NSRange(location: 0, length: adjustAttributedString.length)
+        ) { value, range, _ in
+            if let id = value as? String, ["adjustTitle", "adjustInfo"].contains(id) {
+                adjustAttributedString.addAttribute(.foregroundColor, value: colorManager.appTintColor, range: range)
+            }
+        }
+        blockViewTitle.attributedText = adjustAttributedString
+
+        titleAttributedString.enumerateAttribute(
+            NSAttributedString.Key("id"),
+            in: NSRange(location: 0, length: titleAttributedString.length)
+        ) { value, range, _ in
+            if let id = value as? String, ["title", "directoryTotal", "pageTotal", "totalSize"].contains(id) {
+                titleAttributedString.addAttribute(.foregroundColor, value: colorManager.appTintColor, range: range)
+            }
+        }
+        titleLabel.attributedText = titleAttributedString
+        directoryPathView.applyColor()
+        tabbar.applyColor()
+    }
+
+    func applyColor(
+        _ colorManager: any AppAppearanceManagerType = AppAppearanceManager.shared,
+        sortBy: DirectoryContentsSortCriterias
+    ) {
+        sortByManumalLabel.textColor = sortBy == .manual ? colorManager.appTintColor : .gray
+        sortByNameLabel.textColor = sortBy == .name ? colorManager.appTintColor : .gray
+        sortByCreatedateLabel.textColor = sortBy == .creationDate ? colorManager.appTintColor : .gray
+    }
 }

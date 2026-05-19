@@ -5,7 +5,8 @@ final class SingleTablePageViewController:
     UIViewController,
     UIScrollViewDelegate,
     ManualCaptureHost,
-    ContentsReloadableView
+    ContentsReloadableView,
+    BaseColorUpdatable
 {
     private(set) var headerView: UIView = {
         let headerView = UIView()
@@ -128,6 +129,12 @@ final class SingleTablePageViewController:
             }
             .store(in: &subscriptions)
     }
+	
+	func applyColor(_ colorManager: any AppAppearanceManagerType = AppAppearanceManager.shared) {
+		view.backgroundColor = colorManager.appBaseColor
+		titleLable.textColor = colorManager.appTintColor
+		createDateLabel.textColor = colorManager.appTintColor
+	}
 
     func configure(dispatcher: TableComponentActionDispatcher, component: TableComponent, pageName: String) {
         self.actionDispatcher = dispatcher
@@ -141,46 +148,46 @@ final class SingleTablePageViewController:
             actionDispatcher: dispatcher,
             isMinimum: false)
     }
-	
-	func reloadUsingRestoredContents(contents: Codable) {
-		if let tableContents = contents as? TableComponentContents {
-			tableComponentContentView.alpha = 0
 
-			tableComponentContentView = TableComponentContentView()
-			tableComponentContentView.alpha = 0
-			tableComponentContentView.translatesAutoresizingMaskIntoConstraints = false
-			tableComponentContentView.layer.cornerRadius = 10
-			tableComponentContentView.layer.maskedCorners = [
-				.layerMaxXMaxYCorner, .layerMinXMaxYCorner,
-			]
-			tableComponentContentView.backgroundColor = .systemGray6
+    func reloadUsingRestoredContents(contents: Codable) {
+        if let tableContents = contents as? TableComponentContents {
+            tableComponentContentView.alpha = 0
 
-			view.addSubview(tableComponentContentView)
+            tableComponentContentView = TableComponentContentView()
+            tableComponentContentView.alpha = 0
+            tableComponentContentView.translatesAutoresizingMaskIntoConstraints = false
+            tableComponentContentView.layer.cornerRadius = 10
+            tableComponentContentView.layer.maskedCorners = [
+                .layerMaxXMaxYCorner, .layerMinXMaxYCorner,
+            ]
+            tableComponentContentView.backgroundColor = .systemGray6
 
-			NSLayoutConstraint.activate([
-				tableComponentContentView
-					.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 10),
-				tableComponentContentView
-					.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-				tableComponentContentView
-					.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-				tableComponentContentView
-					.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
-			])
+            view.addSubview(tableComponentContentView)
 
-			tableComponentContentView.configure(
-				columns: tableContents.columns,
-				rows: tableContents.cellValues,
-				actionDispatcher: actionDispatcher!,
-				isMinimum: false)
+            NSLayoutConstraint.activate([
+                tableComponentContentView
+                    .topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 10),
+                tableComponentContentView
+                    .leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                tableComponentContentView
+                    .trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                tableComponentContentView
+                    .bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            ])
 
-			UIView.animateKeyframes(withDuration: 0.8, delay: 0, options: []) {
-				UIView.addKeyframe(withRelativeStartTime: 0.4, relativeDuration: 0.8) {
-					self.tableComponentContentView.alpha = 1
-				}
-			}
-		}
-	}
+            tableComponentContentView.configure(
+                columns: tableContents.columns,
+                rows: tableContents.cellValues,
+                actionDispatcher: actionDispatcher!,
+                isMinimum: false)
+
+            UIView.animateKeyframes(withDuration: 0.8, delay: 0, options: []) {
+                UIView.addKeyframe(withRelativeStartTime: 0.4, relativeDuration: 0.8) {
+                    self.tableComponentContentView.alpha = 1
+                }
+            }
+        }
+    }
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)

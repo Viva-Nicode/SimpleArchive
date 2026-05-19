@@ -13,11 +13,12 @@ final class TextMemoContentsSummaryGeneratingModel {
             sampling: .random(probabilityThreshold: 1.0),
             maximumResponseTokens: max(input.count, 600)
         )
-        let summaryResult = try? await session.respond(to: input, generating: String.self, options: opt)
-        if let content = summaryResult?.content {
-            if content.filter({ $0.isLetter }).count <= 50 { return cannotAssistText }
-            return await LanguageTranslator.translate(input: content)
-        } else {
+        do {
+            let summaryResult = try await session.respond(to: input, generating: String.self, options: opt)
+            print(summaryResult.content)
+            return await LanguageTranslator.translate(input: summaryResult.content)
+        } catch {
+            myLog(error.localizedDescription)
             return cannotAssistText
         }
     }
@@ -26,14 +27,20 @@ final class TextMemoContentsSummaryGeneratingModel {
 @available(iOS 26.0, *)
 final class LanguageTranslator {
     private init() {}
-    private static let instructions = "주어진 텍스트를 한글로 번역하세요"
+    private static let instructions = "주어진 텍스트를 한글로 번역하시오"
     static func translate(input: String) async -> String {
-        (try? await LanguageModelSession(instructions: instructions)
-            .respond(
-                to: input,
-                generating: String.self,
-                options: GenerationOptions(sampling: .greedy, maximumResponseTokens: Int.max)
-            )
-            .content) ?? "??( ˙꒳​˙ ≡ ˙꒳​˙ )??"
+        do {
+            let result = try await LanguageModelSession(instructions: instructions)
+                .respond(
+                    to: input,
+                    generating: String.self,
+                    options: GenerationOptions(sampling: .greedy, maximumResponseTokens: max(input.count, 600))
+                )
+                .content
+            return result
+        } catch {
+            myLog(error.localizedDescription)
+            return "??( ˙꒳​˙ ≡ ˙꒳​˙ )??"
+        }
     }
 }

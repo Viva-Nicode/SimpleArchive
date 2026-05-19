@@ -25,7 +25,6 @@ final class SingleTextEditorPageViewController:
 {
     private(set) var headerView: UIView = {
         let headerView = UIView()
-		
         headerView.translatesAutoresizingMaskIntoConstraints = false
         return headerView
     }()
@@ -49,14 +48,12 @@ final class SingleTextEditorPageViewController:
     }()
     private(set) var textEditorView: UITextView = {
         let textEditorView = UITextView()
-		textEditorView.backgroundColor = UIColor(named: "FixedFileItemBackgroundColor")
         textEditorView.autocorrectionType = .no
         textEditorView.spellCheckingType = .no
         textEditorView.autocapitalizationType = .none
         textEditorView.alwaysBounceVertical = true
         textEditorView.keyboardDismissMode = .onDrag
         textEditorView.contentInset.bottom = 100
-        textEditorView.textColor = .label
         textEditorView.font = .systemFont(ofSize: 15)
         textEditorView.translatesAutoresizingMaskIntoConstraints = false
         return textEditorView
@@ -89,7 +86,7 @@ final class SingleTextEditorPageViewController:
 
     var subscriptions = Set<AnyCancellable>()
     var snapshotCapturePopupView: SnapshotCapturePopupView?
-
+    
     init() {
         super.init(nibName: nil, bundle: nil)
 
@@ -110,7 +107,7 @@ final class SingleTextEditorPageViewController:
             object: nil)
     }
 
-	func configure(dispatcher: TextEditorComponentActionDispatcher, title:String, component: TextEditorComponent) {
+    func configure(dispatcher: TextEditorComponentActionDispatcher, title: String, component: TextEditorComponent) {
         self.actionDispatcher = dispatcher
         titleLable.text = title
         createDateLabel.text = component.creationDate.formattedDate
@@ -124,7 +121,6 @@ final class SingleTextEditorPageViewController:
     deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
 
     private func setupUI() {
-        view.backgroundColor = UIColor(named: "FixedFileItemBackgroundColor")
         view.addSubview(headerView)
 
         headerView.addSubview(titleLable)
@@ -132,18 +128,18 @@ final class SingleTextEditorPageViewController:
         headerView.addSubview(undoButton)
         headerView.addSubview(snapshotButton)
         headerView.addSubview(captureButton)
-		
-		let line = CAShapeLayer()
-		line.frame = .init(x: 0, y: 70, width: UIView.screenWidth, height: 2)
-		line.strokeColor = UIColor.systemGray3.cgColor
-		line.lineWidth = 2
-		line.lineDashPattern = [4, 4]
-		let path = UIBezierPath()
-		path.move(to: .init(x: 0, y: 0))
-		path.addLine(to: .init(x: line.frame.width, y: 0))
-		line.path = path.cgPath
 
-		headerView.layer.addSublayer(line)
+        let line = CAShapeLayer()
+        line.frame = .init(x: 0, y: 70, width: UIView.screenWidth, height: 2)
+		line.strokeColor = AppAppearanceManager.shared.appTintColor.cgColor
+        line.lineWidth = 2
+        line.lineDashPattern = [4, 4]
+        let path = UIBezierPath()
+        path.move(to: .init(x: 0, y: 0))
+        path.addLine(to: .init(x: line.frame.width, y: 0))
+        line.path = path.cgPath
+
+        headerView.layer.addSublayer(line)
 
         view.addSubview(textEditorView)
         textEditorView.delegate = self
@@ -251,4 +247,14 @@ final class SingleTextEditorPageViewController:
             subscriptions.removeAll()
         }
     }
+}
+
+extension SingleTextEditorPageViewController: BaseColorUpdatable {
+	func applyColor(_ colorManager: any AppAppearanceManagerType = AppAppearanceManager.shared) {
+		view.backgroundColor = colorManager.appBaseColor
+		textEditorView.backgroundColor = colorManager.appBaseColor
+		textEditorView.textColor = colorManager.appTintColor
+		titleLable.textColor = colorManager.appTintColor
+		createDateLabel.textColor = colorManager.appTintColor
+	}
 }

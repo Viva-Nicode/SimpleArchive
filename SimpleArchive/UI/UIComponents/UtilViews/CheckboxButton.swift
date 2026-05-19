@@ -17,7 +17,7 @@ final class CheckboxButton: UIButton {
         super.init(frame: .zero)
         configuration = .plain()
         configuration?.contentInsets = .zero
-        tintColor = .black
+		tintColor = .label
         addTarget(self, action: #selector(toggle), for: .touchUpInside)
         updateAppearance()
     }
@@ -28,12 +28,8 @@ final class CheckboxButton: UIButton {
 
     private func updateAppearance() {
         let name = isChecked ? "checkmark.square.fill" : "square"
-        let color: UIColor = isChecked ? .green : .gray
         let image = UIImage(systemName: name)?.withRenderingMode(.alwaysTemplate)
         setImage(image, for: .normal)
-        imageView?.tintColor = color
-
-        setTitleColor(.black, for: .normal)
         setTitle(title, for: .normal)
         configuration?.imagePadding = 8
     }

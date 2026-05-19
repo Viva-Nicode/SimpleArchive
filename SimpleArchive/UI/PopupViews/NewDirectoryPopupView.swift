@@ -12,7 +12,7 @@ class NewDirectoryPopupView: PopupView {
         titleLabel.textColor = .black
         return titleLabel
     }()
-    private let newDirectoryNameTextField: RoundedTextField = {
+    private let directoryNameTextField: RoundedTextField = {
         let newDirectoryNameTextField = RoundedTextField()
         newDirectoryNameTextField.attributedPlaceholder = NSAttributedString(
             string: "Directory Name",
@@ -50,24 +50,33 @@ class NewDirectoryPopupView: PopupView {
     override func didMoveToWindow() {
         super.didMoveToWindow()
         if window != nil {
-            newDirectoryNameTextField.becomeFirstResponder()
+			directoryNameTextField.becomeFirstResponder()
         } else {
-            newDirectoryNameTextField.resignFirstResponder()
+			directoryNameTextField.resignFirstResponder()
         }
     }
 
     override func popupViewDetailConfigure() {
         alertContainer.addArrangedSubview(titleLabel)
-        alertContainer.addArrangedSubview(newDirectoryNameTextField)
+        alertContainer.addArrangedSubview(directoryNameTextField)
         alertContainer.addArrangedSubview(confirmButton)
-        newDirectoryNameTextField.delegate = self
+		directoryNameTextField.delegate = self
 
         confirmButton.throttleTapPublisher()
             .sink { _ in
-            self.subject.send(.willCreatedNewDirectory(self.newDirectoryNameTextField.text ?? "new directory"))
+            self.subject.send(.willCreatedNewDirectory(self.directoryNameTextField.text ?? "new directory"))
             self.dismiss()
         }.store(in: &subscriptions)
+		
+		applyColor()
     }
+	
+	override func applyColor(_ colorManager: any AppAppearanceManagerType = AppAppearanceManager.shared) {
+		super.applyColor()
+		titleLabel.textColor = colorManager.appTintColor
+		directoryNameTextField.backgroundColor = colorManager.appBaseColor
+		directoryNameTextField.textColor = colorManager.appTintColor
+	}
 }
 
 extension NewDirectoryPopupView: UITextFieldDelegate {

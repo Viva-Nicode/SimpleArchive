@@ -1,7 +1,7 @@
 import Combine
 import UIKit
 
-final class TableComponentContentView: UIView, UIScrollViewDelegate {
+final class TableComponentContentView: UIView, UIScrollViewDelegate, BaseColorUpdatable {
     private(set) var tableComponentToolBarStackView: UIStackView = {
         let tableComponentToolBarStackView = UIStackView()
         tableComponentToolBarStackView.axis = .horizontal
@@ -19,7 +19,6 @@ final class TableComponentContentView: UIView, UIScrollViewDelegate {
         let image = UIImage(systemName: "widget.small.badge.plus", withConfiguration: config)
 
         button.setImage(image, for: .normal)
-        button.tintColor = .gray
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
@@ -29,7 +28,6 @@ final class TableComponentContentView: UIView, UIScrollViewDelegate {
         let buttonImage = UIImage(systemName: "text.badge.plus", withConfiguration: config)
 
         button.setImage(buttonImage, for: .normal)
-        button.tintColor = .gray
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
@@ -48,7 +46,6 @@ final class TableComponentContentView: UIView, UIScrollViewDelegate {
     }()
     private(set) var topBoundary: UIView = {
         let topBoundary = UIView()
-        topBoundary.backgroundColor = .systemGray5
         topBoundary.translatesAutoresizingMaskIntoConstraints = false
         return topBoundary
     }()
@@ -73,7 +70,7 @@ final class TableComponentContentView: UIView, UIScrollViewDelegate {
     }()
     private(set) var rowScrollView: UIScrollView = {
         let rowScrollView = UIScrollView()
-		rowScrollView.contentInset.bottom = 170
+        rowScrollView.contentInset.bottom = 170
         rowScrollView.translatesAutoresizingMaskIntoConstraints = false
         rowScrollView.showsHorizontalScrollIndicator = false
         rowScrollView.showsVerticalScrollIndicator = false
@@ -286,6 +283,28 @@ final class TableComponentContentView: UIView, UIScrollViewDelegate {
         tableComponentToolBarStackView.alpha = isMinimum ? 0 : 1
         columnScrollView.alpha = isMinimum ? 0 : 1
         rowScrollView.alpha = isMinimum ? 0 : 1
+
+		applyColor()
+    }
+
+    func applyColor(_ colorManager: any AppAppearanceManagerType = AppAppearanceManager.shared) {
+		backgroundColor = colorManager.appBaseColor
+		
+		topBoundary.backgroundColor = colorManager.appTintColor
+		bottomBoundary.backgroundColor = colorManager.appTintColor
+		
+        columnsStackView.arrangedSubviews.compactMap { $0 as? TableComponentColumnLabel }
+            .forEach { $0.textColor = colorManager.appTintColor }
+        rowStackView.arrangedSubviews.compactMap { $0 as? TableComponentRowView }
+            .forEach {
+                $0.arrangedSubviews.compactMap { $0 as? TableComponentCellLabel }
+                    .forEach {
+                        if !$0.cellValue.isEmpty { $0.textColor = colorManager.appTintColor }
+                    }
+            }
+		
+		rowAddButton.tintColor = colorManager.appTintColor
+		columnAddButton.tintColor = colorManager.appTintColor
     }
 
     func configure(
@@ -326,9 +345,10 @@ final class TableComponentContentView: UIView, UIScrollViewDelegate {
 
                 tableComponentRowView.addArrangedSubLabel(with: cellLabel)
             }
-
             rowStackView.addArrangedSubview(tableComponentRowView)
         }
+
+        rowStackView.gestureRecognizers?.forEach { rowStackView.removeGestureRecognizer($0) }
 
         adjustTableContentWidthToFit()
 
@@ -355,6 +375,8 @@ final class TableComponentContentView: UIView, UIScrollViewDelegate {
         tableComponentToolBarStackView.alpha = 1
         columnScrollView.alpha = 1
         rowScrollView.alpha = 1
+
+        applyColor()
     }
 
     private func adjustTableContentWidthToFit() {
@@ -404,10 +426,15 @@ final class TableComponentContentView: UIView, UIScrollViewDelegate {
                 columnScrollView.alpha = 0
                 rowScrollView.alpha = 0
 
-                heightConstraints.forEach { $0.0.constant = .zero }
-                NSLayoutConstraint.deactivate(stackViewConstraints)
+                self.transform = .init(scaleX: 1.0, y: 0)
+                self.heightConstraints.forEach { $0.0.constant = .zero }
+                NSLayoutConstraint.deactivate(self.stackViewConstraints)
+            } completion: { _ in
+                self.isHidden = true
+                self.transform = .identity
             }
         } else {
+            self.isHidden = false
             UIView.animate(withDuration: isAnimated ? 0.3 : 0.0) { [weak self] in
                 guard let self else { return }
 
@@ -488,7 +515,6 @@ final class TableComponentContentView: UIView, UIScrollViewDelegate {
     }
 
     func applyColumns(columns: [TableComponentColumn]) {
-
         var moves: [Int?] = []
         var newUIVies = [UIView](repeating: UIView(frame: .zero), count: columns.count)
 

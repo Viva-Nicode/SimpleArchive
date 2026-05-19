@@ -58,13 +58,11 @@ final class TableComponentView: PageComponentView<TableComponentContentView, Tab
     override func setupUI() {
         componentContentView = TableComponentContentView()
         componentContentView.translatesAutoresizingMaskIntoConstraints = false
-        componentContentView.layer.cornerRadius = 10
+        componentContentView.layer.cornerRadius = 20
         componentContentView.layer.maskedCorners = [.layerMaxXMaxYCorner, .layerMinXMaxYCorner]
         componentContentView.backgroundColor = .systemGray6
 
         super.setupUI()
-
-        toolBarView.backgroundColor = UIColor(named: "TableComponentToolbarColor")
 
         snapShotView.addArrangedSubview(captureButton)
         snapShotView.addArrangedSubview(snapshotButton)
@@ -122,6 +120,9 @@ final class TableComponentView: PageComponentView<TableComponentContentView, Tab
                 tableActionDispatcher?.navigateComponentSnapshotView()
             }
             .store(in: &subscriptions)
+
+        setMinimizeState(component.isMinimumHeight)
+        applyColor()
     }
 
     func configure(
@@ -132,9 +133,7 @@ final class TableComponentView: PageComponentView<TableComponentContentView, Tab
         self.componentSnapshotActionDispatcher = snapshotActionDispatcher
         pageActionDispatcher = PassthroughSubject<MemoPageViewInput, Never>()
 
-        componentContentView.configure(
-            columns: snapshotDetail.columns,
-            rows: snapshotDetail.cellValues)
+        componentContentView.configure(columns: snapshotDetail.columns, rows: snapshotDetail.cellValues)
 
         componentInformationView.removeFromSuperview()
 
@@ -158,6 +157,14 @@ final class TableComponentView: PageComponentView<TableComponentContentView, Tab
 
         captureButton.removeFromSuperview()
         snapshotButton.removeFromSuperview()
+
+        applyColor()
+    }
+
+    override func applyColor(_ colorManager: any AppAppearanceManagerType = AppAppearanceManager.shared) {
+        super.applyColor()
+        toolBarView.backgroundColor = UIColor(named: "TableComponentToolbarColor")?
+            .setBrightness(min(1.0, colorManager.appBaseColorBrightness * 1.4))
     }
 
     func reloadUsingRestoredContents(contents: Codable) {
@@ -198,6 +205,7 @@ final class TableComponentView: PageComponentView<TableComponentContentView, Tab
     }
 
     override func setMinimizeState(_ isMinimize: Bool) {
+        super.setMinimizeState(isMinimize)
         componentContentView.minimizeContentView(isMinimize, isAnimated: true)
     }
 
@@ -213,6 +221,7 @@ final class TableComponentView: PageComponentView<TableComponentContentView, Tab
             )
             fullscreenComponentViewController.modalPresentationStyle = .fullScreen
             fullscreenComponentViewController.transitioningDelegate = memoPageViewController
+            fullscreenComponentViewController.applyColor()
 
             memoPageViewController.present(fullscreenComponentViewController, animated: true)
         }

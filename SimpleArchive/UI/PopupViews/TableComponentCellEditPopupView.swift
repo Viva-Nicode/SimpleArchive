@@ -13,7 +13,6 @@ final class TableComponentCellEditPopupView: PopupView {
         let titleLabel = UILabel()
         titleLabel.text = "Edit Cell"
         titleLabel.font = .systemFont(ofSize: 18, weight: .bold)
-        titleLabel.textColor = .black
         return titleLabel
     }()
     private(set) var rowStackView: UIStackView = {
@@ -35,7 +34,6 @@ final class TableComponentCellEditPopupView: PopupView {
         rowScrollView.showsHorizontalScrollIndicator = false
         rowScrollView.translatesAutoresizingMaskIntoConstraints = false
         rowScrollView.layer.cornerRadius = 7
-        rowScrollView.backgroundColor = .init(named: "MyLightGray")
         rowScrollView.contentInset = .init(top: 8, left: 8, bottom: 8, right: 8)
         return rowScrollView
     }()
@@ -48,19 +46,16 @@ final class TableComponentCellEditPopupView: PopupView {
     private(set) var removeRowButton: UIButton = {
         let removeRowButton = UIButton()
         removeRowButton.setImage(UIImage(systemName: "minus.circle"), for: .normal)
-        removeRowButton.tintColor = .systemGray3
         return removeRowButton
     }()
     private(set) var pasteButton: UIButton = {
         let pasteButton = UIButton()
         pasteButton.setImage(UIImage(systemName: "document.fill"), for: .normal)
-        pasteButton.tintColor = .systemGray3
         return pasteButton
     }()
     private(set) var randomStringButton: UIButton = {
         let randomStringButton = UIButton()
         randomStringButton.setImage(UIImage(systemName: "doc.questionmark.fill.rtl"), for: .normal)
-        randomStringButton.tintColor = .systemGray3
         return randomStringButton
     }()
     private(set) var tableComponentCellValueTextView: UITextView = {
@@ -69,8 +64,6 @@ final class TableComponentCellEditPopupView: PopupView {
         tableComponentCellValueTextView.autocorrectionType = .no
         tableComponentCellValueTextView.spellCheckingType = .no
         tableComponentCellValueTextView.autocapitalizationType = .none
-        tableComponentCellValueTextView.backgroundColor = .init(named: "MyLightGray")
-        tableComponentCellValueTextView.textColor = .black
         tableComponentCellValueTextView.font = .systemFont(ofSize: 15)
         tableComponentCellValueTextView.translatesAutoresizingMaskIntoConstraints = false
         tableComponentCellValueTextView.layer.cornerRadius = 7
@@ -119,7 +112,7 @@ final class TableComponentCellEditPopupView: PopupView {
         let randomTextGenerateTitleLabel = UILabel()
         randomTextGenerateTitleLabel.text = "Random Text Generate"
         randomTextGenerateTitleLabel.font = .systemFont(ofSize: 18, weight: .bold)
-        randomTextGenerateTitleLabel.textColor = .black
+        randomTextGenerateTitleLabel.textColor = .label
         randomTextGenerateTitleLabel.isHidden = true
         randomTextGenerateTitleLabel.alpha = 0
         return randomTextGenerateTitleLabel
@@ -249,8 +242,18 @@ final class TableComponentCellEditPopupView: PopupView {
         }
     }
 
-    override func popupViewDetailConfigure() {
+    override func applyColor(_ colorManager: any AppAppearanceManagerType = AppAppearanceManager.shared) {
+        super.applyColor()
+        titleLabel.textColor = colorManager.appTintColor
+        randomStringButton.tintColor = colorManager.appTintColor
+        tableComponentCellValueTextView.textColor = colorManager.appTintColor
+        pasteButton.tintColor = colorManager.appTintColor
+        removeRowButton.tintColor = colorManager.appTintColor
+        rowScrollView.backgroundColor = colorManager.appBaseColor
+        tableComponentCellValueTextView.backgroundColor = colorManager.appBaseColor
+    }
 
+    override func popupViewDetailConfigure() {
         titleLabelContainer.addArrangedSubview(titleLabel)
         titleLabelContainer.addArrangedSubview(randomTextGenerateTitleLabel)
         alertContainer.addArrangedSubview(titleLabelContainer)
@@ -292,10 +295,10 @@ final class TableComponentCellEditPopupView: PopupView {
             columnTitleLabel.text = columnTitle
             columnTitleLabel.numberOfLines = 1
             columnTitleLabel.font = columnTitleFont
-            columnTitleLabel.textColor = .black
+            columnTitleLabel.textColor = AppAppearanceManager.shared.appTintColor
 
             let separator = UIView()
-            separator.backgroundColor = index == cellIndex ? .systemBlue : .lightGray
+            separator.backgroundColor = index == cellIndex ? .systemBlue : AppAppearanceManager.shared.appTintColor
 
             separator.translatesAutoresizingMaskIntoConstraints = false
             separator.heightAnchor.constraint(equalToConstant: separatorLineHieght).isActive = true
@@ -304,7 +307,7 @@ final class TableComponentCellEditPopupView: PopupView {
             let cellValueLabel = UILabel()
             cellValueLabel.textAlignment = .left
             cellValueLabel.text = cellValue.isEmpty ? "empty" : cellValue
-            cellValueLabel.textColor = cellValue.isEmpty ? .systemGray2 : .label
+            cellValueLabel.textColor = cellValue.isEmpty ? .systemGray2 : AppAppearanceManager.shared.appTintColor
 
             let cellHeight =
                 self.boundingSize(
@@ -317,7 +320,7 @@ final class TableComponentCellEditPopupView: PopupView {
             cellValueLabelMaximumHeight = max(cellValueLabelMaximumHeight, cellHeight)
             cellValueLabel.numberOfLines = 3
             cellValueLabel.font = cellValueFont
-            cellValueLabel.textColor = .black
+            cellValueLabel.textColor = AppAppearanceManager.shared.appTintColor
 
             stackView.translatesAutoresizingMaskIntoConstraints = false
 
@@ -351,14 +354,14 @@ final class TableComponentCellEditPopupView: PopupView {
         ])
 
         let lineLabel = UILabel()
-        lineLabel.text = "\(rowIndex + 1)번째 행"
-        lineLabel.textColor = .black
+        lineLabel.text = "\(rowIndex + 1)th row"
+        lineLabel.textColor = AppAppearanceManager.shared.appTintColor
+
         accessionalButtonsStackView.addArrangedSubview(lineLabel)
         accessionalButtonsStackView.addArrangedSubview(UIView.spacerView)
-
         accessionalButtonsStackView.addArrangedSubview(removeRowButton)
-
         accessionalButtonsStackView.addArrangedSubview(pasteButton)
+
         pasteButton.addAction(
             UIAction { [weak self] _ in
                 guard let self else { return }
@@ -395,6 +398,8 @@ final class TableComponentCellEditPopupView: PopupView {
         layoutIfNeeded()
 
         rowScrollView.scrollSubviewToCenter(rowStackView.arrangedSubviews[cellIndex], animated: true)
+
+        applyColor()
     }
 
     private func setupRandomTextGenerateView() {

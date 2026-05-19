@@ -1,7 +1,6 @@
 import UIKit
 
 final class SliderView: UIView {
-
     private let containerStack: UIStackView = {
         let containerStack = UIStackView()
         containerStack.axis = .horizontal
@@ -13,7 +12,7 @@ final class SliderView: UIView {
 
     private let titleLabel: UILabel = {
         let titleLabel = UILabel()
-        titleLabel.textColor = .black
+        titleLabel.textColor = .label
         titleLabel.setContentHuggingPriority(.required, for: .horizontal)
         return titleLabel
     }()
@@ -28,7 +27,7 @@ final class SliderView: UIView {
 
     private let valueLabel: UILabel = {
         let valueLabel = UILabel()
-        valueLabel.textColor = .black
+        valueLabel.textColor = .label
         valueLabel.widthAnchor.constraint(equalToConstant: 34).isActive = true
         valueLabel.textAlignment = .right
         valueLabel.setContentHuggingPriority(.required, for: .horizontal)

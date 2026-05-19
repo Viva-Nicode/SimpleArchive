@@ -142,6 +142,10 @@ final class DependencyConfigurator {
             PrivateDirectorySignatureManager()
         }
 
+        container.register(UserContentsConfigurationManagerType.self, isSingleton: true) {
+            UserContentsConfigurationManager()
+        }
+
         #if os(iOS)
             if let LockScreenAudioController = AudioComponentSoundPlayer.shared as? LockScreenAudioControllable {
                 LockScreenAudioController.setLockScreenAudioContoller(with: NowPlayingInfoCenterController())
@@ -159,7 +163,8 @@ final class DependencyConfigurator {
             return PageCreator(componentFactory: factory)
         }
         let audioFileManger = container.resolve(AudioFileManagerType.self)
-		let signatureManager = container.resolve(PrivateDirectorySignatureManagerType.self)
+        let signatureManager = container.resolve(PrivateDirectorySignatureManagerType.self)
+        let userContentsConfigurationManager = container.resolve(UserContentsConfigurationManagerType.self)
 
         container.register(MemoHomeViewModel.self) {
             MemoHomeViewModel(
@@ -167,7 +172,8 @@ final class DependencyConfigurator {
                 directoryCreator: container.resolve(DirectoryCreator.self),
                 pageCreator: container.resolve(PageCreator.self),
                 audioFileManager: audioFileManger,
-                signatureManager: signatureManager
+                signatureManager: signatureManager,
+                userContentConfigurationManager: userContentsConfigurationManager
             )
         }
     }

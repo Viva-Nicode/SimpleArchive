@@ -1,7 +1,7 @@
 import Combine
 import UIKit
 
-final class PrivateDirectoryBlockView: UIView {
+final class PrivateDirectoryBlockView: UIView, BaseColorUpdatable {
     private(set) var privateDirectoryBlockCommentLabel: UILabel = {
         let label = UILabel()
         label.textColor = .black
@@ -86,11 +86,11 @@ final class PrivateDirectoryBlockView: UIView {
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
-    private(set) var infoLabel: UILabel = {
+    private(set) lazy var signatureRegisterGuideLabel: UILabel = {
         let infoLabel = UILabel()
         infoLabel.translatesAutoresizingMaskIntoConstraints = false
         infoLabel.numberOfLines = 0
-        let attributedString = NSMutableAttributedString()
+
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.lineSpacing = 0
         paragraphStyle.alignment = .left
@@ -105,7 +105,7 @@ final class PrivateDirectoryBlockView: UIView {
         ]
 
         for (i, sentence) in sentences.enumerated() {
-            attributedString.append(
+            signatureRegisterGuideAttrString.append(
                 NSAttributedString(
                     string: "• " + sentence + (i < sentences.count - 1 ? "\n\n" : ""),
                     attributes: [
@@ -115,14 +115,13 @@ final class PrivateDirectoryBlockView: UIView {
                     ]
                 ))
         }
-        infoLabel.attributedText = attributedString
+        infoLabel.attributedText = signatureRegisterGuideAttrString
         return infoLabel
     }()
-    private(set) var completeInfoLabel: UILabel = {
+    private(set) lazy var signatureRegisterCompletionGuideLabel: UILabel = {
         let infoLabel = UILabel()
         infoLabel.translatesAutoresizingMaskIntoConstraints = false
         infoLabel.numberOfLines = 0
-        let attributedString = NSMutableAttributedString()
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.lineSpacing = 0
         paragraphStyle.alignment = .left
@@ -135,7 +134,7 @@ final class PrivateDirectoryBlockView: UIView {
         ]
 
         for (i, sentence) in sentences.enumerated() {
-            attributedString.append(
+            signatureRegisterCompletionGuideAttrString.append(
                 NSAttributedString(
                     string: "• " + sentence + (i < sentences.count - 1 ? "\n\n" : ""),
                     attributes: [
@@ -145,7 +144,7 @@ final class PrivateDirectoryBlockView: UIView {
                     ]
                 ))
         }
-        infoLabel.attributedText = attributedString
+        infoLabel.attributedText = signatureRegisterCompletionGuideAttrString
         return infoLabel
     }()
     private let signatureButton: UIButton = {
@@ -160,8 +159,10 @@ final class PrivateDirectoryBlockView: UIView {
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
-
     private(set) var signView = SignatureDrawingView()
+
+    private let signatureRegisterGuideAttrString = NSMutableAttributedString()
+    private let signatureRegisterCompletionGuideAttrString = NSMutableAttributedString()
 
     private var isPresentSignatureHistory = false
     private var signatureHistories: [UIView] = []
@@ -169,10 +170,19 @@ final class PrivateDirectoryBlockView: UIView {
     private var currentSignatureHistoryIndex = 0
     var isRegistering: Bool = false
 
-    var dispatcher: PassthroughSubject<MemoHomeViewInput, Never>?
-
     private var nextSignatureHistorySwipe: UISwipeGestureRecognizer?
     private var previousSignatureHistorySwipe: UISwipeGestureRecognizer?
+
+    var dispatcher: PassthroughSubject<MemoHomeViewInput, Never>? {
+        didSet {
+            signView.finishDrawing = { sign in
+                self.dispatcher?
+                    .send(
+                        self.isRegistering ? .willRegisterSignature(sign) : .willTryToUnlockPrivateDirectoryAccess(sign)
+                    )
+            }
+        }
+    }
 
     override init(frame: CGRect) {
         super.init(frame: .zero)
@@ -192,8 +202,8 @@ final class PrivateDirectoryBlockView: UIView {
 
         addSubview(privateDirectoryBlockCommentLabel)
         addSubview(signView)
-        addSubview(infoLabel)
-        addSubview(completeInfoLabel)
+        addSubview(signatureRegisterGuideLabel)
+        addSubview(signatureRegisterCompletionGuideLabel)
         addSubview(getStartButton)
         addSubview(finishButton)
         addSubview(unregisterButton)
@@ -210,14 +220,15 @@ final class PrivateDirectoryBlockView: UIView {
             privateDirectoryBlockCommentLabel.topAnchor
                 .constraint(equalTo: safeAreaLayoutGuide.topAnchor, constant: 40),
 
-            infoLabel.topAnchor.constraint(equalTo: privateDirectoryBlockCommentLabel.bottomAnchor, constant: 30),
-            infoLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
-            infoLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -20),
-
-            completeInfoLabel.topAnchor.constraint(
+            signatureRegisterGuideLabel.topAnchor.constraint(
                 equalTo: privateDirectoryBlockCommentLabel.bottomAnchor, constant: 30),
-            completeInfoLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
-            completeInfoLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -20),
+            signatureRegisterGuideLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
+            signatureRegisterGuideLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -20),
+
+            signatureRegisterCompletionGuideLabel.topAnchor.constraint(
+                equalTo: privateDirectoryBlockCommentLabel.bottomAnchor, constant: 30),
+            signatureRegisterCompletionGuideLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
+            signatureRegisterCompletionGuideLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -20),
 
             alertLabel.topAnchor.constraint(equalTo: privateDirectoryBlockCommentLabel.bottomAnchor, constant: 20),
             alertLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
@@ -309,7 +320,8 @@ final class PrivateDirectoryBlockView: UIView {
                 }
             }, for: .touchUpInside)
 
-        DoneButton.addAction(UIAction { _ in self.readyToVerifySignature(centers: []) }, for: .touchUpInside)
+        DoneButton.addAction(
+            UIAction { _ in self.readyToVerifySignature(centers: [], dopt: .shown) }, for: .touchUpInside)
 
         nextSignatureHistorySwipe =
             UISwipeGestureRecognizer(target: self, action: #selector(handleSignatureHistorySwipe(_:)))
@@ -326,16 +338,40 @@ final class PrivateDirectoryBlockView: UIView {
         previousSignatureHistorySwipe?.isEnabled = false
     }
 
+    func applyColor(_ colorManager: any AppAppearanceManagerType = AppAppearanceManager.shared) {
+        privateDirectoryBlockCommentLabel.textColor = colorManager.appTintColor
+        signatureRegisterGuideAttrString.enumerateAttributes(
+            in: NSRange(location: 0, length: signatureRegisterGuideAttrString.length)
+        ) {
+            attrs, range, stop in
+            signatureRegisterGuideAttrString.addAttribute(
+                .foregroundColor, value: colorManager.appTintColor, range: range)
+        }
+        signatureRegisterGuideLabel.attributedText = signatureRegisterGuideAttrString
+
+        signatureRegisterCompletionGuideAttrString.enumerateAttributes(
+            in: NSRange(location: 0, length: signatureRegisterCompletionGuideAttrString.length)
+        ) {
+            attrs, range, stop in
+            signatureRegisterCompletionGuideAttrString.addAttribute(
+                .foregroundColor, value: colorManager.appTintColor, range: range)
+        }
+        signatureRegisterCompletionGuideLabel.attributedText = signatureRegisterCompletionGuideAttrString
+    }
+
     func clear() { signView.clear() }
 
     func registerSignatureGuideView() {
         privateDirectoryBlockCommentLabel.text = "Register Pass Signature"
+        signView.isUserInteractionEnabled = false
+        nextSignatureHistorySwipe?.isEnabled = false
+        previousSignatureHistorySwipe?.isEnabled = false
         isRegistering = true
-        infoLabel.isHidden = false
+        signatureRegisterGuideLabel.isHidden = false
         getStartButton.isHidden = false
 
         finishButton.isHidden = true
-        completeInfoLabel.isHidden = true
+        signatureRegisterCompletionGuideLabel.isHidden = true
         signatureButton.isHidden = true
         DoneButton.isHidden = true
         unregisterButton.isHidden = true
@@ -359,27 +395,46 @@ final class PrivateDirectoryBlockView: UIView {
         finishButton.isHidden = true
         signatureButton.isHidden = true
         DoneButton.isHidden = false
-        completeInfoLabel.isHidden = false
+        signatureRegisterCompletionGuideLabel.isHidden = false
         alertLabel.isHidden = true
         signView.isUserInteractionEnabled = false
         centerPoints.forEach { $0.isHidden = true }
+
+        nextSignatureHistorySwipe?.isEnabled = false
+        previousSignatureHistorySwipe?.isEnabled = false
     }
 
     @objc private func handleSignatureHistorySwipe(_ gr: UISwipeGestureRecognizer) {
-        if gr.direction == .left {
-            signatureHistories[currentSignatureHistoryIndex].isHidden = true
-            currentSignatureHistoryIndex += 1
-            if currentSignatureHistoryIndex >= signatureHistories.count {
-                currentSignatureHistoryIndex = 0
-            }
-            signatureHistories[currentSignatureHistoryIndex].isHidden = false
-        } else {
-            signatureHistories[currentSignatureHistoryIndex].isHidden = true
-            currentSignatureHistoryIndex -= 1
-            if currentSignatureHistoryIndex < 0 {
-                currentSignatureHistoryIndex = signatureHistories.count - 1
-            }
-            signatureHistories[currentSignatureHistoryIndex].isHidden = false
+        nextSignatureHistorySwipe?.isEnabled = false
+        previousSignatureHistorySwipe?.isEnabled = false
+
+        let isLeft = gr.direction == .left
+        let outX: CGFloat = isLeft ? -UIView.screenWidth : UIView.screenWidth
+
+        let current = signatureHistories[currentSignatureHistoryIndex]
+
+        if signatureHistories.count <= 1 {
+            nextSignatureHistorySwipe?.isEnabled = true
+            previousSignatureHistorySwipe?.isEnabled = true
+            return
+        }
+
+        currentSignatureHistoryIndex += isLeft ? 1 : -1
+        if currentSignatureHistoryIndex >= signatureHistories.count { currentSignatureHistoryIndex = 0 }
+        if currentSignatureHistoryIndex < 0 { currentSignatureHistoryIndex = signatureHistories.count - 1 }
+
+        let next = signatureHistories[currentSignatureHistoryIndex]
+        next.transform = CGAffineTransform(translationX: -outX, y: 0)
+        next.isHidden = false
+
+        UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseInOut) {
+            current.transform = CGAffineTransform(translationX: outX, y: 0)
+            next.transform = .identity
+        } completion: { _ in
+            current.isHidden = true
+            current.transform = .identity
+            self.nextSignatureHistorySwipe?.isEnabled = true
+            self.previousSignatureHistorySwipe?.isEnabled = true
         }
     }
 
@@ -391,7 +446,7 @@ final class PrivateDirectoryBlockView: UIView {
             addSubview(f)
             signatureHistories.append(f)
 
-            UIView.transition(with: f, duration: 0.5) {
+            UIView.transition(with: f, duration: 0.5, options: [.transitionCurlDown, .allowAnimatedContent]) {
                 let targetX = self.signatureButton.center.x - f.center.x
                 let targetY = self.signatureButton.center.y - f.center.y
 
@@ -407,10 +462,16 @@ final class PrivateDirectoryBlockView: UIView {
         }
     }
 
-    func readyToVerifySignature(centers: [[Double]]) {
+    func readyToVerifySignature(centers: [[Double]], dopt: DrawingDisplayOption) {
         UIView.performWithoutAnimation { [self] in
+            subviews
+                .compactMap { $0 as? UIImageView }
+                .filter { $0.accessibilityIdentifier == "centerPoint" }
+                .forEach { $0.removeFromSuperview() }
+
             for center in centers {
                 let centerImageView = UIImageView(image: UIImage(systemName: "sparkles"))
+                centerImageView.accessibilityIdentifier = "centerPoint"
                 centerImageView.tintColor = .systemBlue
                 centerImageView.frame = CGRect(x: center[0], y: center[1], width: 20, height: 20)
                 centerPoints.append(centerImageView)
@@ -420,14 +481,27 @@ final class PrivateDirectoryBlockView: UIView {
             privateDirectoryBlockCommentLabel.text = "Draw Pass Signature"
             signatureButton.isHidden = true
             finishButton.isHidden = true
-            infoLabel.isHidden = true
-            completeInfoLabel.isHidden = true
+            signatureRegisterGuideLabel.isHidden = true
+            signatureRegisterCompletionGuideLabel.isHidden = true
             getStartButton.isHidden = true
             DoneButton.isHidden = true
             alertLabel.isHidden = true
             signView.isUserInteractionEnabled = true
             isRegistering = false
             centerPoints.forEach { $0.isHidden = false }
+            signView.isVerifing = true
+            switch dopt {
+                case .shown:
+                    signView.isTailEffect = false
+
+                case .partial:
+                    signView.isTailEffect = true
+                    signView.tailLength = 12
+
+                case .hidden:
+                    signView.isTailEffect = true
+                    signView.tailLength = 1
+            }
         }
     }
 
@@ -450,14 +524,18 @@ final class PrivateDirectoryBlockView: UIView {
     }
 
     private func readyToRegisterSignature() {
-        infoLabel.isHidden = true
-        completeInfoLabel.isHidden = true
+        signatureRegisterGuideLabel.isHidden = true
+        signatureRegisterCompletionGuideLabel.isHidden = true
         getStartButton.isHidden = true
         signatureButton.isHidden = false
         finishButton.isHidden = false
         badgeLabel.text = "0"
 
         signView.isUserInteractionEnabled = true
+
+        nextSignatureHistorySwipe?.isEnabled = false
+        previousSignatureHistorySwipe?.isEnabled = false
+        signView.isVerifing = false
     }
 
     private func presnetSignatureSnapshotHistories() {
@@ -491,143 +569,5 @@ final class PrivateDirectoryBlockView: UIView {
             nextSignatureHistorySwipe?.isEnabled = false
             previousSignatureHistorySwipe?.isEnabled = false
         }
-    }
-}
-
-final class SignatureDrawingView: UIView {
-    private var path = UIBezierPath()
-    private var paths: [UIBezierPath] = []
-    private var displayLink: CADisplayLink?
-    private var currentTouch: UITouch?
-    var signatureSnapshot: [UIView] = []
-    var isTailEffect = false
-    private var allPoints: [CGPoint] = []
-    private let tailLength = 20
-
-    override init(frame: CGRect) {
-        super.init(frame: .zero)
-        setupUI()
-    }
-
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-
-    private func startDisplayLink() {
-        displayLink = CADisplayLink(target: self, selector: #selector(update))
-        displayLink?.add(to: .main, forMode: .common)
-    }
-
-    private func stopDisplayLink() {
-        displayLink?.invalidate()
-        displayLink = nil
-
-        var points: [CGPoint] = []
-
-        path.cgPath.applyWithBlock { element in
-            switch element.pointee.type {
-                case .moveToPoint, .addLineToPoint:
-                    points.append(element.pointee.points[0])
-
-                default:
-                    break
-            }
-        }
-
-        if let maxX = points.map({ $0.x }).max(),
-            let minX = points.map({ $0.x }).min(),
-            let maxY = points.map({ $0.y }).max(),
-            let minY = points.map({ $0.y }).min(),
-            let signSnapshot = self.resizableSnapshotView(
-                from: CGRect(x: minX - 20, y: minY - 20, width: maxX - minX + 50, height: maxY - minY + 50),
-                afterScreenUpdates: true,
-                withCapInsets: .zero)
-        {
-            signSnapshot.frame.origin = .init(x: minX - 20, y: minY - 20)
-            signatureSnapshot.append(signSnapshot)
-            if let sp = superview as? PrivateDirectoryBlockView {
-                let d = points.map { [Double($0.x), Double($0.y)] }
-                sp.dispatcher?
-                    .send(sp.isRegistering ? .willRegisterSignature(d) : .willTryToUnlockPrivateDirectoryAccess(d))
-            }
-        }
-    }
-
-    @objc private func update() {
-        guard let touch = currentTouch else { return }
-        let point = touch.location(in: self)
-        path.addLine(to: point)
-        setNeedsDisplay()
-    }
-
-    private func setupUI() {
-        translatesAutoresizingMaskIntoConstraints = false
-        backgroundColor = .white.withAlphaComponent(0.01)
-    }
-
-    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        stopDisplayLink()
-        currentTouch = nil
-    }
-
-    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
-        stopDisplayLink()
-        currentTouch = nil
-    }
-
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let touch = touches.first else { return }
-        currentTouch = touch
-        let point = touch.location(in: self)
-
-        path = UIBezierPath()
-        path.lineWidth = 4
-        path.lineCapStyle = .round
-        path.lineJoinStyle = .round
-        path.move(to: point)
-        paths.append(path)
-        allPoints.append(point)
-
-        startDisplayLink()
-    }
-
-    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let touch = touches.first else { return }
-        let coalesced = event?.coalescedTouches(for: touch) ?? [touch]
-        coalesced.forEach { t in
-            let point = t.location(in: self)
-            path.addLine(to: point)
-            allPoints.append(point)
-        }
-        setNeedsDisplay()
-    }
-
-    override func draw(_ rect: CGRect) {
-        UIColor.black.setStroke()
-
-        if isTailEffect {
-            let visiblePoints = Array(allPoints.suffix(tailLength))
-            guard visiblePoints.count > 1 else { return }
-
-            let tailPath = UIBezierPath()
-            tailPath.lineWidth = 4
-            tailPath.lineCapStyle = .round
-            tailPath.lineJoinStyle = .round
-            tailPath.move(to: visiblePoints[0])
-            visiblePoints.dropFirst().forEach { tailPath.addLine(to: $0) }
-            tailPath.stroke()
-
-        } else {
-            paths.forEach {
-                $0.lineWidth = 4
-                $0.stroke()
-            }
-        }
-    }
-
-    func clear() {
-        paths.removeAll()
-        allPoints.removeAll()
-        setNeedsDisplay()
     }
 }

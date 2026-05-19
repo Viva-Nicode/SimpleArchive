@@ -394,7 +394,7 @@ final class AudioControlBarView: UIView, UITableViewDelegate {
                 string: title,
                 attributes: [
                     .font: UIFont.systemFont(ofSize: 16, weight: .semibold),
-                    .foregroundColor: UIColor.black,
+                    .foregroundColor: UIColor.label,
                 ]
             )
         )
@@ -404,7 +404,7 @@ final class AudioControlBarView: UIView, UITableViewDelegate {
                 string: "\n" + artist,
                 attributes: [
                     .font: UIFont.systemFont(ofSize: 14),
-                    .foregroundColor: UIColor.black,
+                    .foregroundColor: UIColor.label,
                 ]
             )
         )

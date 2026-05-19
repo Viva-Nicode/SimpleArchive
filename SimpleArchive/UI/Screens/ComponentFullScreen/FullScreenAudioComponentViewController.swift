@@ -7,7 +7,6 @@ final class FullScreenAudioComponentViewController: ComponentFullScreenView<Audi
         super.init(componentContentView: audioComponentContentView)
         super.setupUI()
         super.setupConstraints()
-        toolBarView.backgroundColor = UIColor(named: "AudioComponentToolbarColor")
 
         setupData(title: title, date: createdDate)
     }
@@ -31,4 +30,11 @@ final class FullScreenAudioComponentViewController: ComponentFullScreenView<Audi
             }
             .store(in: &subscriptions)
     }
+	
+	override func applyColor(_ colorManager: any AppAppearanceManagerType = AppAppearanceManager.shared) {
+		super.applyColor()
+		toolBarView.backgroundColor = UIColor(named: "AudioComponentToolbarColor")?
+			.setBrightness(min(1.0, colorManager.appBaseColorBrightness * 1.4))
+		
+	}
 }

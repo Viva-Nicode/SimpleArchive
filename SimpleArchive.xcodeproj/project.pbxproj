@@ -49,14 +49,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		FC72EB8A2E388C1100A08C3A /* Exceptions for "SimpleArchive" folder in "SimpleArchiveTests" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Persistences/SimpleArchive.xcdatamodeld,
-			);
-			target = FCCF47902E0681C300C95405 /* SimpleArchiveTests */;
-		};
-		FCDB6C152E03DEE400760124 /* Exceptions for "SimpleArchive" folder in "SimpleArchive" target */ = {
+		475035DD2FAF052900523C22 /* Exceptions for "SimpleArchive" folder in "SimpleArchive" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -79,8 +72,7 @@
 		FCDB6C052E03DEE300760124 /* SimpleArchive */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				FCDB6C152E03DEE400760124 /* Exceptions for "SimpleArchive" folder in "SimpleArchive" target */,
-				FC72EB8A2E388C1100A08C3A /* Exceptions for "SimpleArchive" folder in "SimpleArchiveTests" target */,
+				475035DD2FAF052900523C22 /* Exceptions for "SimpleArchive" folder in "SimpleArchive" target */,
 			);
 			path = SimpleArchive;
 			sourceTree = "<group>";

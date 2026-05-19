@@ -2,7 +2,7 @@ import UIKit
 
 final class ComponentFullScreenViewAnimator: NSObject, UIViewControllerAnimatedTransitioning {
 
-    static let duration: TimeInterval = 0.3
+    private static var duration: TimeInterval { AppAppearanceManager.shared.animaDuration == .normal ? 0.6 : 0.3 }
 
     private let type: PresentationType
 
@@ -18,33 +18,9 @@ final class ComponentFullScreenViewAnimator: NSObject, UIViewControllerAnimatedT
     private let creationLableRect: CGRect
     private let componentInformationViewRect: CGRect
 
-    let redCircle: UIView = {
-        let circleView = UIView()
-        circleView.backgroundColor = UIColor(red: 0.99, green: 0.27, blue: 0.27, alpha: 1)
-        circleView.layer.cornerRadius = 9
-        circleView.translatesAutoresizingMaskIntoConstraints = false
-        circleView.widthAnchor.constraint(equalToConstant: 18).isActive = true
-        circleView.heightAnchor.constraint(equalToConstant: 18).isActive = true
-        return circleView
-    }()
-    let yellowCircle: UIView = {
-        let circleView = UIView()
-        circleView.backgroundColor = UIColor(red: 1.0, green: 0.69, blue: 0.14, alpha: 1)
-        circleView.layer.cornerRadius = 9
-        circleView.translatesAutoresizingMaskIntoConstraints = false
-        circleView.widthAnchor.constraint(equalToConstant: 18).isActive = true
-        circleView.heightAnchor.constraint(equalToConstant: 18).isActive = true
-        return circleView
-    }()
-    let greenCircle: UIView = {
-        let circleView = UIView()
-        circleView.backgroundColor = UIColor(red: 0.16, green: 0.79, blue: 0.19, alpha: 1)
-        circleView.layer.cornerRadius = 9
-        circleView.translatesAutoresizingMaskIntoConstraints = false
-        circleView.widthAnchor.constraint(equalToConstant: 18).isActive = true
-        circleView.heightAnchor.constraint(equalToConstant: 18).isActive = true
-        return circleView
-    }()
+    private let redCircle = CircleButton(.red)
+    private let yellowCircle = CircleButton(.yellow)
+    private let greenCircle = CircleButton(.green)
 
     init?(
         type: PresentationType, firstViewController: MemoPageViewController,
@@ -86,7 +62,8 @@ final class ComponentFullScreenViewAnimator: NSObject, UIViewControllerAnimatedT
         containerView.addSubview(toView)
 
         guard
-            firstViewController.fullscreenTargetComponentView?.toolBarView.snapshotView(afterScreenUpdates: true) != nil,
+            firstViewController.fullscreenTargetComponentView?.toolBarView.snapshotView(afterScreenUpdates: true)
+                != nil,
             let window = firstViewController.view.window ?? secondViewController.getView().window,
             let titleLableSnapshot = secondViewController.titleLabel.snapshotView(afterScreenUpdates: true),
             let creationDateLabelSnapshot = secondViewController
@@ -109,7 +86,8 @@ final class ComponentFullScreenViewAnimator: NSObject, UIViewControllerAnimatedT
 
         let toolBarView: UIView = {
             let uiview = UIView()
-            uiview.backgroundColor = secondViewController.toolbarColor
+            uiview.backgroundColor = secondViewController.toolbarColor?
+                .setBrightness(min(1.0, AppAppearanceManager.shared.appBaseColorBrightness * 1.4))
             uiview.layer.cornerRadius = 10
             uiview.layer.masksToBounds = false
             uiview.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
@@ -119,7 +97,7 @@ final class ComponentFullScreenViewAnimator: NSObject, UIViewControllerAnimatedT
 
         let componentInformationViewSnapshot: UIView = {
             let componentInformationView = UIView()
-            componentInformationView.backgroundColor = .systemGray6
+            componentInformationView.backgroundColor = AppAppearanceManager.shared.appBaseColor
             return componentInformationView
         }()
 
@@ -128,7 +106,7 @@ final class ComponentFullScreenViewAnimator: NSObject, UIViewControllerAnimatedT
         textViewWindow.clipsToBounds = true
         textViewWindow.layer.cornerRadius = 10
         textViewWindow.layer.maskedCorners = [.layerMaxXMaxYCorner, .layerMinXMaxYCorner]
-        textViewWindow.backgroundColor = .systemGray6
+        textViewWindow.backgroundColor = AppAppearanceManager.shared.appBaseColor
 
         redCircle.frame = self.redCircleRect
         yellowCircle.frame = self.yellowCircleRect
@@ -183,9 +161,9 @@ final class ComponentFullScreenViewAnimator: NSObject, UIViewControllerAnimatedT
                     toolBarView.frame = controllerToolbarViewRect
 
                     self.redCircle.frame = controllerRedCircleRect
-                    self.redCircle.backgroundColor = .systemGray5
+                    self.redCircle.setCircleColor(.gray)
                     self.yellowCircle.frame = controllerYellowCircleRect
-                    self.yellowCircle.backgroundColor = .systemGray5
+                    self.yellowCircle.setCircleColor(.gray)
                     self.greenCircle.frame = controllerGreenCircleRect
 
                     titleLableSnapshot.frame = controllerTitleLableViewRect
@@ -214,6 +192,10 @@ final class ComponentFullScreenViewAnimator: NSObject, UIViewControllerAnimatedT
                 toolBarView.removeFromSuperview()
                 titleLableSnapshot.removeFromSuperview()
                 creationDateLabelSnapshot.removeFromSuperview()
+
+                self.redCircle.removeFromSuperview()
+                self.yellowCircle.removeFromSuperview()
+                self.greenCircle.removeFromSuperview()
 
                 textViewWindow.removeFromSuperview()
 
@@ -263,14 +245,15 @@ final class ComponentFullScreenViewAnimator: NSObject, UIViewControllerAnimatedT
             height: controllerTextViewSnapshot.frame.height
         )
         textViewWindow.clipsToBounds = true
-        textViewWindow.backgroundColor = .systemGray6
+        textViewWindow.backgroundColor = AppAppearanceManager.shared.appBaseColor
 
         let toolBarView = UIView()
-        toolBarView.backgroundColor = secondViewController.toolbarColor
+        toolBarView.backgroundColor = secondViewController.toolbarColor?
+            .setBrightness(min(1.0, AppAppearanceManager.shared.appBaseColorBrightness * 1.4))
 
         let componentInformationViewSnapshot: UIView = {
             let componentInformationView = UIView()
-            componentInformationView.backgroundColor = .systemGray6
+            componentInformationView.backgroundColor = AppAppearanceManager.shared.appBaseColor
             return componentInformationView
         }()
 
@@ -300,9 +283,9 @@ final class ComponentFullScreenViewAnimator: NSObject, UIViewControllerAnimatedT
         componentInformationViewSnapshot.frame = controllerComponentInformationViewRect
 
         redCircle.frame = controllerRedCircleRect
-        redCircle.backgroundColor = .systemGray5
+        redCircle.setCircleColor(.gray)
         yellowCircle.frame = controllerYellowCircleRect
-        yellowCircle.backgroundColor = .systemGray5
+        yellowCircle.setCircleColor(.gray)
         greenCircle.frame = controllerGreenCircleRect
 
         titleLableSnapshot.frame = controllerTitleLableRect
@@ -316,15 +299,14 @@ final class ComponentFullScreenViewAnimator: NSObject, UIViewControllerAnimatedT
             containerView.addSubview($0)
         }
         UIView.animateKeyframes(
-			withDuration: Self.duration, delay: 0, options: .calculationModeCubic,
+            withDuration: Self.duration, delay: 0, options: .calculationModeCubic,
             animations: {
                 UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1) {
 
                     toolBarView.frame = self.toolBarViewRect
                     self.redCircle.frame = self.redCircleRect
-
-                    self.redCircle.backgroundColor = UIColor(red: 0.99, green: 0.27, blue: 0.27, alpha: 1)
-                    self.yellowCircle.backgroundColor = UIColor(red: 1.0, green: 0.69, blue: 0.14, alpha: 1)
+                    self.redCircle.setCircleColor(.red)
+                    self.yellowCircle.setCircleColor(.yellow)
 
                     self.yellowCircle.frame = self.yellowCircleRect
                     self.greenCircle.frame = self.greenCircleRect
@@ -334,7 +316,7 @@ final class ComponentFullScreenViewAnimator: NSObject, UIViewControllerAnimatedT
 
                     textViewWindow.frame = self.textViewRect
                     textViewWindow.clipsToBounds = true
-                    textViewWindow.layer.cornerRadius = 10
+                    textViewWindow.layer.cornerRadius = 20
                     textViewWindow.layer.maskedCorners = [.layerMaxXMaxYCorner, .layerMinXMaxYCorner]
                     controllerTextViewSnapshot.frame = CGRect(
                         x: controllerTextViewSnapshot.frame.origin.x - 20,
@@ -344,7 +326,7 @@ final class ComponentFullScreenViewAnimator: NSObject, UIViewControllerAnimatedT
                     )
 
                     toolBarView.clipsToBounds = true
-                    toolBarView.layer.cornerRadius = 10
+                    toolBarView.layer.cornerRadius = 20
                     toolBarView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
 
                     componentInformationViewSnapshot.frame = self.componentInformationViewRect
@@ -359,6 +341,10 @@ final class ComponentFullScreenViewAnimator: NSObject, UIViewControllerAnimatedT
 
                 titleLableSnapshot.removeFromSuperview()
                 creationDateLabelSnapshot.removeFromSuperview()
+
+                self.redCircle.removeFromSuperview()
+                self.yellowCircle.removeFromSuperview()
+                self.greenCircle.removeFromSuperview()
 
                 controllerTextViewSnapshot.removeFromSuperview()
 
@@ -383,10 +369,6 @@ final class ComponentFullScreenViewAnimator: NSObject, UIViewControllerAnimatedT
 }
 
 enum PresentationType {
-
     case present, dismiss
-
-    var isPresenting: Bool {
-        return self == .present
-    }
+    var isPresenting: Bool { self == .present }
 }

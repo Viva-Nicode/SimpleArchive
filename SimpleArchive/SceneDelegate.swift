@@ -10,41 +10,10 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate, UINavigationControllerD
         options connectionOptions: UIScene.ConnectionOptions
     ) {
         guard let windowScene = (scene as? UIWindowScene) else { return }
-
-        let window = AudioControlBarHostWindow(windowScene: windowScene)
-        window.overrideUserInterfaceStyle = .light
         DependencyConfigurator.configureDependencies()
 
-        // MARK: -===================== tab bar =====================-
-
-        //        let appearance = UITabBarAppearance()
-        //        appearance.configureWithDefaultBackground()
-        //        appearance.backgroundEffect = nil
-        //        appearance.shadowColor = .clear
-        //
-        //        let tabBarController = UITabBarController()
-        //        tabBarController.tabBar.isTranslucent = false
-        //        tabBarController.tabBar.shadowImage = nil
-        //        tabBarController.tabBar.backgroundColor = UIColor(named: "FixedFileItemBackgroundColor")
-        //        tabBarController.tabBar.barTintColor = UIColor(named: "FixedFileItemBackgroundColor")
-        //        tabBarController.tabBar.standardAppearance = appearance
-        //        tabBarController.tabBar.scrollEdgeAppearance = appearance
-        //        tabBarController.tabBar.layer.shadowOpacity = 0
-
-        // MARK: -===================== tool bar =====================-
-        //        let toolbarAppearance = UIToolbarAppearance()
-        //        toolbarAppearance.configureWithDefaultBackground()
-        //        toolbarAppearance.backgroundEffect = nil
-        //        toolbarAppearance.backgroundColor = UIColor(named: "FixedFileItemBackgroundColor")
-        //        toolbarAppearance.shadowColor = .clear
-        //        toolbarAppearance.shadowImage = nil
-        //
-        //        UIToolbar.appearance().standardAppearance = toolbarAppearance
-        //        UIToolbar.appearance().isTranslucent = false
-        //        UIToolbar.appearance().hoverStyle = nil
-        //        UIToolbar.appearance().setShadowImage(nil, forToolbarPosition: .any)
-
-        // MARK: -===================== navigation controller =====================-
+        let window = AudioControlBarHostWindow(windowScene: windowScene)
+        window.overrideUserInterfaceStyle = AppAppearanceManager.shared.appBaseColorBrightness <= 0.5 ? .dark : .light
 
         let memoHomeViewModel = DIContainer.shared.resolve(MemoHomeViewModel.self)
         let memoHomeViewController = MemoHomeViewController(
@@ -92,12 +61,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate, UINavigationControllerD
             SingleTextEditorPageViewController.self,
         ]
 
-        let isFromVCInControlBarVisibleScope =
-            visibleControlBarVCTypes
-            .contains(where: { fromVC.isKind(of: $0) })
-        let isToVCInControlBarVisibleScope =
-            visibleControlBarVCTypes
-            .contains(where: { viewController.isKind(of: $0) })
+        let isFromVCInControlBarVisibleScope = visibleControlBarVCTypes.contains(where: { fromVC.isKind(of: $0) })
+        let isToVCInControlBarVisibleScope = visibleControlBarVCTypes.contains(where: { viewController.isKind(of: $0) })
         let isActiveAudioControlBar = ![.initial, .stop].contains(hostWindow.audioControlBarState)
 
         if isToVCInControlBarVisibleScope && isActiveAudioControlBar {

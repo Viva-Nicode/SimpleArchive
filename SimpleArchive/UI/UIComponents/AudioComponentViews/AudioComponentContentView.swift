@@ -77,8 +77,6 @@ final class AudioComponentContentView: UIView, UIDocumentPickerDelegate {
     }()
     private(set) var audioTrackSearchTextField: UnderlineTextField = {
         let audioTrackTitleTextField = UnderlineTextField()
-        audioTrackTitleTextField.setTextColor(.label)
-        audioTrackTitleTextField.setUnderLineColor(.label)
         audioTrackTitleTextField.placeholder = "Search Keyword"
         audioTrackTitleTextField.alpha = 0
         audioTrackTitleTextField.translatesAutoresizingMaskIntoConstraints = false
@@ -161,21 +159,21 @@ final class AudioComponentContentView: UIView, UIDocumentPickerDelegate {
     }
 
     override init(frame: CGRect) {
-        super.init(frame: frame)
+        super.init(frame: .zero)
         setupUI()
         setupConstraints()
-		setupAction()
+        setupAction()
     }
 
     required init?(coder: NSCoder) {
         super.init(coder: coder)
         setupUI()
         setupConstraints()
-		setupAction()
+        setupAction()
     }
 
     deinit { myLog(String(describing: Swift.type(of: self)), c: .purple) }
-	
+
     private func setupUI() {
         audioTrackTableView.backgroundColor = .clear
 
@@ -201,8 +199,7 @@ final class AudioComponentContentView: UIView, UIDocumentPickerDelegate {
         trackSearchTextFieldHeightConstraint = audioTrackSearchTextField.heightAnchor.constraint(equalToConstant: 0)
         searchingResultLabelHeightConstraint = searchingResultLabel.heightAnchor.constraint(equalToConstant: 0)
         audioTrackTableViewTopConstraint =
-            audioTrackTableView
-            .topAnchor.constraint(equalTo: searchingResultLabel.bottomAnchor, constant: 0)
+            audioTrackTableView.topAnchor.constraint(equalTo: searchingResultLabel.bottomAnchor, constant: 0)
 
         NSLayoutConstraint.activate([
             audioComponentToolBarStackView.leadingAnchor.constraint(equalTo: leadingAnchor),
@@ -237,62 +234,62 @@ final class AudioComponentContentView: UIView, UIDocumentPickerDelegate {
         toolBarStackViewHeightConstraint?.isActive = true
         sortOptionStackViewHeightConstraint?.isActive = true
     }
-	
-	private func setupAction() {
-		audioAddButton.addAction(
-			UIAction { [weak self] _ in
-				guard let self else { return }
-				let audioDownloadPopupView = AudioDownloadPopupView()
-				downloadAudioActionSubscription = audioDownloadPopupView
-					.downloadButtonActionPublisher
-					.sink { [weak self] code in
-						self?.audioDownloadStatePopupView = AudioDownloadStatePopupView()
-						self?.audioDownloadStatePopupView?.show()
-						self?.dispatcher?.downloadMusics(with: code)
-						self?.downloadAudioActionSubscription = nil
-					}
-				audioDownloadPopupView.show()
-			}, for: .touchUpInside)
 
-		audioAddFromFileSystemButton.addAction(
-			UIAction { [weak self] _ in
-				guard let self else { return }
+    private func setupAction() {
+        audioAddButton.addAction(
+            UIAction { [weak self] _ in
+                guard let self else { return }
+                let audioDownloadPopupView = AudioDownloadPopupView()
+                downloadAudioActionSubscription = audioDownloadPopupView
+                    .downloadButtonActionPublisher
+                    .sink { [weak self] code in
+                        self?.audioDownloadStatePopupView = AudioDownloadStatePopupView()
+                        self?.audioDownloadStatePopupView?.show()
+                        self?.dispatcher?.downloadMusics(with: code)
+                        self?.downloadAudioActionSubscription = nil
+                    }
+                audioDownloadPopupView.show()
+            }, for: .touchUpInside)
 
-				let supportedTypes: [UTType] = [.audio, .mp3, .wav]
-				let documentPicker = UIDocumentPickerViewController(forOpeningContentTypes: supportedTypes)
+        audioAddFromFileSystemButton.addAction(
+            UIAction { [weak self] _ in
+                guard let self else { return }
 
-				documentPicker.delegate = self
-				documentPicker.allowsMultipleSelection = true
-				parentViewController?.present(documentPicker, animated: true)
-			}, for: .touchUpInside)
+                let supportedTypes: [UTType] = [.audio, .mp3, .wav]
+                let documentPicker = UIDocumentPickerViewController(forOpeningContentTypes: supportedTypes)
 
-		audioSearchButton.addAction(
-			UIAction { [weak self] _ in
-				guard let self else { return }
-				isVisibleAudioSearchTextView.toggle()
-			}, for: .touchUpInside)
+                documentPicker.delegate = self
+                documentPicker.allowsMultipleSelection = true
+                parentViewController?.present(documentPicker, animated: true)
+            }, for: .touchUpInside)
 
-		audioTrackSearchTextField.addTarget(
-			self,
-			action: #selector(handleTitleTextFieldChange),
-			for: .editingChanged)
+        audioSearchButton.addAction(
+            UIAction { [weak self] _ in
+                guard let self else { return }
+                isVisibleAudioSearchTextView.toggle()
+            }, for: .touchUpInside)
 
-		sortByNameButton.addAction(
-			UIAction { [weak self] _ in
-				guard let self else { return }
-				sortBycreateButton.setTitleColor(.gray, for: .normal)
-				sortByNameButton.setTitleColor(.label, for: .normal)
-				dispatcher?.changeSortByAudioTracks(sortBy: .name)
-			}, for: .touchUpInside)
+        audioTrackSearchTextField.addTarget(
+            self,
+            action: #selector(handleTitleTextFieldChange),
+            for: .editingChanged)
 
-		sortBycreateButton.addAction(
-			UIAction { [weak self] _ in
-				guard let self else { return }
-				sortByNameButton.setTitleColor(.gray, for: .normal)
-				sortBycreateButton.setTitleColor(.label, for: .normal)
-				dispatcher?.changeSortByAudioTracks(sortBy: .createDate)
-			}, for: .touchUpInside)
-	}
+        sortByNameButton.addAction(
+            UIAction { [weak self] _ in
+                guard let self else { return }
+                sortBycreateButton.setTitleColor(.gray, for: .normal)
+				sortByNameButton.setTitleColor(AppAppearanceManager.shared.appTintColor, for: .normal)
+                dispatcher?.changeSortByAudioTracks(sortBy: .name)
+            }, for: .touchUpInside)
+
+        sortBycreateButton.addAction(
+            UIAction { [weak self] _ in
+                guard let self else { return }
+                sortByNameButton.setTitleColor(.gray, for: .normal)
+                sortBycreateButton.setTitleColor(AppAppearanceManager.shared.appTintColor, for: .normal)
+                dispatcher?.changeSortByAudioTracks(sortBy: .createDate)
+            }, for: .touchUpInside)
+    }
 
     private func reloadAudioContentsTableView() {
         UIView.animate(
@@ -361,10 +358,10 @@ final class AudioComponentContentView: UIView, UIDocumentPickerDelegate {
 
         switch audioComponent.componentContents.sortBy {
             case .name:
-                sortByNameButton.setTitleColor(.label, for: .normal)
+                sortByNameButton.setTitleColor(AppAppearanceManager.shared.appTintColor, for: .normal)
 
             case .createDate:
-                sortBycreateButton.setTitleColor(.label, for: .normal)
+                sortBycreateButton.setTitleColor(AppAppearanceManager.shared.appTintColor, for: .normal)
 
             case .manual:
                 break
@@ -377,6 +374,7 @@ final class AudioComponentContentView: UIView, UIDocumentPickerDelegate {
             self.sortOptionStackViewHeightConstraint?.constant = isFolding ? 0 : 30
             self.addbuttonHeightConstraint?.constant = isFolding ? 0 : 44
         }
+		applyColor()
     }
 
     func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
@@ -507,5 +505,18 @@ extension AudioComponentContentView: UITableViewDropDelegate {
         } else {
             return UITableViewDropProposal(operation: .cancel)
         }
+    }
+}
+
+extension AudioComponentContentView: BaseColorUpdatable {
+	func applyColor(_ colorManager: any AppAppearanceManagerType = AppAppearanceManager.shared) {
+		backgroundColor = colorManager.appBaseColor
+		totalAudioCountLabel.textColor = colorManager.appTintColor
+		audioAddButton.tintColor = colorManager.appTintColor
+		audioAddFromFileSystemButton.tintColor = colorManager.appTintColor
+		audioSearchButton.tintColor = colorManager.appTintColor
+		audioTrackSearchTextField.setUnderLineColor(colorManager.appTintColor)
+		audioTrackSearchTextField.setTextColor(colorManager.appTintColor)
+		searchingResultLabel.textColor = colorManager.appTintColor
     }
 }

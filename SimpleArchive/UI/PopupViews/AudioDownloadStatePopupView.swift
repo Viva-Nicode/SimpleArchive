@@ -1,7 +1,6 @@
 import UIKit
 
 final class AudioDownloadStatePopupView: PopupView {
-
     private let titleLabel: UILabel = {
         let titleLabel = UILabel()
         titleLabel.text = "audio download"
@@ -54,6 +53,7 @@ final class AudioDownloadStatePopupView: PopupView {
         alertContainer.addArrangedSubview(downloadStateLabel)
         alertContainer.addArrangedSubview(doneButton)
         doneButton.addAction(UIAction { _ in super.dismiss() }, for: .touchUpInside)
+		applyColor()
     }
 
     func setStateToFail() {
@@ -63,4 +63,10 @@ final class AudioDownloadStatePopupView: PopupView {
         downloadStateSymbolImageView.image = UIImage(systemName: "xmark.circle")
         downloadStateSymbolImageView.tintColor = .systemPink
     }
+	
+	override func applyColor(_ colorManager: any AppAppearanceManagerType = AppAppearanceManager.shared) {
+		super.applyColor()
+		titleLabel.textColor = colorManager.appTintColor
+		downloadStateLabel.textColor = colorManager.appTintColor
+	}
 }

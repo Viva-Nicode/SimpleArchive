@@ -2,12 +2,10 @@ import Combine
 import UIKit
 
 final class TableComponentColumnEditPopupView: PopupView, UITextViewDelegate {
-
     private let titleLabel: UILabel = {
         let titleLabel = UILabel()
         titleLabel.text = "Edit Columns"
         titleLabel.font = .systemFont(ofSize: 18, weight: .bold)
-        titleLabel.textColor = .black
         return titleLabel
     }()
 
@@ -15,7 +13,7 @@ final class TableComponentColumnEditPopupView: PopupView, UITextViewDelegate {
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .horizontal
         layout.minimumLineSpacing = 18
-        layout.itemSize = CGSize(width: 80, height: 70)
+        layout.itemSize = CGSize(width: 80, height: 80)
 
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
         collectionView.contentInset = UIEdgeInsets(top: 10, left: 90, bottom: 10, right: 90)
@@ -30,8 +28,9 @@ final class TableComponentColumnEditPopupView: PopupView, UITextViewDelegate {
         return collectionView
     }()
 
-    private(set) var tableComponentColumnTitleTextView: NeumorphicTextView = {
-        let tf = NeumorphicTextView()
+    private(set) var tableComponentColumnTitleTextView: UITextView = {
+        let tf = UITextView()
+		tf.font = .systemFont(ofSize: 16)
         return tf
     }()
     private(set) var removeColumnButton: UIButton = {
@@ -131,6 +130,13 @@ final class TableComponentColumnEditPopupView: PopupView, UITextViewDelegate {
             tableComponentColumnTitleTextView.resignFirstResponder()
         }
     }
+	
+	override func applyColor(_ colorManager: any AppAppearanceManagerType = AppAppearanceManager.shared) {
+		super.applyColor()
+		titleLabel.textColor = colorManager.appTintColor
+		tableComponentColumnTitleTextView.backgroundColor = colorManager.appBaseColor
+		tableComponentColumnTitleTextView.textColor = colorManager.appTintColor
+	}
 
     override func popupViewDetailConfigure() {
         alertContainer.addArrangedSubview(titleLabel)
@@ -159,7 +165,7 @@ final class TableComponentColumnEditPopupView: PopupView, UITextViewDelegate {
                 if columns.isEmpty {
                     tableComponentColumnTitleTextView.delegate = nil
                     tableComponentColumnTitleTextView.text = ""
-                    tableComponentColumnTitleTextView.isEditable = false
+					tableComponentColumnTitleTextView.isEditable = false
                     removeColumnButton.isEnabled = false
                 } else {
                     if let item = collectionView.cellForItem(at: .init(item: tappedColumnIndex, section: 0))
@@ -197,11 +203,12 @@ final class TableComponentColumnEditPopupView: PopupView, UITextViewDelegate {
             at: IndexPath(item: tappedColumnIndex, section: .zero),
             at: .centeredHorizontally,
             animated: true)
+		
+		applyColor()
     }
 }
 
 extension TableComponentColumnEditPopupView: UICollectionViewDataSource {
-
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         columns.count
     }
@@ -220,7 +227,6 @@ extension TableComponentColumnEditPopupView: UICollectionViewDataSource {
 }
 
 extension TableComponentColumnEditPopupView: UICollectionViewDelegate {
-
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         collectionView.scrollToItem(at: indexPath, at: .centeredHorizontally, animated: true)
         if let item = collectionView.cellForItem(at: .init(item: tappedColumnIndex, section: 0))

@@ -19,13 +19,11 @@ final class AudioComponentView: PageComponentView<AudioComponentContentView, Aud
     override func setupUI() {
         componentContentView = AudioComponentContentView()
         componentContentView.translatesAutoresizingMaskIntoConstraints = false
-        componentContentView.layer.cornerRadius = 10
+        componentContentView.layer.cornerRadius = 20
         componentContentView.layer.maskedCorners = [.layerMaxXMaxYCorner, .layerMinXMaxYCorner]
         componentContentView.backgroundColor = .systemGray6
 
         super.setupUI()
-
-        toolBarView.backgroundColor = UIColor(named: "AudioComponentToolbarColor")
     }
 
     override func prepareForReuse() {
@@ -78,8 +76,16 @@ final class AudioComponentView: PageComponentView<AudioComponentContentView, Aud
 
         componentContentView.audioTrackTableView.reloadData()
         adjustAudioTableViewScrollOffset(componentID: component.id)
+		setMinimizeState(component.isMinimumHeight)
+        applyColor()
     }
 
+    override func applyColor(_ colorManager: any AppAppearanceManagerType = AppAppearanceManager.shared) {
+        super.applyColor()
+        toolBarView.backgroundColor = UIColor(named: "AudioComponentToolbarColor")?
+			.setBrightness(min(1.0, colorManager.appBaseColorBrightness * 1.4))
+    }
+	
     private func adjustAudioTableViewScrollOffset(componentID: UUID) {
         let audioTrackTableView = componentContentView.audioTrackTableView
         audioTrackTableView.layoutIfNeeded()
@@ -100,12 +106,14 @@ final class AudioComponentView: PageComponentView<AudioComponentContentView, Aud
 
             fullscreenComponentViewController.modalPresentationStyle = .fullScreen
             fullscreenComponentViewController.transitioningDelegate = memoPageViewController
+			fullscreenComponentViewController.applyColor()
 
             memoPageViewController.present(fullscreenComponentViewController, animated: true)
         }
     }
 
     override func setMinimizeState(_ isMinimize: Bool) {
+		super.setMinimizeState(isMinimize)
         componentContentView.minimizeContentView(isMinimize)
     }
 }

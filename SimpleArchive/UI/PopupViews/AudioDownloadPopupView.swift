@@ -2,7 +2,6 @@ import Combine
 import UIKit
 
 final class AudioDownloadPopupView: PopupView {
-
     private let titleLabel: UILabel = {
         let titleLabel = UILabel()
         titleLabel.text = "download music"
@@ -58,7 +57,15 @@ final class AudioDownloadPopupView: PopupView {
         alertContainer.addArrangedSubview(downloadCodeTextField)
         alertContainer.addArrangedSubview(confirmButton)
         downloadCodeTextField.delegate = self
+		applyColor()
     }
+	
+	override func applyColor(_ colorManager: any AppAppearanceManagerType = AppAppearanceManager.shared) {
+		super.applyColor()
+		titleLabel.textColor = colorManager.appTintColor
+		downloadCodeTextField.backgroundColor = colorManager.appBaseColor
+		downloadCodeTextField.textColor = colorManager.appTintColor
+	}
 }
 
 extension AudioDownloadPopupView: UITextFieldDelegate {

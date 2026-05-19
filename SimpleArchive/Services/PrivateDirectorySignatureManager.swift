@@ -4,49 +4,116 @@ import UIKit
 protocol PrivateDirectorySignatureManagerType: AnyObject {
     var isRegisteredSignature: Bool { get }
     var centerPoints: [[Double]] { get }
+    var coordinateSimilarityPassScore: Double { get set }
+    var patternSimilarityPassScore: Double { get set }
+    var benchmarkVisibility: Bool { get set }
+    var drawingDisplayOption: DrawingDisplayOption { get set }
+    var isUnlocked: Bool { get set }
 
     func registerSignature(sign: [[Double]]) -> [Double]
     func verifySignature(sign: [[Double]]) -> Bool
     func removeSignature(index: Int)
+    func setCoordinateSimilarityPassScore(_ score: Double)
+    func setPatternSimilarityPassScore(_ score: Double)
+    func setBenchMarkVisibility(_ visibility: Bool)
+    func setDrawingDisplayOption(_ opt: DrawingDisplayOption)
     func completeRegister()
     func clearSignature()
 }
 
 final class PrivateDirectorySignatureManager: PrivateDirectorySignatureManagerType {
-
-    private let ud = UserDefaults.standard
+    private let uds = UserDefaultStack.shared
     private let privateDirectoryAccessPassSignatureKey = "privateDirectoryPassSignature"
     private let passSignatureRegisterStateKey = "passSignatureRegisterStateKey"
     private let passSignatureCenterPointKey = "passSignatureCenterPointKey"
-    private let xSimilarityPassScore: Double = 0.2
-    private let ySimilarityPassScore: Double = 0.2
-    private let patternSimilarityPassScore: Double = 0.7
+    private let passSignatureCoordinateSimilarityKey = "passSignatureCoordinateSimilarityKey"
+    private let passSignaturePatternSimilarityKey = "passSignaturePatternSimilarityKey"
+    private let signatureDisplayOptionKey = "signatureDisplayOptionKey"
+    private let signatureBenchmarkVisibilityKey = "signatureBenchmarkVisibilityKey"
 
-    var centerPoints: [[Double]] {
-        ud.object(forKey: passSignatureCenterPointKey) as? [[Double]] ?? []
-    }
+    var coordinateSimilarityPassScore: Double
+    var patternSimilarityPassScore: Double
+    var benchmarkVisibility: Bool
+    var drawingDisplayOption: DrawingDisplayOption
+    var isUnlocked: Bool = false
 
-    var isRegisteredSignature: Bool {
-        ud.object(forKey: passSignatureRegisterStateKey) as? Bool ?? false
-    }
-
-    func registerSignature(sign: [[Double]]) -> [Double] {
-        if var registeredSign = ud.object(forKey: privateDirectoryAccessPassSignatureKey) as? [[[Double]]] {
-            registeredSign.append(sign)
-            ud.set(registeredSign, forKey: privateDirectoryAccessPassSignatureKey)
+    init() {
+        if let passScore: Double = uds.get(k: passSignatureCoordinateSimilarityKey) {
+            coordinateSimilarityPassScore = passScore
         } else {
-            ud.set([sign], forKey: privateDirectoryAccessPassSignatureKey)
+            uds.store(k: passSignatureCoordinateSimilarityKey, v: 0.2)
+            coordinateSimilarityPassScore = 0.2
         }
 
-        if var centerPoints = ud.object(forKey: passSignatureCenterPointKey) as? [[Double]] {
+        if let passScore: Double = uds.get(k: passSignaturePatternSimilarityKey) {
+            patternSimilarityPassScore = passScore
+        } else {
+            uds.store(k: passSignaturePatternSimilarityKey, v: 0.7)
+            patternSimilarityPassScore = 0.7
+        }
+
+        if let visibility: Bool = uds.get(k: signatureBenchmarkVisibilityKey) {
+            benchmarkVisibility = visibility
+        } else {
+            uds.store(k: signatureBenchmarkVisibilityKey, v: true)
+            benchmarkVisibility = true
+        }
+
+        if let drawingDisplayOpt: DrawingDisplayOption = uds.get(k: signatureDisplayOptionKey) {
+            drawingDisplayOption = drawingDisplayOpt
+        } else {
+            uds.store(k: signatureDisplayOptionKey, v: DrawingDisplayOption.shown)
+            drawingDisplayOption = .shown
+        }
+    }
+
+    func setDrawingDisplayOption(_ opt: DrawingDisplayOption) {
+        drawingDisplayOption = opt
+        uds.store(k: signatureDisplayOptionKey, v: opt)
+    }
+
+    func setCoordinateSimilarityPassScore(_ score: Double) {
+        coordinateSimilarityPassScore = score
+        uds.store(k: passSignatureCoordinateSimilarityKey, v: score)
+    }
+
+    func setPatternSimilarityPassScore(_ score: Double) {
+        patternSimilarityPassScore = score
+        uds.store(k: passSignaturePatternSimilarityKey, v: score)
+    }
+
+    func setBenchMarkVisibility(_ visibility: Bool) {
+        benchmarkVisibility = visibility
+        uds.store(k: signatureBenchmarkVisibilityKey, v: visibility)
+    }
+
+    var centerPoints: [[Double]] {
+        if let centers: [[Double]] = uds.get(k: passSignatureCenterPointKey) {
+            return centers
+        } else {
+            return []
+        }
+    }
+
+    var isRegisteredSignature: Bool { uds.isExistValue(k: passSignatureRegisterStateKey) }
+
+    func registerSignature(sign: [[Double]]) -> [Double] {
+        if var registeredSign: [[[Double]]] = uds.get(k: privateDirectoryAccessPassSignatureKey) {
+            registeredSign.append(sign)
+            uds.store(k: privateDirectoryAccessPassSignatureKey, v: registeredSign)
+        } else {
+            uds.store(k: privateDirectoryAccessPassSignatureKey, v: [sign])
+        }
+
+        if var centerPoints: [[Double]] = uds.get(k: passSignatureCenterPointKey) {
             if let center = medoid(sign) {
                 centerPoints.append(center)
-                ud.set(centerPoints, forKey: passSignatureCenterPointKey)
+                uds.store(k: passSignatureCenterPointKey, v: centerPoints)
                 return center
             }
         } else {
             if let center = medoid(sign) {
-                ud.set([center], forKey: passSignatureCenterPointKey)
+                uds.store(k: passSignatureCenterPointKey, v: [center])
                 return center
             }
         }
@@ -54,13 +121,13 @@ final class PrivateDirectorySignatureManager: PrivateDirectorySignatureManagerTy
     }
 
     func removeSignature(index: Int) {
-        if var registeredSign = ud.object(forKey: privateDirectoryAccessPassSignatureKey) as? [[[Double]]] {
+        if var registeredSign: [[[Double]]] = uds.get(k: privateDirectoryAccessPassSignatureKey) {
             registeredSign.remove(at: index)
-            ud.set(registeredSign, forKey: privateDirectoryAccessPassSignatureKey)
+            uds.store(k: privateDirectoryAccessPassSignatureKey, v: registeredSign)
         }
-        if var centerPoints = ud.object(forKey: passSignatureCenterPointKey) as? [[Double]] {
+        if var centerPoints: [[Double]] = uds.get(k: passSignatureCenterPointKey) {
             centerPoints.remove(at: index)
-            ud.set(centerPoints, forKey: passSignatureCenterPointKey)
+            uds.store(k: passSignatureCenterPointKey, v: centerPoints)
         }
     }
 
@@ -68,7 +135,7 @@ final class PrivateDirectorySignatureManager: PrivateDirectorySignatureManagerTy
         let xs = sign.map { sqrt(pow($0[0], 3)) }
         let ys = sign.map { sqrt(pow($0[1], 3)) }
 
-        if let registeredSign = ud.object(forKey: privateDirectoryAccessPassSignatureKey) as? [[[Double]]] {
+        if let registeredSign: [[[Double]]] = uds.get(k: privateDirectoryAccessPassSignatureKey) {
             var isPassedPointSimilarity = false
 
             for s in registeredSign {
@@ -92,7 +159,7 @@ final class PrivateDirectorySignatureManager: PrivateDirectorySignatureManagerTy
 
                 print("\(resultX) : \(resultY)")
 
-                if resultX <= xSimilarityPassScore, resultY <= ySimilarityPassScore {
+                if resultX <= coordinateSimilarityPassScore, resultY <= coordinateSimilarityPassScore {
                     isPassedPointSimilarity = true
                     break
                 }
@@ -102,21 +169,21 @@ final class PrivateDirectorySignatureManager: PrivateDirectorySignatureManagerTy
                 let signatureSimilarity = registeredSign.map({ getSignatureSimilarity(sign: sign, s: $0) }).max()
             {
                 print("signatureSimilarity : \(signatureSimilarity)")
-                return signatureSimilarity >= patternSimilarityPassScore
+				isUnlocked = signatureSimilarity >= patternSimilarityPassScore
+                return isUnlocked
             }
         }
         return false
     }
 
     func completeRegister() {
-        ud.set(true, forKey: passSignatureRegisterStateKey)
+        uds.store(k: passSignatureRegisterStateKey, v: true)
     }
 
     func clearSignature() {
-        ud.removeObject(forKey: privateDirectoryAccessPassSignatureKey)
-        ud.removeObject(forKey: passSignatureRegisterStateKey)
-        ud.removeObject(forKey: passSignatureCenterPointKey)
-
+        uds.remove(k: privateDirectoryAccessPassSignatureKey)
+        uds.remove(k: passSignatureRegisterStateKey)
+        uds.remove(k: passSignatureCenterPointKey)
     }
 
     private func dynamicTimeWarping(a: [Double], b: [Double]) -> Double {
@@ -324,7 +391,6 @@ final class PrivateDirectorySignatureManager: PrivateDirectorySignatureManagerTy
         let ATAInv = invert(ATA)
         let pseudo = multiply(ATAInv, AT)
 
-        
         let coeffs = pseudo[0]
         var result = [Double](repeating: 0, count: n)
 

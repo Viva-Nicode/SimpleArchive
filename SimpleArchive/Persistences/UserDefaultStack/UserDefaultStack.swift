@@ -1,14 +1,37 @@
 import Foundation
 
 protocol UserDefaultStackInterface {
-    func store<ValueType: Codable>(k: String, v: ValueType) throws
-    func store<T: Codable>(keyTypes: UserDefaultStackKeys, v: T) throws
-    func get<T: Codable>(keyTypes: UserDefaultStackKeys) -> T?
+    func store<ValueType: Codable>(k: String, v: ValueType)
     func get<ValueType: Codable>(k: String) -> ValueType?
+    func remove(k: String)
+    func isExistValue(k: String) -> Bool
 }
 
-enum UserDefaultStackKeys: String {
-    case FileItemManualOrder = "FileItemManualOrder"
+final class UserDefaultStack: UserDefaultStackInterface {
+    private var stack: UserDefaults = UserDefaults(suiteName: "org.azurelight.SimpleArchive.shared")!
+    static var shared: UserDefaultStackInterface = UserDefaultStack()
+
+    private init() {}
+
+    func store<ValueType: Codable>(k: String, v: ValueType) {
+        if let data = try? JSONEncoder().encode(v) {
+            let jsonString = String(data: data, encoding: .utf8)
+            stack.set(jsonString, forKey: k)
+        }
+    }
+
+    func get<ValueType: Codable>(k: String) -> ValueType? {
+        if let jsonString = stack.string(forKey: k) {
+            guard let data = jsonString.data(using: .utf8) else { return nil }
+            return try? JSONDecoder().decode(ValueType.self, from: data)
+        } else {
+            return nil
+        }
+    }
+
+    func isExistValue(k: String) -> Bool { stack.string(forKey: k) != nil }
+
+    func remove(k: String) { stack.removeObject(forKey: k) }
 }
 
 extension CGRect {
@@ -53,48 +76,4 @@ enum FrameState: Codable, Equatable {
 struct ItemRenderInfo: Codable {
     var id: UUID
     var frame: FrameState
-}
-
-final class UserDefaultStack: UserDefaultStackInterface {
-    private var stack: UserDefaults = UserDefaults(suiteName: "org.azurelight.SimpleArchive.shared")!
-    static var shared: UserDefaultStackInterface = UserDefaultStack()
-
-    private init() {
-        if stack.object(forKey: UserDefaultStackKeys.FileItemManualOrder.rawValue) == nil {
-            let emptyManualSortingInfo = DirectoryContentsRenderInfo()
-            let data = try! JSONEncoder().encode(emptyManualSortingInfo)
-            let jsonString = String(data: data, encoding: .utf8)
-            stack.set(jsonString, forKey: UserDefaultStackKeys.FileItemManualOrder.rawValue)
-        }
-    }
-
-    func get<T: Codable>(keyTypes: UserDefaultStackKeys) -> T? {
-        if let jsonString = stack.string(forKey: keyTypes.rawValue) {
-            guard let data = jsonString.data(using: .utf8) else { return nil }
-            return try? JSONDecoder().decode(T.self, from: data)
-        } else {
-            return nil
-        }
-    }
-
-    func store<ValueType: Codable>(k: String, v: ValueType) throws {
-        let data = try JSONEncoder().encode(v)
-        let jsonString = String(data: data, encoding: .utf8)
-        stack.set(jsonString, forKey: k)
-    }
-
-    func store<T: Codable>(keyTypes: UserDefaultStackKeys, v: T) throws {
-        let data = try JSONEncoder().encode(v)
-        let jsonString = String(data: data, encoding: .utf8)
-        stack.set(jsonString, forKey: keyTypes.rawValue)
-    }
-
-    func get<ValueType: Codable>(k: String) -> ValueType? {
-        if let jsonString = stack.string(forKey: k) {
-            guard let data = jsonString.data(using: .utf8) else { return nil }
-            return try? JSONDecoder().decode(ValueType.self, from: data)
-        } else {
-            return nil
-        }
-    }
 }

@@ -1,7 +1,7 @@
 import Combine
 import UIKit
 
-final class DormantBoxViewController: UIViewController, ViewControllerType {
+final class DormantBoxViewController: UIViewController, ViewControllerType, BaseColorUpdatable {
     private(set) var titleLabelView: UIView = {
         let titleLabelView = UIView()
 
@@ -30,7 +30,7 @@ final class DormantBoxViewController: UIViewController, ViewControllerType {
         innerShadowLayer.shadowRadius = 4
         innerShadowLayer.fillRule = .evenOdd
 
-        titleLabelView.backgroundColor = UIColor(named: "FixedFileItemBackgroundColor")
+        //        titleLabelView.backgroundColor = UIColor(named: "FixedFileItemBackgroundColor")
 
         return titleLabelView
     }()
@@ -48,6 +48,7 @@ final class DormantBoxViewController: UIViewController, ViewControllerType {
                 attributes: [
                     .font: UIFont.systemFont(ofSize: 28, weight: .bold),
                     .foregroundColor: UIColor.black,
+                    NSAttributedString.Key("id"): "title",
                 ]
             )
         )
@@ -58,7 +59,11 @@ final class DormantBoxViewController: UIViewController, ViewControllerType {
         titleAttributedString.append(
             NSAttributedString(
                 string: String(repeating: "-", count: c) + "\n",
-                attributes: [.font: UIFont.systemFont(ofSize: 18), .foregroundColor: UIColor.systemGray3]
+                attributes: [
+                    .font: UIFont.systemFont(ofSize: 18),
+                    .foregroundColor: UIColor.systemGray3,
+                    NSAttributedString.Key("id"): "line",
+                ]
             )
         )
 
@@ -76,7 +81,6 @@ final class DormantBoxViewController: UIViewController, ViewControllerType {
         let removedItemTableView = UITableView(frame: .zero, style: .plain)
         removedItemTableView.translatesAutoresizingMaskIntoConstraints = false
         removedItemTableView.separatorStyle = .none
-        removedItemTableView.backgroundColor = .clear
         removedItemTableView.register(
             RemovedItemView.self,
             forCellReuseIdentifier: RemovedItemView.reuseIdentifier)
@@ -133,20 +137,19 @@ final class DormantBoxViewController: UIViewController, ViewControllerType {
                             string: totalSizeString,
                             attributes: [
                                 .font: UIFont.systemFont(ofSize: 16),
-                                .foregroundColor: UIColor.black,
+                                .foregroundColor: AppAppearanceManager.shared.appTintColor,
                             ]
                         ), at: insertIndex)
 
                     titleLabel.attributedText = titleAttributedString
-					
-				case .didRemovePageFromDormantBox(let index):
-					removedItemTableView.deleteRows(at: [IndexPath(row: index, section: 0)], with: .fade)
+
+                case .didRemovePageFromDormantBox(let index):
+                    removedItemTableView.deleteRows(at: [IndexPath(row: index, section: 0)], with: .fade)
 
                 case .showFileInformation(let itemID, let itemName, let itemCreationDate, let c, let s):
                     makePopupView(itemID: itemID, itemName: itemName, itemCreationDate: itemCreationDate, s: s)
                     appendPageInfo(comps: c)
                     presentPopupView()
-
 
                 case .showSingleAudioPageInformation(let itemID, let itemName, let itemCreationDate, let s, let c):
                     makePopupView(itemID: itemID, itemName: itemName, itemCreationDate: itemCreationDate, s: s)
@@ -168,7 +171,6 @@ final class DormantBoxViewController: UIViewController, ViewControllerType {
     }
 
     private func setupUI() {
-        view.backgroundColor = UIColor(named: "FixedFileItemBackgroundColor")
         titleLabelView.addSubview(titleLabel)
         view.addSubview(titleLabelView)
         view.addSubview(removedItemTableView)
@@ -194,6 +196,21 @@ final class DormantBoxViewController: UIViewController, ViewControllerType {
         ])
     }
 
+    func applyColor(_ colorManager: any AppAppearanceManagerType = AppAppearanceManager.shared) {
+        view.backgroundColor = colorManager.appBaseColor
+        removedItemTableView.backgroundColor = colorManager.appBaseColor
+        titleLabelView.backgroundColor = colorManager.appBaseColor
+        titleAttributedString.enumerateAttribute(
+            NSAttributedString.Key("id"),
+            in: NSRange(location: 0, length: titleAttributedString.length)
+        ) { value, range, _ in
+            if let id = value as? String, ["title", "line"].contains(id) {
+                titleAttributedString.addAttribute(.foregroundColor, value: colorManager.appTintColor, range: range)
+            }
+        }
+        titleLabel.attributedText = titleAttributedString
+    }
+
     private func makePopupView(itemID: UUID, itemName: String, itemCreationDate: Date, s: Int64) {
         fileInformationView = RemovedFileInformationPopupView(
             itemID: itemID, itemName: itemName, itemCreationDate: itemCreationDate)
@@ -208,7 +225,7 @@ final class DormantBoxViewController: UIViewController, ViewControllerType {
                     string: "size",
                     attributes: [
                         .font: UIFont.systemFont(ofSize: 15, weight: .regular),
-                        .foregroundColor: UIColor.systemGray2,
+                        .foregroundColor: AppAppearanceManager.shared.appSecondaryTintColor,
                     ]
                 )
             )
@@ -219,7 +236,7 @@ final class DormantBoxViewController: UIViewController, ViewControllerType {
                     string: "\n\(totalSize)",
                     attributes: [
                         .font: UIFont.systemFont(ofSize: 16, weight: .regular),
-                        .foregroundColor: UIColor.black,
+                        .foregroundColor: AppAppearanceManager.shared.appTintColor,
                     ]
                 )
             )
@@ -232,7 +249,7 @@ final class DormantBoxViewController: UIViewController, ViewControllerType {
                     string: "\n\ncolumns",
                     attributes: [
                         .font: UIFont.systemFont(ofSize: 15, weight: .regular),
-                        .foregroundColor: UIColor.systemGray2,
+                        .foregroundColor: AppAppearanceManager.shared.appSecondaryTintColor,
                     ]
                 )
             )
@@ -243,7 +260,7 @@ final class DormantBoxViewController: UIViewController, ViewControllerType {
                     string: "\n" + columns.joined(separator: ", "),
                     attributes: [
                         .font: UIFont.systemFont(ofSize: 16, weight: .regular),
-                        .foregroundColor: UIColor.black,
+                        .foregroundColor: AppAppearanceManager.shared.appTintColor,
                     ]
                 )
             )
@@ -254,7 +271,7 @@ final class DormantBoxViewController: UIViewController, ViewControllerType {
                     string: "\n\nrow",
                     attributes: [
                         .font: UIFont.systemFont(ofSize: 15, weight: .regular),
-                        .foregroundColor: UIColor.systemGray2,
+                        .foregroundColor: AppAppearanceManager.shared.appSecondaryTintColor,
                     ]
                 )
             )
@@ -265,7 +282,7 @@ final class DormantBoxViewController: UIViewController, ViewControllerType {
                     string: "\n\(rows)",
                     attributes: [
                         .font: UIFont.systemFont(ofSize: 16, weight: .regular),
-                        .foregroundColor: UIColor.black,
+                        .foregroundColor: AppAppearanceManager.shared.appTintColor,
                     ]
                 )
             )
@@ -278,7 +295,7 @@ final class DormantBoxViewController: UIViewController, ViewControllerType {
                     string: "\n\ntracks",
                     attributes: [
                         .font: UIFont.systemFont(ofSize: 15, weight: .regular),
-                        .foregroundColor: UIColor.systemGray2,
+                        .foregroundColor: AppAppearanceManager.shared.appSecondaryTintColor,
                     ]
                 )
             )
@@ -289,48 +306,48 @@ final class DormantBoxViewController: UIViewController, ViewControllerType {
                     string: "\n\(c)",
                     attributes: [
                         .font: UIFont.systemFont(ofSize: 16, weight: .regular),
-                        .foregroundColor: UIColor.black,
+                        .foregroundColor: AppAppearanceManager.shared.appTintColor,
                     ]
                 )
             )
     }
 
-	private func appendPageInfo(comps: [ComponentType: Int]) {
-		fileInformationView?.attrString
-			.append(
-				NSAttributedString(
-					string: "\n\ncomponent",
-					attributes: [
-						.font: UIFont.systemFont(ofSize: 15, weight: .regular),
-						.foregroundColor: UIColor.systemGray2,
-					]
-				)
-			)
-		
-		fileInformationView?.attrString
-			.append(
-				NSAttributedString(
-					string: "\n" + "\(comps.map { k, v in "\(k.rawValue) : \(v)" }.joined(separator: "\n"))",
+    private func appendPageInfo(comps: [ComponentType: Int]) {
+        fileInformationView?.attrString
+            .append(
+                NSAttributedString(
+                    string: "\n\ncomponent",
+                    attributes: [
+                        .font: UIFont.systemFont(ofSize: 15, weight: .regular),
+                        .foregroundColor: AppAppearanceManager.shared.appSecondaryTintColor,
+                    ]
+                )
+            )
+
+        fileInformationView?.attrString
+            .append(
+                NSAttributedString(
+                    string: "\n" + "\(comps.map { k, v in "\(k.rawValue) : \(v)" }.joined(separator: "\n"))",
                     attributes: [
                         .font: UIFont.systemFont(ofSize: 16, weight: .regular),
-                        .foregroundColor: UIColor.black,
+                        .foregroundColor: AppAppearanceManager.shared.appTintColor,
                     ]
                 )
             )
     }
-	
-	private func presentPopupView() {
-		fileInformationView?.setInfoAttrString()
 
-		fileInformationView?.removeButtonPublisher
-			.sink { [weak self] id in
-				guard let id else { return }
-				self?.input.send(.willRemovePageFromDormantBox(id))
-			}
-			.store(in: &subscriptions)
+    private func presentPopupView() {
+        fileInformationView?.setInfoAttrString()
 
-		fileInformationView?.show()
-	}
+        fileInformationView?.removeButtonPublisher
+            .sink { [weak self] id in
+                guard let id else { return }
+                self?.input.send(.willRemovePageFromDormantBox(id))
+            }
+            .store(in: &subscriptions)
+
+        fileInformationView?.show()
+    }
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
@@ -363,5 +380,5 @@ extension DormantBoxViewController: UITableViewDelegate {
         input.send(.showFileInformation(indexPath.row))
     }
 
-    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat { 50 }
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat { 60 }
 }

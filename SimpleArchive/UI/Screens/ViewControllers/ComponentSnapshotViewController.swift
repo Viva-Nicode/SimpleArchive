@@ -1,9 +1,7 @@
 import Combine
 import UIKit
 
-@MainActor
-final class ComponentSnapshotViewController: UIViewController {
-
+final class ComponentSnapshotViewController: UIViewController, BaseColorUpdatable {
     private let backgroundView: UIStackView = {
         let backgroundView = UIStackView()
         backgroundView.backgroundColor = .systemBackground
@@ -22,7 +20,6 @@ final class ComponentSnapshotViewController: UIViewController {
         let config = UIImage.SymbolConfiguration(pointSize: 20)
         let buttonImage = UIImage(systemName: "chevron.left", withConfiguration: config)
         backButton.setImage(buttonImage, for: .normal)
-        backButton.tintColor = .label
         backButton.translatesAutoresizingMaskIntoConstraints = false
         return backButton
     }()
@@ -226,7 +223,6 @@ final class ComponentSnapshotViewController: UIViewController {
     }
 
     private func setupUI(component: any SnapshotRestorablePageComponent) {
-        view.backgroundColor = .systemBackground
         view.addSubview(backgroundView)
 
         backgroundView.addArrangedSubview(headerView)
@@ -299,6 +295,8 @@ final class ComponentSnapshotViewController: UIViewController {
 
         restoreButton.addAction(restoreAction, for: .touchUpInside)
         backgroundView.addArrangedSubview(restoreButtonStackView)
+		
+		applyColor()
     }
 
     private func setupConstraints() {
@@ -330,6 +328,17 @@ final class ComponentSnapshotViewController: UIViewController {
             descriptionIconView.heightAnchor.constraint(equalToConstant: 20),
         ])
     }
+	
+	func applyColor(_ colorManager: any AppAppearanceManagerType = AppAppearanceManager.shared) {
+		view.backgroundColor = colorManager.appBaseColor
+		backButton.tintColor = colorManager.appTintColor
+		snapshotDescriptionLabel.textColor = colorManager.appTintColor
+		saveModeLabel.textColor = colorManager.appTintColor
+		savingDateLabel.textColor = colorManager.appTintColor
+		backgroundView.backgroundColor = colorManager.appBaseColor
+		headerTitleLabel.textColor = colorManager.appTintColor
+		snapshotCollectionView.backgroundColor = colorManager.appBaseColor
+	}
 }
 
 extension ComponentSnapshotViewController: UICollectionViewDelegate {

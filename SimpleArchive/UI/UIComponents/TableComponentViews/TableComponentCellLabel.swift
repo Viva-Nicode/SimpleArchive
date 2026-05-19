@@ -19,7 +19,7 @@ class TableComponentCellLabel: UILabel {
 
     func setLabelText(_ newCellValue: String) {
         self.cellValue = newCellValue
-        textColor = cellValue.isEmpty ? .systemGray2 : .label
+		textColor = cellValue.isEmpty ? .systemGray2 : AppAppearanceManager.shared.appTintColor
         text = cellValue.isEmpty ? "empty" : cellValue
     }
 }

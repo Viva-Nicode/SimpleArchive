@@ -1,7 +1,23 @@
 import Combine
 import UIKit
 
-class ComponentFullScreenView<ContentViewType>: UIViewController, ComponentFullScreenViewType
+protocol ComponentFullScreenViewType {
+    associatedtype ContentViewType: UIView
+    func getContentView() -> ContentViewType
+    func getView() -> UIView!
+    var titleLabel: UILabel { get set }
+    var creationDateLabel: UILabel { get set }
+    var containerStackView: UIStackView { get set }
+    var componentContentViewContainer: UIView { get set }
+    var toolBarView: UIView { get set }
+    var redCircleView: CircleButton { get set }
+    var yellowCircleView: CircleButton { get set }
+    var greenCircleView: CircleButton { get set }
+    var componentInformationView: UIStackView { get set }
+    var toolbarColor: UIColor? { get }
+}
+
+class ComponentFullScreenView<ContentViewType>: UIViewController, ComponentFullScreenViewType, BaseColorUpdatable
 where ContentViewType: UIView {
 
     var subscriptions = Set<AnyCancellable>()
@@ -36,39 +52,14 @@ where ContentViewType: UIView {
     let circleStackView: UIStackView = {
         let circleStackView = UIStackView()
         circleStackView.axis = .horizontal
-        circleStackView.spacing = 10
+        circleStackView.spacing = 0
         circleStackView.alignment = .center
         circleStackView.translatesAutoresizingMaskIntoConstraints = false
         return circleStackView
     }()
-    var redCircleView: UIView = {
-        let circleView = UIView()
-        circleView.backgroundColor = .systemGray5
-        circleView.layer.cornerRadius = 9
-        circleView.translatesAutoresizingMaskIntoConstraints = false
-        circleView.widthAnchor.constraint(equalToConstant: 18).isActive = true
-        circleView.heightAnchor.constraint(equalToConstant: 18).isActive = true
-        return circleView
-    }()
-    var yellowCircleView: UIView = {
-        let circleView = UIView()
-        circleView.backgroundColor = .systemGray5
-        circleView.layer.cornerRadius = 9
-        circleView.translatesAutoresizingMaskIntoConstraints = false
-        circleView.widthAnchor.constraint(equalToConstant: 18).isActive = true
-        circleView.heightAnchor.constraint(equalToConstant: 18).isActive = true
-        return circleView
-    }()
-    var greenCircleView: UIView = {
-        let circleView = UIView()
-        circleView.backgroundColor = UIColor(red: 0.16, green: 0.79, blue: 0.19, alpha: 1)
-        circleView.layer.cornerRadius = 9
-        circleView.translatesAutoresizingMaskIntoConstraints = false
-        circleView.widthAnchor.constraint(equalToConstant: 18).isActive = true
-        circleView.heightAnchor.constraint(equalToConstant: 18).isActive = true
-        return circleView
-    }()
-
+    var redCircleView = CircleButton(.gray)
+    var yellowCircleView = CircleButton(.gray)
+    var greenCircleView = CircleButton(.green)
     // MARK: - Title Stack View
     let titleStackView: UIStackView = {
         let titleStackView = UIStackView()
@@ -117,7 +108,6 @@ where ContentViewType: UIView {
     }
 
     func setupUI() {
-        view.backgroundColor = .systemBackground
         view.addSubview(containerStackView)
 
         containerStackView.addArrangedSubview(toolBarView)
@@ -150,7 +140,7 @@ where ContentViewType: UIView {
             toolBarView.trailingAnchor.constraint(equalTo: containerStackView.trailingAnchor),
 
             circleStackView.centerYAnchor.constraint(equalTo: toolBarView.centerYAnchor),
-            circleStackView.leadingAnchor.constraint(equalTo: toolBarView.leadingAnchor, constant: 10),
+            circleStackView.leadingAnchor.constraint(equalTo: toolBarView.leadingAnchor, constant: 5),
 
             titleStackView.centerXAnchor.constraint(equalTo: toolBarView.centerXAnchor),
             titleStackView.centerYAnchor.constraint(equalTo: toolBarView.centerYAnchor),
@@ -169,5 +159,14 @@ where ContentViewType: UIView {
             componentContentView.topAnchor.constraint(equalTo: componentContentViewContainer.topAnchor),
             componentContentView.bottomAnchor.constraint(equalTo: componentContentViewContainer.bottomAnchor),
         ])
+    }
+
+    func applyColor(_ colorManager: any AppAppearanceManagerType = AppAppearanceManager.shared) {
+        view.backgroundColor = colorManager.appBaseColor
+        titleLabel.textColor = colorManager.appTintColor
+        containerStackView.backgroundColor = colorManager.appBaseColor
+        componentContentViewContainer.backgroundColor = colorManager.appBaseColor
+        componentInformationView.backgroundColor = colorManager.appBaseColor
+        creationDateLabel.textColor = colorManager.appTintColor
     }
 }

@@ -7,13 +7,14 @@ final class DirectoryContentDataSource: NSObject, UICollectionViewDataSource, At
     private var input: PassthroughSubject<MemoHomeViewInput, Never>
     private var manualSortInfo: DirectoryContentsRenderInfo
     private let spacing = UIConstants.fileItemSpacing
+
     var isActivePanGesture: Bool = false
     var isActiveLongTapGesture: Bool = true
 
     init(
         directoryContents: MemoDirectoryModel,
         input: PassthroughSubject<MemoHomeViewInput, Never>,
-        manualSortInfo: DirectoryContentsRenderInfo
+        manualSortInfo: DirectoryContentsRenderInfo,
     ) {
         self.input = input
         self.directoryContents = directoryContents
@@ -44,7 +45,8 @@ final class DirectoryContentDataSource: NSObject, UICollectionViewDataSource, At
                 with: storageItem,
                 dispatcher: input,
                 isActivePanGesture: isActivePanGesture,
-                isActiveLongTapGesture: isActiveLongTapGesture)
+                isActiveLongTapGesture: isActiveLongTapGesture
+            )
 
             return cell
         }
@@ -87,19 +89,19 @@ final class DirectoryContentDataSource: NSObject, UICollectionViewDataSource, At
 
 extension DirectoryContentDataSource: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-		let fileTapped = directoryContents.items[indexPath.item]
+        let fileTapped = directoryContents.items[indexPath.item]
 
-		switch fileTapped {
-			case is MemoPageModel:
-				input.send(.willNavigatePageView(indexPath.item))
+        switch fileTapped {
+            case is MemoPageModel:
+                input.send(.willNavigatePageView(indexPath.item))
 
-			case is MemoDirectoryModel:
-				collectionView.isUserInteractionEnabled = false
-				input.send(.willMoveToFollowingDirectory(indexPath.item))
+            case is MemoDirectoryModel:
+                collectionView.isUserInteractionEnabled = false
+                input.send(.willMoveToFollowingDirectory(indexPath.item))
 
-			default:
-				break
-		}
+            default:
+                break
+        }
     }
 
     func collectionView(
